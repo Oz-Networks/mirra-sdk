@@ -1,0 +1,29 @@
+{
+  "id": "example-template",
+  "name": "Example Template",
+  "description": "A simple example template to demonstrate the template system",
+  "version": "1.0.0",
+  "category": "productivity",
+  "tags": ["example", "demo", "getting-started"],
+  "icon": "https://via.placeholder.com/150",
+  "screenshots": [
+    "https://via.placeholder.com/800x600"
+  ],
+  "page": {
+    "type": "nextjs",
+    "entryPoint": "page.tsx"
+  },
+  "dependencies": {
+    "scripts": [],
+    "resources": []
+  },
+  "pricing": {
+    "setupFee": 0,
+    "monthlyFee": 0,
+    "estimatedUsageCost": {
+      "perUse": 0,
+      "perMonth": 0
+    }
+  }
+}
+
