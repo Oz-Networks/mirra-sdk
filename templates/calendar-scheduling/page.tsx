@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { MirraSDK } from '@mirra-messenger/sdk';
-import CalendarView from './components/CalendarView';
-import TimeSlotPicker from './components/TimeSlotPicker';
-import BookingForm from './components/BookingForm';
-import ConfirmationView from './components/ConfirmationView';
-import { calculateAvailability } from './components/AvailabilityEngine';
+import CalendarView from '../components/CalendarView';
+import TimeSlotPicker from '../components/TimeSlotPicker';
+import BookingForm from '../components/BookingForm';
+import ConfirmationView from '../components/ConfirmationView';
+import { calculateAvailability } from '../components/AvailabilityEngine';
 
 // Initialize SDK with template API key
 const sdk = new MirraSDK({
@@ -52,8 +52,8 @@ export default function CalendarSchedulingTemplate() {
       // Fetch events from Google Calendar
       const events = await sdk.resources.call({
         resourceId: 'google-calendar',
-        operation: 'getEvents',
-        args: {
+        method: 'getEvents',
+        params: {
           timeMin: startOfDay.toISOString(),
           timeMax: endOfDay.toISOString()
         }
@@ -99,8 +99,8 @@ export default function CalendarSchedulingTemplate() {
       // Create calendar event
       await sdk.resources.call({
         resourceId: 'google-calendar',
-        operation: 'createEvent',
-        args: {
+        method: 'createEvent',
+        params: {
           summary: `Meeting with ${formData.name}`,
           description: `Booked via Mirra Calendar Template\n\nReason: ${formData.reason}\n\nContact: ${formData.email}`,
           start: {
