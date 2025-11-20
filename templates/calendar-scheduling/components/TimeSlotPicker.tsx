@@ -4,6 +4,7 @@ interface AvailabilitySlot {
   start: Date;
   end: Date;
 }
+
 interface TimeSlotPickerProps {
   date: Date;
   slots: AvailabilitySlot[];
@@ -93,3 +94,4 @@ export default function TimeSlotPicker({
     </div>
   );
 }
+// Trigger workflow test
