@@ -13,7 +13,7 @@ interface TimeSlotPickerProps {
   onBack: () => void;
 }
 
-// Timeslot picker.
+
 export default function TimeSlotPicker({
   date,
   slots,
