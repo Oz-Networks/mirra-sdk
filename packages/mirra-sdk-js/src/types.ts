@@ -22,40 +22,55 @@ export interface MirraResponse<T = any> {
 // ============================================================================
 
 export interface MemoryEntity {
+  type: string;
   content: string;
-  type?: string;
   metadata?: Record<string, any>;
-  embedding?: number[];
+}
+
+export interface MemoryEntityWithId extends MemoryEntity {
+  id: string;
 }
 
 export interface MemorySearchQuery {
   query: string;
   limit?: number;
-  threshold?: number;
-  filters?: Record<string, any>;
 }
 
 export interface MemorySearchResult {
   id: string;
   content: string;
-  type?: string;
+  type: string;
   metadata?: Record<string, any>;
   score: number;
 }
 
 export interface MemoryQueryParams {
+  type?: string;
   filters?: Record<string, any>;
   limit?: number;
+  offset?: number;
 }
 
 export interface MemoryUpdateParams {
+  id: string;
+  type?: string;
   content?: string;
   metadata?: Record<string, any>;
+}
+
+export interface MemoryFindOneParams {
+  filters: {
+    id?: string;
+    name?: string;
+    [key: string]: any;
+  };
 }
 
 // ============================================================================
 // AI Types
 // ============================================================================
+
+export type AIProvider = 'anthropic' | 'openai' | 'google';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -65,6 +80,7 @@ export interface ChatMessage {
 export interface ChatRequest {
   messages: ChatMessage[];
   model?: string;
+  provider?: AIProvider;
   temperature?: number;
   maxTokens?: number;
 }
@@ -73,6 +89,16 @@ export interface ChatResponse {
   content: string;
   model: string;
   usage: {
+    inputTokens: number;
+    outputTokens: number;
+  };
+}
+
+export interface ChatStreamChunk {
+  delta: string;
+  done: boolean;
+  model?: string;
+  usage?: {
     inputTokens: number;
     outputTokens: number;
   };
@@ -87,8 +113,9 @@ export interface DecisionOption {
 export interface DecideRequest {
   prompt: string;
   options: DecisionOption[];
-  context?: Record<string, any>;
+  context?: string;
   model?: string;
+  provider?: AIProvider;
 }
 
 export interface DecideResponse {

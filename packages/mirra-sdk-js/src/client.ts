@@ -7,12 +7,15 @@ import {
   MirraSDKConfig,
   MirraResponse,
   MemoryEntity,
+  MemoryEntityWithId,
   MemorySearchQuery,
   MemorySearchResult,
   MemoryQueryParams,
   MemoryUpdateParams,
+  MemoryFindOneParams,
   ChatRequest,
   ChatResponse,
+  ChatStreamChunk,
   DecideRequest,
   DecideResponse,
   BatchChatRequest,
@@ -71,9 +74,9 @@ export class MirraSDK {
     /**
      * Create a new memory entity
      */
-    create: async (entity: MemoryEntity): Promise<{ id: string }> => {
-      const response = await this.client.post<MirraResponse<{ id: string }>>(
-        '/memory',
+    create: async (entity: MemoryEntity): Promise<MemoryEntityWithId> => {
+      const response = await this.client.post<MirraResponse<MemoryEntityWithId>>(
+        '/memory/create',
         entity
       );
       return response.data.data!;
@@ -94,8 +97,8 @@ export class MirraSDK {
     /**
      * Query memories with filters
      */
-    query: async (params: MemoryQueryParams): Promise<MemoryEntity[]> => {
-      const response = await this.client.post<MirraResponse<MemoryEntity[]>>(
+    query: async (params: MemoryQueryParams): Promise<MemoryEntityWithId[]> => {
+      const response = await this.client.post<MirraResponse<MemoryEntityWithId[]>>(
         '/memory/query',
         params
       );
@@ -103,12 +106,12 @@ export class MirraSDK {
     },
 
     /**
-     * Find a single memory by ID
+     * Find a single memory by criteria
      */
-    findOne: async (id: string): Promise<MemoryEntity | null> => {
+    findOne: async (params: MemoryFindOneParams): Promise<MemoryEntityWithId | null> => {
       const response = await this.client.post<
-        MirraResponse<MemoryEntity | null>
-      >('/memory/findOne', { id });
+        MirraResponse<MemoryEntityWithId | null>
+      >('/memory/findOne', params);
       return response.data.data!;
     },
 
@@ -116,21 +119,20 @@ export class MirraSDK {
      * Update a memory entity
      */
     update: async (
-      id: string,
-      updates: MemoryUpdateParams
-    ): Promise<{ success: boolean }> => {
+      params: MemoryUpdateParams
+    ): Promise<{ id: string; updated: boolean }> => {
       const response = await this.client.post<
-        MirraResponse<{ success: boolean }>
-      >('/memory/update', { id, ...updates });
+        MirraResponse<{ id: string; updated: boolean }>
+      >('/memory/update', params);
       return response.data.data!;
     },
 
     /**
      * Delete a memory entity
      */
-    delete: async (id: string): Promise<{ success: boolean }> => {
+    delete: async (id: string): Promise<{ deleted: boolean; message?: string }> => {
       const response = await this.client.post<
-        MirraResponse<{ success: boolean }>
+        MirraResponse<{ deleted: boolean; message?: string }>
       >('/memory/delete', { id });
       return response.data.data!;
     },
@@ -142,7 +144,8 @@ export class MirraSDK {
 
   ai = {
     /**
-     * Send a chat request to the AI
+     * Send a chat request to the AI with multi-provider support
+     * Supports Anthropic Claude, Google Gemini, and OpenAI
      */
     chat: async (request: ChatRequest): Promise<ChatResponse> => {
       const response = await this.client.post<MirraResponse<ChatResponse>>(
@@ -153,7 +156,31 @@ export class MirraSDK {
     },
 
     /**
-     * Ask AI to make a decision from options
+     * Stream AI responses in real-time for long-form content
+     * Returns an async generator that yields chunks of the response
+     * 
+     * @example
+     * ```typescript
+     * const stream = sdk.ai.chatStream({
+     *   messages: [{ role: 'user', content: 'Write a story' }],
+     *   provider: 'anthropic'
+     * });
+     * 
+     * for await (const chunk of stream) {
+     *   if (chunk.done) {
+     *     console.log('Usage:', chunk.usage);
+     *   } else {
+     *     process.stdout.write(chunk.delta);
+     *   }
+     * }
+     * ```
+     */
+    chatStream: (request: ChatRequest): AsyncGenerator<ChatStreamChunk, void, unknown> => {
+      return this._streamChat(request);
+    },
+
+    /**
+     * Ask AI to make a decision from multiple options with structured reasoning
      */
     decide: async (request: DecideRequest): Promise<DecideResponse> => {
       const response = await this.client.post<MirraResponse<DecideResponse>>(
@@ -164,7 +191,7 @@ export class MirraSDK {
     },
 
     /**
-     * Process multiple chat requests in batch
+     * Process multiple chat requests in batch for efficiency
      */
     batchChat: async (
       request: BatchChatRequest
@@ -176,6 +203,53 @@ export class MirraSDK {
       return response.data.data!;
     },
   };
+
+  /**
+   * Internal method to handle streaming chat
+   */
+  private async *_streamChat(request: ChatRequest): AsyncGenerator<ChatStreamChunk, void, unknown> {
+    const response = await this.client.post<ReadableStream>(
+      '/ai/chatStream',
+      request,
+      {
+        responseType: 'stream',
+        headers: {
+          'Accept': 'text/event-stream',
+        },
+      }
+    );
+
+    // Handle streaming response
+    const reader = (response.data as any).getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.trim() === '') continue;
+          if (line.startsWith('data: ')) {
+            try {
+              const chunk = JSON.parse(line.slice(6)) as ChatStreamChunk;
+              yield chunk;
+              if (chunk.done) return;
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
 
   // ============================================================================
   // Agent Operations

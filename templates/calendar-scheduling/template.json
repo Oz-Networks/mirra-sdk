@@ -1,0 +1,34 @@
+{
+  "id": "calendar-scheduling",
+  "name": "Calendar Scheduling",
+  "description": "Allow visitors to view your availability and book appointments directly on your calendar",
+  "version": "1.0.0",
+  "category": "productivity",
+  "tags": ["calendar", "scheduling", "appointments", "booking"],
+  "icon": "https://via.placeholder.com/150",
+  "screenshots": [
+    "https://via.placeholder.com/800x600"
+  ],
+  "page": {
+    "type": "nextjs",
+    "entryPoint": "page.tsx"
+  },
+  "dependencies": {
+    "scripts": [],
+    "resources": [
+      {
+        "id": "google-calendar",
+        "name": "Google Calendar"
+      }
+    ]
+  },
+  "pricing": {
+    "setupFee": 0,
+    "monthlyFee": 0,
+    "estimatedUsageCost": {
+      "perUse": 0,
+      "perMonth": 0
+    }
+  }
+}
+
