@@ -4,7 +4,6 @@ interface AvailabilitySlot {
   start: Date;
   end: Date;
 }
-// update to deploy
 interface TimeSlotPickerProps {
   date: Date;
   slots: AvailabilitySlot[];
