@@ -4,7 +4,7 @@ interface AvailabilitySlot {
   start: Date;
   end: Date;
 }
-// build?
+// b
 interface TimeSlotPickerProps {
   date: Date;
   slots: AvailabilitySlot[];
