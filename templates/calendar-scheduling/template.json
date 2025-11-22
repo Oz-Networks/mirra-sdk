@@ -2,7 +2,7 @@
   "id": "calendar-scheduling",
   "name": "Calendar Scheduling",
   "description": "Allow visitors to view your availability and book appointments directly on your calendar - fully automated!",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "category": "productivity",
   "tags": ["calendar", "scheduling", "appointments", "booking"],
   "icon": "https://via.placeholder.com/150",
