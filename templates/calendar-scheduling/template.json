@@ -2,7 +2,7 @@
   "id": "calendar-scheduling",
   "name": "Calendar Scheduling",
   "description": "Allow visitors to view your availability and book appointments directly on your calendar - fully automated!",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "category": "productivity",
   "tags": ["calendar", "scheduling", "appointments", "booking"],
   "icon": "https://via.placeholder.com/150",
@@ -22,6 +22,53 @@
       }
     ]
   },
+  "configurationSchema": [
+    {
+      "id": "pageName",
+      "type": "string",
+      "label": "Page Name",
+      "description": "The name displayed in the browser tab and shared links",
+      "default": "My Calendar",
+      "required": true,
+      "placeholder": "e.g., Tony's Calendar"
+    },
+    {
+      "id": "primaryColor",
+      "type": "color",
+      "label": "Primary Color",
+      "description": "The main accent color for buttons and highlights",
+      "default": "#E37C60"
+    },
+    {
+      "id": "logo",
+      "type": "url",
+      "label": "Logo URL",
+      "description": "URL to your logo image (PNG or JPG recommended)",
+      "required": false,
+      "placeholder": "https://example.com/logo.png"
+    },
+    {
+      "id": "meetingDuration",
+      "type": "select",
+      "label": "Default Meeting Duration",
+      "description": "The default length for new appointments",
+      "default": "30",
+      "options": [
+        { "value": "15", "label": "15 minutes" },
+        { "value": "30", "label": "30 minutes" },
+        { "value": "45", "label": "45 minutes" },
+        { "value": "60", "label": "1 hour" }
+      ]
+    },
+    {
+      "id": "welcomeMessage",
+      "type": "string",
+      "label": "Welcome Message",
+      "description": "A friendly greeting shown to visitors",
+      "default": "Book a time with me!",
+      "placeholder": "e.g., Let's connect!"
+    }
+  ],
   "pricing": {
     "setupFee": 0,
     "monthlyFee": 0,
