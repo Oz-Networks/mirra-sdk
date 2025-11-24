@@ -27,7 +27,7 @@ export default function CalendarSchedulingTemplate() {
   const [availableSlots, setAvailableSlots] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [ownerName, setOwnerName] = useState(process.env.NEXT_PUBLIC_OWNER_NAME || 'Calendar Owner');
+  const [ownerName] = useState(process.env.NEXT_PUBLIC_OWNERNAME || 'Calendar Owner');
   const [bookingDetails, setBookingDetails] = useState<any>(null);
 
   // Load availability when date is selected
@@ -63,7 +63,7 @@ export default function CalendarSchedulingTemplate() {
       const slots = calculateAvailability(
         date,
         events.events || [],
-        process.env.NEXT_PUBLIC_OWNER_TIMEZONE || 'UTC'
+        process.env.NEXT_PUBLIC_TIMEZONE || 'America/New_York'
       );
 
       setAvailableSlots(slots);
@@ -105,11 +105,11 @@ export default function CalendarSchedulingTemplate() {
           description: `Booked via Mirra Calendar Template\n\nReason: ${formData.reason}\n\nContact: ${formData.email}`,
           start: {
             dateTime: selectedSlot.start.toISOString(),
-            timeZone: process.env.NEXT_PUBLIC_OWNER_TIMEZONE || 'UTC'
+            timeZone: process.env.NEXT_PUBLIC_TIMEZONE || 'America/New_York'
           },
           end: {
             dateTime: selectedSlot.end.toISOString(),
-            timeZone: process.env.NEXT_PUBLIC_OWNER_TIMEZONE || 'UTC'
+            timeZone: process.env.NEXT_PUBLIC_TIMEZONE || 'America/New_York'
           },
           attendees: [{ email: formData.email }]
         }

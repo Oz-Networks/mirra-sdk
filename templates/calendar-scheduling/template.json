@@ -24,6 +24,15 @@
   },
   "configurationSchema": [
     {
+      "id": "ownerName",
+      "type": "string",
+      "label": "Your Name",
+      "description": "Your name as displayed to visitors (e.g., 'Book a meeting with John')",
+      "default": "",
+      "required": true,
+      "placeholder": "e.g., John Smith"
+    },
+    {
       "id": "pageName",
       "type": "string",
       "label": "Page Name",
@@ -31,6 +40,30 @@
       "default": "My Calendar",
       "required": true,
       "placeholder": "e.g., Tony's Calendar"
+    },
+    {
+      "id": "timezone",
+      "type": "select",
+      "label": "Your Timezone",
+      "description": "The timezone used for scheduling",
+      "default": "America/New_York",
+      "options": [
+        { "value": "America/New_York", "label": "Eastern Time (ET)" },
+        { "value": "America/Chicago", "label": "Central Time (CT)" },
+        { "value": "America/Denver", "label": "Mountain Time (MT)" },
+        { "value": "America/Los_Angeles", "label": "Pacific Time (PT)" },
+        { "value": "America/Phoenix", "label": "Arizona (MST)" },
+        { "value": "America/Anchorage", "label": "Alaska (AKT)" },
+        { "value": "Pacific/Honolulu", "label": "Hawaii (HST)" },
+        { "value": "Europe/London", "label": "London (GMT/BST)" },
+        { "value": "Europe/Paris", "label": "Central European (CET)" },
+        { "value": "Europe/Berlin", "label": "Berlin (CET)" },
+        { "value": "Asia/Tokyo", "label": "Tokyo (JST)" },
+        { "value": "Asia/Shanghai", "label": "Shanghai (CST)" },
+        { "value": "Asia/Singapore", "label": "Singapore (SGT)" },
+        { "value": "Australia/Sydney", "label": "Sydney (AEST)" },
+        { "value": "UTC", "label": "UTC" }
+      ]
     },
     {
       "id": "primaryColor",
