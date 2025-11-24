@@ -53,7 +53,7 @@ export default function CalendarSchedulingTemplate() {
       const events = await sdk.resources.call({
         resourceId: 'google-calendar',
         method: 'getEvents',
-        params: {
+        parameters: {
           timeMin: startOfDay.toISOString(),
           timeMax: endOfDay.toISOString()
         }
@@ -100,7 +100,7 @@ export default function CalendarSchedulingTemplate() {
       await sdk.resources.call({
         resourceId: 'google-calendar',
         method: 'createEvent',
-        params: {
+        parameters: {
           summary: `Meeting with ${formData.name}`,
           description: `Booked via Mirra Calendar Template\n\nReason: ${formData.reason}\n\nContact: ${formData.email}`,
           start: {
