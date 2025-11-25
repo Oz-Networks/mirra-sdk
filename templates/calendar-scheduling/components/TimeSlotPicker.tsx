@@ -1,16 +1,39 @@
 import { format } from 'date-fns';
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 
 interface AvailabilitySlot {
   start: Date;
   end: Date;
 }
-// build
+
 interface TimeSlotPickerProps {
   date: Date;
   slots: AvailabilitySlot[];
   loading: boolean;
   onSlotSelect: (slot: AvailabilitySlot) => void;
   onBack: () => void;
+}
+
+// Get timezone abbreviation for display
+function getTimezoneAbbr(timezone: string): string {
+  const abbrs: Record<string, string> = {
+    'America/New_York': 'ET',
+    'America/Chicago': 'CT',
+    'America/Denver': 'MT',
+    'America/Los_Angeles': 'PT',
+    'America/Phoenix': 'MST',
+    'America/Anchorage': 'AKT',
+    'Pacific/Honolulu': 'HST',
+    'Europe/London': 'GMT',
+    'Europe/Paris': 'CET',
+    'Europe/Berlin': 'CET',
+    'Asia/Tokyo': 'JST',
+    'Asia/Shanghai': 'CST',
+    'Asia/Singapore': 'SGT',
+    'Australia/Sydney': 'AEST',
+    'UTC': 'UTC'
+  };
+  return abbrs[timezone] || timezone;
 }
 
 export default function TimeSlotPicker({
@@ -20,6 +43,17 @@ export default function TimeSlotPicker({
   onSlotSelect,
   onBack
 }: TimeSlotPickerProps) {
+  // Get owner's timezone from env var
+  const ownerTimezone = process.env.NEXT_PUBLIC_TIMEZONE || 'America/New_York';
+  const ownerTzAbbr = getTimezoneAbbr(ownerTimezone);
+  
+  // Detect visitor's timezone
+  const visitorTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const visitorTzAbbr = getTimezoneAbbr(visitorTimezone);
+  
+  // Check if visitor is in a different timezone
+  const isDifferentTimezone = ownerTimezone !== visitorTimezone;
+
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
@@ -43,6 +77,21 @@ export default function TimeSlotPicker({
           <p className="text-[#2B2B2B]/60 dark:text-gray-400 text-lg">
             Select a time that works best for you
           </p>
+          
+          {/* Timezone Indicator */}
+          <div className="mt-4 flex items-center gap-2 text-sm">
+            <svg className="w-4 h-4 text-[#E37C60]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-[#2B2B2B] dark:text-white font-medium">
+              Times shown in {ownerTzAbbr}
+            </span>
+            {isDifferentTimezone && (
+              <span className="text-[#2B2B2B]/60 dark:text-gray-400">
+                (your timezone: {visitorTzAbbr})
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Loading State */}
@@ -71,27 +120,38 @@ export default function TimeSlotPicker({
         {/* Time Slots Grid */}
         {!loading && slots.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {slots.map((slot, index) => (
-              <button
-                key={index}
-                onClick={() => onSlotSelect(slot)}
-                className="group relative p-4 bg-white dark:bg-gray-700 border-2 border-transparent hover:border-[#E37C60]/30 rounded-2xl hover:shadow-[0_4px_12px_rgba(227,124,96,0.15)] transition-all duration-200 text-center hover:-translate-y-1"
-              >
-                <div className="absolute inset-0 bg-[#E37C60]/5 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity"></div>
-                <div className="relative z-10">
-                  <div className="text-lg font-bold text-[#2B2B2B] dark:text-white group-hover:text-[#E37C60] transition-colors">
-                    {format(slot.start, 'h:mm a')}
+            {slots.map((slot, index) => {
+              // Format times in owner's timezone
+              const ownerTime = formatInTimeZone(slot.start, ownerTimezone, 'h:mm a');
+              
+              // If different timezone, show visitor's local time too
+              const visitorTime = isDifferentTimezone 
+                ? format(slot.start, 'h:mm a')
+                : null;
+              
+              return (
+                <button
+                  key={index}
+                  onClick={() => onSlotSelect(slot)}
+                  className="group relative p-4 bg-white dark:bg-gray-700 border-2 border-transparent hover:border-[#E37C60]/30 rounded-2xl hover:shadow-[0_4px_12px_rgba(227,124,96,0.15)] transition-all duration-200 text-center hover:-translate-y-1"
+                >
+                  <div className="absolute inset-0 bg-[#E37C60]/5 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity"></div>
+                  <div className="relative z-10">
+                    <div className="text-lg font-bold text-[#2B2B2B] dark:text-white group-hover:text-[#E37C60] transition-colors">
+                      {ownerTime}
+                    </div>
+                    {visitorTime && (
+                      <div className="text-xs text-[#2B2B2B]/50 dark:text-gray-400 mt-1 font-medium">
+                        {visitorTime} your time
+                      </div>
+                    )}
                   </div>
-                  <div className="text-xs text-[#2B2B2B]/50 dark:text-gray-400 mt-1 font-medium">
-                    {format(slot.end, 'h:mm a')}
-                  </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
     </div>
   );
 }
-// Trigger workflow test

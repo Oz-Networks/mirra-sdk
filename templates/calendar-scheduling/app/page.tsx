@@ -28,7 +28,32 @@ export default function CalendarSchedulingTemplate() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ownerName] = useState(process.env.NEXT_PUBLIC_OWNERNAME || 'Calendar Owner');
+  const [ownerTimezone] = useState(process.env.NEXT_PUBLIC_TIMEZONE || 'America/New_York');
   const [bookingDetails, setBookingDetails] = useState<any>(null);
+  
+  // Get timezone abbreviation for display
+  const getTimezoneAbbr = (timezone: string): string => {
+    const abbrs: Record<string, string> = {
+      'America/New_York': 'ET',
+      'America/Chicago': 'CT',
+      'America/Denver': 'MT',
+      'America/Los_Angeles': 'PT',
+      'America/Phoenix': 'MST',
+      'America/Anchorage': 'AKT',
+      'Pacific/Honolulu': 'HST',
+      'Europe/London': 'GMT',
+      'Europe/Paris': 'CET',
+      'Europe/Berlin': 'CET',
+      'Asia/Tokyo': 'JST',
+      'Asia/Shanghai': 'CST',
+      'Asia/Singapore': 'SGT',
+      'Australia/Sydney': 'AEST',
+      'UTC': 'UTC'
+    };
+    return abbrs[timezone] || timezone;
+  };
+  
+  const ownerTzAbbr = getTimezoneAbbr(ownerTimezone);
 
   // Load availability when date is selected
   useEffect(() => {
@@ -63,7 +88,7 @@ export default function CalendarSchedulingTemplate() {
       const slots = calculateAvailability(
         date,
         events.events || [],
-        process.env.NEXT_PUBLIC_TIMEZONE || 'America/New_York'
+        ownerTimezone
       );
 
       setAvailableSlots(slots);
@@ -85,6 +110,17 @@ export default function CalendarSchedulingTemplate() {
     setStep('form');
   };
 
+  // Format date for Google Calendar API (without UTC conversion)
+  const formatDateTime = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  };
+
   const handleBookingSubmit = async (formData: {
     name: string;
     email: string;
@@ -102,14 +138,14 @@ export default function CalendarSchedulingTemplate() {
         method: 'createEvent',
         params: {
           summary: `Meeting with ${formData.name}`,
-          description: `Booked via Mirra Calendar Template\n\nReason: ${formData.reason}\n\nContact: ${formData.email}`,
+          description: `Booked via Mirra\n\nReason: ${formData.reason}\n\nContact: ${formData.email}`,
           start: {
-            dateTime: selectedSlot.start.toISOString(),
-            timeZone: process.env.NEXT_PUBLIC_TIMEZONE || 'America/New_York'
+            dateTime: formatDateTime(selectedSlot.start),
+            timeZone: ownerTimezone
           },
           end: {
-            dateTime: selectedSlot.end.toISOString(),
-            timeZone: process.env.NEXT_PUBLIC_TIMEZONE || 'America/New_York'
+            dateTime: formatDateTime(selectedSlot.end),
+            timeZone: ownerTimezone
           },
           attendees: [{ email: formData.email }]
         }
@@ -154,6 +190,12 @@ export default function CalendarSchedulingTemplate() {
           <p className="text-xl text-[#2B2B2B]/70 dark:text-gray-300 max-w-2xl mx-auto font-medium">
             Select a date and time that works for you to get started.
           </p>
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-[#2B2B2B]/60 dark:text-gray-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>All times in {ownerTzAbbr}</span>
+          </div>
         </div>
 
         {/* Error Display */}
