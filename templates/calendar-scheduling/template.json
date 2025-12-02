@@ -5,9 +5,9 @@
   "version": "1.0.4",
   "category": "productivity",
   "tags": ["calendar", "scheduling", "appointments", "booking"],
-  "icon": "https://via.placeholder.com/150",
+  "icon": "./assets/icon.png",
   "screenshots": [
-    "https://via.placeholder.com/800x600"
+    "./assets/screenshot-1.png"
   ],
   "page": {
     "type": "nextjs",
