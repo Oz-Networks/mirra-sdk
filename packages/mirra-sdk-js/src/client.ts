@@ -32,6 +32,20 @@ import {
   Template,
   MarketplaceItem,
   MarketplaceFilters,
+  UploadDocumentParams,
+  UploadDocumentResult,
+  DocumentGetResult,
+  DocumentStatusResult,
+  DocumentChunksResult,
+  DocumentDeleteResult,
+  ShareDocumentParams,
+  ShareDocumentResult,
+  UnshareDocumentResult,
+  ListDocumentGraphsResult,
+  SearchDocumentsParams,
+  SearchDocumentsResult,
+  ListDocumentsParams,
+  ListDocumentsResult,
 } from './types';
 
 export class MirraSDK {
@@ -487,6 +501,153 @@ export class MirraSDK {
       const response = await this.client.get<MirraResponse<MarketplaceItem[]>>(
         '/marketplace/search',
         { params: { q: query } }
+      );
+      return response.data.data!;
+    },
+  };
+
+  // ============================================================================
+  // Document Operations
+  // ============================================================================
+
+  documents = {
+    /**
+     * Upload and process a document
+     * Supports PDF, DOCX, TXT, and MD files
+     * 
+     * @example
+     * ```typescript
+     * import { readFileSync } from 'fs';
+     * 
+     * const fileBuffer = readFileSync('document.pdf');
+     * const result = await sdk.documents.upload({
+     *   file: fileBuffer.toString('base64'),
+     *   filename: 'document.pdf',
+     *   mimeType: 'application/pdf',
+     *   title: 'My Document'
+     * });
+     * console.log('Uploaded:', result.documentId);
+     * ```
+     */
+    upload: async (params: UploadDocumentParams): Promise<UploadDocumentResult> => {
+      const response = await this.client.post<MirraResponse<UploadDocumentResult>>(
+        '/documents/upload',
+        params
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Get document metadata and chunks
+     */
+    get: async (documentId: string): Promise<DocumentGetResult> => {
+      const response = await this.client.get<MirraResponse<DocumentGetResult>>(
+        `/documents/${documentId}`
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Get document processing status
+     */
+    getStatus: async (documentId: string): Promise<DocumentStatusResult> => {
+      const response = await this.client.get<MirraResponse<DocumentStatusResult>>(
+        `/documents/${documentId}/status`
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Get all chunks for a document
+     */
+    getChunks: async (documentId: string): Promise<DocumentChunksResult> => {
+      const response = await this.client.get<MirraResponse<DocumentChunksResult>>(
+        `/documents/${documentId}/chunks`
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Delete a document and all its chunks
+     */
+    delete: async (documentId: string): Promise<DocumentDeleteResult> => {
+      const response = await this.client.delete<MirraResponse<DocumentDeleteResult>>(
+        `/documents/${documentId}`
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Share a document to another graph (group or user-contact)
+     * 
+     * @example
+     * ```typescript
+     * await sdk.documents.share('doc-123', {
+     *   targetGraphId: 'group-456',
+     *   shareReason: 'For team review'
+     * });
+     * ```
+     */
+    share: async (documentId: string, params: ShareDocumentParams): Promise<ShareDocumentResult> => {
+      const response = await this.client.post<MirraResponse<ShareDocumentResult>>(
+        `/documents/${documentId}/share`,
+        params
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Remove document access from a graph
+     * Note: Cannot unshare from the primary (original) graph
+     */
+    unshare: async (documentId: string, graphId: string): Promise<UnshareDocumentResult> => {
+      const response = await this.client.delete<MirraResponse<UnshareDocumentResult>>(
+        `/documents/${documentId}/share/${graphId}`
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * List all graphs a document is shared in
+     */
+    listGraphs: async (documentId: string): Promise<ListDocumentGraphsResult> => {
+      const response = await this.client.get<MirraResponse<ListDocumentGraphsResult>>(
+        `/documents/${documentId}/graphs`
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Semantic search across document chunks
+     * 
+     * @example
+     * ```typescript
+     * const results = await sdk.documents.search({
+     *   query: 'quarterly earnings report',
+     *   limit: 10,
+     *   threshold: 0.7
+     * });
+     * 
+     * for (const result of results.results) {
+     *   console.log(`[${result.score}] ${result.content}`);
+     * }
+     * ```
+     */
+    search: async (params: SearchDocumentsParams): Promise<SearchDocumentsResult> => {
+      const response = await this.client.post<MirraResponse<SearchDocumentsResult>>(
+        '/documents/search',
+        params
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * List documents in a graph
+     */
+    list: async (params?: ListDocumentsParams): Promise<ListDocumentsResult> => {
+      const response = await this.client.get<MirraResponse<ListDocumentsResult>>(
+        '/documents',
+        { params }
       );
       return response.data.data!;
     },

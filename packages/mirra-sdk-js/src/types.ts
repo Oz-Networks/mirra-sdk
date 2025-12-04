@@ -277,3 +277,165 @@ export interface MarketplaceFilters {
   offset?: number;
 }
 
+// ============================================================================
+// Document Types
+// ============================================================================
+
+export type DocumentAccessLevel = 'public' | 'internal' | 'confidential' | 'private';
+
+export interface Document {
+  documentId: string;
+  title?: string;
+  filename: string;
+  mimeType: string;
+  fileSize: number;
+  processingStatus: 'processing' | 'completed' | 'failed';
+  chunkCount?: number;
+  graphIds: string[];
+  primaryGraphId: string;
+  createdAt: number;
+  createdByUserId: string;
+  extractedText?: string;
+  processingError?: string;
+}
+
+export interface DocumentChunk {
+  chunkId: string;
+  documentId: string;
+  content: string;
+  position: number;
+  tokenCount?: number;
+}
+
+export interface UploadDocumentParams {
+  /** Base64 encoded file content */
+  file: string;
+  /** Original filename with extension */
+  filename: string;
+  /** MIME type (application/pdf, text/plain, etc.) */
+  mimeType: string;
+  /** Target graph ID (defaults to user's personal graph) */
+  graphId?: string;
+  /** Custom document title */
+  title?: string;
+  /** Document author */
+  author?: string;
+  /** Product tags for categorization */
+  productTags?: string[];
+  /** Access level for the document */
+  accessLevel?: DocumentAccessLevel;
+}
+
+export interface UploadDocumentResult {
+  documentId: string;
+  chunkCount: number;
+  graphIds: string[];
+  primaryGraphId: string;
+  processingTimeMs: number;
+}
+
+export interface DocumentGetResult {
+  document: Document;
+  chunks: DocumentChunk[];
+  chunkCount: number;
+}
+
+export interface DocumentStatusResult {
+  documentId: string;
+  processingStatus: 'processing' | 'completed' | 'failed';
+  chunkCount?: number;
+  processingError?: string;
+  extractedAt?: number;
+  processingCompletedAt?: number;
+}
+
+export interface DocumentChunksResult {
+  chunks: DocumentChunk[];
+  count: number;
+}
+
+export interface DocumentDeleteResult {
+  deleted: boolean;
+  documentId: string;
+  chunksDeleted: number;
+}
+
+export interface ShareDocumentParams {
+  /** Target graph ID to share to */
+  targetGraphId: string;
+  /** Optional reason for sharing */
+  shareReason?: string;
+}
+
+export interface DocumentShareEvent {
+  sharedToGraphId: string;
+  sharedByUserId: string;
+  sharedAt: number;
+  shareReason?: string;
+  shareType: 'manual' | 'automatic';
+}
+
+export interface ShareDocumentResult {
+  documentId: string;
+  graphIds: string[];
+  shareEvent: DocumentShareEvent;
+}
+
+export interface UnshareDocumentResult {
+  documentId: string;
+  graphIds: string[];
+}
+
+export interface DocumentGraphInfo {
+  graphId: string;
+  isPrimary: boolean;
+  sharedAt: number;
+  sharedByUserId?: string;
+  shareReason?: string;
+}
+
+export interface ListDocumentGraphsResult {
+  documentId: string;
+  graphs: DocumentGraphInfo[];
+}
+
+export interface SearchDocumentsParams {
+  /** Search query */
+  query: string;
+  /** Graph ID to search in (defaults to user's graph) */
+  graphId?: string;
+  /** Maximum results (default: 10) */
+  limit?: number;
+  /** Similarity threshold 0-1 (default: 0.7) */
+  threshold?: number;
+}
+
+export interface DocumentSearchResult {
+  chunkId: string;
+  documentId: string;
+  content: string;
+  score: number;
+  position: number;
+}
+
+export interface SearchDocumentsResult {
+  results: DocumentSearchResult[];
+  count: number;
+  graphId: string;
+}
+
+export interface ListDocumentsParams {
+  /** Graph ID to list documents from (defaults to user's graph) */
+  graphId?: string;
+  /** Maximum results (default: 50) */
+  limit?: number;
+  /** Pagination offset (default: 0) */
+  offset?: number;
+}
+
+export interface ListDocumentsResult {
+  documents: Document[];
+  count: number;
+  graphId: string;
+}
+
