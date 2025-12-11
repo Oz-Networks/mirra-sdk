@@ -1,0 +1,94 @@
+{
+  "id": "product-document-manager",
+  "name": "Product Document Manager",
+  "description": "Securely manage product documentation with an authenticated interface. Add products, organize documents, and keep everything in one place.",
+  "version": "1.0.0",
+  "category": "productivity",
+  "tags": ["documents", "products", "upload", "management", "authentication"],
+  "icon": "./assets/icon.png",
+  "screenshots": [
+    "./assets/screenshot-1.png"
+  ],
+  "page": {
+    "type": "nextjs",
+    "entryPoint": "page.tsx"
+  },
+  "dependencies": {
+    "scripts": [],
+    "resources": [
+      {
+        "id": "file-storage",
+        "name": "File Storage"
+      }
+    ]
+  },
+  "configurationSchema": [
+    {
+      "id": "pageName",
+      "type": "string",
+      "label": "Page Name",
+      "description": "The name displayed in the browser tab",
+      "default": "Product Documents",
+      "required": true,
+      "placeholder": "e.g., Acme Product Docs"
+    },
+    {
+      "id": "primaryColor",
+      "type": "color",
+      "label": "Primary Color",
+      "description": "The main accent color for buttons and highlights",
+      "default": "#6366F1"
+    },
+    {
+      "id": "logo",
+      "type": "url",
+      "label": "Logo URL",
+      "description": "URL to your logo image (PNG or JPG recommended)",
+      "required": false,
+      "placeholder": "https://example.com/logo.png"
+    },
+    {
+      "id": "welcomeMessage",
+      "type": "string",
+      "label": "Welcome Message",
+      "description": "A message shown on the dashboard",
+      "default": "Manage your product documentation",
+      "placeholder": "e.g., Welcome to your document hub"
+    },
+    {
+      "id": "maxFileSize",
+      "type": "select",
+      "label": "Maximum File Size",
+      "description": "Maximum allowed file size for uploads",
+      "default": "10",
+      "options": [
+        { "value": "5", "label": "5 MB" },
+        { "value": "10", "label": "10 MB" },
+        { "value": "25", "label": "25 MB" },
+        { "value": "50", "label": "50 MB" }
+      ]
+    },
+    {
+      "id": "allowedFileTypes",
+      "type": "select",
+      "label": "Allowed File Types",
+      "description": "Types of files that can be uploaded",
+      "default": "all",
+      "options": [
+        { "value": "all", "label": "All Documents" },
+        { "value": "pdf", "label": "PDF Only" },
+        { "value": "office", "label": "Office Documents (PDF, DOC, XLS)" },
+        { "value": "images", "label": "Images Only" }
+      ]
+    }
+  ],
+  "pricing": {
+    "setupFee": 0,
+    "monthlyFee": 0,
+    "estimatedUsageCost": {
+      "perUse": 0,
+      "perMonth": 0
+    }
+  }
+}
+

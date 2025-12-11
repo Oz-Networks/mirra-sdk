@@ -254,6 +254,33 @@ export interface Template {
   createdAt: string;
 }
 
+export interface TemplatePermissions {
+  memoryAccess?: 'none' | 'filtered' | 'all';
+  memoryTags?: string[];
+  calendarAccess?: 'read-only' | 'read-write';
+  workingHours?: {
+    timezone: string;
+    schedule: Array<{
+      day: number;
+      start: string;
+      end: string;
+    }>;
+  };
+}
+
+export interface TemplateInstallation {
+  installationId: string;
+  userId: string;
+  templateId: string;
+  pagePath: string;
+  version: string;
+  status: string;
+  configurationStatus: string;
+  permissions: TemplatePermissions;
+  config: Record<string, any>;
+  configuration: Record<string, any>;
+}
+
 // ============================================================================
 // Marketplace Types
 // ============================================================================

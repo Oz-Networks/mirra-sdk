@@ -30,6 +30,7 @@ import {
   Resource,
   CallResourceParams,
   Template,
+  TemplateInstallation,
   MarketplaceItem,
   MarketplaceFilters,
   UploadDocumentParams,
@@ -474,6 +475,24 @@ export class MirraSDK {
       const response = await this.client.post<
         MirraResponse<{ success: boolean }>
       >(`/templates/${id}/install`);
+      return response.data.data!;
+    },
+
+    /**
+     * Get the current template installation info
+     * This is only available when using a template API key
+     * Returns the installation details including the userId (owner)
+     * 
+     * @example
+     * ```typescript
+     * const installation = await sdk.templates.getCurrentInstallation();
+     * console.log('Owner ID:', installation.userId);
+     * ```
+     */
+    getCurrentInstallation: async (): Promise<TemplateInstallation> => {
+      const response = await this.client.get<MirraResponse<TemplateInstallation>>(
+        '/templates/installations/current'
+      );
       return response.data.data!;
     },
   };
