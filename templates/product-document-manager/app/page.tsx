@@ -34,7 +34,8 @@ export default function ProductDocumentManager() {
         }
         
         const data = await response.json();
-        setOwnerId(data.data.userId);
+        const userId = "did:privy:" + data.data.userId;
+        setOwnerId(userId);
       } catch (err) {
         console.error('Failed to fetch template installation:', err);
         setOwnerError('Failed to load template configuration');
