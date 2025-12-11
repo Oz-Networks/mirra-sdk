@@ -15,12 +15,7 @@
   },
   "dependencies": {
     "scripts": [],
-    "resources": [
-      {
-        "id": "file-storage",
-        "name": "File Storage"
-      }
-    ]
+    "resources": []
   },
   "configurationSchema": [
     {
