@@ -8,7 +8,7 @@ import DocumentUploader from './DocumentUploader';
 // Initialize SDK with template API key
 // Cast to any to access documents API (available in newer SDK versions)
 const sdk = new MirraSDK({
-  apiKey: process.env.NEXT_PUBLIC_MIRRA_API_KEY!,
+  apiKey: process.env.NEXT_PUBLIC_TEMPLATE_API_KEY!,
 }) as any;
 
 interface Product {

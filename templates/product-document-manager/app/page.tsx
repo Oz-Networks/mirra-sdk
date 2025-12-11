@@ -24,7 +24,7 @@ export default function ProductDocumentManager() {
       try {
         const response = await fetch(`${API_BASE_URL}/templates/installations/current`, {
           headers: {
-            'X-API-Key': process.env.NEXT_PUBLIC_MIRRA_API_KEY!,
+            'X-API-Key': process.env.NEXT_PUBLIC_TEMPLATE_API_KEY!,
             'Content-Type': 'application/json',
           },
         });
