@@ -18,7 +18,7 @@ export default function ProductDocumentManager() {
   const allowedTypes = process.env.NEXT_PUBLIC_ALLOWEDFILETYPES || 'all';
   const welcomeMessage = process.env.NEXT_PUBLIC_WELCOMEMESSAGE || 'Manage your product documentation';
 
-  // Fetch owner ID from template installation
+  // Fetch owner's Privy ID from template installation
   useEffect(() => {
     async function fetchOwnerId() {
       try {
@@ -34,8 +34,9 @@ export default function ProductDocumentManager() {
         }
         
         const data = await response.json();
-        const userId = "did:privy:" + data.data.userId;
-        setOwnerId(userId);
+        const ownerPrivyId = "did:privy:" + data.data.ownerPrivyId;
+        // Use the owner's Privy ID for authentication comparison
+        setOwnerId(ownerPrivyId);
       } catch (err) {
         console.error('Failed to fetch template installation:', err);
         setOwnerError('Failed to load template configuration');
