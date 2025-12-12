@@ -34,9 +34,8 @@ export default function ProductDocumentManager() {
         }
         
         const data = await response.json();
-        const ownerPrivyId = "did:privy:" + data.data.ownerPrivyId;
         // Use the owner's Privy ID for authentication comparison
-        setOwnerId(ownerPrivyId);
+        setOwnerId(data.data.ownerPrivyId);
       } catch (err) {
         console.error('Failed to fetch template installation:', err);
         setOwnerError('Failed to load template configuration');
