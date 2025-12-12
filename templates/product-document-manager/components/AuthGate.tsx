@@ -48,6 +48,12 @@ export default function AuthGate({ ownerId, onAccessDenied }: AuthGateProps) {
                 <p className="text-sm text-white font-medium truncate">
                   {user?.email?.address || user?.wallet?.address || user?.id}
                 </p>
+                <p className="text-sm text-white font-medium truncate">
+                  {ownerId}
+                </p>
+                <p className="text-sm text-white font-medium truncate">
+                  {user?.id}
+                </p>
               </div>
 
               <button
