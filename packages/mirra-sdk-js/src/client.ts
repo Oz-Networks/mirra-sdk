@@ -67,7 +67,7 @@ export class MirraSDK {
 
     // Response interceptor to handle errors
     this.client.interceptors.response.use(
-      (response) => response,
+      (response: any) => response,
       (error: AxiosError<MirraResponse>) => {
         if (error.response?.data?.error) {
           const err = new Error(error.response.data.error.message);
