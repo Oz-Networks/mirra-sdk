@@ -70,8 +70,6 @@ export interface MemoryFindOneParams {
 // AI Types
 // ============================================================================
 
-export type AIProvider = 'anthropic' | 'openai' | 'google';
-
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -80,7 +78,6 @@ export interface ChatMessage {
 export interface ChatRequest {
   messages: ChatMessage[];
   model?: string;
-  provider?: AIProvider;
   temperature?: number;
   maxTokens?: number;
 }
@@ -115,7 +112,6 @@ export interface DecideRequest {
   options: DecisionOption[];
   context?: string;
   model?: string;
-  provider?: AIProvider;
 }
 
 export interface DecideResponse {

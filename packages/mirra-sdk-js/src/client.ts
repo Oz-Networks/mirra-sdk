@@ -159,8 +159,8 @@ export class MirraSDK {
 
   ai = {
     /**
-     * Send a chat request to the AI with multi-provider support
-     * Supports Anthropic Claude, Google Gemini, and OpenAI
+     * Send a chat request to the AI
+     * Uses Anthropic Claude as the AI provider
      */
     chat: async (request: ChatRequest): Promise<ChatResponse> => {
       const response = await this.client.post<MirraResponse<ChatResponse>>(
@@ -177,8 +177,7 @@ export class MirraSDK {
      * @example
      * ```typescript
      * const stream = sdk.ai.chatStream({
-     *   messages: [{ role: 'user', content: 'Write a story' }],
-     *   provider: 'anthropic'
+     *   messages: [{ role: 'user', content: 'Write a story' }]
      * });
      * 
      * for await (const chunk of stream) {
