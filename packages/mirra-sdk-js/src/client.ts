@@ -79,6 +79,29 @@ export class MirraSDK {
         throw error;
       }
     );
+
+    // Initialize auto-generated adapter methods
+    this.initializeGeneratedAdapters();
+  }
+
+  /**
+   * Initialize auto-generated adapter methods
+   * This dynamically adds all adapter methods from generated code
+   */
+  private initializeGeneratedAdapters(): void {
+    try {
+      // Import generated adapters - will exist after running generate:llm-api
+      const { generatedAdapters } = require('./generated/adapters');
+      
+      // Dynamically attach each adapter to this instance
+      for (const [adapterName, adapterFactory] of Object.entries(generatedAdapters)) {
+        (this as any)[adapterName] = (adapterFactory as any)(this);
+      }
+    } catch (error) {
+      // Generated adapters don't exist yet - this is OK during development
+      // They will be created when you run: npm run generate:llm-api
+      console.warn('Generated adapters not found. Run: npm run generate:llm-api');
+    }
   }
 
   // ============================================================================
