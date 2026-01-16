@@ -460,6 +460,16 @@ export interface JiraListAssignableUsersArgs {
 export interface JiraGetIssueTypesArgs {
   projectKey: string; // Project key (e.g., "PROJ")
 }
+export interface JiraDiscoverExtendedArgs {
+  query: string; // Describe what you want to do (e.g., "add label to card")
+  limit?: number; // Max results to return (default 5)
+}
+export interface JiraExecuteExtendedArgs {
+  operationId: string; // The operationId from discoverExtended results
+  pathParams?: any; // Path parameters, e.g., { id: "abc123" }
+  queryParams?: any; // Query string parameters
+  body?: any; // Request body for POST/PUT/PATCH operations
+}
 
 // Twitter Adapter Types
 export interface TwitterPostTweetArgs {
@@ -521,6 +531,16 @@ export interface TrelloUpdateCheckItemArgs {
 export interface TrelloDeleteCheckItemArgs {
   checklistId: string; // The ID of the checklist containing the item
   checkItemId: string; // The ID of the check item to delete
+}
+export interface TrelloDiscoverExtendedArgs {
+  query: string; // Describe what you want to do (e.g., "add label to card")
+  limit?: number; // Max results to return (default 5)
+}
+export interface TrelloExecuteExtendedArgs {
+  operationId: string; // The operationId from discoverExtended results
+  pathParams?: any; // Path parameters, e.g., { id: "abc123" }
+  queryParams?: any; // Query string parameters
+  body?: any; // Request body for POST/PUT/PATCH operations
 }
 
 // Jupiter Adapter Types
@@ -2138,6 +2158,34 @@ function createJiraAdapter(sdk: MirraSDK) {
         method: 'getIssueTypes',
         params: args || {}
       });
+    },
+
+    /**
+     * Search Jira API for available operations beyond core tools
+     * @param args.query - Describe what you want to do (e.g., "add label to card")
+     * @param args.limit - Max results to return (default 5) (optional)
+     */
+    discoverExtended: async (args: JiraDiscoverExtendedArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'discoverExtended',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Execute a Jira API operation by operationId
+     * @param args.operationId - The operationId from discoverExtended results
+     * @param args.pathParams - Path parameters, e.g., { id: "abc123" } (optional)
+     * @param args.queryParams - Query string parameters (optional)
+     * @param args.body - Request body for POST/PUT/PATCH operations (optional)
+     */
+    executeExtended: async (args: JiraExecuteExtendedArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'executeExtended',
+        params: args || {}
+      });
     }
   };
 }
@@ -2347,6 +2395,34 @@ function createTrelloAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'trello',
         method: 'deleteCheckItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search Trello API for available operations beyond core tools
+     * @param args.query - Describe what you want to do (e.g., "add label to card")
+     * @param args.limit - Max results to return (default 5) (optional)
+     */
+    discoverExtended: async (args: TrelloDiscoverExtendedArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'discoverExtended',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Execute a Trello API operation by operationId
+     * @param args.operationId - The operationId from discoverExtended results
+     * @param args.pathParams - Path parameters, e.g., { id: "abc123" } (optional)
+     * @param args.queryParams - Query string parameters (optional)
+     * @param args.body - Request body for POST/PUT/PATCH operations (optional)
+     */
+    executeExtended: async (args: TrelloExecuteExtendedArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'executeExtended',
         params: args || {}
       });
     }
