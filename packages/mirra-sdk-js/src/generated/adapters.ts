@@ -136,14 +136,18 @@ export interface MemoryCreateArgs {
   metadata?: any; // Additional metadata (e.g., priority, deadline, tags, etc.)
 }
 export interface MemorySearchArgs {
-  query: string; // Search query text
-  limit?: number; // Maximum number of results to return (default: 50, max: 100)
+  query: string; // Search query text for semantic matching
+  types?: any[]; // Filter by entity types (e.g., ["TASK", "NOTE", "IDEA"])
+  startTime?: number; // Filter entities created after this timestamp (Unix milliseconds)
+  endTime?: number; // Filter entities created before this timestamp (Unix milliseconds)
+  propertyFilters?: any; // Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] }
+  limit?: number; // Maximum number of results (default: 50, max: 100)
 }
 export interface MemoryQueryArgs {
-  type?: string; // Entity type filter
-  filters?: any; // Additional filters
-  limit?: number; // Maximum results (default: 50, max: 100)
-  offset?: number; // Pagination offset (default: 0)
+  type?: string; // Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against meta_item_type, subType, or semantic_roles
+  filters?: any; // Additional filters (not yet implemented)
+  limit?: number; // Maximum results (default: 50, max: 100). Use smaller limits to get complete results without truncation
+  offset?: number; // Pagination offset for fetching more results (default: 0)
 }
 export interface MemoryFindOneArgs {
   filters: any; // Filter criteria (e.g., { id: "..." })
@@ -1114,9 +1118,13 @@ function createMemoryAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Semantic search across memory entities
-     * @param args.query - Search query text
-     * @param args.limit - Maximum number of results to return (default: 50, max: 100) (optional)
+     * Semantic search across memory entities with advanced filtering
+     * @param args.query - Search query text for semantic matching
+     * @param args.types - Filter by entity types (e.g., ["TASK", "NOTE", "IDEA"]) (optional)
+     * @param args.startTime - Filter entities created after this timestamp (Unix milliseconds) (optional)
+     * @param args.endTime - Filter entities created before this timestamp (Unix milliseconds) (optional)
+     * @param args.propertyFilters - Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] } (optional)
+     * @param args.limit - Maximum number of results (default: 50, max: 100) (optional)
      */
     search: async (args: MemorySearchArgs): Promise<any> => {
       return sdk.resources.call({
@@ -1127,11 +1135,11 @@ function createMemoryAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Query entities with filters and pagination
-     * @param args.type - Entity type filter (optional)
-     * @param args.filters - Additional filters (optional)
-     * @param args.limit - Maximum results (default: 50, max: 100) (optional)
-     * @param args.offset - Pagination offset (default: 0) (optional)
+     * Query memory entities with filters. Returns lightweight summaries with normalized fields: id, type, name, description, status, priority, createdAt, updatedAt
+     * @param args.type - Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against meta_item_type, subType, or semantic_roles (optional)
+     * @param args.filters - Additional filters (not yet implemented) (optional)
+     * @param args.limit - Maximum results (default: 50, max: 100). Use smaller limits to get complete results without truncation (optional)
+     * @param args.offset - Pagination offset for fetching more results (default: 0) (optional)
      */
     query: async (args: MemoryQueryArgs): Promise<any> => {
       return sdk.resources.call({
