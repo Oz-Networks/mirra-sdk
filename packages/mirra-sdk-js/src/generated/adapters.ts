@@ -432,6 +432,55 @@ export interface GoogleDocsReplaceTextArgs {
   searchText: string; // Text to search for
   replaceText: string; // Text to replace with
 }
+export interface GoogleDocsGetDocumentContentArgs {
+  documentId: string; // ID of the document
+}
+export interface GoogleDocsInsertTextAtPositionArgs {
+  documentId: string; // ID of the document
+  text: string; // Text to insert
+  position: number; // Character position to insert at (1-indexed)
+}
+export interface GoogleDocsInsertTextAfterArgs {
+  documentId: string; // ID of the document
+  searchText: string; // Text to search for
+  textToInsert: string; // Text to insert after the search text
+  occurrence?: number; // Which occurrence to insert after (default: 1)
+}
+export interface GoogleDocsInsertHeadingArgs {
+  documentId: string; // ID of the document
+  text: string; // Heading text
+  level: number; // Heading level (1-6)
+  position?: number; // Character position to insert at
+  insertAfterText?: string; // Insert after this text instead of at position
+}
+export interface GoogleDocsInsertListArgs {
+  documentId: string; // ID of the document
+  items: any[]; // Array of list items
+  listType: string; // Type of list: "bulleted" or "numbered"
+  position?: number; // Character position to insert at
+  insertAfterText?: string; // Insert after this text instead of at position
+}
+export interface GoogleDocsInsertTableArgs {
+  documentId: string; // ID of the document
+  data: any[]; // 2D array of table data (rows x columns)
+  hasHeader?: boolean; // Whether the first row is a header (default: true)
+  position?: number; // Character position to insert at
+  insertAfterText?: string; // Insert after this text instead of at position
+}
+export interface GoogleDocsUpdateDocumentContentArgs {
+  documentId: string; // ID of the document
+  newContent: string; // New content to replace existing content
+}
+export interface GoogleDocsCreateSectionArgs {
+  documentId: string; // ID of the document
+  heading: string; // Section heading text
+  content: string; // Section content text
+}
+export interface GoogleDocsFindInsertionPointArgs {
+  documentId: string; // ID of the document
+  position: number; // Position to find (1 for start, -1 for end)
+  searchText?: string; // Text to search for (returns position after this text)
+}
 
 // Jira Adapter Types
 export interface JiraCreateIssueArgs {
@@ -2099,6 +2148,136 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'replaceText',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the text content of a Google Doc
+     * @param args.documentId - ID of the document
+     */
+    getDocumentContent: async (args: GoogleDocsGetDocumentContentArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'getDocumentContent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert text at a specific position in the document
+     * @param args.documentId - ID of the document
+     * @param args.text - Text to insert
+     * @param args.position - Character position to insert at (1-indexed)
+     */
+    insertTextAtPosition: async (args: GoogleDocsInsertTextAtPositionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'insertTextAtPosition',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert text after a search string in the document
+     * @param args.documentId - ID of the document
+     * @param args.searchText - Text to search for
+     * @param args.textToInsert - Text to insert after the search text
+     * @param args.occurrence - Which occurrence to insert after (default: 1) (optional)
+     */
+    insertTextAfter: async (args: GoogleDocsInsertTextAfterArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'insertTextAfter',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a heading into the document
+     * @param args.documentId - ID of the document
+     * @param args.text - Heading text
+     * @param args.level - Heading level (1-6)
+     * @param args.position - Character position to insert at (optional)
+     * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     */
+    insertHeading: async (args: GoogleDocsInsertHeadingArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'insertHeading',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a bulleted or numbered list into the document
+     * @param args.documentId - ID of the document
+     * @param args.items - Array of list items
+     * @param args.listType - Type of list: "bulleted" or "numbered"
+     * @param args.position - Character position to insert at (optional)
+     * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     */
+    insertList: async (args: GoogleDocsInsertListArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'insertList',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a table into the document
+     * @param args.documentId - ID of the document
+     * @param args.data - 2D array of table data (rows x columns)
+     * @param args.hasHeader - Whether the first row is a header (default: true) (optional)
+     * @param args.position - Character position to insert at (optional)
+     * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     */
+    insertTable: async (args: GoogleDocsInsertTableArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'insertTable',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Replace the entire content of a document
+     * @param args.documentId - ID of the document
+     * @param args.newContent - New content to replace existing content
+     */
+    updateDocumentContent: async (args: GoogleDocsUpdateDocumentContentArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'updateDocumentContent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new section with a heading and content
+     * @param args.documentId - ID of the document
+     * @param args.heading - Section heading text
+     * @param args.content - Section content text
+     */
+    createSection: async (args: GoogleDocsCreateSectionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'createSection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Find the character position for insertion based on position or search text
+     * @param args.documentId - ID of the document
+     * @param args.position - Position to find (1 for start, -1 for end)
+     * @param args.searchText - Text to search for (returns position after this text) (optional)
+     */
+    findInsertionPoint: async (args: GoogleDocsFindInsertionPointArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'findInsertionPoint',
         params: args || {}
       });
     }
