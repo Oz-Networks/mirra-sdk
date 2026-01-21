@@ -891,6 +891,32 @@ export interface FeedbackSubmitFeatureRequestArgs {
   priority?: string; // Priority: high, medium, or low
 }
 
+// Mirra Messaging Adapter Types
+export interface MirraMessagingSendMessageArgs {
+  recipientId: string; // User ID of the recipient (use findContact to look up by username)
+  content: string; // Message text content
+  automation?: any; // Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string }
+}
+export interface MirraMessagingSendGroupMessageArgs {
+  groupId: string; // Group ID to send the message to
+  content: string; // Message text content
+  automation?: any; // Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string }
+}
+export interface MirraMessagingGetContactsArgs {
+  limit?: number; // Maximum number of contacts to return (default 50)
+  offset?: number; // Offset for pagination (default 0)
+}
+export interface MirraMessagingFindContactArgs {
+  query: string; // Username or name to search for
+}
+export interface MirraMessagingGetChatsArgs {
+  scope?: string; // Filter by scope: direct, user, group, or all (default all)
+  limit?: number; // Maximum number of chats to return (default 50)
+}
+export interface MirraMessagingGetGroupsArgs {
+  limit?: number; // Maximum number of groups to return (default 50)
+}
+
 
 // ============================================================================
 // Adapter Factory Functions
@@ -3627,6 +3653,92 @@ function createFeedbackAdapter(sdk: MirraSDK) {
   };
 }
 
+/**
+ * Mirra Messaging Adapter
+ * Category: communication
+ */
+function createMirraMessagingAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Send a direct message to a contact. The message is sent as the authenticated user with optional automation metadata.
+     * @param args.recipientId - User ID of the recipient (use findContact to look up by username)
+     * @param args.content - Message text content
+     * @param args.automation - Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string } (optional)
+     */
+    sendMessage: async (args: MirraMessagingSendMessageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'mirra-messaging',
+        method: 'sendMessage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Send a message to a group chat. The message is sent as the authenticated user with optional automation metadata.
+     * @param args.groupId - Group ID to send the message to
+     * @param args.content - Message text content
+     * @param args.automation - Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string } (optional)
+     */
+    sendGroupMessage: async (args: MirraMessagingSendGroupMessageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'mirra-messaging',
+        method: 'sendGroupMessage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get list of accepted contacts for the user
+     * @param args.limit - Maximum number of contacts to return (default 50) (optional)
+     * @param args.offset - Offset for pagination (default 0) (optional)
+     */
+    getContacts: async (args: MirraMessagingGetContactsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'mirra-messaging',
+        method: 'getContacts',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Find a contact by username or partial name match
+     * @param args.query - Username or name to search for
+     */
+    findContact: async (args: MirraMessagingFindContactArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'mirra-messaging',
+        method: 'findContact',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get list of chat instances for the user
+     * @param args.scope - Filter by scope: direct, user, group, or all (default all) (optional)
+     * @param args.limit - Maximum number of chats to return (default 50) (optional)
+     */
+    getChats: async (args: MirraMessagingGetChatsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'mirra-messaging',
+        method: 'getChats',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get list of groups the user is a member of
+     * @param args.limit - Maximum number of groups to return (default 50) (optional)
+     */
+    getGroups: async (args: MirraMessagingGetGroupsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'mirra-messaging',
+        method: 'getGroups',
+        params: args || {}
+      });
+    }
+  };
+}
+
 
 // ============================================================================
 // Exports
@@ -3652,5 +3764,6 @@ export const generatedAdapters = {
   jupiter: createJupiterAdapter,
   crypto: createCryptoAdapter,
   scripts: createScriptsAdapter,
-  feedback: createFeedbackAdapter
+  feedback: createFeedbackAdapter,
+  mirraMessaging: createMirraMessagingAdapter
 };
