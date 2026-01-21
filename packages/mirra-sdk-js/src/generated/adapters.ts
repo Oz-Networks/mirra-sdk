@@ -396,6 +396,26 @@ export interface GoogleDriveShareFileArgs {
   email?: string; // Email address to share with (optional)
   role?: string; // Permission role: reader, writer, commenter (default: reader)
 }
+export interface GoogleDriveDownloadFileArgs {
+  fileId: string; // ID of the file to download
+}
+export interface GoogleDriveMoveFileArgs {
+  fileId: string; // ID of the file to move
+  folderId: string; // ID of the destination folder
+}
+export interface GoogleDriveDeleteFileArgs {
+  fileId: string; // ID of the file or folder to delete
+  permanently?: boolean; // If true, permanently delete instead of moving to trash (default: false)
+}
+export interface GoogleDriveSearchFilesArgs {
+  query: string; // Search query using Drive syntax (e.g., "name contains 'report'", "mimeType='application/pdf'")
+  pageSize?: number; // Maximum number of files to return (default: 20)
+}
+export interface GoogleDriveUpdateFileArgs {
+  fileId: string; // ID of the file to update
+  name?: string; // New name for the file
+  description?: string; // New description for the file
+}
 
 // Google Sheets Adapter Types
 export interface GoogleSheetsCreateSpreadsheetArgs {
@@ -2114,6 +2134,71 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'google-drive',
         method: 'shareFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Download a file from Google Drive. For Google Docs/Sheets, exports as PDF/XLSX. Returns base64-encoded data.
+     * @param args.fileId - ID of the file to download
+     */
+    downloadFile: async (args: GoogleDriveDownloadFileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-drive',
+        method: 'downloadFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Move a file to a different folder
+     * @param args.fileId - ID of the file to move
+     * @param args.folderId - ID of the destination folder
+     */
+    moveFile: async (args: GoogleDriveMoveFileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-drive',
+        method: 'moveFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a file or folder. By default moves to trash; set permanently=true to delete forever.
+     * @param args.fileId - ID of the file or folder to delete
+     * @param args.permanently - If true, permanently delete instead of moving to trash (default: false) (optional)
+     */
+    deleteFile: async (args: GoogleDriveDeleteFileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-drive',
+        method: 'deleteFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search for files using Google Drive query syntax
+     * @param args.query - Search query using Drive syntax (e.g., "name contains 'report'", "mimeType='application/pdf'")
+     * @param args.pageSize - Maximum number of files to return (default: 20) (optional)
+     */
+    searchFiles: async (args: GoogleDriveSearchFilesArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-drive',
+        method: 'searchFiles',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update file metadata (name, description)
+     * @param args.fileId - ID of the file to update
+     * @param args.name - New name for the file (optional)
+     * @param args.description - New description for the file (optional)
+     */
+    updateFile: async (args: GoogleDriveUpdateFileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-drive',
+        method: 'updateFile',
         params: args || {}
       });
     }
