@@ -421,7 +421,7 @@ export interface GoogleSheetsGetSpreadsheetArgs {
 export interface GoogleSheetsInsertAtCellArgs {
   spreadsheetId: string; // ID of the spreadsheet
   cell: string; // Cell reference in format SheetName!A1
-  value: any; // Value to insert
+  value: string; // Value to insert
   bold?: boolean; // Make text bold
   italic?: boolean; // Make text italic
   foregroundColor?: string; // Text color (hex or named color)
@@ -469,6 +469,37 @@ export interface GoogleSheetsClearRangeArgs {
   spreadsheetId: string; // ID of the spreadsheet
   sheetName: string; // Name of the sheet
   range: string; // Range to clear (e.g., A1:B10)
+}
+export interface GoogleSheetsInsertRowsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // ID of the sheet (not the name)
+  startRowIndex: number; // Row index to start inserting at (0-indexed)
+  numRows: number; // Number of rows to insert
+}
+export interface GoogleSheetsDeleteRowsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // ID of the sheet (not the name)
+  startRowIndex: number; // Row index to start deleting from (0-indexed)
+  numRows: number; // Number of rows to delete
+}
+export interface GoogleSheetsInsertColumnsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // ID of the sheet (not the name)
+  startColumnIndex: number; // Column index to start inserting at (0-indexed, A=0, B=1, etc.)
+  numColumns: number; // Number of columns to insert
+}
+export interface GoogleSheetsDeleteColumnsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // ID of the sheet (not the name)
+  startColumnIndex: number; // Column index to start deleting from (0-indexed, A=0, B=1, etc.)
+  numColumns: number; // Number of columns to delete
+}
+export interface GoogleSheetsCopyRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sourceSheetId: number; // ID of the source sheet
+  sourceRange: string; // Source range in A1 notation (e.g., A1:C5)
+  targetSheetId: number; // ID of the target sheet
+  targetStartCell: string; // Target start cell in A1 notation (e.g., E1)
 }
 
 // Google Docs Adapter Types
@@ -2271,6 +2302,82 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'google-sheets',
         method: 'clearRange',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert empty rows at a specific position in a sheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - ID of the sheet (not the name)
+     * @param args.startRowIndex - Row index to start inserting at (0-indexed)
+     * @param args.numRows - Number of rows to insert
+     */
+    insertRows: async (args: GoogleSheetsInsertRowsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'insertRows',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete rows from a sheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - ID of the sheet (not the name)
+     * @param args.startRowIndex - Row index to start deleting from (0-indexed)
+     * @param args.numRows - Number of rows to delete
+     */
+    deleteRows: async (args: GoogleSheetsDeleteRowsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'deleteRows',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert empty columns at a specific position in a sheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - ID of the sheet (not the name)
+     * @param args.startColumnIndex - Column index to start inserting at (0-indexed, A=0, B=1, etc.)
+     * @param args.numColumns - Number of columns to insert
+     */
+    insertColumns: async (args: GoogleSheetsInsertColumnsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'insertColumns',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete columns from a sheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - ID of the sheet (not the name)
+     * @param args.startColumnIndex - Column index to start deleting from (0-indexed, A=0, B=1, etc.)
+     * @param args.numColumns - Number of columns to delete
+     */
+    deleteColumns: async (args: GoogleSheetsDeleteColumnsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'deleteColumns',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Copy data from one range to another location
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sourceSheetId - ID of the source sheet
+     * @param args.sourceRange - Source range in A1 notation (e.g., A1:C5)
+     * @param args.targetSheetId - ID of the target sheet
+     * @param args.targetStartCell - Target start cell in A1 notation (e.g., E1)
+     */
+    copyRange: async (args: GoogleSheetsCopyRangeArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'copyRange',
         params: args || {}
       });
     }
