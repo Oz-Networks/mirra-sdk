@@ -257,8 +257,6 @@ export interface TelegramSearchMessagesArgs {
   senderId?: string; // Filter messages by sender ID
 }
 export interface TelegramGetRecentContactsArgs {
-  sinceDate?: string; // ISO date string - only return contacts with activity since this date
-  onlyNewContacts?: boolean; // If true, only return contacts that are new (first message after sinceDate)
   limit?: number; // Maximum number of contacts to return (default: 100, max: 100)
 }
 export interface TelegramGetChatMessagesArgs {
@@ -330,12 +328,6 @@ export interface GoogleGmailDeleteDraftArgs {
 export interface GoogleGmailListDraftsArgs {
   maxResults?: number; // Maximum number of drafts to return (default: 10)
 }
-export interface GoogleGmailMarkAsReadArgs {
-  messageId: string; // Gmail message ID to mark as read
-}
-export interface GoogleGmailMarkAsUnreadArgs {
-  messageId: string; // Gmail message ID to mark as unread
-}
 export interface GoogleGmailDeleteEmailArgs {
   messageId: string; // Gmail message ID to delete
 }
@@ -360,6 +352,26 @@ export interface GoogleCalendarGetEventsArgs {
   timeMax?: string; // End time for events to list (ISO 8601)
   maxResults?: number; // Maximum number of events to return (default: 50, max: 100)
   query?: string; // Search query to filter events
+}
+export interface GoogleCalendarGetEventArgs {
+  eventId: string; // Calendar event ID
+}
+export interface GoogleCalendarUpdateEventArgs {
+  eventId: string; // Calendar event ID to update
+  summary?: string; // Updated event title/summary
+  description?: string; // Updated event description
+  location?: string; // Updated event location
+  start?: any; // Updated start time object with dateTime and optional timeZone
+  end?: any; // Updated end time object with dateTime and optional timeZone
+}
+export interface GoogleCalendarDeleteEventArgs {
+  eventId: string; // Calendar event ID to delete
+}
+export interface GoogleCalendarSearchEventsArgs {
+  query: string; // Search query to filter events
+  timeMin?: string; // Start time for events to search (ISO 8601)
+  timeMax?: string; // End time for events to search (ISO 8601)
+  maxResults?: number; // Maximum number of events to return (default: 50, max: 100)
 }
 
 // Google Drive Adapter Types
@@ -679,6 +691,49 @@ export interface ScriptsModifyFlowScriptArgs {
 }
 export interface ScriptsLintScriptArgs {
   code: string; // The script code to validate
+}
+
+// Feedback Adapter Types
+export interface FeedbackReportBugArgs {
+  title: string; // Brief bug description
+  description: string; // Detailed description of the bug
+  severity: string; // Bug severity: critical, high, medium, or low
+  stepsToReproduce?: any[]; // Steps to reproduce the bug
+  expectedBehavior?: string; // What should happen
+  actualBehavior?: string; // What actually happens
+  errorDetails?: any; // Error details: { message, stack, code }
+  context?: any; // Additional context: { conversationId, recentMessages, platform, appVersion }
+  llmAnalysis?: string; // LLM analysis of the issue
+}
+export interface FeedbackReportToolFailureArgs {
+  adapterType: string; // Adapter type (e.g., jupiter, crypto)
+  operation: string; // Operation that failed (e.g., swap, sendToken)
+  errorMessage: string; // Error message from the failure
+  errorCode?: string; // Error code if available
+  errorStack?: string; // Error stack trace
+  args?: any; // Sanitized arguments that caused the failure
+  llmAnalysis?: string; // LLM analysis of why it failed
+  suggestedFix?: string; // LLM suggested fix
+  context?: any; // Additional context: { conversationId, userId, timestamp }
+}
+export interface FeedbackReportMissingCapabilityArgs {
+  userRequest: string; // What the user asked for
+  reason: string; // Why it could not be fulfilled
+  suggestedCapability?: string; // What capability would enable this
+  relatedAdapters?: any[]; // Adapters that might be relevant
+  context?: any; // Additional context: { conversationId }
+}
+export interface FeedbackSubmitFeedbackArgs {
+  sentiment: string; // Sentiment: positive, negative, or neutral
+  feedback: string; // Feedback content
+  category?: string; // Category: ux, performance, feature, or general
+  context?: any; // Additional context: { feature, screen }
+}
+export interface FeedbackSubmitFeatureRequestArgs {
+  title: string; // Feature title
+  description: string; // Feature description
+  useCase?: string; // Why the user needs this feature
+  priority?: string; // Priority: high, medium, or low
 }
 
 
@@ -1528,9 +1583,7 @@ function createTelegramAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get recent contacts from Telegram, optionally filtering for new contacts since a specific date.
-     * @param args.sinceDate - ISO date string - only return contacts with activity since this date (optional)
-     * @param args.onlyNewContacts - If true, only return contacts that are new (first message after sinceDate) (optional)
+     * Get recent private chat contacts from Telegram, ordered by most recent activity. Uses the cached chat list filtered for 1:1 conversations.
      * @param args.limit - Maximum number of contacts to return (default: 100, max: 100) (optional)
      */
     getRecentContacts: async (args: TelegramGetRecentContactsArgs): Promise<any> => {
@@ -1734,30 +1787,6 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Mark an email as read
-     * @param args.messageId - Gmail message ID to mark as read
-     */
-    markAsRead: async (args: GoogleGmailMarkAsReadArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'markAsRead',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Mark an email as unread
-     * @param args.messageId - Gmail message ID to mark as unread
-     */
-    markAsUnread: async (args: GoogleGmailMarkAsUnreadArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'markAsUnread',
-        params: args || {}
-      });
-    },
-
-    /**
      * Delete an email
      * @param args.messageId - Gmail message ID to delete
      */
@@ -1820,6 +1849,62 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'google-calendar',
         method: 'getEvents',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific calendar event by ID
+     * @param args.eventId - Calendar event ID
+     */
+    getEvent: async (args: GoogleCalendarGetEventArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-calendar',
+        method: 'getEvent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing calendar event
+     * @param args.eventId - Calendar event ID to update
+     * @param args.summary - Updated event title/summary (optional)
+     * @param args.description - Updated event description (optional)
+     * @param args.location - Updated event location (optional)
+     * @param args.start - Updated start time object with dateTime and optional timeZone (optional)
+     * @param args.end - Updated end time object with dateTime and optional timeZone (optional)
+     */
+    updateEvent: async (args: GoogleCalendarUpdateEventArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-calendar',
+        method: 'updateEvent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a calendar event
+     * @param args.eventId - Calendar event ID to delete
+     */
+    deleteEvent: async (args: GoogleCalendarDeleteEventArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-calendar',
+        method: 'deleteEvent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search calendar events by text query
+     * @param args.query - Search query to filter events
+     * @param args.timeMin - Start time for events to search (ISO 8601) (optional)
+     * @param args.timeMax - End time for events to search (ISO 8601) (optional)
+     * @param args.maxResults - Maximum number of events to return (default: 50, max: 100) (optional)
+     */
+    searchEvents: async (args: GoogleCalendarSearchEventsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-calendar',
+        method: 'searchEvents',
         params: args || {}
       });
     }
@@ -2895,6 +2980,100 @@ function createScriptsAdapter(sdk: MirraSDK) {
   };
 }
 
+/**
+ * Feedback Adapter
+ * Category: internal
+ */
+function createFeedbackAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Report a bug with detailed context and reproduction steps
+     * @param args.title - Brief bug description
+     * @param args.description - Detailed description of the bug
+     * @param args.severity - Bug severity: critical, high, medium, or low
+     * @param args.stepsToReproduce - Steps to reproduce the bug (optional)
+     * @param args.expectedBehavior - What should happen (optional)
+     * @param args.actualBehavior - What actually happens (optional)
+     * @param args.errorDetails - Error details: { message, stack, code } (optional)
+     * @param args.context - Additional context: { conversationId, recentMessages, platform, appVersion } (optional)
+     * @param args.llmAnalysis - LLM analysis of the issue (optional)
+     */
+    reportBug: async (args: FeedbackReportBugArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'feedback',
+        method: 'reportBug',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Auto-report tool or adapter failures for debugging
+     * @param args.adapterType - Adapter type (e.g., jupiter, crypto)
+     * @param args.operation - Operation that failed (e.g., swap, sendToken)
+     * @param args.errorMessage - Error message from the failure
+     * @param args.errorCode - Error code if available (optional)
+     * @param args.errorStack - Error stack trace (optional)
+     * @param args.args - Sanitized arguments that caused the failure (optional)
+     * @param args.llmAnalysis - LLM analysis of why it failed (optional)
+     * @param args.suggestedFix - LLM suggested fix (optional)
+     * @param args.context - Additional context: { conversationId, userId, timestamp } (optional)
+     */
+    reportToolFailure: async (args: FeedbackReportToolFailureArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'feedback',
+        method: 'reportToolFailure',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Report when LLM cannot fulfill a user request
+     * @param args.userRequest - What the user asked for
+     * @param args.reason - Why it could not be fulfilled
+     * @param args.suggestedCapability - What capability would enable this (optional)
+     * @param args.relatedAdapters - Adapters that might be relevant (optional)
+     * @param args.context - Additional context: { conversationId } (optional)
+     */
+    reportMissingCapability: async (args: FeedbackReportMissingCapabilityArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'feedback',
+        method: 'reportMissingCapability',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Submit general user feedback
+     * @param args.sentiment - Sentiment: positive, negative, or neutral
+     * @param args.feedback - Feedback content
+     * @param args.category - Category: ux, performance, feature, or general (optional)
+     * @param args.context - Additional context: { feature, screen } (optional)
+     */
+    submitFeedback: async (args: FeedbackSubmitFeedbackArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'feedback',
+        method: 'submitFeedback',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Submit a feature request
+     * @param args.title - Feature title
+     * @param args.description - Feature description
+     * @param args.useCase - Why the user needs this feature (optional)
+     * @param args.priority - Priority: high, medium, or low (optional)
+     */
+    submitFeatureRequest: async (args: FeedbackSubmitFeatureRequestArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'feedback',
+        method: 'submitFeatureRequest',
+        params: args || {}
+      });
+    }
+  };
+}
+
 
 // ============================================================================
 // Exports
@@ -2919,5 +3098,6 @@ export const generatedAdapters = {
   trello: createTrelloAdapter,
   jupiter: createJupiterAdapter,
   crypto: createCryptoAdapter,
-  scripts: createScriptsAdapter
+  scripts: createScriptsAdapter,
+  feedback: createFeedbackAdapter
 };
