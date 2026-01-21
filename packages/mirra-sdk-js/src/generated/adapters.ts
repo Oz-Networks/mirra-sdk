@@ -415,6 +415,61 @@ export interface GoogleSheetsAppendRowArgs {
   sheetName: string; // Name of the sheet
   values: any[]; // Row values to append
 }
+export interface GoogleSheetsGetSpreadsheetArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+}
+export interface GoogleSheetsInsertAtCellArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  cell: string; // Cell reference in format SheetName!A1
+  value: any; // Value to insert
+  bold?: boolean; // Make text bold
+  italic?: boolean; // Make text italic
+  foregroundColor?: string; // Text color (hex or named color)
+  backgroundColor?: string; // Cell background color (hex or named color)
+}
+export interface GoogleSheetsInsertFormulaArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  cell: string; // Cell reference in format SheetName!A1
+  formula: string; // Formula to insert (with or without leading =)
+  note?: string; // Optional note to add to the cell
+}
+export interface GoogleSheetsFormatRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  range: string; // Range in format SheetName!A1:B10
+  bold?: boolean; // Make text bold
+  italic?: boolean; // Make text italic
+  foregroundColor?: string; // Text color (hex or named color)
+  backgroundColor?: string; // Cell background color (hex or named color)
+  borders?: boolean; // Add borders to cells
+}
+export interface GoogleSheetsCreateChartArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // ID of the sheet containing data
+  dataRange: string; // Data range for the chart (e.g., A1:B10)
+  chartType: string; // Chart type: BAR, LINE, AREA, PIE, or SCATTER
+  title: string; // Chart title
+  position: any; // Chart position with row, column, rowCount, columnCount
+}
+export interface GoogleSheetsFindAndReplaceArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  findText: string; // Text to find
+  replaceText: string; // Text to replace with
+  sheetName?: string; // Limit search to specific sheet
+  matchCase?: boolean; // Case-sensitive search
+  matchEntireCell?: boolean; // Match entire cell content only
+}
+export interface GoogleSheetsInsertMultipleRowsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetName: string; // Name of the sheet
+  rowsData: any[]; // 2D array of row data to insert
+  startingRow?: number; // Row number to start insertion (1-indexed). If not provided, appends to end
+  formattingOptions?: any; // Optional formatting to apply (bold, italic, foregroundColor, backgroundColor, borders)
+}
+export interface GoogleSheetsClearRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetName: string; // Name of the sheet
+  range: string; // Range to clear (e.g., A1:B10)
+}
 
 // Google Docs Adapter Types
 export interface GoogleDocsCreateDocumentArgs {
@@ -2089,6 +2144,133 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'google-sheets',
         method: 'appendRow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get spreadsheet metadata and properties
+     * @param args.spreadsheetId - ID of the spreadsheet
+     */
+    getSpreadsheet: async (args: GoogleSheetsGetSpreadsheetArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'getSpreadsheet',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a value at a specific cell with optional formatting
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.cell - Cell reference in format SheetName!A1
+     * @param args.value - Value to insert
+     * @param args.bold - Make text bold (optional)
+     * @param args.italic - Make text italic (optional)
+     * @param args.foregroundColor - Text color (hex or named color) (optional)
+     * @param args.backgroundColor - Cell background color (hex or named color) (optional)
+     */
+    insertAtCell: async (args: GoogleSheetsInsertAtCellArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'insertAtCell',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a formula at a specific cell
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.cell - Cell reference in format SheetName!A1
+     * @param args.formula - Formula to insert (with or without leading =)
+     * @param args.note - Optional note to add to the cell (optional)
+     */
+    insertFormula: async (args: GoogleSheetsInsertFormulaArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'insertFormula',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Apply formatting to a range of cells
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.range - Range in format SheetName!A1:B10
+     * @param args.bold - Make text bold (optional)
+     * @param args.italic - Make text italic (optional)
+     * @param args.foregroundColor - Text color (hex or named color) (optional)
+     * @param args.backgroundColor - Cell background color (hex or named color) (optional)
+     * @param args.borders - Add borders to cells (optional)
+     */
+    formatRange: async (args: GoogleSheetsFormatRangeArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'formatRange',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a chart from spreadsheet data
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - ID of the sheet containing data
+     * @param args.dataRange - Data range for the chart (e.g., A1:B10)
+     * @param args.chartType - Chart type: BAR, LINE, AREA, PIE, or SCATTER
+     * @param args.title - Chart title
+     * @param args.position - Chart position with row, column, rowCount, columnCount
+     */
+    createChart: async (args: GoogleSheetsCreateChartArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'createChart',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Find and replace text in a spreadsheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.findText - Text to find
+     * @param args.replaceText - Text to replace with
+     * @param args.sheetName - Limit search to specific sheet (optional)
+     * @param args.matchCase - Case-sensitive search (optional)
+     * @param args.matchEntireCell - Match entire cell content only (optional)
+     */
+    findAndReplace: async (args: GoogleSheetsFindAndReplaceArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'findAndReplace',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert multiple rows of data at once
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetName - Name of the sheet
+     * @param args.rowsData - 2D array of row data to insert
+     * @param args.startingRow - Row number to start insertion (1-indexed). If not provided, appends to end (optional)
+     * @param args.formattingOptions - Optional formatting to apply (bold, italic, foregroundColor, backgroundColor, borders) (optional)
+     */
+    insertMultipleRows: async (args: GoogleSheetsInsertMultipleRowsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'insertMultipleRows',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Clear content from a range of cells
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetName - Name of the sheet
+     * @param args.range - Range to clear (e.g., A1:B10)
+     */
+    clearRange: async (args: GoogleSheetsClearRangeArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'clearRange',
         params: args || {}
       });
     }
