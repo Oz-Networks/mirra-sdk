@@ -472,34 +472,34 @@ export interface GoogleSheetsClearRangeArgs {
 }
 export interface GoogleSheetsInsertRowsArgs {
   spreadsheetId: string; // ID of the spreadsheet
-  sheetId: number; // ID of the sheet (not the name)
-  startRowIndex: number; // Row index to start inserting at (0-indexed)
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startRowIndex: number; // Row index to start inserting at (0-indexed). To insert before row 5 in the UI, use index 4.
   numRows: number; // Number of rows to insert
 }
 export interface GoogleSheetsDeleteRowsArgs {
   spreadsheetId: string; // ID of the spreadsheet
-  sheetId: number; // ID of the sheet (not the name)
-  startRowIndex: number; // Row index to start deleting from (0-indexed)
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startRowIndex: number; // Row index to start deleting from (0-indexed). To delete row 5 in the UI, use index 4.
   numRows: number; // Number of rows to delete
 }
 export interface GoogleSheetsInsertColumnsArgs {
   spreadsheetId: string; // ID of the spreadsheet
-  sheetId: number; // ID of the sheet (not the name)
-  startColumnIndex: number; // Column index to start inserting at (0-indexed, A=0, B=1, etc.)
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startColumnIndex: number; // Column index to start inserting at (0-indexed: A=0, B=1, C=2, D=3, etc.). To insert before column D, use index 3.
   numColumns: number; // Number of columns to insert
 }
 export interface GoogleSheetsDeleteColumnsArgs {
   spreadsheetId: string; // ID of the spreadsheet
-  sheetId: number; // ID of the sheet (not the name)
-  startColumnIndex: number; // Column index to start deleting from (0-indexed, A=0, B=1, etc.)
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startColumnIndex: number; // Column index to start deleting from (0-indexed: A=0, B=1, C=2, D=3, etc.). To delete column D, use index 3.
   numColumns: number; // Number of columns to delete
 }
 export interface GoogleSheetsCopyRangeArgs {
   spreadsheetId: string; // ID of the spreadsheet
-  sourceSheetId: number; // ID of the source sheet
-  sourceRange: string; // Source range in A1 notation (e.g., A1:C5)
-  targetSheetId: number; // ID of the target sheet
-  targetStartCell: string; // Target start cell in A1 notation (e.g., E1)
+  sourceSheetId: number; // Numeric sheet ID of the source sheet (get from getSpreadsheet response: sheets[n].properties.sheetId)
+  sourceRange: string; // Source range in A1 notation WITHOUT sheet name (e.g., "A1:C5", not "Sheet1!A1:C5")
+  targetSheetId: number; // Numeric sheet ID of the target sheet (can be same as sourceSheetId to copy within same sheet)
+  targetStartCell: string; // Target start cell in A1 notation (e.g., "E1"). The copied data will fill cells starting from this position.
 }
 
 // Google Docs Adapter Types
@@ -2307,10 +2307,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Insert empty rows at a specific position in a sheet
+     * Insert empty rows at a specific position in a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Row indices are 0-indexed (row 1 in UI = index 0).
      * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetId - ID of the sheet (not the name)
-     * @param args.startRowIndex - Row index to start inserting at (0-indexed)
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startRowIndex - Row index to start inserting at (0-indexed). To insert before row 5 in the UI, use index 4.
      * @param args.numRows - Number of rows to insert
      */
     insertRows: async (args: GoogleSheetsInsertRowsArgs): Promise<any> => {
@@ -2322,10 +2322,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Delete rows from a sheet
+     * Delete rows from a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Row indices are 0-indexed (row 1 in UI = index 0).
      * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetId - ID of the sheet (not the name)
-     * @param args.startRowIndex - Row index to start deleting from (0-indexed)
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startRowIndex - Row index to start deleting from (0-indexed). To delete row 5 in the UI, use index 4.
      * @param args.numRows - Number of rows to delete
      */
     deleteRows: async (args: GoogleSheetsDeleteRowsArgs): Promise<any> => {
@@ -2337,10 +2337,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Insert empty columns at a specific position in a sheet
+     * Insert empty columns at a specific position in a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Column indices are 0-indexed (A=0, B=1, C=2, etc.).
      * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetId - ID of the sheet (not the name)
-     * @param args.startColumnIndex - Column index to start inserting at (0-indexed, A=0, B=1, etc.)
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startColumnIndex - Column index to start inserting at (0-indexed: A=0, B=1, C=2, D=3, etc.). To insert before column D, use index 3.
      * @param args.numColumns - Number of columns to insert
      */
     insertColumns: async (args: GoogleSheetsInsertColumnsArgs): Promise<any> => {
@@ -2352,10 +2352,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Delete columns from a sheet
+     * Delete columns from a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Column indices are 0-indexed (A=0, B=1, C=2, etc.).
      * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetId - ID of the sheet (not the name)
-     * @param args.startColumnIndex - Column index to start deleting from (0-indexed, A=0, B=1, etc.)
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startColumnIndex - Column index to start deleting from (0-indexed: A=0, B=1, C=2, D=3, etc.). To delete column D, use index 3.
      * @param args.numColumns - Number of columns to delete
      */
     deleteColumns: async (args: GoogleSheetsDeleteColumnsArgs): Promise<any> => {
@@ -2367,12 +2367,12 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Copy data from one range to another location
+     * Copy data from one range to another location within the same spreadsheet. IMPORTANT: Requires numeric sheetIds (get from getSpreadsheet), not sheet names. Can copy within same sheet or across sheets.
      * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sourceSheetId - ID of the source sheet
-     * @param args.sourceRange - Source range in A1 notation (e.g., A1:C5)
-     * @param args.targetSheetId - ID of the target sheet
-     * @param args.targetStartCell - Target start cell in A1 notation (e.g., E1)
+     * @param args.sourceSheetId - Numeric sheet ID of the source sheet (get from getSpreadsheet response: sheets[n].properties.sheetId)
+     * @param args.sourceRange - Source range in A1 notation WITHOUT sheet name (e.g., "A1:C5", not "Sheet1!A1:C5")
+     * @param args.targetSheetId - Numeric sheet ID of the target sheet (can be same as sourceSheetId to copy within same sheet)
+     * @param args.targetStartCell - Target start cell in A1 notation (e.g., "E1"). The copied data will fill cells starting from this position.
      */
     copyRange: async (args: GoogleSheetsCopyRangeArgs): Promise<any> => {
       return sdk.resources.call({
