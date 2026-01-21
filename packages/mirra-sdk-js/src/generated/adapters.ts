@@ -75,6 +75,9 @@ export interface FlowsValidateTriggerArgs {
   flowId: string; // ID of the flow
   event: any; // Event object to test against the trigger (must match IntegrationEvent structure)
 }
+export interface FlowsGetFlowsByEventTypeArgs {
+  eventType: string; // Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
+}
 
 // User Adapter Types
 export interface UserUpdateProfileArgs {
@@ -564,6 +567,15 @@ export interface JupiterGetTokenSecurityArgs {
 export interface JupiterSearchTokensArgs {
   query: string; // Search query (symbol, name, or mint address)
 }
+export interface JupiterRefreshSwapArgs {
+  feedItemId: string; // Feed item ID containing the swap to refresh
+  swapId: string; // Original swap ID
+  inputMint: string; // Input token mint address
+  outputMint: string; // Output token mint address
+  amount: number; // Amount to swap (in UI units)
+  inputDecimals: number; // Input token decimals
+  slippageBps?: number; // Slippage tolerance in basis points
+}
 
 // Crypto Adapter Types
 export interface CryptoGetPriceArgs {
@@ -585,6 +597,15 @@ export interface CryptoMonitorPriceArgs {
 }
 export interface CryptoUnsubscribeAssetArgs {
   tokenAddress: string; // Token address to stop monitoring
+}
+export interface CryptoRefreshTransactionArgs {
+  feedItemId: string; // Feed item ID containing the transaction to refresh
+  transferId: string; // Original transfer ID
+  recipient: string; // Recipient address
+  token: string; // Token symbol or mint address
+  amount: number; // Amount to send
+  tokenMint?: string; // Token mint address (optional, will resolve if not provided)
+  tokenDecimals?: number; // Token decimals (optional)
 }
 
 // Scripts Adapter Types
@@ -885,6 +906,18 @@ Returns detailed information about trigger matching, including which conditions 
       return sdk.resources.call({
         resourceId: 'flows',
         method: 'validateTrigger',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get all active flows that are triggered by a specific event type. Used by frontend to show flow selection for targeted execution (e.g., call.action flows).
+     * @param args.eventType - Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
+     */
+    getFlowsByEventType: async (args: FlowsGetFlowsByEventTypeArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'getFlowsByEventType',
         params: args || {}
       });
     }
@@ -2493,6 +2526,24 @@ function createJupiterAdapter(sdk: MirraSDK) {
         method: 'searchTokens',
         params: args || {}
       });
+    },
+
+    /**
+     * Refresh an expired swap with new quote and transaction
+     * @param args.feedItemId - Feed item ID containing the swap to refresh
+     * @param args.swapId - Original swap ID
+     * @param args.inputMint - Input token mint address
+     * @param args.outputMint - Output token mint address
+     * @param args.amount - Amount to swap (in UI units)
+     * @param args.inputDecimals - Input token decimals
+     * @param args.slippageBps - Slippage tolerance in basis points (optional)
+     */
+    refreshSwap: async (args: JupiterRefreshSwapArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'jupiter',
+        method: 'refreshSwap',
+        params: args || {}
+      });
     }
   };
 }
@@ -2566,6 +2617,24 @@ function createCryptoAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'crypto',
         method: 'unsubscribeAsset',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Refresh an expired transaction with new blockhash and updated details
+     * @param args.feedItemId - Feed item ID containing the transaction to refresh
+     * @param args.transferId - Original transfer ID
+     * @param args.recipient - Recipient address
+     * @param args.token - Token symbol or mint address
+     * @param args.amount - Amount to send
+     * @param args.tokenMint - Token mint address (optional, will resolve if not provided) (optional)
+     * @param args.tokenDecimals - Token decimals (optional) (optional)
+     */
+    refreshTransaction: async (args: CryptoRefreshTransactionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'crypto',
+        method: 'refreshTransaction',
         params: args || {}
       });
     }
