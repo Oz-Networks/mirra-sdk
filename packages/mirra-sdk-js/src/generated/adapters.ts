@@ -893,12 +893,7 @@ export interface FeedbackSubmitFeatureRequestArgs {
 
 // Mirra Messaging Adapter Types
 export interface MirraMessagingSendMessageArgs {
-  recipientId: string; // User ID of the recipient (use findContact to look up by username)
-  content: string; // Message text content
-  automation?: any; // Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string }
-}
-export interface MirraMessagingSendGroupMessageArgs {
-  groupId: string; // Group ID to send the message to
+  groupId: string; // Group ID to send the message to (use getContacts or getGroups to get the groupId)
   content: string; // Message text content
   automation?: any; // Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string }
 }
@@ -961,16 +956,18 @@ TRIGGER STRUCTURE:
     eventFilter: {
       operator: "and" | "or",
       conditions: [
-        { operator: "equals", field: "eventType", value: "call.ended" },
+        { operator: "equals", field: "type", value: "call.ended" },
         { operator: "contains", field: "content.text", value: "urgent" }
       ]
     }
   }
 }
 
+IMPORTANT: Use field: "type" (not "eventType") to filter by event type. This is required for testFlow to auto-generate test events.
+
 VALID OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not
 
-COMMON EVENT TYPES: call.started, call.ended, call.action, telegram.message, gmail.email_received
+COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.action, telegram.message, gmail.email_received
      * @param args.title - Flow title
      * @param args.description - Detailed description of what the flow does
      * @param args.trigger - Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
@@ -1108,6 +1105,13 @@ COMMON EVENT TYPES: call.started, call.ended, call.action, telegram.message, gma
     /**
      * Test a flow by generating an event that matches the trigger conditions.
 
+REQUIREMENT: The flow's trigger conditions MUST include a condition with field: "type" or field: "source" so the system knows what kind of test event to generate.
+
+CORRECT condition: { operator: "equals", field: "type", value: "telegram.message" }
+WRONG condition: { operator: "equals", field: "eventType", value: "telegram.message" }
+
+If your flow lacks a "type" or "source" condition, use validateTrigger instead with a manually constructed event.
+
 MODES:
 - dryRun=true (DEFAULT): Validates trigger matching only. Safe, no side effects, no token consumption.
 - dryRun=false: Executes the real script. WARNING: This causes real side effects (sends messages, makes API calls, consumes tokens).
@@ -1115,7 +1119,7 @@ MODES:
 Use dryRun=true first to verify trigger conditions work, then dryRun=false only when ready to test full execution.
 
 WORKFLOW:
-1. Generates a test event from the flow's trigger conditions
+1. Generates a test event from the flow's trigger conditions (requires "type" or "source" field)
 2. Validates the event matches the trigger (always)
 3. If dryRun=false, executes the script with the test event
 
@@ -3660,8 +3664,8 @@ function createFeedbackAdapter(sdk: MirraSDK) {
 function createMirraMessagingAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Send a direct message to a contact. The message is sent as the authenticated user with optional automation metadata.
-     * @param args.recipientId - User ID of the recipient (use findContact to look up by username)
+     * Send a message to a group (including direct chats). The message is sent as the authenticated user with optional automation metadata.
+     * @param args.groupId - Group ID to send the message to (use getContacts or getGroups to get the groupId)
      * @param args.content - Message text content
      * @param args.automation - Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string } (optional)
      */
@@ -3669,20 +3673,6 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'mirra-messaging',
         method: 'sendMessage',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Send a message to a group chat. The message is sent as the authenticated user with optional automation metadata.
-     * @param args.groupId - Group ID to send the message to
-     * @param args.content - Message text content
-     * @param args.automation - Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string } (optional)
-     */
-    sendGroupMessage: async (args: MirraMessagingSendGroupMessageArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'mirra-messaging',
-        method: 'sendGroupMessage',
         params: args || {}
       });
     },
