@@ -233,6 +233,40 @@ export interface CallResourceParams {
   params?: Record<string, any>;
 }
 
+export interface ResourceEndpointMethod {
+  name: string;
+  httpMethod: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  path: string;
+  description?: string;
+  parameters?: Record<string, { type: string; required?: boolean; description?: string }>;
+  response?: { type: string; schema?: any };
+}
+
+export interface ResourceEndpoint {
+  baseUrl: string;
+  authentication: 'none' | 'api_key' | 'oauth2' | 'bearer';
+  methods: ResourceEndpointMethod[];
+}
+
+export interface CreateResourceParams {
+  name: string;
+  description?: string;
+  resourceType: 'integration' | 'api' | 'webhook' | 'custom';
+  category?: string;
+  isPrivate?: boolean;
+  endpoint: ResourceEndpoint;
+  pricing?: { model: 'free' | 'paid'; price?: number };
+  openApiSpec?: object;
+}
+
+export interface UpdateResourceParams {
+  id: string;
+  name?: string;
+  description?: string;
+  endpoint?: ResourceEndpoint;
+  isPrivate?: boolean;
+}
+
 // ============================================================================
 // Template Types
 // ============================================================================

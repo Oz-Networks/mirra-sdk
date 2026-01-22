@@ -29,6 +29,8 @@ import {
   ScriptInvocationResult,
   Resource,
   CallResourceParams,
+  CreateResourceParams,
+  UpdateResourceParams,
   Template,
   TemplateInstallation,
   MarketplaceItem,
@@ -492,6 +494,39 @@ export class MirraSDK {
     get: async (id: string): Promise<Resource> => {
       const response = await this.client.get<MirraResponse<Resource>>(
         `/resources/${id}`
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Create a new resource
+     */
+    create: async (params: CreateResourceParams): Promise<Resource> => {
+      const response = await this.client.post<MirraResponse<Resource>>(
+        '/resources',
+        params
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Update an existing resource
+     */
+    update: async (params: UpdateResourceParams): Promise<Resource> => {
+      const { id, ...updateData } = params;
+      const response = await this.client.patch<MirraResponse<Resource>>(
+        `/resources/${id}`,
+        updateData
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Install a resource for the current user
+     */
+    install: async (id: string): Promise<{ success: boolean }> => {
+      const response = await this.client.post<MirraResponse<{ success: boolean }>>(
+        `/resources/${id}/install`
       );
       return response.data.data!;
     },
