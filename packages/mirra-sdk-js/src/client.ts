@@ -47,6 +47,13 @@ import {
   SearchDocumentsResult,
   ListDocumentsParams,
   ListDocumentsResult,
+  // Flow types
+  Flow,
+  CreateEventFlowParams,
+  CreateTimeFlowParams,
+  UpdateFlowParams,
+  ListFlowsParams,
+  EventTypeInfo,
 } from './types';
 
 export class MirraSDK {
@@ -426,6 +433,31 @@ export class MirraSDK {
       });
       return response.data.data!;
     },
+
+    /**
+     * Get a system script ID by type
+     * System scripts are pre-deployed scripts available to all users for specific functionality.
+     *
+     * @example
+     * ```typescript
+     * // Get the Claude Code router script ID for Flow creation
+     * const { scriptId } = await sdk.scripts.getSystemScript('claude-code-router');
+     * console.log('Router script ID:', scriptId);
+     * ```
+     *
+     * @param type - The system script type:
+     *   - `claude-code-router`: Routes mobile replies to Claude Code sessions on user PCs
+     *   - `call-summary-script`: Generates call summaries for completed voice calls
+     *   - `call-reminder-script`: Creates reminders from call context
+     */
+    getSystemScript: async (
+      type: 'claude-code-router' | 'call-summary-script' | 'call-reminder-script'
+    ): Promise<{ type: string; scriptId: string }> => {
+      const response = await this.client.get<
+        MirraResponse<{ type: string; scriptId: string }>
+      >(`/scripts/system/${type}`);
+      return response.data.data!;
+    },
   };
 
   // ============================================================================
@@ -689,6 +721,148 @@ export class MirraSDK {
       const response = await this.client.get<MirraResponse<ListDocumentsResult>>(
         '/documents',
         { params }
+      );
+      return response.data.data!;
+    },
+  };
+
+  // ============================================================================
+  // Flow Operations
+  // ============================================================================
+
+  flows = {
+    /**
+     * Create an event-based flow
+     * Event flows trigger when conditions match incoming events (e.g., message replies)
+     *
+     * @example
+     * ```typescript
+     * const flow = await sdk.flows.createEventFlow({
+     *   title: 'Route Claude Code Replies',
+     *   description: 'Routes replies to Claude Code session',
+     *   trigger: {
+     *     type: 'event',
+     *     config: {
+     *       eventSource: 'mirra',
+     *       rootCondition: {
+     *         operator: 'and',
+     *         conditions: [
+     *           { field: 'mirra.replyTo.automation.sessionId', operator: 'equals', value: 'cc_123' }
+     *         ]
+     *       }
+     *     }
+     *   },
+     *   scriptId: 'my-router-script',
+     *   scriptInput: { sessionId: 'cc_123' }
+     * });
+     * ```
+     */
+    createEventFlow: async (params: CreateEventFlowParams): Promise<Flow> => {
+      const response = await this.client.post<MirraResponse<Flow>>(
+        '/flows/createEventFlow',
+        params
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Create a time-based flow
+     * Time flows trigger on a cron schedule
+     *
+     * @example
+     * ```typescript
+     * const flow = await sdk.flows.createTimeFlow({
+     *   title: 'Daily Summary',
+     *   description: 'Runs every day at 9am',
+     *   trigger: {
+     *     type: 'time',
+     *     config: { cronExpression: '0 9 * * *' }
+     *   },
+     *   scriptId: 'daily-summary-script'
+     * });
+     * ```
+     */
+    createTimeFlow: async (params: CreateTimeFlowParams): Promise<Flow> => {
+      const response = await this.client.post<MirraResponse<Flow>>(
+        '/flows/createTimeFlow',
+        params
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Get a flow by ID
+     */
+    get: async (id: string): Promise<Flow> => {
+      const response = await this.client.post<MirraResponse<Flow>>(
+        '/flows/getFlow',
+        { flowId: id }
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * List all flows for the authenticated user
+     */
+    list: async (params?: ListFlowsParams): Promise<Flow[]> => {
+      const response = await this.client.post<MirraResponse<Flow[]>>(
+        '/flows/listFlows',
+        params || {}
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Update a flow
+     */
+    update: async (id: string, params: UpdateFlowParams): Promise<Flow> => {
+      const response = await this.client.post<MirraResponse<Flow>>(
+        '/flows/updateFlow',
+        { flowId: id, ...params }
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Delete a flow
+     */
+    delete: async (id: string): Promise<{ success: boolean }> => {
+      const response = await this.client.post<MirraResponse<{ success: boolean }>>(
+        '/flows/deleteFlow',
+        { flowId: id }
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Pause a flow (stop it from triggering)
+     */
+    pause: async (id: string): Promise<Flow> => {
+      const response = await this.client.post<MirraResponse<Flow>>(
+        '/flows/pauseFlow',
+        { flowId: id }
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * Resume a paused flow
+     */
+    resume: async (id: string): Promise<Flow> => {
+      const response = await this.client.post<MirraResponse<Flow>>(
+        '/flows/resumeFlow',
+        { flowId: id }
+      );
+      return response.data.data!;
+    },
+
+    /**
+     * List available event types that can trigger flows
+     */
+    listEventTypes: async (): Promise<EventTypeInfo[]> => {
+      const response = await this.client.post<MirraResponse<EventTypeInfo[]>>(
+        '/flows/listEventTypes',
+        {}
       );
       return response.data.data!;
     },

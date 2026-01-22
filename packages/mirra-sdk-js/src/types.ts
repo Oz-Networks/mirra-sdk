@@ -462,3 +462,160 @@ export interface ListDocumentsResult {
   graphId: string;
 }
 
+// ============================================================================
+// Flow Types
+// ============================================================================
+
+/**
+ * Flow condition operator types
+ */
+export type FlowConditionOperator =
+  | 'equals'
+  | 'notEquals'
+  | 'contains'
+  | 'startsWith'
+  | 'endsWith'
+  | 'greaterThan'
+  | 'lessThan'
+  | 'exists'
+  | 'notExists'
+  | 'matchesRegex'
+  | 'and'
+  | 'or'
+  | 'not';
+
+/**
+ * Flow condition for event filtering
+ */
+export interface FlowCondition {
+  operator: FlowConditionOperator;
+  field?: string;
+  value?: any;
+  conditions?: FlowCondition[];
+  condition?: FlowCondition;
+}
+
+/**
+ * Flow trigger configuration
+ */
+export interface FlowTriggerConfig {
+  /** Cron expression for time-based triggers */
+  cronExpression?: string;
+  /** Event source for event-based triggers (e.g., 'mirra', 'gmail', 'telegram') */
+  eventSource?: string;
+  /** Root condition for event filtering */
+  rootCondition?: FlowCondition;
+  /** Alternative event filter format */
+  eventFilter?: FlowCondition;
+  /** How to combine multiple conditions */
+  combineMethod?: 'AND' | 'OR';
+}
+
+/**
+ * Flow trigger definition
+ */
+export interface FlowTrigger {
+  type: 'time' | 'event';
+  config: FlowTriggerConfig;
+}
+
+/**
+ * Flow status
+ */
+export type FlowStatus = 'active' | 'paused' | 'completed' | 'failed';
+
+/**
+ * Flow execution result
+ */
+export interface FlowExecutionResult {
+  timestamp: string;
+  success: boolean;
+  result?: any;
+  error?: string;
+  tokensConsumed?: number;
+}
+
+/**
+ * Flow entity
+ */
+export interface Flow {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  status: FlowStatus;
+  trigger: FlowTrigger;
+  scriptId: string;
+  scriptInput?: Record<string, any>;
+  executionCount?: number;
+  lastExecutedAt?: string;
+  executionResults?: FlowExecutionResult[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Parameters for creating an event-based flow
+ */
+export interface CreateEventFlowParams {
+  title: string;
+  description: string;
+  trigger: {
+    type: 'event';
+    config: FlowTriggerConfig;
+  };
+  scriptId: string;
+  scriptInput?: Record<string, any>;
+  status?: FlowStatus;
+}
+
+/**
+ * Parameters for creating a time-based flow
+ */
+export interface CreateTimeFlowParams {
+  title: string;
+  description: string;
+  trigger: {
+    type: 'time';
+    config: {
+      cronExpression: string;
+    };
+  };
+  scriptId: string;
+  scriptInput?: Record<string, any>;
+  status?: FlowStatus;
+}
+
+/**
+ * Parameters for updating a flow
+ */
+export interface UpdateFlowParams {
+  title?: string;
+  description?: string;
+  trigger?: FlowTrigger;
+  scriptId?: string;
+  scriptInput?: Record<string, any>;
+  status?: FlowStatus;
+}
+
+/**
+ * Parameters for listing flows
+ */
+export interface ListFlowsParams {
+  status?: FlowStatus;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * Available event type info
+ */
+export interface EventTypeInfo {
+  eventType: string;
+  source: string;
+  displayName: string;
+  description: string;
+  icon: string;
+  enabled: boolean;
+}
+
