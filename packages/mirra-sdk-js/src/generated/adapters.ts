@@ -896,6 +896,7 @@ export interface MirraMessagingSendMessageArgs {
   groupId: string; // Group ID to send the message to (use getContacts or getGroups to get the groupId)
   content: string; // Message text content
   automation?: any; // Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string }
+  structuredData?: any[]; // Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }]
 }
 export interface MirraMessagingGetContactsArgs {
   limit?: number; // Maximum number of contacts to return (default 50)
@@ -3668,6 +3669,7 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
      * @param args.groupId - Group ID to send the message to (use getContacts or getGroups to get the groupId)
      * @param args.content - Message text content
      * @param args.automation - Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string } (optional)
+     * @param args.structuredData - Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }] (optional)
      */
     sendMessage: async (args: MirraMessagingSendMessageArgs): Promise<any> => {
       return sdk.resources.call({
