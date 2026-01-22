@@ -2914,7 +2914,7 @@ function createTwitterAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Retrieve tweets from a Twitter user
+     * Retrieve tweets from a Twitter user. Must provide either userId OR userName.
      * @param args.userId - Twitter user ID (recommended for stability and speed) (optional)
      * @param args.userName - Twitter username/screen name (alternative to userId) (optional)
      * @param args.cursor - Pagination cursor for next page of results (optional)
