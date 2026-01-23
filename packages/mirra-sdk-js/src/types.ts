@@ -596,6 +596,10 @@ export interface CreateEventFlowParams {
   description: string;
   trigger: {
     type: 'event';
+    /** Event type for UI grouping (e.g., 'mirra.message', 'telegram.message') */
+    eventType?: string;
+    /** Event source for UI grouping (e.g., 'mirra', 'telegram') */
+    source?: string;
     config: FlowTriggerConfig;
   };
   scriptId: string;
