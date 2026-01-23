@@ -237,27 +237,30 @@ export interface FeedItemsCreateFeedItemArgs {
 
 // Telegram Adapter Types
 export interface TelegramSendMessageArgs {
-  chatId: string; // Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from getChats operation.
+  chatId: string; // Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from searchChats operation.
   text: string; // The text content of the message to send
 }
-export interface TelegramGetChatsArgs {
-  limit?: number; // Maximum number of chats to return (default: 50, max: 100). Use pagination for large chat lists to avoid token limits.
-  offset?: number; // Number of chats to skip for pagination (default: 0). Combine with limit to fetch subsequent pages.
-  forceRefresh?: boolean; // If true, bypasses the cache and fetches fresh chat data from Telegram. Default: false
-}
-export interface TelegramFindChatByNameArgs {
-  name: string; // Chat name, username (with or without @), or partial match to search for
+export interface TelegramSearchChatsArgs {
+  query?: string; // Text to search in chat names/usernames. Supports fuzzy matching with relevance scoring.
+  type?: string; // Filter by chat type: "private", "group", "channel", or "all" (default: "all")
+  inactiveSince?: string; // Find chats with no activity since date. Accepts ISO date or relative like "30 days ago", "1 week ago"
+  activeSince?: string; // Find chats with activity since date. Accepts ISO date or relative like "7 days ago"
+  hasUnread?: boolean; // Filter by unread status: true = only unread, false = only read
+  archived?: boolean; // Filter by archived status
+  pinned?: boolean; // Filter by pinned status
+  sortBy?: string; // Sort results: "relevance" (default with query), "lastActivity" (default without query), "unreadCount", "name"
+  limit?: number; // Max results (default: 50, max: 100)
+  offset?: number; // Pagination offset (default: 0)
+  forceRefresh?: boolean; // Bypass cache and fetch fresh data
 }
 export interface TelegramSearchMessagesArgs {
-  chatIds?: any[]; // Array of chat IDs to search within. If not provided, searches globally.
-  query?: string; // Text query to search for in messages
+  query: string; // Text query to search for in messages
+  chatIds?: any[]; // Array of chat IDs to search within. Omit for global search across all chats.
+  chatType?: string; // Filter by chat type (for global search): "private", "group", or "channel"
   fromDate?: string; // ISO date string for start of date range
   toDate?: string; // ISO date string for end of date range
   limit?: number; // Maximum number of messages to return (default: 100, max: 100)
   senderId?: string; // Filter messages by sender ID
-}
-export interface TelegramGetRecentContactsArgs {
-  limit?: number; // Maximum number of contacts to return (default: 100, max: 100)
 }
 export interface TelegramGetChatMessagesArgs {
   chatId: string; // Chat ID to retrieve messages from
@@ -280,13 +283,8 @@ export interface TelegramGetMentionsArgs {
   sinceDate?: string; // ISO date string - only return mentions since this date
   onlyUnread?: boolean; // If true, only return unread mentions
 }
-export interface TelegramGlobalSearchArgs {
-  query: string; // Search query text
-  filter?: string; // Filter results by chat type: "groups", "private", or "channels"
-  limit?: number; // Maximum number of results to return (default: 100, max: 100)
-}
 export interface TelegramLeaveGroupArgs {
-  chatId: string; // The ID of the group, supergroup, or channel to leave. Can be obtained from getChats operation.
+  chatId: string; // The ID of the group, supergroup, or channel to leave. Can be obtained from searchChats operation.
 }
 
 // Gmail Adapter Types
@@ -1732,7 +1730,7 @@ function createTelegramAdapter(sdk: MirraSDK) {
   return {
     /**
      * Send a text message to a Telegram chat or user. Supports both chat IDs and usernames.
-     * @param args.chatId - Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from getChats operation.
+     * @param args.chatId - Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from searchChats operation.
      * @param args.text - The text content of the message to send
      */
     sendMessage: async (args: TelegramSendMessageArgs): Promise<any> => {
@@ -1744,35 +1742,32 @@ function createTelegramAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Retrieve Telegram chats with pagination support. Use limit and offset to paginate through large chat lists. Results are cached for 10 minutes.
-     * @param args.limit - Maximum number of chats to return (default: 50, max: 100). Use pagination for large chat lists to avoid token limits. (optional)
-     * @param args.offset - Number of chats to skip for pagination (default: 0). Combine with limit to fetch subsequent pages. (optional)
-     * @param args.forceRefresh - If true, bypasses the cache and fetches fresh chat data from Telegram. Default: false (optional)
+     * Powerful unified chat search with filtering, sorting, and activity tracking. Replaces getChats, findChatByName, and getRecentContacts. Use with no filters to list all chats.
+     * @param args.query - Text to search in chat names/usernames. Supports fuzzy matching with relevance scoring. (optional)
+     * @param args.type - Filter by chat type: "private", "group", "channel", or "all" (default: "all") (optional)
+     * @param args.inactiveSince - Find chats with no activity since date. Accepts ISO date or relative like "30 days ago", "1 week ago" (optional)
+     * @param args.activeSince - Find chats with activity since date. Accepts ISO date or relative like "7 days ago" (optional)
+     * @param args.hasUnread - Filter by unread status: true = only unread, false = only read (optional)
+     * @param args.archived - Filter by archived status (optional)
+     * @param args.pinned - Filter by pinned status (optional)
+     * @param args.sortBy - Sort results: "relevance" (default with query), "lastActivity" (default without query), "unreadCount", "name" (optional)
+     * @param args.limit - Max results (default: 50, max: 100) (optional)
+     * @param args.offset - Pagination offset (default: 0) (optional)
+     * @param args.forceRefresh - Bypass cache and fetch fresh data (optional)
      */
-    getChats: async (args: TelegramGetChatsArgs): Promise<any> => {
+    searchChats: async (args: TelegramSearchChatsArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'telegram',
-        method: 'getChats',
+        method: 'searchChats',
         params: args || {}
       });
     },
 
     /**
-     * Find a Telegram chat by name or username. Searches through user's chats and returns the first match.
-     * @param args.name - Chat name, username (with or without @), or partial match to search for
-     */
-    findChatByName: async (args: TelegramFindChatByNameArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'telegram',
-        method: 'findChatByName',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Search for messages across Telegram chats by content, date range, sender, or specific chats.
-     * @param args.chatIds - Array of chat IDs to search within. If not provided, searches globally. (optional)
-     * @param args.query - Text query to search for in messages (optional)
+     * Search for messages across Telegram chats. When chatIds is omitted, performs global search across all chats (replaces globalSearch operation).
+     * @param args.query - Text query to search for in messages
+     * @param args.chatIds - Array of chat IDs to search within. Omit for global search across all chats. (optional)
+     * @param args.chatType - Filter by chat type (for global search): "private", "group", or "channel" (optional)
      * @param args.fromDate - ISO date string for start of date range (optional)
      * @param args.toDate - ISO date string for end of date range (optional)
      * @param args.limit - Maximum number of messages to return (default: 100, max: 100) (optional)
@@ -1782,18 +1777,6 @@ function createTelegramAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'telegram',
         method: 'searchMessages',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get recent private chat contacts from Telegram, ordered by most recent activity. Uses the cached chat list filtered for 1:1 conversations.
-     * @param args.limit - Maximum number of contacts to return (default: 100, max: 100) (optional)
-     */
-    getRecentContacts: async (args: TelegramGetRecentContactsArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'telegram',
-        method: 'getRecentContacts',
         params: args || {}
       });
     },
@@ -1856,22 +1839,8 @@ function createTelegramAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Perform a global search across all Telegram chats for messages matching a query.
-     * @param args.query - Search query text
-     * @param args.filter - Filter results by chat type: "groups", "private", or "channels" (optional)
-     * @param args.limit - Maximum number of results to return (default: 100, max: 100) (optional)
-     */
-    globalSearch: async (args: TelegramGlobalSearchArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'telegram',
-        method: 'globalSearch',
-        params: args || {}
-      });
-    },
-
-    /**
      * Leave a Telegram group, supergroup, or channel. Removes the user from the group and clears it from the local cache.
-     * @param args.chatId - The ID of the group, supergroup, or channel to leave. Can be obtained from getChats operation.
+     * @param args.chatId - The ID of the group, supergroup, or channel to leave. Can be obtained from searchChats operation.
      */
     leaveGroup: async (args: TelegramLeaveGroupArgs): Promise<any> => {
       return sdk.resources.call({
