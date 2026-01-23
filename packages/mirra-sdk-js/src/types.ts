@@ -70,13 +70,20 @@ export interface MemoryFindOneParams {
 // AI Types
 // ============================================================================
 
-export interface ChatMessage {
+/**
+ * Simple LLM conversation message format
+ * For AI chat completions - NOT to be confused with messaging ChatMessage
+ */
+export interface AIConversationMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
+/** @deprecated Use AIConversationMessage instead to avoid confusion with messaging ChatMessage */
+export type ChatMessage = AIConversationMessage;
+
 export interface ChatRequest {
-  messages: ChatMessage[];
+  messages: AIConversationMessage[];
   model?: string;
   temperature?: number;
   maxTokens?: number;
