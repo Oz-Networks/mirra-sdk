@@ -285,6 +285,9 @@ export interface TelegramGlobalSearchArgs {
   filter?: string; // Filter results by chat type: "groups", "private", or "channels"
   limit?: number; // Maximum number of results to return (default: 100, max: 100)
 }
+export interface TelegramLeaveGroupArgs {
+  chatId: string; // The ID of the group, supergroup, or channel to leave. Can be obtained from getChats operation.
+}
 
 // Gmail Adapter Types
 export interface GoogleGmailSendEmailArgs {
@@ -910,7 +913,7 @@ export interface FeedbackSubmitFeatureRequestArgs {
 export interface MirraMessagingSendMessageArgs {
   groupId: string; // Group ID to send the message to (use getContacts or getGroups to get the groupId)
   content: string; // Message text content
-  automation?: any; // Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string }
+  automation?: any; // Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing.
   structuredData?: any[]; // Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }]
 }
 export interface MirraMessagingGetContactsArgs {
@@ -1862,6 +1865,18 @@ function createTelegramAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'telegram',
         method: 'globalSearch',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Leave a Telegram group, supergroup, or channel. Removes the user from the group and clears it from the local cache.
+     * @param args.chatId - The ID of the group, supergroup, or channel to leave. Can be obtained from getChats operation.
+     */
+    leaveGroup: async (args: TelegramLeaveGroupArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegram',
+        method: 'leaveGroup',
         params: args || {}
       });
     }
@@ -3696,7 +3711,7 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
      * Send a message to a group (including direct chats). The message is sent as the authenticated user with optional automation metadata.
      * @param args.groupId - Group ID to send the message to (use getContacts or getGroups to get the groupId)
      * @param args.content - Message text content
-     * @param args.automation - Automation metadata: { source: "sdk" | "flow", flowId?: string, flowTitle?: string } (optional)
+     * @param args.automation - Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing. (optional)
      * @param args.structuredData - Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }] (optional)
      */
     sendMessage: async (args: MirraMessagingSendMessageArgs): Promise<any> => {
