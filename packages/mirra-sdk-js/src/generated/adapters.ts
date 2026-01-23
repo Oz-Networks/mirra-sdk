@@ -821,6 +821,21 @@ export interface ScriptsPublishScriptArgs {
 export interface ScriptsUnpublishScriptArgs {
   scriptId: string; // ID of the script to unpublish
 }
+export interface ScriptsListMarketplaceScriptsArgs {
+  name?: string; // Exact match on script name
+  system?: boolean; // Filter by system scripts (scope="system") when true, user scripts when false
+  search?: string; // Text search on name and description
+  tags?: any[]; // Filter by tags (matches scripts with any of the specified tags)
+  category?: string; // Filter by UI category (notification, data_sync, automation, utility, reporting)
+  pricingModel?: string; // Filter by pricing model (free, pay-per-execution, subscription)
+  staffPick?: boolean; // Filter to only staff-picked scripts when true
+  minRating?: number; // Minimum rating threshold (0-5)
+  requiredIntegrations?: any[]; // Filter by required integrations (e.g., ["telegram", "gmail"])
+  sortBy?: string; // Sort field: rating, installCount, trendingScore, publishedAt, name (default: rating)
+  sortOrder?: string; // Sort order: asc or desc (default: desc)
+  limit?: number; // Maximum number of results to return (default: 50, max: 100)
+  offset?: number; // Number of results to skip for pagination (default: 0)
+}
 export interface ScriptsGetMetricsArgs {
   scriptId: string; // ID of the script
 }
@@ -3472,9 +3487,22 @@ function createScriptsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * List all published scripts in the marketplace
+     * Search and list published scripts in the marketplace with filtering and sorting options
+     * @param args.name - Exact match on script name (optional)
+     * @param args.system - Filter by system scripts (scope="system") when true, user scripts when false (optional)
+     * @param args.search - Text search on name and description (optional)
+     * @param args.tags - Filter by tags (matches scripts with any of the specified tags) (optional)
+     * @param args.category - Filter by UI category (notification, data_sync, automation, utility, reporting) (optional)
+     * @param args.pricingModel - Filter by pricing model (free, pay-per-execution, subscription) (optional)
+     * @param args.staffPick - Filter to only staff-picked scripts when true (optional)
+     * @param args.minRating - Minimum rating threshold (0-5) (optional)
+     * @param args.requiredIntegrations - Filter by required integrations (e.g., ["telegram", "gmail"]) (optional)
+     * @param args.sortBy - Sort field: rating, installCount, trendingScore, publishedAt, name (default: rating) (optional)
+     * @param args.sortOrder - Sort order: asc or desc (default: desc) (optional)
+     * @param args.limit - Maximum number of results to return (default: 50, max: 100) (optional)
+     * @param args.offset - Number of results to skip for pagination (default: 0) (optional)
      */
-    listMarketplaceScripts: async (args?: {}): Promise<any> => {
+    listMarketplaceScripts: async (args: ScriptsListMarketplaceScriptsArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'listMarketplaceScripts',
