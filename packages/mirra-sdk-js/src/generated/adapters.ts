@@ -78,6 +78,12 @@ export interface FlowsValidateTriggerArgs {
 export interface FlowsGetFlowsByEventTypeArgs {
   eventType: string; // Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
 }
+export interface FlowsCreateBatchOperationArgs {
+  title: string; // Human-readable title for this batch operation (e.g., "Leave 100 Telegram groups")
+  operations: any[]; // Array of operations to execute. Each item must have adapter, operation, and args properties.
+  batchSize?: number; // Number of operations to process per execution (default: 5)
+  intervalSeconds?: number; // Seconds between batch executions (default: 60, minimum: 60)
+}
 
 // User Adapter Types
 export interface UserUpdateProfileArgs {
@@ -1175,6 +1181,21 @@ Returns detailed information about trigger matching, including which conditions 
       return sdk.resources.call({
         resourceId: 'flows',
         method: 'getFlowsByEventType',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a self-managing flow that processes multiple adapter operations over time, respecting rate limits. The flow automatically cleans up when complete and notifies the user via feed item.
+     * @param args.title - Human-readable title for this batch operation (e.g., "Leave 100 Telegram groups")
+     * @param args.operations - Array of operations to execute. Each item must have adapter, operation, and args properties.
+     * @param args.batchSize - Number of operations to process per execution (default: 5) (optional)
+     * @param args.intervalSeconds - Seconds between batch executions (default: 60, minimum: 60) (optional)
+     */
+    createBatchOperation: async (args: FlowsCreateBatchOperationArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'createBatchOperation',
         params: args || {}
       });
     }
