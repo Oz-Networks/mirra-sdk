@@ -240,13 +240,21 @@ export interface CallResourceParams {
   params?: Record<string, any>;
 }
 
+export interface ResourceMethodExample {
+  description: string;
+  input: Record<string, any>;
+  output: Record<string, any>;
+  note?: string;
+}
+
 export interface ResourceEndpointMethod {
   name: string;
   httpMethod: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   path: string;
   description?: string;
   parameters?: Record<string, { type: string; required?: boolean; description?: string }>;
-  response?: { type: string; schema?: any };
+  response?: { type: string; schema?: any; description?: string };
+  examples?: ResourceMethodExample[];
 }
 
 export interface ResourceEndpoint {
