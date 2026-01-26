@@ -140,9 +140,16 @@ export interface ContactsGetContactRequestsArgs {
 
 // Memory Adapter Types
 export interface MemoryCreateArgs {
-  type: string; // Memory subtype: "task" (reminders/todos), "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), or "event" (calendar items)
+  type: string; // Memory subtype: "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), "event" (calendar items). For tasks with assignment, use createTask instead.
   content: string; // Main content/description of the memory
   metadata?: any; // Additional metadata (e.g., priority, deadline, tags, etc.)
+}
+export interface MemoryCreateTaskArgs {
+  content: string; // Task description/title - what needs to be done
+  assignedTo?: string; // Username of the person to assign this task to (group contexts only). System resolves username to user ID.
+  dueAt?: string; // Due date/time in ISO 8601 format (e.g., "2024-01-15T10:00:00Z") or natural language that will be parsed
+  priority?: string; // Task priority: "high", "medium", or "low"
+  tags?: any[]; // Tags/labels for categorization (e.g., ["work", "urgent"])
 }
 export interface MemorySearchArgs {
   query: string; // Search query text for semantic matching
@@ -1421,8 +1428,8 @@ function createContactsAdapter(sdk: MirraSDK) {
 function createMemoryAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new memory entity in the knowledge graph. Use the type field to specify what kind of memory (task, note, idea, shopping_item, etc.)
-     * @param args.type - Memory subtype: "task" (reminders/todos), "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), or "event" (calendar items)
+     * Create a new memory entity in the knowledge graph. Use the type field to specify what kind of memory (note, idea, shopping_item, etc.). For tasks with assignment or timing features, use `createTask` instead. All memory types can be queried, updated, and deleted using the standard operations.
+     * @param args.type - Memory subtype: "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), "event" (calendar items). For tasks with assignment, use createTask instead.
      * @param args.content - Main content/description of the memory
      * @param args.metadata - Additional metadata (e.g., priority, deadline, tags, etc.) (optional)
      */
@@ -1430,6 +1437,22 @@ function createMemoryAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'memory',
         method: 'create',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a task in the knowledge graph. Tasks are a specialized memory type with assignment, timing, priority, and status lifecycle. Use this instead of `create` when you need task-specific features like assigning to users. Tasks can be queried, updated, and deleted using the standard memory operations (`query`, `update`, `delete`) with type="task". For group contexts, the task is stored in the group's shared graph.
+     * @param args.content - Task description/title - what needs to be done
+     * @param args.assignedTo - Username of the person to assign this task to (group contexts only). System resolves username to user ID. (optional)
+     * @param args.dueAt - Due date/time in ISO 8601 format (e.g., "2024-01-15T10:00:00Z") or natural language that will be parsed (optional)
+     * @param args.priority - Task priority: "high", "medium", or "low" (optional)
+     * @param args.tags - Tags/labels for categorization (e.g., ["work", "urgent"]) (optional)
+     */
+    createTask: async (args: MemoryCreateTaskArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'createTask',
         params: args || {}
       });
     },
@@ -1452,7 +1475,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Query memory entities with filters. Returns lightweight summaries with normalized fields: id, type, name, description, status, priority, createdAt, updatedAt
+     * Query memory entities with filters. Returns lightweight summaries with normalized fields. Use type="task" to list all tasks (including those created via createTask).
      * @param args.type - Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against meta_item_type, subType, or semantic_roles (optional)
      * @param args.filters - Additional filters (not yet implemented) (optional)
      * @param args.limit - Maximum results (default: 50, max: 100). Use smaller limits to get complete results without truncation (optional)
@@ -1479,7 +1502,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Update an existing memory entity
+     * Update an existing memory entity. Works with all memory types including tasks created via createTask. Use this to mark tasks complete, update content, or modify metadata.
      * @param args.id - Entity ID to update
      * @param args.type - Entity type (optional)
      * @param args.content - Updated content (optional)
@@ -1494,7 +1517,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Delete a memory entity
+     * Delete a memory entity. Works with all memory types including tasks, notes, ideas, etc.
      * @param args.id - Entity ID to delete
      */
     delete: async (args: MemoryDeleteArgs): Promise<any> => {
