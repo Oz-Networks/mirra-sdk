@@ -934,6 +934,12 @@ export interface MirraMessagingGetChatsArgs {
 export interface MirraMessagingGetGroupsArgs {
   limit?: number; // Maximum number of groups to return (default 50)
 }
+export interface MirraMessagingCreateGroupArgs {
+  name: string; // Group name (max 100 characters)
+  description?: string; // Group description (max 500 characters)
+  category?: string; // Category for organization: "family", "friends", "work", or "other" (default: "other")
+  memberIds?: any[]; // Array of user IDs to add as initial members
+}
 
 
 // ============================================================================
@@ -3758,6 +3764,21 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'mirra-messaging',
         method: 'getGroups',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new group. The authenticated user becomes the group owner.
+     * @param args.name - Group name (max 100 characters)
+     * @param args.description - Group description (max 500 characters) (optional)
+     * @param args.category - Category for organization: "family", "friends", "work", or "other" (default: "other") (optional)
+     * @param args.memberIds - Array of user IDs to add as initial members (optional)
+     */
+    createGroup: async (args: MirraMessagingCreateGroupArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'mirra-messaging',
+        method: 'createGroup',
         params: args || {}
       });
     }
