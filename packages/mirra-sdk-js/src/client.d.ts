@@ -173,6 +173,31 @@ export declare class MirraSDK {
          * Get a resource by ID
          */
         get: (id: string) => Promise<Resource>;
+        /**
+         * Create a new resource
+         */
+        create: (params: CreateResourceParams) => Promise<Resource>;
+        /**
+         * Update an existing resource
+         */
+        update: (params: UpdateResourceParams) => Promise<Resource>;
+        /**
+         * Install a resource for the current user
+         */
+        install: (id: string) => Promise<{
+            success: boolean;
+        }>;
+        /**
+         * Authenticate a resource installation
+         * Stores credentials for accessing the resource on behalf of the user
+         */
+        authenticate: (resourceId: string, auth: {
+            type: 'api_key' | 'oauth2' | 'basic' | 'bearer';
+            credentials: Record<string, any>;
+        }) => Promise<{
+            success: boolean;
+            isAuthenticated: boolean;
+        }>;
     };
     templates: {
         /**

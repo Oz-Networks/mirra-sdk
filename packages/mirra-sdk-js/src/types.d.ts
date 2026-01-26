@@ -185,6 +185,43 @@ export interface CallResourceParams {
     method: string;
     params?: Record<string, any>;
 }
+export interface ResourceEndpointMethod {
+    name: string;
+    httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    path: string;
+    description?: string;
+    parameters?: Record<string, any>;
+    response?: Record<string, any>;
+    examples?: Array<{
+        description: string;
+        input: Record<string, any>;
+        output: Record<string, any>;
+        note?: string;
+    }>;
+}
+export interface ResourceEndpoint {
+    baseUrl: string;
+    authentication: 'none' | 'bearer' | 'api_key' | 'oauth2' | 'basic';
+    methods: ResourceEndpointMethod[];
+}
+export interface CreateResourceParams {
+    name: string;
+    description?: string;
+    resourceType: 'integration' | 'api' | 'webhook' | 'custom';
+    category?: string;
+    isPrivate?: boolean;
+    endpoint: ResourceEndpoint;
+    pricing?: { model: 'free' | 'pay-per-call' | 'subscription' };
+    openApiSpec?: object;
+}
+export interface UpdateResourceParams {
+    id: string;
+    name?: string;
+    description?: string;
+    endpoint?: Partial<ResourceEndpoint>;
+    pricing?: { model: 'free' | 'pay-per-call' | 'subscription' };
+    openApiSpec?: object;
+}
 export interface Template {
     id: string;
     name: string;

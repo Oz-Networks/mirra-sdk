@@ -530,6 +530,26 @@ export class MirraSDK {
       );
       return response.data.data!;
     },
+
+    /**
+     * Authenticate a resource installation
+     * Stores credentials for accessing the resource on behalf of the user
+     */
+    authenticate: async (
+      resourceId: string,
+      auth: {
+        type: 'api_key' | 'oauth2' | 'basic' | 'bearer';
+        credentials: Record<string, any>;
+      }
+    ): Promise<{ success: boolean; isAuthenticated: boolean }> => {
+      const response = await this.client.post<
+        MirraResponse<{ message: string; resourceId: string; isAuthenticated: boolean }>
+      >(`/resources/${resourceId}/authenticate`, auth);
+      return {
+        success: true,
+        isAuthenticated: response.data.data!.isAuthenticated,
+      };
+    },
   };
 
   // ============================================================================
