@@ -927,6 +927,11 @@ export interface MirraMessagingSendMessageArgs {
   automation?: any; // Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing.
   structuredData?: any[]; // Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }]
 }
+export interface MirraMessagingUpdateMessageArgs {
+  messageId: string; // ID of the message to update
+  content: string; // New message text content
+  structuredData?: any[]; // Updated structured data for rich UI rendering
+}
 export interface MirraMessagingGetContactsArgs {
   limit?: number; // Maximum number of contacts to return (default 50)
   offset?: number; // Offset for pagination (default 0)
@@ -3737,6 +3742,20 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'mirra-messaging',
         method: 'sendMessage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing message sent by the authenticated user
+     * @param args.messageId - ID of the message to update
+     * @param args.content - New message text content
+     * @param args.structuredData - Updated structured data for rich UI rendering (optional)
+     */
+    updateMessage: async (args: MirraMessagingUpdateMessageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'mirra-messaging',
+        method: 'updateMessage',
         params: args || {}
       });
     },
