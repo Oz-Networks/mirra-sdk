@@ -145,7 +145,7 @@ export interface MemoryCreateArgs {
   metadata?: any; // Additional metadata (e.g., priority, deadline, tags, etc.)
 }
 export interface MemoryCreateTaskArgs {
-  content: string; // Task description/title - what needs to be done
+  content: string; // Task description/title - what needs to be done. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
   assignedTo?: string; // Username of the person to assign this task to (group contexts only). System resolves username to user ID.
   dueAt?: string; // Due date/time in ISO 8601 format (e.g., "2024-01-15T10:00:00Z") or natural language that will be parsed
   priority?: string; // Task priority: "high", "medium", or "low"
@@ -1448,7 +1448,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
 
     /**
      * Create a task in the knowledge graph. Tasks are a specialized memory type with assignment, timing, priority, and status lifecycle. Use this instead of `create` when you need task-specific features like assigning to users. Tasks can be queried, updated, and deleted using the standard memory operations (`query`, `update`, `delete`) with type="task". For group contexts, the task is stored in the group's shared graph.
-     * @param args.content - Task description/title - what needs to be done
+     * @param args.content - Task description/title - what needs to be done. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
      * @param args.assignedTo - Username of the person to assign this task to (group contexts only). System resolves username to user ID. (optional)
      * @param args.dueAt - Due date/time in ISO 8601 format (e.g., "2024-01-15T10:00:00Z") or natural language that will be parsed (optional)
      * @param args.priority - Task priority: "high", "medium", or "low" (optional)
