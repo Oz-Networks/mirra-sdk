@@ -1,11 +1,10 @@
 import React from 'react'
 import './globals.css'
-import { PrivyProviderWrapper } from '../providers/PrivyProvider'
 import { ThemeProvider } from '../providers/ThemeProvider'
 
 export const metadata = {
-  title: 'Product Document Manager',
-  description: 'Securely manage your product documentation',
+  title: 'Product Support',
+  description: 'Get help with our products',
 }
 
 export default function RootLayout({
@@ -20,7 +19,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                const theme = localStorage.getItem('theme');
+                const theme = localStorage.getItem('kb-theme');
                 if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                   document.documentElement.classList.add('dark');
                 }
@@ -31,9 +30,7 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <PrivyProviderWrapper>
-            {children}
-          </PrivyProviderWrapper>
+          {children}
         </ThemeProvider>
       </body>
     </html>

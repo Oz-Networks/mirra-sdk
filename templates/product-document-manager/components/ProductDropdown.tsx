@@ -28,7 +28,6 @@ export default function ProductDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -43,7 +42,6 @@ export default function ProductDropdown({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Focus input when adding new product
   useEffect(() => {
     if (isAdding && inputRef.current) {
       inputRef.current.focus();
@@ -52,7 +50,7 @@ export default function ProductDropdown({
 
   const handleAddProduct = () => {
     const trimmedName = newProductName.trim();
-    
+
     if (!trimmedName) {
       setError('Product name is required');
       return;
@@ -67,6 +65,7 @@ export default function ProductDropdown({
     setNewProductName('');
     setIsAdding(false);
     setError(null);
+    setIsOpen(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -81,31 +80,51 @@ export default function ProductDropdown({
 
   return (
     <div ref={dropdownRef} className="relative">
-      {/* Dropdown trigger */}
+      {/* Trigger button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-5 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-between gap-3 hover:border-indigo-300 dark:hover:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-all group"
+        className="w-full p-4 flex items-center justify-between gap-3 rounded-xl transition-all duration-150"
+        style={{
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border-primary)',
+        }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/50 dark:to-violet-900/50 flex items-center justify-center">
-            <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: 'var(--accent-subtle)' }}
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              style={{ color: 'var(--accent-primary)' }}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
           </div>
           <div className="text-left">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            <p
+              className="text-[10px] font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
               Product
             </p>
-            <p className="text-base font-semibold text-slate-900 dark:text-white">
+            <p
+              className="text-sm font-medium"
+              style={{ color: selectedProduct ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
+            >
               {selectedProduct ? selectedProduct.name : 'Select a product...'}
             </p>
           </div>
         </div>
         <svg
-          className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          style={{ color: 'var(--text-tertiary)' }}
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
@@ -113,18 +132,37 @@ export default function ProductDropdown({
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 overflow-hidden animate-slide-up">
+        <div
+          className="absolute z-50 w-full mt-2 rounded-xl overflow-hidden animate-slide-down"
+          style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-primary)',
+            boxShadow: 'var(--shadow-lg)',
+          }}
+        >
           {/* Product list */}
           <div className="max-h-64 overflow-y-auto">
             {products.length === 0 ? (
-              <div className="px-5 py-8 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="px-4 py-8 text-center">
+                <div
+                  className="w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center"
+                  style={{ background: 'var(--bg-tertiary)' }}
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
                 </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  No products yet. Add your first one below!
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  No products yet
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                  Add your first one below
                 </p>
               </div>
             ) : (
@@ -135,32 +173,53 @@ export default function ProductDropdown({
                     onSelect(product);
                     setIsOpen(false);
                   }}
-                  className={`w-full px-5 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
-                    selectedProduct?.id === product.id ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
-                  }`}
+                  className="w-full px-4 py-3 flex items-center gap-3 transition-colors"
+                  style={{
+                    background: selectedProduct?.id === product.id ? 'var(--accent-subtle)' : 'transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedProduct?.id !== product.id) {
+                      e.currentTarget.style.background = 'var(--bg-tertiary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = selectedProduct?.id === product.id ? 'var(--accent-subtle)' : 'transparent';
+                  }}
                 >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                    selectedProduct?.id === product.id 
-                      ? 'bg-indigo-100 dark:bg-indigo-900/50' 
-                      : 'bg-slate-100 dark:bg-slate-700'
-                  }`}>
-                    <svg className={`w-4 h-4 ${
-                      selectedProduct?.id === product.id 
-                        ? 'text-indigo-600 dark:text-indigo-400' 
-                        : 'text-slate-400'
-                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: selectedProduct?.id === product.id ? 'var(--accent-tertiary)' : 'var(--bg-tertiary)',
+                    }}
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      style={{
+                        color: selectedProduct?.id === product.id ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+                      }}
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                   </div>
-                  <span className={`font-medium ${
-                    selectedProduct?.id === product.id 
-                      ? 'text-indigo-600 dark:text-indigo-400' 
-                      : 'text-slate-700 dark:text-slate-200'
-                  }`}>
+                  <span
+                    className="flex-1 text-left text-sm font-medium"
+                    style={{
+                      color: selectedProduct?.id === product.id ? 'var(--accent-primary)' : 'var(--text-primary)',
+                    }}
+                  >
                     {product.name}
                   </span>
                   {selectedProduct?.id === product.id && (
-                    <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      style={{ color: 'var(--accent-primary)' }}
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
@@ -170,11 +229,11 @@ export default function ProductDropdown({
           </div>
 
           {/* Divider */}
-          <div className="border-t border-slate-200 dark:border-slate-700" />
+          <div style={{ borderTop: '1px solid var(--border-primary)' }} />
 
           {/* Add new product */}
           {isAdding ? (
-            <div className="p-4">
+            <div className="p-3">
               <div className="flex gap-2">
                 <input
                   ref={inputRef}
@@ -186,11 +245,13 @@ export default function ProductDropdown({
                   }}
                   onKeyDown={handleKeyDown}
                   placeholder="Enter product name..."
-                  className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  className="input flex-1 text-sm"
+                  style={{ padding: '10px 14px' }}
                 />
                 <button
                   onClick={handleAddProduct}
-                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors"
+                  className="btn btn-primary"
+                  style={{ padding: '10px 14px' }}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -202,7 +263,8 @@ export default function ProductDropdown({
                     setNewProductName('');
                     setError(null);
                   }}
-                  className="px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-xl transition-colors"
+                  className="btn btn-secondary"
+                  style={{ padding: '10px 14px' }}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -210,20 +272,37 @@ export default function ProductDropdown({
                 </button>
               </div>
               {error && (
-                <p className="mt-2 text-sm text-red-500">{error}</p>
+                <p className="mt-2 text-xs" style={{ color: 'var(--error)' }}>{error}</p>
               )}
             </div>
           ) : (
             <button
               onClick={() => setIsAdding(true)}
-              className="w-full px-5 py-4 flex items-center gap-3 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+              className="w-full px-4 py-3 flex items-center gap-3 transition-colors"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--accent-subtle)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
             >
-              <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ background: 'var(--accent-subtle)' }}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  style={{ color: 'var(--accent-primary)' }}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </div>
-              <span className="font-medium">Add New Product</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--accent-primary)' }}>
+                Add New Product
+              </span>
             </button>
           )}
         </div>
@@ -231,4 +310,3 @@ export default function ProductDropdown({
     </div>
   );
 }
-

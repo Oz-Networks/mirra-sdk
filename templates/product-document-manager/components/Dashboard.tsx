@@ -2,19 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { MirraSDK } from '@mirra-messenger/sdk';
+import { ThemeToggle } from '../providers/ThemeProvider';
 import ProductDropdown from './ProductDropdown';
 import DocumentUploader from './DocumentUploader';
 
 // Initialize SDK with template API key
-// Cast to any to access documents API (available in newer SDK versions)
 const sdk = new MirraSDK({
   apiKey: process.env.NEXT_PUBLIC_TEMPLATE_API_KEY!,
-}) as any;
+});
 
 interface Product {
   id: string;
   name: string;
   createdAt: Date;
+  memoryId?: string;
 }
 
 interface Document {
@@ -24,7 +25,13 @@ interface Document {
   type: string;
   uploadedAt: Date;
   productId: string;
-  documentId?: string; // Mirra document ID for cloud storage
+  documentId?: string;
+}
+
+interface DocumentProductLink {
+  documentId: string;
+  productId: string;
+  memoryId?: string;
 }
 
 interface DashboardProps {
@@ -48,7 +55,6 @@ export default function Dashboard({
   const [loading, setLoading] = useState(true);
   const [syncError, setSyncError] = useState<string | null>(null);
 
-  // Load data on mount - try cloud first, fallback to localStorage
   useEffect(() => {
     loadData();
   }, [userId]);
@@ -58,24 +64,39 @@ export default function Dashboard({
     setSyncError(null);
 
     try {
-      // Try to load products from memory (cloud storage)
       const productsResult = await sdk.memory.query({
-        filters: { type: 'product', userId },
+        type: 'product',
         limit: 100,
       });
 
       if (productsResult && productsResult.length > 0) {
         const loadedProducts = productsResult.map((p: any) => ({
-          id: p.id,
+          id: p.metadata?.productId || p.id,
+          memoryId: p.id,
           name: p.metadata?.name || p.content,
           createdAt: new Date(p.metadata?.createdAt || Date.now()),
         }));
         setProducts(loadedProducts);
       }
 
-      // Load documents from Mirra Documents API
-      const docsResult = await sdk.documents.list({ limit: 100 });
-      
+      const linksResult = await sdk.memory.query({
+        type: 'document-product-link',
+        limit: 500,
+      });
+
+      const docProductMap: Record<string, string> = {};
+      if (linksResult && linksResult.length > 0) {
+        for (const link of linksResult) {
+          const docId = link.metadata?.documentId;
+          const prodId = link.metadata?.productId;
+          if (docId && prodId) {
+            docProductMap[docId] = prodId;
+          }
+        }
+      }
+
+      const docsResult = await sdk.documents.list();
+
       if (docsResult && docsResult.documents) {
         const loadedDocs = docsResult.documents.map((d: any) => ({
           id: d.documentId,
@@ -84,53 +105,33 @@ export default function Dashboard({
           size: d.fileSize || 0,
           type: d.mimeType || 'application/octet-stream',
           uploadedAt: new Date(d.createdAt),
-          productId: d.productTags?.[0] || '', // Use productTag to link to product
+          productId: docProductMap[d.documentId] || '',
         }));
         setDocuments(loadedDocs);
       }
     } catch (err) {
-      console.error('Error loading from cloud, falling back to localStorage:', err);
-      setSyncError('Unable to sync with cloud. Using local storage.');
-      
-      // Fallback to localStorage
-      const storedProducts = localStorage.getItem(`products_${userId}`);
-      const storedDocuments = localStorage.getItem(`documents_${userId}`);
-
-      if (storedProducts) {
-        const parsed = JSON.parse(storedProducts);
-        setProducts(parsed.map((p: any) => ({ ...p, createdAt: new Date(p.createdAt) })));
-      }
-
-      if (storedDocuments) {
-        const parsed = JSON.parse(storedDocuments);
-        setDocuments(parsed.map((d: any) => ({ ...d, uploadedAt: new Date(d.uploadedAt) })));
-      }
+      console.error('Error loading from cloud:', err);
+      setSyncError('Unable to connect to cloud storage. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Save products to cloud and localStorage
   const saveProducts = async (updatedProducts: Product[]) => {
-    // Always save to localStorage as backup
-    localStorage.setItem(`products_${userId}`, JSON.stringify(updatedProducts));
-
     try {
-      // Sync to cloud via memory API
       for (const product of updatedProducts) {
         const existing = products.find(p => p.id === product.id);
         if (!existing) {
-          // New product - create in cloud
-          await sdk.memory.create({
+          const result = await sdk.memory.create({
             type: 'product',
             content: product.name,
             metadata: {
-              userId,
               name: product.name,
               createdAt: product.createdAt.toISOString(),
               productId: product.id,
             },
           });
+          product.memoryId = result.id;
         }
       }
     } catch (err) {
@@ -145,7 +146,7 @@ export default function Dashboard({
       name,
       createdAt: new Date(),
     };
-    
+
     const updatedProducts = [...products, newProduct];
     setProducts(updatedProducts);
     setSelectedProduct(newProduct);
@@ -159,16 +160,24 @@ export default function Dashboard({
 
     for (const file of files) {
       try {
-        // Convert file to base64
         const base64 = await fileToBase64(file);
-        
-        // Upload to Mirra Documents API
+
         const result = await sdk.documents.upload({
           file: base64,
           filename: file.name,
           mimeType: file.type || 'application/octet-stream',
           title: file.name,
-          productTags: [selectedProduct.id], // Tag with product ID
+        });
+
+        await sdk.memory.create({
+          type: 'document-product-link',
+          content: `Document ${file.name} linked to ${selectedProduct.name}`,
+          metadata: {
+            documentId: result.documentId,
+            productId: selectedProduct.id,
+            filename: file.name,
+            createdAt: new Date().toISOString(),
+          },
         });
 
         const newDoc: Document = {
@@ -188,42 +197,64 @@ export default function Dashboard({
       }
     }
 
-    // Update local state
     const updatedDocs = [...documents, ...uploadedDocs];
     setDocuments(updatedDocs);
-    
-    // Backup to localStorage
-    localStorage.setItem(`documents_${userId}`, JSON.stringify(updatedDocs));
 
     return uploadedDocs;
   };
 
   const handleDeleteDocument = async (documentId: string) => {
     try {
-      // Delete from Mirra Documents API
       await sdk.documents.delete(documentId);
+
+      const linksResult = await sdk.memory.query({
+        type: 'document-product-link',
+        limit: 500,
+      });
+
+      if (linksResult && linksResult.length > 0) {
+        const linkToDelete = linksResult.find(
+          (link: any) => link.metadata?.documentId === documentId
+        );
+        if (linkToDelete) {
+          await sdk.memory.delete(linkToDelete.id);
+        }
+      }
     } catch (err) {
       console.error('Error deleting document from cloud:', err);
-      // Continue with local deletion even if cloud fails
     }
 
-    // Update local state
     const updatedDocs = documents.filter(d => d.id !== documentId);
     setDocuments(updatedDocs);
-    localStorage.setItem(`documents_${userId}`, JSON.stringify(updatedDocs));
+  };
+
+  const handleViewDocument = async (documentId: string) => {
+    try {
+      const result = await sdk.documents.get(documentId);
+      if (result && result.document) {
+        return {
+          title: result.document.title,
+          filename: result.document.filename,
+          extractedText: result.document.extractedText,
+          processingStatus: result.document.processingStatus,
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error('Error fetching document:', err);
+      return null;
+    }
   };
 
   const totalDocuments = documents.length;
   const totalProducts = products.length;
 
-  // Helper function to convert File to base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
         const result = reader.result as string;
-        // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
         const base64 = result.split(',')[1];
         resolve(base64);
       };
@@ -233,192 +264,264 @@ export default function Dashboard({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 animate-pulse">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--bg-primary)' }}
+      >
+        <div className="text-center animate-fade-in">
+          <div
+            className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center animate-pulse-subtle"
+            style={{ background: 'var(--accent-primary)' }}
+          >
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <p className="text-slate-500 dark:text-slate-400">Loading your documents...</p>
+          <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+            Loading your workspace...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/20">
+    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
       {/* Header */}
-      <header className="sticky top-0 z-40 glass border-b border-slate-200/50 dark:border-slate-700/50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-lg font-display font-bold text-slate-900 dark:text-white">
-                Product Documents
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Manage your documentation
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Sync status indicator */}
-            {syncError ? (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg text-xs">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <span>Offline mode</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Synced</span>
-              </div>
-            )}
-
-            <button
-              onClick={onSignOut}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-6 py-10">
-        {/* Welcome section */}
-        <div className="mb-10 animate-fade-in">
-          <h2 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-2">
-            {welcomeMessage}
-          </h2>
-          <p className="text-slate-600 dark:text-slate-400">
-            Select a product or create a new one to start uploading documents.
-          </p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 animate-slide-up">
-          <div className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalProducts}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Products</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/50 flex items-center justify-center">
-                <svg className="w-5 h-5 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <header
+        className="sticky top-0 z-40 glass"
+        style={{ borderBottom: '1px solid var(--border-primary)' }}
+      >
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo & Title */}
+            <div className="flex items-center gap-4">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: 'var(--accent-primary)' }}
+              >
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalDocuments}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Documents</p>
+                <h1
+                  className="text-base font-display font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  Document Manager
+                </h1>
               </div>
             </div>
-          </div>
 
-          <div className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{maxFileSize}MB</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Max Size</p>
-              </div>
-            </div>
-          </div>
+            {/* Right side actions */}
+            <div className="flex items-center gap-2">
+              {/* Sync status */}
+              {syncError ? (
+                <div className="badge badge-warning">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01" />
+                  </svg>
+                  Offline
+                </div>
+              ) : (
+                <div className="badge badge-success">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Synced
+                </div>
+              )}
 
-          <div className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+              {/* Theme toggle */}
+              <ThemeToggle />
+
+              {/* Sign out */}
+              <button
+                onClick={onSignOut}
+                className="btn btn-ghost text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">Cloud</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Storage</p>
-              </div>
+                Sign out
+              </button>
             </div>
           </div>
         </div>
+      </header>
 
-        {/* Main content */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Product selection */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24">
-              <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">
-                Select Product
-              </h3>
-              <ProductDropdown
-                products={products}
-                selectedProduct={selectedProduct}
-                onSelect={setSelectedProduct}
-                onAddNew={handleAddProduct}
-              />
+      <main className="max-w-7xl mx-auto px-6 lg:px-8 py-8 lg:py-12">
+        {/* Welcome section */}
+        <div className="mb-10 animate-fade-in">
+          <h2
+            className="text-2xl lg:text-3xl font-display font-semibold mb-2 text-balance"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {welcomeMessage}
+          </h2>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            Select a product or create a new one to manage documents.
+          </p>
+        </div>
 
-              {/* Quick tips */}
-              <div className="mt-8 p-5 bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-900/20 dark:to-violet-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
-                <h4 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        {/* Stats row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+          {[
+            {
+              label: 'Products',
+              value: totalProducts,
+              icon: (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              )
+            },
+            {
+              label: 'Documents',
+              value: totalDocuments,
+              icon: (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              )
+            },
+            {
+              label: 'Max Size',
+              value: `${maxFileSize}MB`,
+              icon: (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+              )
+            },
+            {
+              label: 'Storage',
+              value: 'Cloud',
+              icon: (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+              )
+            },
+          ].map((stat, idx) => (
+            <div
+              key={stat.label}
+              className={`card p-5 animate-slide-up stagger-${idx + 1}`}
+              style={{ opacity: 0 }}
+            >
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'var(--accent-subtle)' }}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    style={{ color: 'var(--accent-primary)' }}
+                  >
+                    {stat.icon}
                   </svg>
-                  Quick Tips
-                </h4>
-                <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                </div>
+                <div>
+                  <p
+                    className="text-xl font-display font-semibold"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {stat.value}
+                  </p>
+                  <p
+                    className="text-xs font-medium uppercase tracking-wider"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    {stat.label}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Main content grid */}
+        <div className="grid lg:grid-cols-12 gap-8">
+          {/* Sidebar */}
+          <div className="lg:col-span-4 xl:col-span-3">
+            <div className="lg:sticky lg:top-24 space-y-6">
+              {/* Product selector */}
+              <div>
+                <label
+                  className="block text-xs font-semibold uppercase tracking-wider mb-3"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  Select Product
+                </label>
+                <ProductDropdown
+                  products={products}
+                  selectedProduct={selectedProduct}
+                  onSelect={setSelectedProduct}
+                  onAddNew={handleAddProduct}
+                />
+              </div>
+
+              {/* Quick tips card */}
+              <div
+                className="p-5 rounded-2xl"
+                style={{
+                  background: 'var(--accent-subtle)',
+                  border: '1px solid var(--accent-tertiary)'
+                }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    style={{ color: 'var(--accent-primary)' }}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  <h4
+                    className="font-semibold text-sm"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    Quick Tips
+                  </h4>
+                </div>
+                <ul className="space-y-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <li className="flex items-start gap-2">
-                    <span className="text-indigo-500 mt-1">•</span>
-                    Create products to organize your documents
+                    <span style={{ color: 'var(--accent-primary)' }}>1.</span>
+                    Create products to organize documents
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-indigo-500 mt-1">•</span>
-                    Drag & drop files to upload quickly
+                    <span style={{ color: 'var(--accent-primary)' }}>2.</span>
+                    Drag & drop files for quick uploads
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-indigo-500 mt-1">•</span>
-                    Documents are stored securely in the cloud
+                    <span style={{ color: 'var(--accent-primary)' }}>3.</span>
+                    All files are stored securely in cloud
                   </li>
                 </ul>
               </div>
             </div>
           </div>
 
-          {/* Document uploader */}
-          <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+          {/* Main content area */}
+          <div className="lg:col-span-8 xl:col-span-9">
+            <div className="card-elevated p-6 lg:p-8">
               {selectedProduct ? (
                 <>
-                  <div className="mb-6">
-                    <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white mb-1">
-                      {selectedProduct.name}
-                    </h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <div className="mb-6 pb-6" style={{ borderBottom: '1px solid var(--border-primary)' }}>
+                    <div className="flex items-center gap-3 mb-1">
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ background: 'var(--accent-primary)' }}
+                      />
+                      <h3
+                        className="text-xl font-display font-semibold"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
+                        {selectedProduct.name}
+                      </h3>
+                    </div>
+                    <p
+                      className="text-sm ml-5"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
                       Upload and manage documents for this product
                     </p>
                   </div>
@@ -428,21 +531,37 @@ export default function Dashboard({
                     documents={documents}
                     onUpload={handleUpload}
                     onDelete={handleDeleteDocument}
+                    onView={handleViewDocument}
                     maxFileSize={maxFileSize}
                     allowedTypes={allowedTypes}
                   />
                 </>
               ) : (
-                <div className="text-center py-16">
-                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                    <svg className="w-10 h-10 text-slate-300 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="text-center py-16 lg:py-24">
+                  <div
+                    className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center"
+                    style={{ background: 'var(--bg-tertiary)' }}
+                  >
+                    <svg
+                      className="w-10 h-10"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-display font-semibold text-slate-900 dark:text-white mb-2">
+                  <h3
+                    className="text-xl font-display font-semibold mb-2"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
                     No Product Selected
                   </h3>
-                  <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  <p
+                    className="text-sm max-w-sm mx-auto"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
                     Select a product from the dropdown or create a new one to start uploading documents.
                   </p>
                 </div>

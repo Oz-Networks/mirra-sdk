@@ -32,7 +32,26 @@
       "type": "color",
       "label": "Primary Color",
       "description": "The main accent color for buttons and highlights",
-      "default": "#6366F1"
+      "default": "#c2410c"
+    },
+    {
+      "id": "secondaryColor",
+      "type": "color",
+      "label": "Secondary Color",
+      "description": "A lighter variant of the primary color for hover states",
+      "default": "#ea580c"
+    },
+    {
+      "id": "colorTheme",
+      "type": "select",
+      "label": "Default Color Theme",
+      "description": "The default theme when users first visit",
+      "default": "system",
+      "options": [
+        { "value": "system", "label": "System Preference" },
+        { "value": "light", "label": "Light Mode" },
+        { "value": "dark", "label": "Dark Mode" }
+      ]
     },
     {
       "id": "logo",

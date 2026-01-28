@@ -1,0 +1,124 @@
+{
+  "id": "product-knowledge-chat",
+  "name": "Product Knowledge Base Chat",
+  "description": "A customer-facing chat interface for product support. Customers can select a product and ask technical questions, with AI-powered answers based on your uploaded documentation.",
+  "version": "1.0.0",
+  "category": "support",
+  "tags": ["chat", "knowledge-base", "support", "ai", "documents", "customer-service"],
+  "icon": "./assets/icon.png",
+  "screenshots": [
+    "./assets/screenshot-1.png"
+  ],
+  "page": {
+    "type": "nextjs",
+    "entryPoint": "page.tsx"
+  },
+  "dependencies": {
+    "scripts": [],
+    "resources": []
+  },
+  "configurationSchema": [
+    {
+      "id": "pageName",
+      "type": "string",
+      "label": "Page Name",
+      "description": "The name displayed in the browser tab",
+      "default": "Product Support",
+      "required": true,
+      "placeholder": "e.g., Acme Support Center"
+    },
+    {
+      "id": "companyName",
+      "type": "string",
+      "label": "Company Name",
+      "description": "Your company or brand name",
+      "default": "Support",
+      "required": true,
+      "placeholder": "e.g., Acme Inc"
+    },
+    {
+      "id": "welcomeTitle",
+      "type": "string",
+      "label": "Welcome Title",
+      "description": "The main heading shown to customers",
+      "default": "How can we help you today?",
+      "placeholder": "e.g., Welcome to Acme Support"
+    },
+    {
+      "id": "welcomeSubtitle",
+      "type": "string",
+      "label": "Welcome Subtitle",
+      "description": "Supporting text shown below the title",
+      "default": "Select a product and ask any question about features, setup, or troubleshooting.",
+      "placeholder": "e.g., Ask us anything about our products"
+    },
+    {
+      "id": "primaryColor",
+      "type": "color",
+      "label": "Primary Color",
+      "description": "The main accent color for buttons and highlights",
+      "default": "#0891b2"
+    },
+    {
+      "id": "secondaryColor",
+      "type": "color",
+      "label": "Secondary Color",
+      "description": "A lighter variant for hover states",
+      "default": "#06b6d4"
+    },
+    {
+      "id": "colorTheme",
+      "type": "select",
+      "label": "Default Color Theme",
+      "description": "The default theme when users first visit",
+      "default": "light",
+      "options": [
+        { "value": "system", "label": "System Preference" },
+        { "value": "light", "label": "Light Mode" },
+        { "value": "dark", "label": "Dark Mode" }
+      ]
+    },
+    {
+      "id": "aiModel",
+      "type": "select",
+      "label": "AI Model",
+      "description": "The AI model to use for answering questions",
+      "default": "claude-3-haiku-20240307",
+      "options": [
+        { "value": "claude-3-haiku-20240307", "label": "Claude 3 Haiku (Fast)" },
+        { "value": "claude-3-5-sonnet-20241022", "label": "Claude 3.5 Sonnet (Balanced)" }
+      ]
+    },
+    {
+      "id": "systemPrompt",
+      "type": "textarea",
+      "label": "System Prompt",
+      "description": "Instructions for the AI assistant (advanced)",
+      "default": "You are a helpful product support assistant. Answer questions based on the provided documentation. Be concise, accurate, and friendly. If you don't know the answer or the documentation doesn't cover the topic, say so honestly and suggest the customer contact support directly.",
+      "placeholder": "Enter custom instructions for the AI..."
+    },
+    {
+      "id": "showSources",
+      "type": "boolean",
+      "label": "Show Sources",
+      "description": "Display source documents used to generate answers",
+      "default": true
+    },
+    {
+      "id": "suggestedQuestions",
+      "type": "textarea",
+      "label": "Suggested Questions",
+      "description": "Example questions to show customers (one per line)",
+      "default": "How do I get started?\nWhat are the main features?\nHow do I troubleshoot common issues?",
+      "placeholder": "How do I get started?\nWhat features are available?"
+    }
+  ],
+  "pricing": {
+    "setupFee": 0,
+    "monthlyFee": 0,
+    "estimatedUsageCost": {
+      "perUse": 0,
+      "perMonth": 0
+    }
+  }
+}
