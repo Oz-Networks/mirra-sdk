@@ -162,11 +162,11 @@ export interface MemorySearchArgs {
 export interface MemoryQueryArgs {
   type?: string; // Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against meta_item_type, subType, or semantic_roles
   filters?: any; // Additional filters (not yet implemented)
-  limit?: number; // Maximum results (default: 50, max: 100). Use smaller limits to get complete results without truncation
+  limit?: number; // Maximum results (default: 50, max: 100)
   offset?: number; // Pagination offset for fetching more results (default: 0)
 }
 export interface MemoryFindOneArgs {
-  filters: any; // Filter criteria (e.g., { id: "..." })
+  filters: any; // Filter criteria. Use { id: "entity_id" } to find by ID (recommended), or { name: "entity name" } to find by name.
 }
 export interface MemoryUpdateArgs {
   id: string; // Entity ID to update
@@ -1463,7 +1463,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Semantic search across memory entities with advanced filtering
+     * Semantic search across memory entities with advanced filtering. IMPORTANT: Search results return TRUNCATED content (max 300 chars) to prevent huge payloads. To get the full untruncated text of a specific entity, use `findOne` with the entity ID after searching. Recommended workflow: (1) Use `search` to find matching entities, (2) Use `findOne` with { filters: { id: "entity_id" } } to retrieve full content for entities you need.
      * @param args.query - Search query text for semantic matching
      * @param args.types - Filter by entity types (e.g., ["TASK", "NOTE", "IDEA"]) (optional)
      * @param args.startTime - Filter entities created after this timestamp (Unix milliseconds) (optional)
@@ -1480,10 +1480,10 @@ function createMemoryAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Query memory entities with filters. Returns lightweight summaries with normalized fields. Use type="task" to list all tasks (including those created via createTask).
+     * Query memory entities with filters. Returns lightweight summaries with TRUNCATED content (max 200 chars) to prevent large payloads. Use type="task" to list all tasks (including those created via createTask). To get full untruncated content for a specific entity, use `findOne` with the entity ID.
      * @param args.type - Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against meta_item_type, subType, or semantic_roles (optional)
      * @param args.filters - Additional filters (not yet implemented) (optional)
-     * @param args.limit - Maximum results (default: 50, max: 100). Use smaller limits to get complete results without truncation (optional)
+     * @param args.limit - Maximum results (default: 50, max: 100) (optional)
      * @param args.offset - Pagination offset for fetching more results (default: 0) (optional)
      */
     query: async (args: MemoryQueryArgs): Promise<any> => {
@@ -1495,8 +1495,8 @@ function createMemoryAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Find a single entity matching criteria
-     * @param args.filters - Filter criteria (e.g., { id: "..." })
+     * Find a single entity by ID or name. Returns the FULL untruncated entity content. Use this after `search` or `query` to retrieve complete content for a specific entity (since those operations return truncated results to prevent large payloads).
+     * @param args.filters - Filter criteria. Use { id: "entity_id" } to find by ID (recommended), or { name: "entity name" } to find by name.
      */
     findOne: async (args: MemoryFindOneArgs): Promise<any> => {
       return sdk.resources.call({
