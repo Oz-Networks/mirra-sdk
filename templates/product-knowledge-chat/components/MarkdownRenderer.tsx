@@ -63,13 +63,18 @@ export default function MarkdownRenderer({ content }: { content: string }) {
             const codeString = String(children).replace(/^\n+|\n+$/g, '');
             return (
               <div className="md-code-block">
-                <div className="md-code-header">
-                  {match && <span className="md-code-lang">{match[1]}</span>}
-                  <CopyButton code={codeString} />
+                {match && (
+                  <div className="md-code-header">
+                    <span className="md-code-lang">{match[1]}</span>
+                    <CopyButton code={codeString} />
+                  </div>
+                )}
+                <div className="md-pre-wrap">
+                  {!match && <CopyButton code={codeString} />}
+                  <pre className="md-pre">
+                    <code className={className} {...props}>{codeString}</code>
+                  </pre>
                 </div>
-                <pre className="md-pre">
-                  <code className={className} {...props}>{codeString}</code>
-                </pre>
               </div>
             );
           }

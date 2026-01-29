@@ -508,6 +508,22 @@ body {
   background: var(--border-primary);
 }
 
+.md-pre-wrap {
+  position: relative;
+}
+
+.md-pre-wrap > .md-copy-btn {
+  position: absolute;
+  top: 0.4em;
+  right: 0.5em;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.md-code-block:hover .md-pre-wrap > .md-copy-btn {
+  opacity: 1;
+}
+
 .md-pre {
   margin: 0;
   padding: 0.85em 1em;
