@@ -76,6 +76,7 @@ export default function MarkdownRenderer({ content }: { content: string }) {
 
           return <code className="md-inline-code" {...props}>{children}</code>;
         },
+        pre: ({ children }) => <>{children}</>,
         hr: () => <hr className="md-hr" />,
         table: ({ children }) => (
           <div className="md-table-wrap">
