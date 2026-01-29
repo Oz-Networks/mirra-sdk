@@ -64,7 +64,7 @@ export default function Dashboard({
     setSyncError(null);
 
     try {
-      const productsResult = await sdk.memory.query({
+      const productsResult: any = await sdk.memory.query({
         type: 'product',
         limit: 100,
       });
@@ -80,7 +80,7 @@ export default function Dashboard({
         setProducts(loadedProducts);
       }
 
-      const linksResult = await sdk.memory.query({
+      const linksResult: any = await sdk.memory.query({
         type: 'document-product-link',
         limit: 500,
       });

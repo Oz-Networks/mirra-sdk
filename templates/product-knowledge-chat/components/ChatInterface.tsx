@@ -79,7 +79,7 @@ export default function ChatInterface({
   const loadProducts = async () => {
     setProductsLoading(true);
     try {
-      const result = await sdk.memory.query({
+      const result: any = await sdk.memory.query({
         type: 'product',
         limit: 100,
       });
@@ -108,7 +108,7 @@ export default function ChatInterface({
   const searchDocuments = async (query: string, productId: string): Promise<DocumentSource[]> => {
     try {
       // First, get document IDs linked to this product
-      const linksResult = await sdk.memory.query({
+      const linksResult: any = await sdk.memory.query({
         type: 'document-product-link',
         limit: 100,
       });
