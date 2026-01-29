@@ -84,10 +84,11 @@ export default function ChatInterface({
         limit: 100,
       });
 
-      if (result && result.length > 0) {
-        const loadedProducts = result.map((p: any) => ({
+      const items = Array.isArray(result) ? result : result?.data || [];
+      if (items.length > 0) {
+        const loadedProducts = items.map((p: any) => ({
           id: p.metadata?.productId || p.id,
-          name: p.metadata?.name || p.content,
+          name: p.metadata?.name || p.content || p.name,
         }));
         setProducts(loadedProducts);
 
@@ -112,10 +113,11 @@ export default function ChatInterface({
         limit: 100,
       });
 
-      const productDocIds = linksResult
-        ?.filter((link: any) => link.metadata?.productId === productId)
+      const linkItems = Array.isArray(linksResult) ? linksResult : linksResult?.data || [];
+      const productDocIds = linkItems
+        .filter((link: any) => link.metadata?.productId === productId)
         .map((link: any) => link.metadata?.documentId)
-        .filter(Boolean) || [];
+        .filter(Boolean);
 
       if (productDocIds.length === 0) {
         return [];

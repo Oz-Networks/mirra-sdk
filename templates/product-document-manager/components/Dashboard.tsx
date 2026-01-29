@@ -69,11 +69,12 @@ export default function Dashboard({
         limit: 100,
       });
 
-      if (productsResult && productsResult.length > 0) {
-        const loadedProducts = productsResult.map((p: any) => ({
+      const productItems = Array.isArray(productsResult) ? productsResult : productsResult?.data || [];
+      if (productItems.length > 0) {
+        const loadedProducts = productItems.map((p: any) => ({
           id: p.metadata?.productId || p.id,
           memoryId: p.id,
-          name: p.metadata?.name || p.content,
+          name: p.metadata?.name || p.content || p.name,
           createdAt: new Date(p.metadata?.createdAt || Date.now()),
         }));
         setProducts(loadedProducts);
@@ -84,9 +85,10 @@ export default function Dashboard({
         limit: 500,
       });
 
+      const linkItems = Array.isArray(linksResult) ? linksResult : linksResult?.data || [];
       const docProductMap: Record<string, string> = {};
-      if (linksResult && linksResult.length > 0) {
-        for (const link of linksResult) {
+      if (linkItems.length > 0) {
+        for (const link of linkItems) {
           const docId = link.metadata?.documentId;
           const prodId = link.metadata?.productId;
           if (docId && prodId) {
