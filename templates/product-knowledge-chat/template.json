@@ -91,7 +91,7 @@
     },
     {
       "id": "systemPrompt",
-      "type": "textarea",
+      "type": "string",
       "label": "System Prompt",
       "description": "Instructions for the AI assistant (advanced)",
       "default": "You are a helpful product support assistant. Answer questions based on the provided documentation. Be concise, accurate, and friendly. If you don't know the answer or the documentation doesn't cover the topic, say so honestly and suggest the customer contact support directly.",
@@ -106,7 +106,7 @@
     },
     {
       "id": "suggestedQuestions",
-      "type": "textarea",
+      "type": "string",
       "label": "Suggested Questions",
       "description": "Example questions to show customers (one per line)",
       "default": "How do I get started?\nWhat are the main features?\nHow do I troubleshoot common issues?",
