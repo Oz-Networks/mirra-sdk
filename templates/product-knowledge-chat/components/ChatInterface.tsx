@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { MirraSDK } from '@mirra-messenger/sdk';
 import { ThemeToggle } from '../providers/ThemeProvider';
 import ProductSelector from './ProductSelector';
+import MarkdownRenderer from './MarkdownRenderer';
 
 const sdk = new MirraSDK({
   apiKey: process.env.NEXT_PUBLIC_TEMPLATE_API_KEY!,
@@ -378,8 +379,10 @@ export default function ChatInterface({
                       message.role === 'user' ? 'message-user' : 'message-assistant'
                     } px-4 py-3`}
                   >
-                    <div className="prose text-sm">
-                      {message.content || (
+                    <div className="text-sm">
+                      {message.content ? (
+                        <MarkdownRenderer content={message.content} />
+                      ) : (
                         <div className="flex items-center gap-1">
                           <span className="typing-dot w-2 h-2 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
                           <span className="typing-dot w-2 h-2 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
