@@ -60,7 +60,7 @@ export default function MarkdownRenderer({ content }: { content: string }) {
           const isBlock = match || (typeof children === 'string' && children.includes('\n'));
 
           if (isBlock) {
-            const codeString = String(children).replace(/\n$/, '');
+            const codeString = String(children).replace(/^\n+|\n+$/g, '');
             return (
               <div className="md-code-block">
                 <div className="md-code-header">
@@ -68,7 +68,7 @@ export default function MarkdownRenderer({ content }: { content: string }) {
                   <CopyButton code={codeString} />
                 </div>
                 <pre className="md-pre">
-                  <code className={className} {...props}>{children}</code>
+                  <code className={className} {...props}>{codeString}</code>
                 </pre>
               </div>
             );
