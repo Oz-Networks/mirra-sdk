@@ -52,7 +52,7 @@ export default function ChatInterface({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [isStreaming] = useState(false);
   const [productsLoading, setProductsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -208,27 +208,20 @@ export default function ChatInterface({
         timestamp: new Date(),
       }]);
 
-      setIsStreaming(true);
-
-      // Stream the response
-      let fullContent = '';
-      for await (const chunk of sdk.ai.chatStream({
+      // Get AI response
+      const response: any = await sdk.ai.chat({
         messages: chatMessages,
         model: aiModel,
         temperature: 0.3,
         maxTokens: 1500,
-      })) {
-        if (!chunk.done && chunk.delta) {
-          fullContent += chunk.delta;
-          setMessages(prev => prev.map(msg =>
-            msg.id === assistantMessageId
-              ? { ...msg, content: fullContent }
-              : msg
-          ));
-        }
-      }
+      });
 
-      setIsStreaming(false);
+      const content = response?.content || response?.data?.content || response?.message || '';
+      setMessages(prev => prev.map(msg =>
+        msg.id === assistantMessageId
+          ? { ...msg, content }
+          : msg
+      ));
     } catch (err: any) {
       console.error('Error getting response:', err);
       setError('Failed to get a response. Please try again.');
@@ -236,7 +229,6 @@ export default function ChatInterface({
       setMessages(prev => prev.filter(m => m.content || m.role === 'user'));
     } finally {
       setIsLoading(false);
-      setIsStreaming(false);
     }
   };
 
