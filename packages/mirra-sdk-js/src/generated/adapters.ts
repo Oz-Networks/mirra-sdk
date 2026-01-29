@@ -952,6 +952,19 @@ export interface MirraMessagingCreateGroupArgs {
   category?: string; // Category for organization: "family", "friends", "work", or "other" (default: "other")
   memberIds?: any[]; // Array of user IDs to add as initial members
 }
+export interface MirraMessagingSearchMessagesArgs {
+  query: string; // Keywords to search for
+  contactName?: string; // Contact name to filter by sender (resolved to userId)
+  groupName?: string; // Group name to limit search (resolved to groupId)
+  groupId?: string; // Group ID to limit search (use groupName for name-based lookup)
+  scope?: string; // "direct", "group", or "all" (default)
+  startDate?: string; // ISO date for time range start
+  endDate?: string; // ISO date for time range end
+  includeFullText?: boolean; // Include full message text (default: false, returns snippets)
+  snippetLength?: number; // Max chars for snippet (default: 200)
+  limit?: number; // Max results (default 20, max 50)
+  offset?: number; // Pagination offset
+}
 
 
 // ============================================================================
@@ -3821,6 +3834,28 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'mirra-messaging',
         method: 'createGroup',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search chat messages by keywords. Returns summaries by default to avoid overwhelming context. Use includeFullText for complete messages.
+     * @param args.query - Keywords to search for
+     * @param args.contactName - Contact name to filter by sender (resolved to userId) (optional)
+     * @param args.groupName - Group name to limit search (resolved to groupId) (optional)
+     * @param args.groupId - Group ID to limit search (use groupName for name-based lookup) (optional)
+     * @param args.scope - "direct", "group", or "all" (default) (optional)
+     * @param args.startDate - ISO date for time range start (optional)
+     * @param args.endDate - ISO date for time range end (optional)
+     * @param args.includeFullText - Include full message text (default: false, returns snippets) (optional)
+     * @param args.snippetLength - Max chars for snippet (default: 200) (optional)
+     * @param args.limit - Max results (default 20, max 50) (optional)
+     * @param args.offset - Pagination offset (optional)
+     */
+    searchMessages: async (args: MirraMessagingSearchMessagesArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'mirra-messaging',
+        method: 'searchMessages',
         params: args || {}
       });
     }
