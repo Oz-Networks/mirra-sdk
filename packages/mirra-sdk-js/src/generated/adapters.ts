@@ -177,6 +177,18 @@ export interface MemoryUpdateArgs {
 export interface MemoryDeleteArgs {
   id: string; // Entity ID to delete
 }
+export interface MemoryShareArgs {
+  entityId: string; // Entity ID to share
+  targetGraphId: string; // Target graph ID to share with (group ID or user contact graph ID)
+  shareReason?: string; // Optional reason for sharing
+}
+export interface MemoryUnshareArgs {
+  entityId: string; // Entity ID to unshare
+  graphId: string; // Graph ID to remove sharing from
+}
+export interface MemoryListGraphsArgs {
+  entityId: string; // Entity ID to list graphs for
+}
 
 // AI Services Adapter Types
 export interface AiChatArgs {
@@ -966,6 +978,79 @@ export interface MirraMessagingSearchMessagesArgs {
   offset?: number; // Pagination offset
 }
 
+// Moltbook Adapter Types
+export interface MoltbookRegisterAgentArgs {
+  agentName: string; // Unique name for your agent (alphanumeric, underscores allowed)
+}
+export interface MoltbookCreatePostArgs {
+  content: string; // Post content/body text
+  title?: string; // Post title (optional)
+  type?: string; // Post type: "text" or "link" (default: text)
+  url?: string; // URL for link posts
+  submolt?: string; // Community name to post in (optional)
+}
+export interface MoltbookGetPostsArgs {
+  sort?: string; // Sort order: "hot", "new", "top", "rising" (default: hot)
+  limit?: number; // Max posts to return (default: 25)
+  submolt?: string; // Filter by community name
+}
+export interface MoltbookGetPostArgs {
+  postId: string; // Post ID
+}
+export interface MoltbookDeletePostArgs {
+  postId: string; // Post ID to delete
+}
+export interface MoltbookCreateCommentArgs {
+  postId: string; // Post ID to comment on
+  content: string; // Comment content
+  parentId?: string; // Parent comment ID for replies
+}
+export interface MoltbookGetCommentsArgs {
+  postId: string; // Post ID
+  sort?: string; // Sort: "top", "new", "controversial" (default: top)
+}
+export interface MoltbookUpvotePostArgs {
+  postId: string; // Post ID to upvote
+}
+export interface MoltbookDownvotePostArgs {
+  postId: string; // Post ID to downvote
+}
+export interface MoltbookUpvoteCommentArgs {
+  commentId: string; // Comment ID to upvote
+}
+export interface MoltbookCreateSubmoltArgs {
+  name: string; // Community name (alphanumeric, underscores)
+  description: string; // Community description
+}
+export interface MoltbookGetSubmoltArgs {
+  name: string; // Community name
+}
+export interface MoltbookSubscribeArgs {
+  name: string; // Community name to subscribe to
+}
+export interface MoltbookUnsubscribeArgs {
+  name: string; // Community name to unsubscribe from
+}
+export interface MoltbookFollowAgentArgs {
+  agentName: string; // Agent name to follow
+}
+export interface MoltbookUnfollowAgentArgs {
+  agentName: string; // Agent name to unfollow
+}
+export interface MoltbookGetProfileArgs {
+  agentName: string; // Agent name
+}
+export interface MoltbookUpdateProfileArgs {
+  description?: string; // New profile description
+  metadata?: any; // Additional metadata
+}
+export interface MoltbookGetFeedArgs {
+  limit?: number; // Max posts to return (default: 25)
+}
+export interface MoltbookSearchArgs {
+  query: string; // Search query
+}
+
 
 // ============================================================================
 // Adapter Factory Functions
@@ -1542,6 +1627,45 @@ function createMemoryAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'memory',
         method: 'delete',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Share a memory entity with another graph (group or contact). Only the creator can share memories. Recipients can view and complete tasks but cannot edit or delete.
+     * @param args.entityId - Entity ID to share
+     * @param args.targetGraphId - Target graph ID to share with (group ID or user contact graph ID)
+     * @param args.shareReason - Optional reason for sharing (optional)
+     */
+    share: async (args: MemoryShareArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'share',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Remove sharing of a memory entity from a graph. Only the creator can unshare. Cannot unshare from the primary graph (where it was created).
+     * @param args.entityId - Entity ID to unshare
+     * @param args.graphId - Graph ID to remove sharing from
+     */
+    unshare: async (args: MemoryUnshareArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'unshare',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all graphs a memory entity is shared with, including share history and metadata.
+     * @param args.entityId - Entity ID to list graphs for
+     */
+    listGraphs: async (args: MemoryListGraphsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'listGraphs',
         params: args || {}
       });
     }
@@ -3862,6 +3986,298 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
   };
 }
 
+/**
+ * Moltbook Adapter
+ * Category: social
+ */
+function createMoltbookAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Register a new agent on Moltbook. Returns API key and claim URL for verification.
+     * @param args.agentName - Unique name for your agent (alphanumeric, underscores allowed)
+     */
+    registerAgent: async (args: MoltbookRegisterAgentArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'registerAgent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new post on Moltbook (rate limited: 1 post per 30 minutes)
+     * @param args.content - Post content/body text
+     * @param args.title - Post title (optional) (optional)
+     * @param args.type - Post type: "text" or "link" (default: text) (optional)
+     * @param args.url - URL for link posts (optional)
+     * @param args.submolt - Community name to post in (optional) (optional)
+     */
+    createPost: async (args: MoltbookCreatePostArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'createPost',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get posts from Moltbook feed
+     * @param args.sort - Sort order: "hot", "new", "top", "rising" (default: hot) (optional)
+     * @param args.limit - Max posts to return (default: 25) (optional)
+     * @param args.submolt - Filter by community name (optional)
+     */
+    getPosts: async (args: MoltbookGetPostsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'getPosts',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a single post by ID
+     * @param args.postId - Post ID
+     */
+    getPost: async (args: MoltbookGetPostArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'getPost',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete your own post
+     * @param args.postId - Post ID to delete
+     */
+    deletePost: async (args: MoltbookDeletePostArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'deletePost',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Add a comment to a post (rate limited: 50 comments per hour)
+     * @param args.postId - Post ID to comment on
+     * @param args.content - Comment content
+     * @param args.parentId - Parent comment ID for replies (optional)
+     */
+    createComment: async (args: MoltbookCreateCommentArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'createComment',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get comments on a post
+     * @param args.postId - Post ID
+     * @param args.sort - Sort: "top", "new", "controversial" (default: top) (optional)
+     */
+    getComments: async (args: MoltbookGetCommentsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'getComments',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Upvote a post
+     * @param args.postId - Post ID to upvote
+     */
+    upvotePost: async (args: MoltbookUpvotePostArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'upvotePost',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Downvote a post
+     * @param args.postId - Post ID to downvote
+     */
+    downvotePost: async (args: MoltbookDownvotePostArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'downvotePost',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Upvote a comment
+     * @param args.commentId - Comment ID to upvote
+     */
+    upvoteComment: async (args: MoltbookUpvoteCommentArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'upvoteComment',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new community (submolt)
+     * @param args.name - Community name (alphanumeric, underscores)
+     * @param args.description - Community description
+     */
+    createSubmolt: async (args: MoltbookCreateSubmoltArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'createSubmolt',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all communities
+     */
+    getSubmolts: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'getSubmolts',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get community details
+     * @param args.name - Community name
+     */
+    getSubmolt: async (args: MoltbookGetSubmoltArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'getSubmolt',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Subscribe to a community
+     * @param args.name - Community name to subscribe to
+     */
+    subscribe: async (args: MoltbookSubscribeArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'subscribe',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Unsubscribe from a community
+     * @param args.name - Community name to unsubscribe from
+     */
+    unsubscribe: async (args: MoltbookUnsubscribeArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'unsubscribe',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Follow another agent
+     * @param args.agentName - Agent name to follow
+     */
+    followAgent: async (args: MoltbookFollowAgentArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'followAgent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Unfollow an agent
+     * @param args.agentName - Agent name to unfollow
+     */
+    unfollowAgent: async (args: MoltbookUnfollowAgentArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'unfollowAgent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get an agent's profile
+     * @param args.agentName - Agent name
+     */
+    getProfile: async (args: MoltbookGetProfileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'getProfile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get your own agent profile
+     */
+    getMyProfile: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'getMyProfile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update your agent profile
+     * @param args.description - New profile description (optional)
+     * @param args.metadata - Additional metadata (optional)
+     */
+    updateProfile: async (args: MoltbookUpdateProfileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'updateProfile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get personalized feed (subscriptions + follows)
+     * @param args.limit - Max posts to return (default: 25) (optional)
+     */
+    getFeed: async (args: MoltbookGetFeedArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'getFeed',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search posts, agents, and communities
+     * @param args.query - Search query
+     */
+    search: async (args: MoltbookSearchArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'search',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Check agent claim/verification status
+     */
+    getStatus: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'moltbook',
+        method: 'getStatus',
+        params: args || {}
+      });
+    }
+  };
+}
+
 
 // ============================================================================
 // Exports
@@ -3888,5 +4304,6 @@ export const generatedAdapters = {
   crypto: createCryptoAdapter,
   scripts: createScriptsAdapter,
   feedback: createFeedbackAdapter,
-  mirraMessaging: createMirraMessagingAdapter
+  mirraMessaging: createMirraMessagingAdapter,
+  moltbook: createMoltbookAdapter
 };
