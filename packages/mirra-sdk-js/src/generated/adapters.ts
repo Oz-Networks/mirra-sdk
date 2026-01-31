@@ -676,15 +676,15 @@ export interface TwitterPostTweetArgs {
   text: string; // Tweet text (max 280 characters)
 }
 export interface TwitterGetUserTweetsArgs {
-  userId?: string; // Twitter user ID (recommended for stability and speed)
-  userName?: string; // Twitter username/screen name (alternative to userId)
-  cursor?: string; // Pagination cursor for next page of results
-  includeReplies?: boolean; // Whether to include replies in results (default: false)
+  userId?: string; // Twitter user ID (recommended for stability and speed). Provide userId OR userName, not both.
+  userName?: string; // Twitter username/handle without @ symbol (e.g., "elonmusk"). Provide userName OR userId, not both.
+  cursor?: string; // Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values.
+  includeReplies?: boolean; // Whether to include replies in results. Defaults to false (only original tweets).
 }
 export interface TwitterAdvancedSearchArgs {
-  query: string; // Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR "machine learning"". See Twitter advanced search operators for full syntax.
-  queryType?: string; // Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest".
-  cursor?: string; // Pagination cursor for next page of results
+  query: string; // Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR \"machine learning\"". Supported operators: from:user, to:user, since:YYYY-MM-DD, until:YYYY-MM-DD, lang:xx, filter:media, filter:links, -filter:retweets, AND, OR, -keyword, "exact phrase".
+  queryType?: string; // Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". Only these two values are valid.
+  cursor?: string; // Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values.
 }
 
 // Trello Adapter Types
@@ -3115,11 +3115,11 @@ function createTwitterAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Retrieve tweets from a Twitter user. Must provide either userId OR userName.
-     * @param args.userId - Twitter user ID (recommended for stability and speed) (optional)
-     * @param args.userName - Twitter username/screen name (alternative to userId) (optional)
-     * @param args.cursor - Pagination cursor for next page of results (optional)
-     * @param args.includeReplies - Whether to include replies in results (default: false) (optional)
+     * Retrieve tweets from a Twitter user. Must provide either userId OR userName (not both). NOTE: This operation ONLY accepts the 4 parameters listed below. There is NO maxResults, limit, count, or similar parameters - the API returns ~20 tweets per page, use cursor for pagination.
+     * @param args.userId - Twitter user ID (recommended for stability and speed). Provide userId OR userName, not both. (optional)
+     * @param args.userName - Twitter username/handle without @ symbol (e.g., "elonmusk"). Provide userName OR userId, not both. (optional)
+     * @param args.cursor - Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values. (optional)
+     * @param args.includeReplies - Whether to include replies in results. Defaults to false (only original tweets). (optional)
      */
     getUserTweets: async (args: TwitterGetUserTweetsArgs): Promise<any> => {
       return sdk.resources.call({
@@ -3130,10 +3130,10 @@ function createTwitterAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Search tweets using advanced Twitter search syntax. Supports operators like from:username, since:date, until:date, lang:en, and boolean operators (AND, OR).
-     * @param args.query - Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR "machine learning"". See Twitter advanced search operators for full syntax.
-     * @param args.queryType - Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". (optional)
-     * @param args.cursor - Pagination cursor for next page of results (optional)
+     * Search tweets using advanced Twitter search syntax. Supports operators like from:username, since:date, until:date, lang:en, and boolean operators (AND, OR). NOTE: This operation ONLY accepts the 3 parameters listed below (query, queryType, cursor). There is NO minFollowers, maxResults, limit, or other filtering parameters - filter results client-side after fetching.
+     * @param args.query - Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR \"machine learning\"". Supported operators: from:user, to:user, since:YYYY-MM-DD, until:YYYY-MM-DD, lang:xx, filter:media, filter:links, -filter:retweets, AND, OR, -keyword, "exact phrase".
+     * @param args.queryType - Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". Only these two values are valid. (optional)
+     * @param args.cursor - Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values. (optional)
      */
     advancedSearch: async (args: TwitterAdvancedSearchArgs): Promise<any> => {
       return sdk.resources.call({
