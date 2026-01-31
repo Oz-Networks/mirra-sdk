@@ -27,6 +27,18 @@ export interface FlowsCreateEventFlowArgs {
   scriptId: string; // ID of the script to execute when triggered
   scriptInput?: any; // Optional static input data for the script
 }
+export interface FlowsCreateFlowArgs {
+  title?: string; // Flow title. Required if providing inline code.
+  description?: string; // Detailed description of what the flow does
+  code?: string; // Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId.
+  scriptId?: string; // ID of existing deployed script. Cannot use with code.
+  schedule?: string; // Cron expression for time-based flows (e.g., "0 9 * * *"). Cannot use with eventType/eventFilter/trigger.
+  eventType?: string; // Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type.
+  eventFilter?: any; // Full event filter with operator and conditions array for complex filtering.
+  trigger?: any; // Legacy nested trigger structure. Prefer eventType or eventFilter instead.
+  scriptInput?: any; // Optional static input data for the script
+  enabled?: boolean; // Whether the flow is enabled (default: true)
+}
 export interface FlowsListFlowsArgs {
   status?: string; // Filter by status: active, paused, completed, failed
 }
@@ -1126,6 +1138,59 @@ COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.acti
       return sdk.resources.call({
         resourceId: 'flows',
         method: 'createEventFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a flow (event-triggered or time-scheduled). This is the unified, simplified interface for flow creation.
+
+TRIGGER TYPE (provide exactly one):
+- schedule: Cron expression for time-based flows (e.g., "0 9 * * *")
+- eventType: Event type shorthand for event flows (e.g., "telegram.message")
+- eventFilter: Full filter object for complex event conditions
+- trigger: Legacy nested structure (still supported)
+
+SCRIPT (provide exactly one):
+- code: Inline script code - will auto-create, deploy, and link the script
+- scriptId: ID of an existing deployed script
+
+EXAMPLES:
+
+Time flow with inline code:
+{
+  title: "Daily Report",
+  schedule: "0 9 * * *",
+  code: "async (ctx) => { await ctx.mirra.telegram.sendMessage({...}); return { done: true }; }"
+}
+
+Event flow with eventType shorthand:
+{
+  title: "Handle Messages",
+  eventType: "telegram.message",
+  code: "async (event, ctx) => { return { handled: true }; }"
+}
+
+Event flow with existing script:
+{
+  eventType: "gmail.email_received",
+  scriptId: "existing-script-id"
+}
+     * @param args.title - Flow title. Required if providing inline code. (optional)
+     * @param args.description - Detailed description of what the flow does (optional)
+     * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId. (optional)
+     * @param args.scriptId - ID of existing deployed script. Cannot use with code. (optional)
+     * @param args.schedule - Cron expression for time-based flows (e.g., "0 9 * * *"). Cannot use with eventType/eventFilter/trigger. (optional)
+     * @param args.eventType - Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type. (optional)
+     * @param args.eventFilter - Full event filter with operator and conditions array for complex filtering. (optional)
+     * @param args.trigger - Legacy nested trigger structure. Prefer eventType or eventFilter instead. (optional)
+     * @param args.scriptInput - Optional static input data for the script (optional)
+     * @param args.enabled - Whether the flow is enabled (default: true) (optional)
+     */
+    createFlow: async (args: FlowsCreateFlowArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'createFlow',
         params: args || {}
       });
     },
