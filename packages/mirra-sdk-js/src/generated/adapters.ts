@@ -13,6 +13,18 @@ import { MirraSDK } from '../client';
 // ============================================================================
 
 // Flows Adapter Types
+export interface FlowsCreateFlowArgs {
+  title?: string; // Flow title. Required if providing inline code.
+  description?: string; // Detailed description of what the flow does
+  code?: string; // Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId.
+  scriptId?: string; // ID of existing deployed script. Cannot use with code.
+  schedule?: string; // Cron expression for time-based flows (e.g., "0 9 * * *"). Cannot use with eventType/eventFilter/trigger.
+  eventType?: string; // Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type.
+  eventFilter?: any; // Full event filter with operator and conditions array for complex filtering.
+  trigger?: any; // Legacy nested trigger structure. Prefer eventType or eventFilter instead.
+  scriptInput?: any; // Optional static input data for the script
+  enabled?: boolean; // Whether the flow is enabled (default: true)
+}
 export interface FlowsCreateTimeFlowArgs {
   title: string; // Flow title
   description: string; // Detailed description of what the flow does
@@ -26,18 +38,6 @@ export interface FlowsCreateEventFlowArgs {
   trigger: any; // Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
   scriptId: string; // ID of the script to execute when triggered
   scriptInput?: any; // Optional static input data for the script
-}
-export interface FlowsCreateFlowArgs {
-  title?: string; // Flow title. Required if providing inline code.
-  description?: string; // Detailed description of what the flow does
-  code?: string; // Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId.
-  scriptId?: string; // ID of existing deployed script. Cannot use with code.
-  schedule?: string; // Cron expression for time-based flows (e.g., "0 9 * * *"). Cannot use with eventType/eventFilter/trigger.
-  eventType?: string; // Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type.
-  eventFilter?: any; // Full event filter with operator and conditions array for complex filtering.
-  trigger?: any; // Legacy nested trigger structure. Prefer eventType or eventFilter instead.
-  scriptInput?: any; // Optional static input data for the script
-  enabled?: boolean; // Whether the flow is enabled (default: true)
 }
 export interface FlowsListFlowsArgs {
   status?: string; // Filter by status: active, paused, completed, failed
@@ -1084,65 +1084,6 @@ export interface MoltbookSearchArgs {
 function createFlowsAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new time-based flow with cron schedule
-     * @param args.title - Flow title
-     * @param args.description - Detailed description of what the flow does
-     * @param args.schedule - Cron expression for scheduling (e.g., "0 9 * * *" for daily at 9am)
-     * @param args.scriptId - ID of the script to execute when triggered
-     * @param args.scriptInput - Optional static input data for the script (optional)
-     */
-    createTimeFlow: async (args: FlowsCreateTimeFlowArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'createTimeFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create an event-based flow with pre-filtering conditions.
-
-EFFICIENCY RULE: Always filter in eventFilter, not the script.
-- eventFilter conditions: FREE (evaluated in-memory before script runs)
-- Script filtering: EXPENSIVE (invokes Lambda for every event)
-
-BAD: Trigger on "telegram.message" with no filter → script checks sender
-GOOD: Trigger on "telegram.message" with eventFilter for sender
-
-TRIGGER STRUCTURE:
-{
-  type: "event",
-  config: {
-    eventFilter: {
-      operator: "and" | "or",
-      conditions: [
-        { operator: "equals", field: "type", value: "call.ended" },
-        { operator: "contains", field: "content.text", value: "urgent" }
-      ]
-    }
-  }
-}
-
-IMPORTANT: Use field: "type" (not "eventType") to filter by event type. This is required for testFlow to auto-generate test events.
-
-VALID OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not
-
-COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.action, telegram.message, gmail.email_received
-     * @param args.title - Flow title
-     * @param args.description - Detailed description of what the flow does
-     * @param args.trigger - Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
-     * @param args.scriptId - ID of the script to execute when triggered
-     * @param args.scriptInput - Optional static input data for the script (optional)
-     */
-    createEventFlow: async (args: FlowsCreateEventFlowArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'createEventFlow',
-        params: args || {}
-      });
-    },
-
-    /**
      * Create a flow (event-triggered or time-scheduled). This is the unified, simplified interface for flow creation.
 
 TRIGGER TYPE (provide exactly one):
@@ -1191,6 +1132,65 @@ Event flow with existing script:
       return sdk.resources.call({
         resourceId: 'flows',
         method: 'createFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new time-based flow with cron schedule. NOTE: Consider using createFlow instead for a simpler interface with inline code support.
+     * @param args.title - Flow title
+     * @param args.description - Detailed description of what the flow does
+     * @param args.schedule - Cron expression for scheduling (e.g., "0 9 * * *" for daily at 9am)
+     * @param args.scriptId - ID of the script to execute when triggered
+     * @param args.scriptInput - Optional static input data for the script (optional)
+     */
+    createTimeFlow: async (args: FlowsCreateTimeFlowArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'createTimeFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create an event-based flow with pre-filtering conditions. NOTE: Consider using createFlow instead for a simpler interface with inline code support.
+
+EFFICIENCY RULE: Always filter in eventFilter, not the script.
+- eventFilter conditions: FREE (evaluated in-memory before script runs)
+- Script filtering: EXPENSIVE (invokes Lambda for every event)
+
+BAD: Trigger on "telegram.message" with no filter → script checks sender
+GOOD: Trigger on "telegram.message" with eventFilter for sender
+
+TRIGGER STRUCTURE:
+{
+  type: "event",
+  config: {
+    eventFilter: {
+      operator: "and" | "or",
+      conditions: [
+        { operator: "equals", field: "type", value: "call.ended" },
+        { operator: "contains", field: "content.text", value: "urgent" }
+      ]
+    }
+  }
+}
+
+IMPORTANT: Use field: "type" (not "eventType") to filter by event type. This is required for testFlow to auto-generate test events.
+
+VALID OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not
+
+COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.action, telegram.message, gmail.email_received
+     * @param args.title - Flow title
+     * @param args.description - Detailed description of what the flow does
+     * @param args.trigger - Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
+     * @param args.scriptId - ID of the script to execute when triggered
+     * @param args.scriptInput - Optional static input data for the script (optional)
+     */
+    createEventFlow: async (args: FlowsCreateEventFlowArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'createEventFlow',
         params: args || {}
       });
     },
