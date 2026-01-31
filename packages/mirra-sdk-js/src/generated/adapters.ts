@@ -357,6 +357,10 @@ export interface GoogleGmailListDraftsArgs {
 export interface GoogleGmailDeleteEmailArgs {
   messageId: string; // Gmail message ID to delete
 }
+export interface GoogleGmailBulkDeleteEmailsArgs {
+  messageIds: any[]; // Array of Gmail message IDs to delete (max 1000 per request)
+  permanently?: boolean; // If true, permanently delete. If false (default), move to trash.
+}
 
 // Google Calendar Adapter Types
 export interface GoogleCalendarCreateEventArgs {
@@ -2176,6 +2180,19 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'google-gmail',
         method: 'deleteEmail',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete multiple emails at once. Uses Gmail batchDelete API for efficiency.
+     * @param args.messageIds - Array of Gmail message IDs to delete (max 1000 per request)
+     * @param args.permanently - If true, permanently delete. If false (default), move to trash. (optional)
+     */
+    bulkDeleteEmails: async (args: GoogleGmailBulkDeleteEmailsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'google-gmail',
+        method: 'bulkDeleteEmails',
         params: args || {}
       });
     }
