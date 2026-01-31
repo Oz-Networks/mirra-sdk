@@ -1233,6 +1233,106 @@ export interface GoogleGmailBulkDeleteEmailsData {
 
 export type GoogleGmailBulkDeleteEmailsResult = AdapterResultBase<GoogleGmailBulkDeleteEmailsData>;
 
+// Google Calendar Response Types
+export interface GoogleCalendarAttendee {
+  email: string; // Attendee email address
+  name?: string; // Attendee display name
+  responseStatus?: string; // Response status: needsAction, declined, tentative, accepted
+  isOrganizer?: boolean; // Whether this attendee is the organizer
+  isSelf?: boolean; // Whether this is the authenticated user
+}
+
+export interface GoogleCalendarGetEventData {
+  id: string; // Calendar event ID
+  summary: string; // Event title
+  description: string; // Event description
+  location: string; // Event location
+  startTime: string; // Start time (ISO 8601)
+  endTime: string; // End time (ISO 8601)
+  isAllDay: boolean; // Whether this is an all-day event
+  timeZone: string; // Event timezone
+  creator: GoogleCalendarAttendee; // Event creator
+  organizer: GoogleCalendarAttendee; // Event organizer
+  attendees: GoogleCalendarAttendee[]; // List of attendees
+  attendeeCount: number; // Number of attendees
+  status: string; // Event status: confirmed, tentative, cancelled
+  htmlLink: string; // Link to view event in Google Calendar
+  isRecurring: boolean; // Whether this is a recurring event
+  recurringEventId?: string; // ID of the recurring event series
+  created: string; // When the event was created (ISO 8601)
+  updated: string; // When the event was last updated (ISO 8601)
+}
+
+export type GoogleCalendarGetEventResult = AdapterResultBase<GoogleCalendarGetEventData>;
+
+export interface GoogleCalendarEventSummary {
+  id: string; // Calendar event ID
+  summary: string; // Event title
+  location: string; // Event location
+  startTime: string; // Start time (ISO 8601)
+  endTime: string; // End time (ISO 8601)
+  isAllDay: boolean; // Whether this is an all-day event
+  status: string; // Event status: confirmed, tentative, cancelled
+  htmlLink: string; // Link to view event in Google Calendar
+  isRecurring: boolean; // Whether this is a recurring event
+  attendeeCount: number; // Number of attendees
+}
+
+export interface GoogleCalendarListEventsData {
+  count: number; // Number of events returned
+  query?: string; // Search query used
+  timeMin?: string; // Start of time range
+  timeMax?: string; // End of time range
+  events: GoogleCalendarEventSummary[]; // List of calendar events
+}
+
+export type GoogleCalendarListEventsResult = AdapterResultBase<GoogleCalendarListEventsData>;
+
+export interface GoogleCalendarListEventsData {
+  count: number; // Number of events returned
+  query?: string; // Search query used
+  timeMin?: string; // Start of time range
+  timeMax?: string; // End of time range
+  events: GoogleCalendarEventSummary[]; // List of calendar events
+}
+
+export type GoogleCalendarGetEventsResult = AdapterResultBase<GoogleCalendarListEventsData>;
+
+export interface GoogleCalendarSearchEventsData {
+  count: number; // Number of events returned
+  query: string; // Search query used
+  timeMin?: string; // Start of time range
+  timeMax?: string; // End of time range
+  events: GoogleCalendarEventSummary[]; // List of matching calendar events
+}
+
+export type GoogleCalendarSearchEventsResult = AdapterResultBase<GoogleCalendarSearchEventsData>;
+
+export interface GoogleCalendarCreateEventData {
+  eventId: string; // Created event ID
+  summary: string; // Event title
+  start: object; // Event start time
+  end: object; // Event end time
+  htmlLink: string; // Link to view event in Google Calendar
+}
+
+export type GoogleCalendarCreateEventResult = AdapterResultBase<GoogleCalendarCreateEventData>;
+
+export interface GoogleCalendarUpdateEventData {
+  eventId: string; // Updated event ID
+  summary: string; // Event title
+  updated: boolean; // Whether the update succeeded
+}
+
+export type GoogleCalendarUpdateEventResult = AdapterResultBase<GoogleCalendarUpdateEventData>;
+
+export interface GoogleCalendarDeleteEventData {
+  eventId: string; // Deleted event ID
+  deleted: boolean; // Whether the deletion succeeded
+}
+
+export type GoogleCalendarDeleteEventResult = AdapterResultBase<GoogleCalendarDeleteEventData>;
+
 
 // ============================================================================
 // Adapter Factory Functions
@@ -2451,8 +2551,9 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
      * @param args.description - Event description (optional)
      * @param args.location - Event location (optional)
      * @param args.attendees - Array of attendee email addresses (optional)
+     * @returns Promise<GoogleCalendarCreateEventResult> Typed response with IDE autocomplete
      */
-    createEvent: async (args: GoogleCalendarCreateEventArgs): Promise<any> => {
+    createEvent: async (args: GoogleCalendarCreateEventArgs): Promise<GoogleCalendarCreateEventResult> => {
       return sdk.resources.call({
         resourceId: 'google-calendar',
         method: 'createEvent',
@@ -2466,8 +2567,9 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
      * @param args.timeMax - End time for events to list (ISO 8601) (optional)
      * @param args.maxResults - Maximum number of events to return (default: 50, max: 100) (optional)
      * @param args.query - Search query to filter events (optional)
+     * @returns Promise<GoogleCalendarListEventsResult> Typed response with IDE autocomplete
      */
-    listEvents: async (args: GoogleCalendarListEventsArgs): Promise<any> => {
+    listEvents: async (args: GoogleCalendarListEventsArgs): Promise<GoogleCalendarListEventsResult> => {
       return sdk.resources.call({
         resourceId: 'google-calendar',
         method: 'listEvents',
@@ -2481,8 +2583,9 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
      * @param args.timeMax - End time for events to list (ISO 8601) (optional)
      * @param args.maxResults - Maximum number of events to return (default: 50, max: 100) (optional)
      * @param args.query - Search query to filter events (optional)
+     * @returns Promise<GoogleCalendarGetEventsResult> Typed response with IDE autocomplete
      */
-    getEvents: async (args: GoogleCalendarGetEventsArgs): Promise<any> => {
+    getEvents: async (args: GoogleCalendarGetEventsArgs): Promise<GoogleCalendarGetEventsResult> => {
       return sdk.resources.call({
         resourceId: 'google-calendar',
         method: 'getEvents',
@@ -2493,8 +2596,9 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
     /**
      * Get a specific calendar event by ID
      * @param args.eventId - Calendar event ID
+     * @returns Promise<GoogleCalendarGetEventResult> Typed response with IDE autocomplete
      */
-    getEvent: async (args: GoogleCalendarGetEventArgs): Promise<any> => {
+    getEvent: async (args: GoogleCalendarGetEventArgs): Promise<GoogleCalendarGetEventResult> => {
       return sdk.resources.call({
         resourceId: 'google-calendar',
         method: 'getEvent',
@@ -2510,8 +2614,9 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
      * @param args.location - Updated event location (optional)
      * @param args.start - Updated start time object with dateTime and optional timeZone (optional)
      * @param args.end - Updated end time object with dateTime and optional timeZone (optional)
+     * @returns Promise<GoogleCalendarUpdateEventResult> Typed response with IDE autocomplete
      */
-    updateEvent: async (args: GoogleCalendarUpdateEventArgs): Promise<any> => {
+    updateEvent: async (args: GoogleCalendarUpdateEventArgs): Promise<GoogleCalendarUpdateEventResult> => {
       return sdk.resources.call({
         resourceId: 'google-calendar',
         method: 'updateEvent',
@@ -2522,8 +2627,9 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
     /**
      * Delete a calendar event
      * @param args.eventId - Calendar event ID to delete
+     * @returns Promise<GoogleCalendarDeleteEventResult> Typed response with IDE autocomplete
      */
-    deleteEvent: async (args: GoogleCalendarDeleteEventArgs): Promise<any> => {
+    deleteEvent: async (args: GoogleCalendarDeleteEventArgs): Promise<GoogleCalendarDeleteEventResult> => {
       return sdk.resources.call({
         resourceId: 'google-calendar',
         method: 'deleteEvent',
@@ -2537,8 +2643,9 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
      * @param args.timeMin - Start time for events to search (ISO 8601) (optional)
      * @param args.timeMax - End time for events to search (ISO 8601) (optional)
      * @param args.maxResults - Maximum number of events to return (default: 50, max: 100) (optional)
+     * @returns Promise<GoogleCalendarSearchEventsResult> Typed response with IDE autocomplete
      */
-    searchEvents: async (args: GoogleCalendarSearchEventsArgs): Promise<any> => {
+    searchEvents: async (args: GoogleCalendarSearchEventsArgs): Promise<GoogleCalendarSearchEventsResult> => {
       return sdk.resources.call({
         resourceId: 'google-calendar',
         method: 'searchEvents',
