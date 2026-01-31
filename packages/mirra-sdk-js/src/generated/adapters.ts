@@ -9,6 +9,42 @@
 import { MirraSDK } from '../client';
 
 // ============================================================================
+// Base Result Type
+// ============================================================================
+
+/**
+ * Structured data for rich UI rendering in chat messages
+ */
+export interface ToolResultStructuredData {
+  displayType: 'list' | 'card' | 'table' | 'chart' | 'code' | 'markdown';
+  templateId?: string;
+  data: any;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Base result type for all adapter operations
+ */
+export interface AdapterResultBase<T = any> {
+  id: string;
+  status: 'success' | 'pending' | 'failed';
+  timestamp: string;
+  data: T;
+  structuredData?: ToolResultStructuredData[];
+  metadata?: {
+    executionMode: 'standard' | 'delegated' | 'service';
+    actorId?: string;
+    adapter?: string;
+    [key: string]: any;
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+// ============================================================================
 // Type Definitions
 // ============================================================================
 
@@ -342,6 +378,8 @@ export interface GoogleGmailListEmailsArgs {
 }
 export interface GoogleGmailGetEmailArgs {
   messageId: string; // Gmail message ID
+  includeHtml?: boolean; // Include HTML body content (default: false)
+  includeAttachments?: boolean; // Include attachment metadata (default: false)
 }
 export interface GoogleGmailCreateDraftArgs {
   to: string; // Valid email address
@@ -1071,6 +1109,129 @@ export interface MoltbookGetFeedArgs {
 export interface MoltbookSearchArgs {
   query: string; // Search query
 }
+
+
+// ============================================================================
+// Response Type Definitions
+// ============================================================================
+
+// Gmail Response Types
+export interface GoogleGmailSendEmailData {
+  messageId: string; // ID of the sent message
+  to: string; // Recipient email address
+  subject: string; // Email subject
+  sentAt: string; // ISO timestamp when sent
+}
+
+export type GoogleGmailSendEmailResult = AdapterResultBase<GoogleGmailSendEmailData>;
+
+export interface GoogleGmailAttachment {
+  filename: string; // Attachment filename
+  mimeType: string; // MIME type
+  size: number; // Size in bytes
+  attachmentId: string; // Attachment ID
+}
+
+export interface GoogleGmailGetEmailData {
+  id: string; // Unique email ID
+  threadId: string; // Thread ID
+  subject: string; // Email subject
+  from: string; // Sender email address
+  to: string; // Recipient email address
+  cc?: string; // CC recipients
+  bcc?: string; // BCC recipients
+  date: string; // ISO timestamp of email
+  body: string; // Plain text body content
+  bodyHtml?: string; // HTML body content
+  snippet: string; // Email preview snippet
+  labelIds: string[]; // Gmail label IDs
+  isUnread: boolean; // Whether email is unread
+  hasAttachments: boolean; // Whether email has attachments
+  attachments?: GoogleGmailAttachment[]; // Attachment metadata
+}
+
+export type GoogleGmailGetEmailResult = AdapterResultBase<GoogleGmailGetEmailData>;
+
+export interface GoogleGmailEmailSummary {
+  id: string; // Unique email ID
+  threadId: string; // Thread ID
+  subject: string; // Email subject
+  from: string; // Sender email address
+  to: string; // Recipient email address
+  date: string; // ISO timestamp
+  snippet: string; // Preview snippet
+  labelIds: string[]; // Gmail label IDs
+  isUnread: boolean; // Whether email is unread
+  hasAttachments: boolean; // Whether email has attachments
+}
+
+export interface GoogleGmailSearchEmailsData {
+  query: string; // Search query used
+  count: number; // Number of results
+  emails: GoogleGmailEmailSummary[]; // List of matching emails
+}
+
+export type GoogleGmailSearchEmailsResult = AdapterResultBase<GoogleGmailSearchEmailsData>;
+
+export interface GoogleGmailListEmailsData {
+  query: string; // Search query used
+  count: number; // Number of results
+  emails: GoogleGmailEmailSummary[]; // List of emails
+}
+
+export type GoogleGmailListEmailsResult = AdapterResultBase<GoogleGmailListEmailsData>;
+
+export interface GoogleGmailCreateDraftData {
+  draftId: string; // ID of created draft
+  subject: string; // Draft subject
+  to: string; // Recipient email address
+}
+
+export type GoogleGmailCreateDraftResult = AdapterResultBase<GoogleGmailCreateDraftData>;
+
+export interface GoogleGmailUpdateDraftData {
+  draftId: string; // ID of updated draft
+  updated: boolean; // Whether update succeeded
+}
+
+export type GoogleGmailUpdateDraftResult = AdapterResultBase<GoogleGmailUpdateDraftData>;
+
+export interface GoogleGmailDeleteDraftData {
+  draftId: string; // ID of deleted draft
+  deleted: boolean; // Whether deletion succeeded
+}
+
+export type GoogleGmailDeleteDraftResult = AdapterResultBase<GoogleGmailDeleteDraftData>;
+
+export interface GoogleGmailDraftSummary {
+  id: string; // Draft ID
+  messageId: string; // Associated message ID
+  subject: string; // Draft subject
+  to: string; // Recipient email
+  snippet: string; // Preview snippet
+}
+
+export interface GoogleGmailListDraftsData {
+  count: number; // Number of drafts
+  drafts: GoogleGmailDraftSummary[]; // List of drafts
+}
+
+export type GoogleGmailListDraftsResult = AdapterResultBase<GoogleGmailListDraftsData>;
+
+export interface GoogleGmailDeleteEmailData {
+  messageId: string; // ID of deleted email
+  deleted: 'permanent' | 'trash'; // Type of deletion
+}
+
+export type GoogleGmailDeleteEmailResult = AdapterResultBase<GoogleGmailDeleteEmailData>;
+
+export interface GoogleGmailBulkDeleteEmailsData {
+  deletedCount: number; // Number of emails deleted
+  messageIds: string[]; // IDs of deleted emails
+  deleted: 'permanent' | 'trash'; // Type of deletion
+}
+
+export type GoogleGmailBulkDeleteEmailsResult = AdapterResultBase<GoogleGmailBulkDeleteEmailsData>;
 
 
 // ============================================================================
@@ -2132,8 +2293,9 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
      * @param args.cc - CC recipients (comma-separated email addresses) (optional)
      * @param args.bcc - BCC recipients (comma-separated email addresses) (optional)
      * @param args.isHtml - Whether body is HTML format (optional)
+     * @returns Promise<GoogleGmailSendEmailResult> Typed response with IDE autocomplete
      */
-    sendEmail: async (args: GoogleGmailSendEmailArgs): Promise<any> => {
+    sendEmail: async (args: GoogleGmailSendEmailArgs): Promise<GoogleGmailSendEmailResult> => {
       return sdk.resources.call({
         resourceId: 'google-gmail',
         method: 'sendEmail',
@@ -2142,11 +2304,12 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Search emails with Gmail query syntax
+     * Search emails with Gmail query syntax. Returns normalized email summaries.
      * @param args.query - Gmail search query (e.g., "from:user@example.com is:unread")
      * @param args.maxResults - Maximum number of results to return (default: 50, max: 100) (optional)
+     * @returns Promise<GoogleGmailSearchEmailsResult> Typed response with IDE autocomplete
      */
-    searchEmails: async (args: GoogleGmailSearchEmailsArgs): Promise<any> => {
+    searchEmails: async (args: GoogleGmailSearchEmailsArgs): Promise<GoogleGmailSearchEmailsResult> => {
       return sdk.resources.call({
         resourceId: 'google-gmail',
         method: 'searchEmails',
@@ -2155,10 +2318,11 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * List recent emails from inbox
+     * List recent emails from inbox. Returns normalized email summaries.
      * @param args.maxResults - Maximum number of results to return (default: 50, max: 100) (optional)
+     * @returns Promise<GoogleGmailListEmailsResult> Typed response with IDE autocomplete
      */
-    listEmails: async (args: GoogleGmailListEmailsArgs): Promise<any> => {
+    listEmails: async (args: GoogleGmailListEmailsArgs): Promise<GoogleGmailListEmailsResult> => {
       return sdk.resources.call({
         resourceId: 'google-gmail',
         method: 'listEmails',
@@ -2167,10 +2331,13 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get details of a specific email by ID
+     * Get full details of a specific email by ID. Returns normalized flat structure.
      * @param args.messageId - Gmail message ID
+     * @param args.includeHtml - Include HTML body content (default: false) (optional)
+     * @param args.includeAttachments - Include attachment metadata (default: false) (optional)
+     * @returns Promise<GoogleGmailGetEmailResult> Typed response with IDE autocomplete
      */
-    getEmail: async (args: GoogleGmailGetEmailArgs): Promise<any> => {
+    getEmail: async (args: GoogleGmailGetEmailArgs): Promise<GoogleGmailGetEmailResult> => {
       return sdk.resources.call({
         resourceId: 'google-gmail',
         method: 'getEmail',
@@ -2186,8 +2353,9 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
      * @param args.cc - CC recipients (comma-separated email addresses) (optional)
      * @param args.bcc - BCC recipients (comma-separated email addresses) (optional)
      * @param args.isHtml - Whether body is HTML format (optional)
+     * @returns Promise<GoogleGmailCreateDraftResult> Typed response with IDE autocomplete
      */
-    createDraft: async (args: GoogleGmailCreateDraftArgs): Promise<any> => {
+    createDraft: async (args: GoogleGmailCreateDraftArgs): Promise<GoogleGmailCreateDraftResult> => {
       return sdk.resources.call({
         resourceId: 'google-gmail',
         method: 'createDraft',
@@ -2204,8 +2372,9 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
      * @param args.cc - Updated CC recipients (optional)
      * @param args.bcc - Updated BCC recipients (optional)
      * @param args.isHtml - Whether body is HTML format (optional)
+     * @returns Promise<GoogleGmailUpdateDraftResult> Typed response with IDE autocomplete
      */
-    updateDraft: async (args: GoogleGmailUpdateDraftArgs): Promise<any> => {
+    updateDraft: async (args: GoogleGmailUpdateDraftArgs): Promise<GoogleGmailUpdateDraftResult> => {
       return sdk.resources.call({
         resourceId: 'google-gmail',
         method: 'updateDraft',
@@ -2216,8 +2385,9 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
     /**
      * Delete a draft email
      * @param args.draftId - Gmail draft ID to delete
+     * @returns Promise<GoogleGmailDeleteDraftResult> Typed response with IDE autocomplete
      */
-    deleteDraft: async (args: GoogleGmailDeleteDraftArgs): Promise<any> => {
+    deleteDraft: async (args: GoogleGmailDeleteDraftArgs): Promise<GoogleGmailDeleteDraftResult> => {
       return sdk.resources.call({
         resourceId: 'google-gmail',
         method: 'deleteDraft',
@@ -2226,10 +2396,11 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * List all draft emails
+     * List all draft emails. Returns normalized draft summaries.
      * @param args.maxResults - Maximum number of drafts to return (default: 10) (optional)
+     * @returns Promise<GoogleGmailListDraftsResult> Typed response with IDE autocomplete
      */
-    listDrafts: async (args: GoogleGmailListDraftsArgs): Promise<any> => {
+    listDrafts: async (args: GoogleGmailListDraftsArgs): Promise<GoogleGmailListDraftsResult> => {
       return sdk.resources.call({
         resourceId: 'google-gmail',
         method: 'listDrafts',
@@ -2240,8 +2411,9 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
     /**
      * Delete an email
      * @param args.messageId - Gmail message ID to delete
+     * @returns Promise<GoogleGmailDeleteEmailResult> Typed response with IDE autocomplete
      */
-    deleteEmail: async (args: GoogleGmailDeleteEmailArgs): Promise<any> => {
+    deleteEmail: async (args: GoogleGmailDeleteEmailArgs): Promise<GoogleGmailDeleteEmailResult> => {
       return sdk.resources.call({
         resourceId: 'google-gmail',
         method: 'deleteEmail',
@@ -2253,8 +2425,9 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
      * Delete multiple emails at once. Uses Gmail batchDelete API for efficiency.
      * @param args.messageIds - Array of Gmail message IDs to delete (max 1000 per request)
      * @param args.permanently - If true, permanently delete. If false (default), move to trash. (optional)
+     * @returns Promise<GoogleGmailBulkDeleteEmailsResult> Typed response with IDE autocomplete
      */
-    bulkDeleteEmails: async (args: GoogleGmailBulkDeleteEmailsArgs): Promise<any> => {
+    bulkDeleteEmails: async (args: GoogleGmailBulkDeleteEmailsArgs): Promise<GoogleGmailBulkDeleteEmailsResult> => {
       return sdk.resources.call({
         resourceId: 'google-gmail',
         method: 'bulkDeleteEmails',
