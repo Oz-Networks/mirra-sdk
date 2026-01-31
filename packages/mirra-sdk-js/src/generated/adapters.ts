@@ -681,6 +681,11 @@ export interface TwitterGetUserTweetsArgs {
   cursor?: string; // Pagination cursor for next page of results
   includeReplies?: boolean; // Whether to include replies in results (default: false)
 }
+export interface TwitterAdvancedSearchArgs {
+  query: string; // Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR "machine learning"". See Twitter advanced search operators for full syntax.
+  queryType?: string; // Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest".
+  cursor?: string; // Pagination cursor for next page of results
+}
 
 // Trello Adapter Types
 export interface TrelloGetBoardArgs {
@@ -3120,6 +3125,20 @@ function createTwitterAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'twitter',
         method: 'getUserTweets',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search tweets using advanced Twitter search syntax. Supports operators like from:username, since:date, until:date, lang:en, and boolean operators (AND, OR).
+     * @param args.query - Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR "machine learning"". See Twitter advanced search operators for full syntax.
+     * @param args.queryType - Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". (optional)
+     * @param args.cursor - Pagination cursor for next page of results (optional)
+     */
+    advancedSearch: async (args: TwitterAdvancedSearchArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'twitter',
+        method: 'advancedSearch',
         params: args || {}
       });
     }
