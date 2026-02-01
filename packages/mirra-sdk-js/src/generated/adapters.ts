@@ -1115,6 +1115,115 @@ export interface MoltbookSearchArgs {
 // Response Type Definitions
 // ============================================================================
 
+// Telegram Response Types
+export interface TelegramSendMessageData {
+  messageId: number; // ID of the sent message
+  chatId: string; // Chat ID where message was sent
+  text: string; // Message text that was sent
+  sentAt: string; // ISO 8601 timestamp when sent
+}
+
+export type TelegramSendMessageResult = AdapterResultBase<TelegramSendMessageData>;
+
+export interface TelegramChat {
+  id: string; // Chat ID
+  title: string; // Chat title/name
+  type: 'private' | 'group' | 'channel'; // Chat type
+  username: string | null; // Chat username (if available)
+  lastMessageDate: string | null; // ISO 8601 date of last message
+  unreadCount: number; // Number of unread messages
+  unreadMentionsCount: number; // Number of unread mentions
+  pinned: boolean; // Whether chat is pinned
+  archived: boolean; // Whether chat is archived
+  memberCount: number; // Number of members (for groups/channels)
+  relevanceScore?: number; // Relevance score when query is provided
+}
+
+export interface TelegramPaginationInfo {
+  totalCount: number; // Total number of matching chats
+  limit: number; // Maximum items per page
+  offset: number; // Current offset
+  hasMore: boolean; // Whether more results are available
+}
+
+export interface TelegramSearchChatsData {
+  items: TelegramChat[]; // List of matching chats
+  pagination: TelegramPaginationInfo; // Pagination metadata
+}
+
+export type TelegramSearchChatsResult = AdapterResultBase<TelegramSearchChatsData>;
+
+export interface TelegramMessage {
+  id: string; // Message ID
+  text: string; // Message text content
+  caption: string | null; // Caption for media messages
+  date: string; // ISO 8601 timestamp
+  chatId: string; // Chat ID where message was sent
+  senderId: string; // Sender user ID
+  senderName: string; // Sender display name
+  hasMedia: boolean; // Whether message has media attachment
+  mediaType: string | null; // Media type: photo, video, document, etc.
+  isOutgoing: boolean; // Whether message was sent by the user
+  replyToMessageId: string | null; // ID of message being replied to
+}
+
+export interface TelegramSearchMessagesData {
+  messages: TelegramMessage[]; // List of matching messages
+  count: number; // Number of messages returned
+}
+
+export type TelegramSearchMessagesResult = AdapterResultBase<TelegramSearchMessagesData>;
+
+export interface TelegramGetChatMessagesData {
+  messages: TelegramMessage[]; // List of messages from the chat
+  count: number; // Number of messages returned
+  chatId?: string; // Chat ID the messages are from
+}
+
+export type TelegramGetChatMessagesResult = AdapterResultBase<TelegramGetChatMessagesData>;
+
+export interface TelegramUnreadSummaryEntry {
+  chatId: string; // Chat ID
+  chatName: string; // Chat display name
+  chatType: 'private' | 'group' | 'channel'; // Chat type
+  unreadCount: number; // Number of unread messages
+  hasMention: boolean; // Whether there are unread mentions
+  lastMessageText: string | null; // Text of last message
+  lastMessageSender: string | null; // Sender of last message
+  lastMessageDate: string | null; // ISO 8601 date of last message
+}
+
+export interface TelegramUnreadSummaryData {
+  chats: TelegramUnreadSummaryEntry[]; // List of chats with unread information
+  totalUnread: number; // Total unread messages across all chats
+  chatsWithUnread: number; // Number of chats with unread messages
+}
+
+export type TelegramGetUnreadSummaryResult = AdapterResultBase<TelegramUnreadSummaryData>;
+
+export interface TelegramMarkAsReadData {
+  success: boolean; // Whether the operation succeeded
+  chatId: string; // Chat ID that was marked as read
+  markedAt: string; // ISO 8601 timestamp when marked
+}
+
+export type TelegramMarkAsReadResult = AdapterResultBase<TelegramMarkAsReadData>;
+
+export interface TelegramMentionsData {
+  mentions: TelegramMessage[]; // List of messages with mentions
+  count: number; // Number of mentions returned
+}
+
+export type TelegramGetMentionsResult = AdapterResultBase<TelegramMentionsData>;
+
+export interface TelegramLeaveGroupData {
+  success: boolean; // Whether the operation succeeded
+  chatId: string; // Chat ID that was left
+  leftAt: string; // ISO 8601 timestamp when left
+}
+
+export type TelegramLeaveGroupResult = AdapterResultBase<TelegramLeaveGroupData>;
+
 // Gmail Response Types
 export interface GoogleGmailSendEmailData {
   messageId: string; // ID of the sent message
@@ -1332,6 +1441,381 @@ export interface GoogleCalendarDeleteEventData {
 }
 
 export type GoogleCalendarDeleteEventResult = AdapterResultBase<GoogleCalendarDeleteEventData>;
+
+// Google Drive Response Types
+export interface GoogleDriveFileSummary {
+  id: string; // File ID
+  name: string; // File name
+  mimeType: string; // MIME type
+  mimeTypeReadable: string; // Human-readable file type
+  createdAt: string; // ISO 8601 creation date
+  modifiedAt: string; // ISO 8601 modification date
+  isFolder: boolean; // Whether this is a folder
+}
+
+export interface GoogleDriveListFilesData {
+  count: number; // Number of files returned
+  query?: string; // Search query used
+  files: GoogleDriveFileSummary[]; // Array of file summaries
+}
+
+export type GoogleDriveListFilesResult = AdapterResultBase<GoogleDriveListFilesData>;
+
+export interface GoogleDriveSearchFilesData {
+  count: number; // Number of files returned
+  query: string; // Search query used
+  files: GoogleDriveFileSummary[]; // Array of matching file summaries
+}
+
+export type GoogleDriveSearchFilesResult = AdapterResultBase<GoogleDriveSearchFilesData>;
+
+export interface GoogleDriveOwner {
+  name: string; // Owner name
+  email: string; // Owner email
+}
+
+export interface GoogleDriveGetFileInfoData {
+  id: string; // File ID
+  name: string; // File name
+  mimeType: string; // MIME type
+  mimeTypeReadable: string; // Human-readable file type
+  size: number; // File size in bytes
+  createdAt: string; // ISO 8601 creation date
+  modifiedAt: string; // ISO 8601 modification date
+  webViewLink: string | null; // Web view URL
+  parents: string[]; // Parent folder IDs
+  owner: GoogleDriveOwner | null; // File owner
+  isFolder: boolean; // Whether this is a folder
+  isTrashed: boolean; // Whether file is in trash
+}
+
+export type GoogleDriveGetFileInfoResult = AdapterResultBase<GoogleDriveGetFileInfoData>;
+
+export interface GoogleDriveCreateFileData {
+  fileId: string; // Created file ID
+  name: string; // File name
+  mimeType: string; // MIME type
+  webViewLink?: string; // Web view URL
+}
+
+export type GoogleDriveCreateFileResult = AdapterResultBase<GoogleDriveCreateFileData>;
+
+export interface GoogleDriveCreateFolderData {
+  folderId: string; // Created folder ID
+  name: string; // Folder name
+  webViewLink?: string; // Web view URL
+}
+
+export type GoogleDriveCreateFolderResult = AdapterResultBase<GoogleDriveCreateFolderData>;
+
+export interface GoogleDriveDownloadFileData {
+  data: string; // Base64-encoded file content
+  mimeType: string; // MIME type of downloaded file
+}
+
+export type GoogleDriveDownloadFileResult = AdapterResultBase<GoogleDriveDownloadFileData>;
+
+export interface GoogleDriveMoveFileData {
+  fileId: string; // Moved file ID
+  name: string; // File name
+  moved: boolean; // Whether move succeeded
+}
+
+export type GoogleDriveMoveFileResult = AdapterResultBase<GoogleDriveMoveFileData>;
+
+export interface GoogleDriveShareFileData {
+  fileId: string; // Shared file ID
+  permissionId: string; // Created permission ID
+  role: string; // Permission role granted
+  shared: boolean; // Whether share succeeded
+}
+
+export type GoogleDriveShareFileResult = AdapterResultBase<GoogleDriveShareFileData>;
+
+export interface GoogleDriveDeleteFileData {
+  fileId: string; // Deleted file ID
+  deleted: string; // Deletion type: permanent or trash
+}
+
+export type GoogleDriveDeleteFileResult = AdapterResultBase<GoogleDriveDeleteFileData>;
+
+export interface GoogleDriveUpdateFileData {
+  fileId: string; // Updated file ID
+  name: string; // File name
+  updated: boolean; // Whether update succeeded
+}
+
+export type GoogleDriveUpdateFileResult = AdapterResultBase<GoogleDriveUpdateFileData>;
+
+// Google Docs Response Types
+/**
+ * Normalized document structure with all fields extracted
+ */
+export interface GoogleDocsGetDocumentData {
+  documentId: string; // Unique document ID
+  title: string; // Document title
+  revisionId: string; // Current revision ID
+  body: string; // Plain text content extracted from document
+  bodyLength: number; // Character count of body
+  lastEditedTime?: string; // ISO 8601 timestamp if available
+  url: string; // Link to document
+  hasContent: boolean; // Whether document has any text content
+}
+
+export type GoogleDocsGetDocumentResult = AdapterResultBase<GoogleDocsGetDocumentData>;
+
+/**
+ * Result of document creation
+ */
+export interface GoogleDocsCreateDocumentData {
+  documentId: string; // Created document ID
+  title: string; // Document title
+}
+
+export type GoogleDocsCreateDocumentResult = AdapterResultBase<GoogleDocsCreateDocumentData>;
+
+/**
+ * Result of getDocumentContent operation
+ */
+export interface GoogleDocsGetDocumentContentData {
+  documentId: string; // Document ID
+  content: string; // Plain text content
+}
+
+export type GoogleDocsGetDocumentContentResult = AdapterResultBase<GoogleDocsGetDocumentContentData>;
+
+/**
+ * Result for write operations (append, insert, replace, update)
+ */
+export interface GoogleDocsWriteOperationData {
+  documentId: string; // Document ID
+  success: boolean; // Whether operation succeeded
+  feedback: string; // Human-readable feedback message
+}
+
+export type GoogleDocsAppendTextResult = AdapterResultBase<GoogleDocsWriteOperationData>;
+export type GoogleDocsInsertTextAtPositionResult = AdapterResultBase<GoogleDocsWriteOperationData>;
+export type GoogleDocsInsertTextAfterResult = AdapterResultBase<GoogleDocsWriteOperationData>;
+export type GoogleDocsInsertHeadingResult = AdapterResultBase<GoogleDocsWriteOperationData>;
+export type GoogleDocsInsertListResult = AdapterResultBase<GoogleDocsWriteOperationData>;
+export type GoogleDocsInsertTableResult = AdapterResultBase<GoogleDocsWriteOperationData>;
+export type GoogleDocsReplaceTextResult = AdapterResultBase<GoogleDocsWriteOperationData>;
+export type GoogleDocsUpdateDocumentContentResult = AdapterResultBase<GoogleDocsWriteOperationData>;
+
+/**
+ * Result of section creation with insertion details
+ */
+export interface GoogleDocsCreateSectionData {
+  documentId: string; // Document ID
+  title: string; // Document title
+  url: string; // Link to document
+  heading: string; // Section heading text
+  insertionIndex: number; // Character position where section was inserted
+  success: boolean; // Whether operation succeeded
+}
+
+export type GoogleDocsCreateSectionResult = AdapterResultBase<GoogleDocsCreateSectionData>;
+
+/**
+ * Result of finding insertion point with position and context
+ */
+export interface GoogleDocsFindInsertionPointData {
+  documentId: string; // Document ID
+  title: string; // Document title
+  url: string; // Link to document
+  position: number; // Character position for insertion
+  context: string; // Text context around the position
+  documentLength: number; // Total document length in characters
+}
+
+export type GoogleDocsFindInsertionPointResult = AdapterResultBase<GoogleDocsFindInsertionPointData>;
+
+// Jira Response Types
+export interface JiraGetIssueData {
+  id: string; // Unique issue ID
+  key: string; // Issue key (e.g., PROJ-123)
+  summary: string; // Issue summary/title
+  description: string; // Issue description (extracted from ADF)
+  status: string; // Status name
+  statusId: string; // Status ID
+  issueType: string; // Issue type name
+  issueTypeId: string; // Issue type ID
+  priority: string; // Priority name
+  priorityId: string; // Priority ID
+  assignee: string; // Assignee display name
+  assigneeAccountId: string; // Assignee account ID
+  reporter: string; // Reporter display name
+  reporterAccountId: string; // Reporter account ID
+  projectKey: string; // Project key
+  projectName: string; // Project name
+  projectId: string; // Project ID
+  labels: string[]; // Issue labels
+  created: string; // Created timestamp (ISO 8601)
+  updated: string; // Updated timestamp (ISO 8601)
+  isAssigned: boolean; // Whether issue has an assignee
+  hasLabels: boolean; // Whether issue has labels
+}
+
+export type JiraGetIssueResult = AdapterResultBase<JiraGetIssueData>;
+
+export interface JiraIssueSummary {
+  id: string; // Unique issue ID
+  key: string; // Issue key (e.g., PROJ-123)
+  summary: string; // Issue summary/title
+  status: string; // Status name
+  statusId: string; // Status ID
+  issueType: string; // Issue type name
+  issueTypeId: string; // Issue type ID
+  priority: string; // Priority name
+  priorityId: string; // Priority ID
+  assignee: string; // Assignee display name
+  assigneeAccountId: string; // Assignee account ID
+  projectKey: string; // Project key
+  projectName: string; // Project name
+  labels: string[]; // Issue labels
+  created: string; // Created timestamp (ISO 8601)
+  updated: string; // Updated timestamp (ISO 8601)
+  isAssigned: boolean; // Whether issue has an assignee
+}
+
+export interface JiraSearchIssuesData {
+  jql: string; // JQL query used
+  count: number; // Number of results
+  issues: JiraIssueSummary[]; // List of matching issues
+}
+
+export type JiraSearchIssuesResult = AdapterResultBase<JiraSearchIssuesData>;
+
+export interface JiraCreateIssueData {
+  issueKey: string; // Created issue key
+  issueId: string; // Created issue ID
+  summary: string; // Issue summary
+}
+
+export type JiraCreateIssueResult = AdapterResultBase<JiraCreateIssueData>;
+
+export interface JiraUpdateIssueData {
+  issueKey: string; // Updated issue key
+  updated: boolean; // Whether update succeeded
+}
+
+export type JiraUpdateIssueResult = AdapterResultBase<JiraUpdateIssueData>;
+
+export interface JiraDeleteIssueData {
+  issueKey: string; // Deleted issue key
+  deleted: boolean; // Whether deletion succeeded
+}
+
+export type JiraDeleteIssueResult = AdapterResultBase<JiraDeleteIssueData>;
+
+export interface JiraAddCommentData {
+  issueKey: string; // Issue key
+  commentId: string; // Created comment ID
+  added: boolean; // Whether comment was added
+}
+
+export type JiraAddCommentResult = AdapterResultBase<JiraAddCommentData>;
+
+export interface JiraTransitionIssueData {
+  issueKey: string; // Issue key
+  transitioned: boolean; // Whether transition succeeded
+  transitionId: string; // Transition ID used
+}
+
+export type JiraTransitionIssueResult = AdapterResultBase<JiraTransitionIssueData>;
+
+export interface JiraAssignIssueData {
+  issueKey: string; // Issue key
+  accountId: string; // Assigned user account ID
+  assigned: boolean; // Whether assignment succeeded
+}
+
+export type JiraAssignIssueResult = AdapterResultBase<JiraAssignIssueData>;
+
+export interface JiraProject {
+  id: string; // Project ID
+  key: string; // Project key
+  name: string; // Project name
+  projectTypeKey: string; // Project type key
+  leadName: string; // Project lead name
+  leadAccountId: string; // Project lead account ID
+}
+
+export interface JiraGetProjectsData {
+  count: number; // Number of projects
+  projects: JiraProject[]; // List of projects
+}
+
+export type JiraGetProjectsResult = AdapterResultBase<JiraGetProjectsData>;
+
+export interface JiraListProjectsData {
+  count: number; // Number of projects
+  projects: JiraProject[]; // List of projects
+}
+
+export type JiraListProjectsResult = AdapterResultBase<JiraListProjectsData>;
+
+export interface JiraIssueType {
+  id: string; // Issue type ID
+  name: string; // Issue type name
+  description: string; // Issue type description
+  isSubtask: boolean; // Whether this is a subtask type
+}
+
+export interface JiraPriority {
+  id: string; // Priority ID
+  name: string; // Priority name
+  description: string; // Priority description
+}
+
+export interface JiraGetProjectMetadataData {
+  projectKey: string; // Project key
+  projectName: string; // Project name
+  issueTypeCount: number; // Number of issue types
+  issueTypes: JiraIssueType[]; // Available issue types
+  priorityCount: number; // Number of priorities
+  priorities: JiraPriority[]; // Available priorities
+}
+
+export type JiraGetProjectMetadataResult = AdapterResultBase<JiraGetProjectMetadataData>;
+
+export interface JiraTransition {
+  id: string; // Transition ID
+  name: string; // Transition name
+  toStatus: string; // Target status name
+  toStatusId: string; // Target status ID
+}
+
+export interface JiraGetTransitionsData {
+  issueKey: string; // Issue key
+  count: number; // Number of transitions
+  transitions: JiraTransition[]; // Available transitions
+}
+
+export type JiraGetTransitionsResult = AdapterResultBase<JiraGetTransitionsData>;
+
+export interface JiraUser {
+  accountId: string; // User account ID
+  displayName: string; // User display name
+  emailAddress?: string; // User email address
+  active: boolean; // Whether user is active
+}
+
+export interface JiraListAssignableUsersData {
+  projectKey: string; // Project key
+  count: number; // Number of users
+  users: JiraUser[]; // Assignable users
+}
+
+export type JiraListAssignableUsersResult = AdapterResultBase<JiraListAssignableUsersData>;
+
+export interface JiraGetIssueTypesData {
+  projectKey: string; // Project key
+  count: number; // Number of issue types
+  issueTypes: JiraIssueType[]; // Available issue types
+}
+
+export type JiraGetIssueTypesResult = AdapterResultBase<JiraGetIssueTypesData>;
 
 
 // ============================================================================
@@ -2259,8 +2743,9 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * Send a text message to a Telegram chat or user. Supports both chat IDs and usernames.
      * @param args.chatId - Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from searchChats operation.
      * @param args.text - The text content of the message to send
+     * @returns Promise<TelegramSendMessageResult> Typed response with IDE autocomplete
      */
-    sendMessage: async (args: TelegramSendMessageArgs): Promise<any> => {
+    sendMessage: async (args: TelegramSendMessageArgs): Promise<TelegramSendMessageResult> => {
       return sdk.resources.call({
         resourceId: 'telegram',
         method: 'sendMessage',
@@ -2281,8 +2766,9 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * @param args.limit - Max results (default: 50, max: 100) (optional)
      * @param args.offset - Pagination offset (default: 0) (optional)
      * @param args.forceRefresh - Bypass cache and fetch fresh data (optional)
+     * @returns Promise<TelegramSearchChatsResult> Typed response with IDE autocomplete
      */
-    searchChats: async (args: TelegramSearchChatsArgs): Promise<any> => {
+    searchChats: async (args: TelegramSearchChatsArgs): Promise<TelegramSearchChatsResult> => {
       return sdk.resources.call({
         resourceId: 'telegram',
         method: 'searchChats',
@@ -2299,8 +2785,9 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * @param args.toDate - ISO date string for end of date range (optional)
      * @param args.limit - Maximum number of messages to return (default: 100, max: 100) (optional)
      * @param args.senderId - Filter messages by sender ID (optional)
+     * @returns Promise<TelegramSearchMessagesResult> Typed response with IDE autocomplete
      */
-    searchMessages: async (args: TelegramSearchMessagesArgs): Promise<any> => {
+    searchMessages: async (args: TelegramSearchMessagesArgs): Promise<TelegramSearchMessagesResult> => {
       return sdk.resources.call({
         resourceId: 'telegram',
         method: 'searchMessages',
@@ -2315,8 +2802,9 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * @param args.offsetId - Message ID to use as pagination offset (optional)
      * @param args.minDate - ISO date string for minimum message date (optional)
      * @param args.maxDate - ISO date string for maximum message date (optional)
+     * @returns Promise<TelegramGetChatMessagesResult> Typed response with IDE autocomplete
      */
-    getChatMessages: async (args: TelegramGetChatMessagesArgs): Promise<any> => {
+    getChatMessages: async (args: TelegramGetChatMessagesArgs): Promise<TelegramGetChatMessagesResult> => {
       return sdk.resources.call({
         resourceId: 'telegram',
         method: 'getChatMessages',
@@ -2325,12 +2813,13 @@ function createTelegramAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get summary of unread messages across Telegram chats, including mentions and last message info.
+     * Get summary of unread messages across Telegram chats, including mentions and flattened last message info.
      * @param args.chatIds - Array of chat IDs to filter by. If not provided, checks all chats. (optional)
      * @param args.priorityOnly - If true, only return chats with unread messages (optional)
      * @param args.groupBy - Group results by "chat" or "sender" (optional)
+     * @returns Promise<TelegramGetUnreadSummaryResult> Typed response with IDE autocomplete
      */
-    getUnreadSummary: async (args: TelegramGetUnreadSummaryArgs): Promise<any> => {
+    getUnreadSummary: async (args: TelegramGetUnreadSummaryArgs): Promise<TelegramGetUnreadSummaryResult> => {
       return sdk.resources.call({
         resourceId: 'telegram',
         method: 'getUnreadSummary',
@@ -2342,8 +2831,9 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * Mark messages as read in a Telegram chat up to a specific message ID.
      * @param args.chatId - Chat ID to mark messages as read in
      * @param args.maxMessageId - Maximum message ID to mark as read. If not provided, marks all messages as read. (optional)
+     * @returns Promise<TelegramMarkAsReadResult> Typed response with IDE autocomplete
      */
-    markAsRead: async (args: TelegramMarkAsReadArgs): Promise<any> => {
+    markAsRead: async (args: TelegramMarkAsReadArgs): Promise<TelegramMarkAsReadResult> => {
       return sdk.resources.call({
         resourceId: 'telegram',
         method: 'markAsRead',
@@ -2356,8 +2846,9 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * @param args.chatIds - Array of chat IDs to filter mentions by (optional)
      * @param args.sinceDate - ISO date string - only return mentions since this date (optional)
      * @param args.onlyUnread - If true, only return unread mentions (optional)
+     * @returns Promise<TelegramGetMentionsResult> Typed response with IDE autocomplete
      */
-    getMentions: async (args: TelegramGetMentionsArgs): Promise<any> => {
+    getMentions: async (args: TelegramGetMentionsArgs): Promise<TelegramGetMentionsResult> => {
       return sdk.resources.call({
         resourceId: 'telegram',
         method: 'getMentions',
@@ -2368,8 +2859,9 @@ function createTelegramAdapter(sdk: MirraSDK) {
     /**
      * Leave a Telegram group, supergroup, or channel. Removes the user from the group and clears it from the local cache.
      * @param args.chatId - The ID of the group, supergroup, or channel to leave. Can be obtained from searchChats operation.
+     * @returns Promise<TelegramLeaveGroupResult> Typed response with IDE autocomplete
      */
-    leaveGroup: async (args: TelegramLeaveGroupArgs): Promise<any> => {
+    leaveGroup: async (args: TelegramLeaveGroupArgs): Promise<TelegramLeaveGroupResult> => {
       return sdk.resources.call({
         resourceId: 'telegram',
         method: 'leaveGroup',
@@ -2665,8 +3157,9 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * List files in Google Drive
      * @param args.query - Search query (Google Drive query syntax) (optional)
      * @param args.pageSize - Maximum number of files to return (default: 20) (optional)
+     * @returns Promise<GoogleDriveListFilesResult> Typed response with IDE autocomplete
      */
-    listFiles: async (args: GoogleDriveListFilesArgs): Promise<any> => {
+    listFiles: async (args: GoogleDriveListFilesArgs): Promise<GoogleDriveListFilesResult> => {
       return sdk.resources.call({
         resourceId: 'google-drive',
         method: 'listFiles',
@@ -2679,8 +3172,9 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * @param args.name - Name of the file
      * @param args.mimeType - MIME type of the file
      * @param args.folderId - Parent folder ID (optional) (optional)
+     * @returns Promise<GoogleDriveCreateFileResult> Typed response with IDE autocomplete
      */
-    createFile: async (args: GoogleDriveCreateFileArgs): Promise<any> => {
+    createFile: async (args: GoogleDriveCreateFileArgs): Promise<GoogleDriveCreateFileResult> => {
       return sdk.resources.call({
         resourceId: 'google-drive',
         method: 'createFile',
@@ -2692,8 +3186,9 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * Create a new folder in Google Drive
      * @param args.name - Name of the folder
      * @param args.parentFolderId - Parent folder ID (optional) (optional)
+     * @returns Promise<GoogleDriveCreateFolderResult> Typed response with IDE autocomplete
      */
-    createFolder: async (args: GoogleDriveCreateFolderArgs): Promise<any> => {
+    createFolder: async (args: GoogleDriveCreateFolderArgs): Promise<GoogleDriveCreateFolderResult> => {
       return sdk.resources.call({
         resourceId: 'google-drive',
         method: 'createFolder',
@@ -2704,8 +3199,9 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
     /**
      * Get information about a file
      * @param args.fileId - ID of the file
+     * @returns Promise<GoogleDriveGetFileInfoResult> Typed response with IDE autocomplete
      */
-    getFileInfo: async (args: GoogleDriveGetFileInfoArgs): Promise<any> => {
+    getFileInfo: async (args: GoogleDriveGetFileInfoArgs): Promise<GoogleDriveGetFileInfoResult> => {
       return sdk.resources.call({
         resourceId: 'google-drive',
         method: 'getFileInfo',
@@ -2718,8 +3214,9 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * @param args.fileId - ID of the file to share
      * @param args.email - Email address to share with (optional) (optional)
      * @param args.role - Permission role: reader, writer, commenter (default: reader) (optional)
+     * @returns Promise<GoogleDriveShareFileResult> Typed response with IDE autocomplete
      */
-    shareFile: async (args: GoogleDriveShareFileArgs): Promise<any> => {
+    shareFile: async (args: GoogleDriveShareFileArgs): Promise<GoogleDriveShareFileResult> => {
       return sdk.resources.call({
         resourceId: 'google-drive',
         method: 'shareFile',
@@ -2730,8 +3227,9 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
     /**
      * Download a file from Google Drive. For Google Docs/Sheets, exports as PDF/XLSX. Returns base64-encoded data.
      * @param args.fileId - ID of the file to download
+     * @returns Promise<GoogleDriveDownloadFileResult> Typed response with IDE autocomplete
      */
-    downloadFile: async (args: GoogleDriveDownloadFileArgs): Promise<any> => {
+    downloadFile: async (args: GoogleDriveDownloadFileArgs): Promise<GoogleDriveDownloadFileResult> => {
       return sdk.resources.call({
         resourceId: 'google-drive',
         method: 'downloadFile',
@@ -2743,8 +3241,9 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * Move a file to a different folder
      * @param args.fileId - ID of the file to move
      * @param args.folderId - ID of the destination folder
+     * @returns Promise<GoogleDriveMoveFileResult> Typed response with IDE autocomplete
      */
-    moveFile: async (args: GoogleDriveMoveFileArgs): Promise<any> => {
+    moveFile: async (args: GoogleDriveMoveFileArgs): Promise<GoogleDriveMoveFileResult> => {
       return sdk.resources.call({
         resourceId: 'google-drive',
         method: 'moveFile',
@@ -2756,8 +3255,9 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * Delete a file or folder. By default moves to trash; set permanently=true to delete forever.
      * @param args.fileId - ID of the file or folder to delete
      * @param args.permanently - If true, permanently delete instead of moving to trash (default: false) (optional)
+     * @returns Promise<GoogleDriveDeleteFileResult> Typed response with IDE autocomplete
      */
-    deleteFile: async (args: GoogleDriveDeleteFileArgs): Promise<any> => {
+    deleteFile: async (args: GoogleDriveDeleteFileArgs): Promise<GoogleDriveDeleteFileResult> => {
       return sdk.resources.call({
         resourceId: 'google-drive',
         method: 'deleteFile',
@@ -2769,8 +3269,9 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * Search for files using Google Drive query syntax
      * @param args.query - Search query using Drive syntax (e.g., "name contains 'report'", "mimeType='application/pdf'")
      * @param args.pageSize - Maximum number of files to return (default: 20) (optional)
+     * @returns Promise<GoogleDriveSearchFilesResult> Typed response with IDE autocomplete
      */
-    searchFiles: async (args: GoogleDriveSearchFilesArgs): Promise<any> => {
+    searchFiles: async (args: GoogleDriveSearchFilesArgs): Promise<GoogleDriveSearchFilesResult> => {
       return sdk.resources.call({
         resourceId: 'google-drive',
         method: 'searchFiles',
@@ -2783,8 +3284,9 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * @param args.fileId - ID of the file to update
      * @param args.name - New name for the file (optional)
      * @param args.description - New description for the file (optional)
+     * @returns Promise<GoogleDriveUpdateFileResult> Typed response with IDE autocomplete
      */
-    updateFile: async (args: GoogleDriveUpdateFileArgs): Promise<any> => {
+    updateFile: async (args: GoogleDriveUpdateFileArgs): Promise<GoogleDriveUpdateFileResult> => {
       return sdk.resources.call({
         resourceId: 'google-drive',
         method: 'updateFile',
@@ -3067,8 +3569,9 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
     /**
      * Create a new Google Doc
      * @param args.title - Title of the document
+     * @returns Promise<GoogleDocsCreateDocumentResult> Typed response with IDE autocomplete
      */
-    createDocument: async (args: GoogleDocsCreateDocumentArgs): Promise<any> => {
+    createDocument: async (args: GoogleDocsCreateDocumentArgs): Promise<GoogleDocsCreateDocumentResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'createDocument',
@@ -3077,10 +3580,11 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get a Google Doc by ID
+     * Get a Google Doc by ID. Returns normalized flat structure with extracted fields.
      * @param args.documentId - ID of the document
+     * @returns Promise<GoogleDocsGetDocumentResult> Typed response with IDE autocomplete
      */
-    getDocument: async (args: GoogleDocsGetDocumentArgs): Promise<any> => {
+    getDocument: async (args: GoogleDocsGetDocumentArgs): Promise<GoogleDocsGetDocumentResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'getDocument',
@@ -3092,8 +3596,9 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * Append text to the end of a document
      * @param args.documentId - ID of the document
      * @param args.text - Text to append
+     * @returns Promise<GoogleDocsAppendTextResult> Typed response with IDE autocomplete
      */
-    appendText: async (args: GoogleDocsAppendTextArgs): Promise<any> => {
+    appendText: async (args: GoogleDocsAppendTextArgs): Promise<GoogleDocsAppendTextResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'appendText',
@@ -3106,8 +3611,9 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.documentId - ID of the document
      * @param args.searchText - Text to search for
      * @param args.replaceText - Text to replace with
+     * @returns Promise<GoogleDocsReplaceTextResult> Typed response with IDE autocomplete
      */
-    replaceText: async (args: GoogleDocsReplaceTextArgs): Promise<any> => {
+    replaceText: async (args: GoogleDocsReplaceTextArgs): Promise<GoogleDocsReplaceTextResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'replaceText',
@@ -3118,8 +3624,9 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
     /**
      * Get the text content of a Google Doc
      * @param args.documentId - ID of the document
+     * @returns Promise<GoogleDocsGetDocumentContentResult> Typed response with IDE autocomplete
      */
-    getDocumentContent: async (args: GoogleDocsGetDocumentContentArgs): Promise<any> => {
+    getDocumentContent: async (args: GoogleDocsGetDocumentContentArgs): Promise<GoogleDocsGetDocumentContentResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'getDocumentContent',
@@ -3132,8 +3639,9 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.documentId - ID of the document
      * @param args.text - Text to insert
      * @param args.position - Character position to insert at (1-indexed)
+     * @returns Promise<GoogleDocsInsertTextAtPositionResult> Typed response with IDE autocomplete
      */
-    insertTextAtPosition: async (args: GoogleDocsInsertTextAtPositionArgs): Promise<any> => {
+    insertTextAtPosition: async (args: GoogleDocsInsertTextAtPositionArgs): Promise<GoogleDocsInsertTextAtPositionResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'insertTextAtPosition',
@@ -3147,8 +3655,9 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.searchText - Text to search for
      * @param args.textToInsert - Text to insert after the search text
      * @param args.occurrence - Which occurrence to insert after (default: 1) (optional)
+     * @returns Promise<GoogleDocsInsertTextAfterResult> Typed response with IDE autocomplete
      */
-    insertTextAfter: async (args: GoogleDocsInsertTextAfterArgs): Promise<any> => {
+    insertTextAfter: async (args: GoogleDocsInsertTextAfterArgs): Promise<GoogleDocsInsertTextAfterResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'insertTextAfter',
@@ -3163,8 +3672,9 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.level - Heading level (1-6)
      * @param args.position - Character position to insert at (optional)
      * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     * @returns Promise<GoogleDocsInsertHeadingResult> Typed response with IDE autocomplete
      */
-    insertHeading: async (args: GoogleDocsInsertHeadingArgs): Promise<any> => {
+    insertHeading: async (args: GoogleDocsInsertHeadingArgs): Promise<GoogleDocsInsertHeadingResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'insertHeading',
@@ -3179,8 +3689,9 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.listType - Type of list: "bulleted" or "numbered"
      * @param args.position - Character position to insert at (optional)
      * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     * @returns Promise<GoogleDocsInsertListResult> Typed response with IDE autocomplete
      */
-    insertList: async (args: GoogleDocsInsertListArgs): Promise<any> => {
+    insertList: async (args: GoogleDocsInsertListArgs): Promise<GoogleDocsInsertListResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'insertList',
@@ -3195,8 +3706,9 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.hasHeader - Whether the first row is a header (default: true) (optional)
      * @param args.position - Character position to insert at (optional)
      * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     * @returns Promise<GoogleDocsInsertTableResult> Typed response with IDE autocomplete
      */
-    insertTable: async (args: GoogleDocsInsertTableArgs): Promise<any> => {
+    insertTable: async (args: GoogleDocsInsertTableArgs): Promise<GoogleDocsInsertTableResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'insertTable',
@@ -3208,8 +3720,9 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * Replace the entire content of a document
      * @param args.documentId - ID of the document
      * @param args.newContent - New content to replace existing content
+     * @returns Promise<GoogleDocsUpdateDocumentContentResult> Typed response with IDE autocomplete
      */
-    updateDocumentContent: async (args: GoogleDocsUpdateDocumentContentArgs): Promise<any> => {
+    updateDocumentContent: async (args: GoogleDocsUpdateDocumentContentArgs): Promise<GoogleDocsUpdateDocumentContentResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'updateDocumentContent',
@@ -3218,12 +3731,13 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Create a new section with a heading and content
+     * Create a new section with a heading and content. Returns normalized result with insertion details.
      * @param args.documentId - ID of the document
      * @param args.heading - Section heading text
      * @param args.content - Section content text
+     * @returns Promise<GoogleDocsCreateSectionResult> Typed response with IDE autocomplete
      */
-    createSection: async (args: GoogleDocsCreateSectionArgs): Promise<any> => {
+    createSection: async (args: GoogleDocsCreateSectionArgs): Promise<GoogleDocsCreateSectionResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'createSection',
@@ -3232,12 +3746,13 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Find the character position for insertion based on position or search text
+     * Find the character position for insertion based on position or search text. Returns normalized result with position and context.
      * @param args.documentId - ID of the document
      * @param args.position - Position to find (1 for start, -1 for end)
      * @param args.searchText - Text to search for (returns position after this text) (optional)
+     * @returns Promise<GoogleDocsFindInsertionPointResult> Typed response with IDE autocomplete
      */
-    findInsertionPoint: async (args: GoogleDocsFindInsertionPointArgs): Promise<any> => {
+    findInsertionPoint: async (args: GoogleDocsFindInsertionPointArgs): Promise<GoogleDocsFindInsertionPointResult> => {
       return sdk.resources.call({
         resourceId: 'google-docs',
         method: 'findInsertionPoint',
@@ -3259,8 +3774,9 @@ function createJiraAdapter(sdk: MirraSDK) {
      * @param args.summary - Issue summary/title
      * @param args.description - Issue description (optional)
      * @param args.issueType - Issue type (Task, Bug, Story, etc.) (optional)
+     * @returns Promise<JiraCreateIssueResult> Typed response with IDE autocomplete
      */
-    createIssue: async (args: JiraCreateIssueArgs): Promise<any> => {
+    createIssue: async (args: JiraCreateIssueArgs): Promise<JiraCreateIssueResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'createIssue',
@@ -3269,11 +3785,12 @@ function createJiraAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Search Jira issues using JQL
+     * Search Jira issues using JQL. Returns normalized flat issue summaries.
      * @param args.jql - JQL query string
      * @param args.maxResults - Maximum number of results (default: 50, max: 100) (optional)
+     * @returns Promise<JiraSearchIssuesResult> Typed response with IDE autocomplete
      */
-    searchIssues: async (args: JiraSearchIssuesArgs): Promise<any> => {
+    searchIssues: async (args: JiraSearchIssuesArgs): Promise<JiraSearchIssuesResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'searchIssues',
@@ -3282,10 +3799,11 @@ function createJiraAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get a specific Jira issue by key or ID
+     * Get a specific Jira issue by key or ID. Returns normalized flat structure.
      * @param args.issueKey - Issue key (e.g., "PROJ-123") or ID
+     * @returns Promise<JiraGetIssueResult> Typed response with IDE autocomplete
      */
-    getIssue: async (args: JiraGetIssueArgs): Promise<any> => {
+    getIssue: async (args: JiraGetIssueArgs): Promise<JiraGetIssueResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'getIssue',
@@ -3298,8 +3816,9 @@ function createJiraAdapter(sdk: MirraSDK) {
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
      * @param args.summary - New issue summary/title (optional)
      * @param args.description - New issue description (optional)
+     * @returns Promise<JiraUpdateIssueResult> Typed response with IDE autocomplete
      */
-    updateIssue: async (args: JiraUpdateIssueArgs): Promise<any> => {
+    updateIssue: async (args: JiraUpdateIssueArgs): Promise<JiraUpdateIssueResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'updateIssue',
@@ -3310,8 +3829,9 @@ function createJiraAdapter(sdk: MirraSDK) {
     /**
      * Delete a Jira issue
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @returns Promise<JiraDeleteIssueResult> Typed response with IDE autocomplete
      */
-    deleteIssue: async (args: JiraDeleteIssueArgs): Promise<any> => {
+    deleteIssue: async (args: JiraDeleteIssueArgs): Promise<JiraDeleteIssueResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'deleteIssue',
@@ -3323,8 +3843,9 @@ function createJiraAdapter(sdk: MirraSDK) {
      * Add a comment to a Jira issue
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
      * @param args.comment - Comment text
+     * @returns Promise<JiraAddCommentResult> Typed response with IDE autocomplete
      */
-    addComment: async (args: JiraAddCommentArgs): Promise<any> => {
+    addComment: async (args: JiraAddCommentArgs): Promise<JiraAddCommentResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'addComment',
@@ -3336,8 +3857,9 @@ function createJiraAdapter(sdk: MirraSDK) {
      * Transition a Jira issue to a different status
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
      * @param args.transitionId - ID of the transition to perform
+     * @returns Promise<JiraTransitionIssueResult> Typed response with IDE autocomplete
      */
-    transitionIssue: async (args: JiraTransitionIssueArgs): Promise<any> => {
+    transitionIssue: async (args: JiraTransitionIssueArgs): Promise<JiraTransitionIssueResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'transitionIssue',
@@ -3349,8 +3871,9 @@ function createJiraAdapter(sdk: MirraSDK) {
      * Assign a Jira issue to a user
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
      * @param args.accountId - Atlassian account ID of the assignee
+     * @returns Promise<JiraAssignIssueResult> Typed response with IDE autocomplete
      */
-    assignIssue: async (args: JiraAssignIssueArgs): Promise<any> => {
+    assignIssue: async (args: JiraAssignIssueArgs): Promise<JiraAssignIssueResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'assignIssue',
@@ -3359,9 +3882,10 @@ function createJiraAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get all accessible Jira projects
+     * Get all accessible Jira projects. Returns normalized flat project structures.
+     * @returns Promise<JiraGetProjectsResult> Typed response with IDE autocomplete
      */
-    getProjects: async (args?: {}): Promise<any> => {
+    getProjects: async (args?: {}): Promise<JiraGetProjectsResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'getProjects',
@@ -3370,9 +3894,10 @@ function createJiraAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * List all accessible Jira projects (alias for getProjects)
+     * List all accessible Jira projects (alias for getProjects). Returns normalized flat structures.
+     * @returns Promise<JiraListProjectsResult> Typed response with IDE autocomplete
      */
-    listProjects: async (args?: {}): Promise<any> => {
+    listProjects: async (args?: {}): Promise<JiraListProjectsResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'listProjects',
@@ -3381,10 +3906,11 @@ function createJiraAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get metadata for a specific Jira project
+     * Get metadata for a specific Jira project. Returns normalized flat structures.
      * @param args.projectKey - Project key (e.g., "PROJ")
+     * @returns Promise<JiraGetProjectMetadataResult> Typed response with IDE autocomplete
      */
-    getProjectMetadata: async (args: JiraGetProjectMetadataArgs): Promise<any> => {
+    getProjectMetadata: async (args: JiraGetProjectMetadataArgs): Promise<JiraGetProjectMetadataResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'getProjectMetadata',
@@ -3393,10 +3919,11 @@ function createJiraAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get available transitions for a Jira issue
+     * Get available transitions for a Jira issue. Returns normalized flat structures.
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @returns Promise<JiraGetTransitionsResult> Typed response with IDE autocomplete
      */
-    getTransitions: async (args: JiraGetTransitionsArgs): Promise<any> => {
+    getTransitions: async (args: JiraGetTransitionsArgs): Promise<JiraGetTransitionsResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'getTransitions',
@@ -3407,8 +3934,9 @@ function createJiraAdapter(sdk: MirraSDK) {
     /**
      * List users that can be assigned to issues in a project
      * @param args.projectKey - Project key (e.g., "PROJ")
+     * @returns Promise<JiraListAssignableUsersResult> Typed response with IDE autocomplete
      */
-    listAssignableUsers: async (args: JiraListAssignableUsersArgs): Promise<any> => {
+    listAssignableUsers: async (args: JiraListAssignableUsersArgs): Promise<JiraListAssignableUsersResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'listAssignableUsers',
@@ -3417,10 +3945,11 @@ function createJiraAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get available issue types for a project
+     * Get available issue types for a project. Returns normalized flat structures.
      * @param args.projectKey - Project key (e.g., "PROJ")
+     * @returns Promise<JiraGetIssueTypesResult> Typed response with IDE autocomplete
      */
-    getIssueTypes: async (args: JiraGetIssueTypesArgs): Promise<any> => {
+    getIssueTypes: async (args: JiraGetIssueTypesArgs): Promise<JiraGetIssueTypesResult> => {
       return sdk.resources.call({
         resourceId: 'jira',
         method: 'getIssueTypes',
