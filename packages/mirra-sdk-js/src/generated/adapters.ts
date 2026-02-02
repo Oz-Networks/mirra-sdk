@@ -113,6 +113,7 @@ export interface FlowsRecordExecutionArgs {
 }
 export interface FlowsListEventTypesArgs {
   includeTemplates?: boolean; // Include condition templates for each event type
+  includeSchema?: boolean; // Include field schema showing available paths for script access. RECOMMENDED when writing scripts to see correct field access patterns.
 }
 export interface FlowsTestFlowArgs {
   flowId: string; // ID of the flow to test
@@ -1108,6 +1109,18 @@ export interface MoltbookGetFeedArgs {
 }
 export interface MoltbookSearchArgs {
   query: string; // Search query
+}
+
+// Tunnel Adapter Types
+export interface TunnelCallArgs {
+  tunnel?: string; // Tunnel name to use (defaults to 'default')
+  method?: string; // HTTP method (defaults to GET)
+  path: string; // Request path (e.g., /api/query)
+  headers?: any; // Request headers
+  body?: any; // Request body (for POST/PUT/PATCH)
+}
+export interface TunnelStatusArgs {
+  tunnel?: string; // Tunnel name to check (defaults to 'default')
 }
 
 
@@ -4114,7 +4127,21 @@ COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.acti
 
     /**
      * List all available event types that can trigger automations. Returns normalized event types.
+
+IMPORTANT: Use includeSchema: true when writing scripts to see available fields and correct access patterns.
+
+Scripts receive an ExecutionRequest, NOT the raw IntegrationEvent. Correct access patterns:
+- event.data.text (normalized text content)
+- event.data.sender (normalized sender name)
+- event.data.event (full IntegrationEvent object)
+- event.trigger.event (also full IntegrationEvent)
+
+Common WRONG patterns that don't work:
+- event.summary (doesn't exist)
+- event.content.text (wrong path)
+- event.timestamp (wrong path)
      * @param args.includeTemplates - Include condition templates for each event type (optional)
+     * @param args.includeSchema - Include field schema showing available paths for script access. RECOMMENDED when writing scripts to see correct field access patterns. (optional)
      * @returns Promise<FlowsListEventTypesResult> Typed response with IDE autocomplete
      */
     listEventTypes: async (args: FlowsListEventTypesArgs): Promise<FlowsListEventTypesResult> => {
@@ -7379,6 +7406,53 @@ function createMoltbookAdapter(sdk: MirraSDK) {
   };
 }
 
+/**
+ * Tunnel Adapter
+ * Category: internal
+ */
+function createTunnelAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Make an HTTP request through a tunnel to a local service
+     * @param args.tunnel - Tunnel name to use (defaults to 'default') (optional)
+     * @param args.method - HTTP method (defaults to GET) (optional)
+     * @param args.path - Request path (e.g., /api/query)
+     * @param args.headers - Request headers (optional)
+     * @param args.body - Request body (for POST/PUT/PATCH) (optional)
+     */
+    call: async (args: TunnelCallArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'tunnel',
+        method: 'call',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Check if a specific tunnel is connected
+     * @param args.tunnel - Tunnel name to check (defaults to 'default') (optional)
+     */
+    status: async (args: TunnelStatusArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'tunnel',
+        method: 'status',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all connected tunnels for the user
+     */
+    list: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'tunnel',
+        method: 'list',
+        params: args || {}
+      });
+    }
+  };
+}
+
 
 // ============================================================================
 // Exports
@@ -7406,5 +7480,6 @@ export const generatedAdapters = {
   scripts: createScriptsAdapter,
   feedback: createFeedbackAdapter,
   mirraMessaging: createMirraMessagingAdapter,
-  moltbook: createMoltbookAdapter
+  moltbook: createMoltbookAdapter,
+  tunnel: createTunnelAdapter
 };
