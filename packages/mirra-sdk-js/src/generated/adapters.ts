@@ -1754,7 +1754,7 @@ export interface DocumentListGraphsData {
 
 export type DocumentListGraphsResult = AdapterResultBase<DocumentListGraphsData>;
 
-export interface DocumentSearchResult {
+export interface DocumentSearchResultItem {
   chunkId: string; // Unique chunk ID
   documentId: string; // Parent document ID
   content: string; // Chunk text content
@@ -1765,7 +1765,7 @@ export interface DocumentSearchResult {
 export interface DocumentSearchData {
   graphId: string; // Searched graph ID
   count: number; // Number of results
-  results: DocumentSearchResult[]; // Search results
+  results: DocumentSearchResultItem[]; // Search results
 }
 
 export type DocumentSearchResult = AdapterResultBase<DocumentSearchData>;
