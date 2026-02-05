@@ -1138,6 +1138,86 @@ export interface TunnelStatusArgs {
   tunnel?: string; // Tunnel name to check (defaults to 'default')
 }
 
+// Polymarket Adapter Types
+export interface PolymarketGetMarketsArgs {
+  query?: string; // Search query to filter markets by question text (matched against slug)
+  tag?: string; // Filter by category tag (e.g., "politics", "crypto", "sports", "science")
+  limit?: number; // Maximum number of markets to return (default: 25, max: 100)
+  offset?: number; // Offset for pagination (default: 0)
+  active?: boolean; // If true, return only active/open markets
+  closed?: boolean; // If true, return only closed/resolved markets
+}
+export interface PolymarketGetMarketArgs {
+  conditionId?: string; // The condition ID of the market (hex string, e.g., "0xabc123...")
+  slug?: string; // The market slug (URL-friendly name, alternative to conditionId)
+}
+export interface PolymarketGetEventsArgs {
+  tag?: string; // Filter by category tag (e.g., "politics", "crypto", "sports")
+  limit?: number; // Maximum number of events to return (default: 25, max: 100)
+  offset?: number; // Offset for pagination (default: 0)
+  active?: boolean; // If true, return only active events
+  closed?: boolean; // If true, return only closed/resolved events
+}
+export interface PolymarketGetPriceArgs {
+  tokenId: string; // The token ID of the outcome to price (available from market.outcomes or market data)
+}
+export interface PolymarketGetOrderbookArgs {
+  tokenId: string; // The token ID of the outcome (available from market data)
+}
+export interface PolymarketPlaceOrderArgs {
+  tokenId: string; // The token ID of the outcome to trade (from market data)
+  price: number; // Order price between 0.01 and 0.99 (implied probability)
+  size: number; // Order size in number of shares (denominated in USDC)
+  side: string; // Order side: "BUY" to buy outcome shares, "SELL" to sell held shares
+  type?: string; // Order type: "GTC" (Good Til Cancelled, default), "GTD" (Good Til Date), "FOK" (Fill Or Kill), "FAK" (Fill And Kill)
+  expiration?: number; // Unix timestamp expiration for GTD orders only
+}
+export interface PolymarketExecuteOrderArgs {
+  orderPayload: any; // The order payload from placeOrder: { tokenId, price, size, side, type, expiration }
+}
+export interface PolymarketCancelOrderArgs {
+  orderId: string; // The ID of the order to cancel (from getOrders or placeOrder result)
+}
+export interface PolymarketExecuteCancelOrderArgs {
+  orderId: string; // The ID of the order to cancel
+}
+export interface PolymarketRefreshOrderArgs {
+  tokenId: string; // The token ID of the outcome to trade
+  price: number; // Order price between 0.01 and 0.99
+  size: number; // Order size in number of shares
+  side: string; // Order side: "BUY" or "SELL"
+  type?: string; // Order type: "GTC" (default), "GTD", "FOK", "FAK"
+  expiration?: number; // Unix timestamp expiration for GTD orders
+}
+export interface PolymarketGetOrdersArgs {
+  market?: string; // Filter by market condition ID to see orders for a specific market
+  limit?: number; // Maximum number of orders to return (default: 25, max: 100)
+  offset?: number; // Offset for pagination (default: 0)
+}
+export interface PolymarketGetTradesArgs {
+  market?: string; // Filter by market condition ID
+  limit?: number; // Maximum number of trades to return (default: 25, max: 100)
+  offset?: number; // Offset for pagination (default: 0)
+}
+export interface PolymarketGetBuilderLeaderboardArgs {
+  period?: string; // Time period for rankings: "daily", "weekly", "monthly", or omit for all-time
+  limit?: number; // Maximum number of entries to return (default: 25, max: 100)
+}
+export interface PolymarketGetBuilderVolumeArgs {
+  startDate?: string; // Start date in ISO 8601 format (e.g., "2024-06-01")
+  endDate?: string; // End date in ISO 8601 format (e.g., "2024-06-30")
+}
+export interface PolymarketDiscoverExtendedArgs {
+  query: string; // Describe what you want to do (e.g., "add label to card")
+  limit?: number; // Max results to return (default 5)
+}
+export interface PolymarketExecuteExtendedArgs {
+  operationId: string; // The operationId from discoverExtended results
+  pathParams?: any; // Path parameters, e.g., { id: "abc123" }
+  queryParams?: any; // Query string parameters
+  body?: any; // Request body for POST/PUT/PATCH operations
+}
+
 
 // ============================================================================
 // Response Type Definitions
@@ -7506,6 +7586,247 @@ function createTunnelAdapter(sdk: MirraSDK) {
   };
 }
 
+/**
+ * Polymarket Adapter
+ * Category: crypto
+ */
+function createPolymarketAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Search and list Polymarket prediction markets. Returns active and resolved markets with current pricing, volume, and outcome data from the Gamma API. Use the query parameter to search by question text, or filter by category tag, active/closed status. Results are paginated.
+     * @param args.query - Search query to filter markets by question text (matched against slug) (optional)
+     * @param args.tag - Filter by category tag (e.g., "politics", "crypto", "sports", "science") (optional)
+     * @param args.limit - Maximum number of markets to return (default: 25, max: 100) (optional)
+     * @param args.offset - Offset for pagination (default: 0) (optional)
+     * @param args.active - If true, return only active/open markets (optional)
+     * @param args.closed - If true, return only closed/resolved markets (optional)
+     */
+    getMarkets: async (args: PolymarketGetMarketsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'getMarkets',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get detailed information for a specific Polymarket prediction market. Lookup by conditionId (the unique market identifier on the CTF contract) or by slug (the URL-friendly market name). Returns full market details including current pricing, volume, liquidity, and outcome probabilities.
+     * @param args.conditionId - The condition ID of the market (hex string, e.g., "0xabc123...") (optional)
+     * @param args.slug - The market slug (URL-friendly name, alternative to conditionId) (optional)
+     */
+    getMarket: async (args: PolymarketGetMarketArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'getMarket',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List Polymarket events, which are groups of related prediction markets. For example, a "2024 US Election" event may contain multiple markets for different races. Events include aggregated volume/liquidity and a list of child markets with their individual outcome prices.
+     * @param args.tag - Filter by category tag (e.g., "politics", "crypto", "sports") (optional)
+     * @param args.limit - Maximum number of events to return (default: 25, max: 100) (optional)
+     * @param args.offset - Offset for pagination (default: 0) (optional)
+     * @param args.active - If true, return only active events (optional)
+     * @param args.closed - If true, return only closed/resolved events (optional)
+     */
+    getEvents: async (args: PolymarketGetEventsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'getEvents',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the current midpoint price for a specific market outcome token on the Polymarket CLOB. The tokenId is the unique identifier for one side of a binary market outcome (e.g., the "Yes" token or "No" token). Prices range from 0.00 to 1.00, representing the implied probability.
+     * @param args.tokenId - The token ID of the outcome to price (available from market.outcomes or market data)
+     */
+    getPrice: async (args: PolymarketGetPriceArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'getPrice',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the current orderbook depth for a market outcome token on the Polymarket CLOB. Returns sorted bid and ask arrays with price/size at each level, plus computed midpoint and spread. Useful for assessing liquidity and slippage before placing orders.
+     * @param args.tokenId - The token ID of the outcome (available from market data)
+     */
+    getOrderbook: async (args: PolymarketGetOrderbookArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'getOrderbook',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Creates an action proposal for user approval. Validates that CLOB credentials exist, fetches live market price/spread for context, and saves an ActionProposal to the database. Server signs and submits the order on approval. Returns status "pending" with requiresAction: true.
+     * @param args.tokenId - The token ID of the outcome to trade (from market data)
+     * @param args.price - Order price between 0.01 and 0.99 (implied probability)
+     * @param args.size - Order size in number of shares (denominated in USDC)
+     * @param args.side - Order side: "BUY" to buy outcome shares, "SELL" to sell held shares
+     * @param args.type - Order type: "GTC" (Good Til Cancelled, default), "GTD" (Good Til Date), "FOK" (Fill Or Kill), "FAK" (Fill And Kill) (optional)
+     * @param args.expiration - Unix timestamp expiration for GTD orders only (optional)
+     */
+    placeOrder: async (args: PolymarketPlaceOrderArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'placeOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Executes a previously approved order using server-stored CLOB credentials. Called automatically when user approves a placeOrder proposal. Signs the order server-side with HMAC-SHA256 and submits to the Polymarket CLOB API with optional Builder attribution headers.
+     * @param args.orderPayload - The order payload from placeOrder: { tokenId, price, size, side, type, expiration }
+     */
+    executeOrder: async (args: PolymarketExecuteOrderArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'executeOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Creates an action proposal to cancel an existing order. Validates that CLOB credentials exist and saves an ActionProposal to the database. Server signs and submits the cancellation on approval. Returns status "pending" with requiresAction: true.
+     * @param args.orderId - The ID of the order to cancel (from getOrders or placeOrder result)
+     */
+    cancelOrder: async (args: PolymarketCancelOrderArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'cancelOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Executes a previously approved cancel using server-stored CLOB credentials. Called automatically when user approves a cancelOrder proposal. Signs the cancel request server-side and submits to the Polymarket CLOB API.
+     * @param args.orderId - The ID of the order to cancel
+     */
+    executeCancelOrder: async (args: PolymarketExecuteCancelOrderArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'executeCancelOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Rebuild an expired order proposal with fresh market data. Use this when a pending order from placeOrder has expired and the user still wants to place the trade. Creates a new ActionProposal with updated currentPrice and a new expiration. Same parameters as placeOrder.
+     * @param args.tokenId - The token ID of the outcome to trade
+     * @param args.price - Order price between 0.01 and 0.99
+     * @param args.size - Order size in number of shares
+     * @param args.side - Order side: "BUY" or "SELL"
+     * @param args.type - Order type: "GTC" (default), "GTD", "FOK", "FAK" (optional)
+     * @param args.expiration - Unix timestamp expiration for GTD orders (optional)
+     */
+    refreshOrder: async (args: PolymarketRefreshOrderArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'refreshOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get active orders for the authenticated user on the Polymarket CLOB. Returns open/pending orders with current fill status. Requires server-side CLOB credentials (read-only). Can be filtered by market condition ID.
+     * @param args.market - Filter by market condition ID to see orders for a specific market (optional)
+     * @param args.limit - Maximum number of orders to return (default: 25, max: 100) (optional)
+     * @param args.offset - Offset for pagination (default: 0) (optional)
+     */
+    getOrders: async (args: PolymarketGetOrdersArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'getOrders',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get current prediction market positions for the authenticated user. Shows all held outcome token positions with average entry price, current price, and computed P&L. Requires the user's wallet address and CLOB credentials.
+     */
+    getPositions: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'getPositions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get trade history for the authenticated user. Returns completed trades with execution prices, sizes, fees, and on-chain transaction hashes. Can be filtered by market.
+     * @param args.market - Filter by market condition ID (optional)
+     * @param args.limit - Maximum number of trades to return (default: 25, max: 100) (optional)
+     * @param args.offset - Offset for pagination (default: 0) (optional)
+     */
+    getTrades: async (args: PolymarketGetTradesArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'getTrades',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the Polymarket Builder program leaderboard rankings. Shows top builders by volume and trade count for a given period. Requires Builder API credentials configured on the server.
+     * @param args.period - Time period for rankings: "daily", "weekly", "monthly", or omit for all-time (optional)
+     * @param args.limit - Maximum number of entries to return (default: 25, max: 100) (optional)
+     */
+    getBuilderLeaderboard: async (args: PolymarketGetBuilderLeaderboardArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'getBuilderLeaderboard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get volume time-series data for the Builder program. Shows daily volume and trade count attributed to the builder. Requires Builder API credentials.
+     * @param args.startDate - Start date in ISO 8601 format (e.g., "2024-06-01") (optional)
+     * @param args.endDate - End date in ISO 8601 format (e.g., "2024-06-30") (optional)
+     */
+    getBuilderVolume: async (args: PolymarketGetBuilderVolumeArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'getBuilderVolume',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search Polymarket API for available operations beyond core tools
+     * @param args.query - Describe what you want to do (e.g., "add label to card")
+     * @param args.limit - Max results to return (default 5) (optional)
+     */
+    discoverExtended: async (args: PolymarketDiscoverExtendedArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'discoverExtended',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Execute a Polymarket API operation by operationId
+     * @param args.operationId - The operationId from discoverExtended results
+     * @param args.pathParams - Path parameters, e.g., { id: "abc123" } (optional)
+     * @param args.queryParams - Query string parameters (optional)
+     * @param args.body - Request body for POST/PUT/PATCH operations (optional)
+     */
+    executeExtended: async (args: PolymarketExecuteExtendedArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'polymarket',
+        method: 'executeExtended',
+        params: args || {}
+      });
+    }
+  };
+}
+
 
 // ============================================================================
 // Exports
@@ -7534,5 +7855,6 @@ export const generatedAdapters = {
   feedback: createFeedbackAdapter,
   mirraMessaging: createMirraMessagingAdapter,
   moltbook: createMoltbookAdapter,
-  tunnel: createTunnelAdapter
+  tunnel: createTunnelAdapter,
+  polymarket: createPolymarketAdapter
 };
