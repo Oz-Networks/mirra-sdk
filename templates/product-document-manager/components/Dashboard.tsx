@@ -69,13 +69,16 @@ export default function Dashboard({
         limit: 100,
       });
 
-      const productItems = Array.isArray(productsResult) ? productsResult : productsResult?.data || [];
+      // Handle normalized response: { data: { entities: [...] } } or legacy array format
+      const productItems = Array.isArray(productsResult)
+        ? productsResult
+        : productsResult?.data?.entities || productsResult?.entities || [];
       if (productItems.length > 0) {
         const loadedProducts = productItems.map((p: any) => ({
           id: p.metadata?.productId || p.id,
           memoryId: p.id,
-          name: p.metadata?.name || p.content || p.name,
-          createdAt: new Date(p.metadata?.createdAt || Date.now()),
+          name: p.metadata?.name || p.name || p.description || 'Untitled',
+          createdAt: new Date(p.metadata?.createdAt || p.createdAt || Date.now()),
         }));
         setProducts(loadedProducts);
       }
@@ -85,7 +88,9 @@ export default function Dashboard({
         limit: 500,
       });
 
-      const linkItems = Array.isArray(linksResult) ? linksResult : linksResult?.data || [];
+      const linkItems = Array.isArray(linksResult)
+        ? linksResult
+        : linksResult?.data?.entities || linksResult?.entities || [];
       const docProductMap: Record<string, string> = {};
       if (linkItems.length > 0) {
         for (const link of linkItems) {
@@ -209,13 +214,16 @@ export default function Dashboard({
     try {
       await sdk.documents.delete(documentId);
 
-      const linksResult = await sdk.memory.query({
+      const linksResult: any = await sdk.memory.query({
         type: 'document-product-link',
         limit: 500,
       });
 
-      if (linksResult && linksResult.length > 0) {
-        const linkToDelete = linksResult.find(
+      const deleteLinks = Array.isArray(linksResult)
+        ? linksResult
+        : linksResult?.data?.entities || linksResult?.entities || [];
+      if (deleteLinks.length > 0) {
+        const linkToDelete = deleteLinks.find(
           (link: any) => link.metadata?.documentId === documentId
         );
         if (linkToDelete) {

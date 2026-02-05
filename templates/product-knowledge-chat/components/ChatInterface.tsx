@@ -85,11 +85,13 @@ export default function ChatInterface({
         limit: 100,
       });
 
-      const items = Array.isArray(result) ? result : result?.data || [];
+      const items = Array.isArray(result)
+        ? result
+        : result?.data?.entities || result?.entities || [];
       if (items.length > 0) {
         const loadedProducts = items.map((p: any) => ({
           id: p.metadata?.productId || p.id,
-          name: p.metadata?.name || p.content || p.name,
+          name: p.metadata?.name || p.name || p.description || 'Untitled',
         }));
         setProducts(loadedProducts);
 
@@ -114,7 +116,9 @@ export default function ChatInterface({
         limit: 100,
       });
 
-      const linkItems = Array.isArray(linksResult) ? linksResult : linksResult?.data || [];
+      const linkItems = Array.isArray(linksResult)
+        ? linksResult
+        : linksResult?.data?.entities || linksResult?.entities || [];
       const productDocIds = linkItems
         .filter((link: any) => link.metadata?.productId === productId)
         .map((link: any) => link.metadata?.documentId)

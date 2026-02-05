@@ -829,6 +829,21 @@ export interface JupiterRefreshSwapArgs {
   inputDecimals: number; // Input token decimals
   slippageBps?: number; // Slippage tolerance in basis points
 }
+export interface JupiterLaunchTokenArgs {
+  tokenName: string; // Name of the token
+  tokenSymbol: string; // Token ticker symbol
+  tokenDescription?: string; // Description for the token metadata
+  tokenImageUrl: string; // URL of the uploaded token image (from user message)
+  quoteMint?: string; // Quote token mint address. Defaults to USDC (EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v). Can also use SOL or JUP mint.
+  initialMarketCap?: number; // Initial market cap in quote token units (default: 16000 for meme preset)
+  migrationMarketCap?: number; // Market cap threshold for graduation/migration (default: 69000 for meme preset)
+  antiSniping?: boolean; // Enable anti-sniping protection (default: false)
+  feeBps?: number; // Creator trading fee in basis points: 100 (1%) or 200 (2%). Default: 100
+  isLpLocked?: boolean; // Lock LP tokens (default: true)
+  website?: string; // Project website URL for token metadata
+  twitter?: string; // Twitter/X URL for token metadata
+  telegram?: string; // Telegram URL for token metadata
+}
 
 // Crypto Adapter Types
 export interface CryptoGetPriceArgs {
@@ -3056,6 +3071,19 @@ export interface JupiterRefreshSwapData {
 
 export type JupiterRefreshSwapResult = AdapterResultBase<JupiterRefreshSwapData>;
 
+export interface JupiterLaunchTokenData {
+  type: 'pending_transaction'; // Response type
+  transaction: string; // Base64 encoded unsigned transaction
+  mint: string; // New token mint address
+  signerWallet: string; // Wallet that needs to sign
+  expiresAt: string; // Expiration timestamp (ISO 8601)
+  tokenName: string; // Token name
+  tokenSymbol: string; // Token symbol
+  imageUrl: string; // Onchain image URL (from Jupiter)
+}
+
+export type JupiterLaunchTokenResult = AdapterResultBase<JupiterLaunchTokenData>;
+
 // Crypto Response Types
 export interface CryptoGetPriceData {
   tokenAddress: string; // Token contract address
@@ -3913,14 +3941,14 @@ Time flow with inline code:
 {
   title: "Daily Report",
   schedule: "0 9 * * *",
-  code: "async (ctx) => { await ctx.mirra.telegram.sendMessage({...}); return { done: true }; }"
+  code: "export async function handler(event, context, mirra) { await mirra.telegram.sendMessage({...}); return { done: true }; }"
 }
 
 Event flow with eventType shorthand:
 {
   title: "Handle Messages",
   eventType: "telegram.message",
-  code: "async (event, ctx) => { return { handled: true }; }"
+  code: "export async function handler(event, context, mirra) { return { handled: true }; }"
 }
 
 Event flow with existing script:
@@ -6469,6 +6497,31 @@ function createJupiterAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'jupiter',
         method: 'refreshSwap',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Launch a new token on Solana via Jupiter Studio. Creates a DBC (Dynamic Bonding Curve) pool. The user must have uploaded a token image in this conversation — pass the image URL provided in the chat. Returns a pending_transaction for the user to sign. FLAT structure.
+     * @param args.tokenName - Name of the token
+     * @param args.tokenSymbol - Token ticker symbol
+     * @param args.tokenDescription - Description for the token metadata (optional)
+     * @param args.tokenImageUrl - URL of the uploaded token image (from user message)
+     * @param args.quoteMint - Quote token mint address. Defaults to USDC (EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v). Can also use SOL or JUP mint. (optional)
+     * @param args.initialMarketCap - Initial market cap in quote token units (default: 16000 for meme preset) (optional)
+     * @param args.migrationMarketCap - Market cap threshold for graduation/migration (default: 69000 for meme preset) (optional)
+     * @param args.antiSniping - Enable anti-sniping protection (default: false) (optional)
+     * @param args.feeBps - Creator trading fee in basis points: 100 (1%) or 200 (2%). Default: 100 (optional)
+     * @param args.isLpLocked - Lock LP tokens (default: true) (optional)
+     * @param args.website - Project website URL for token metadata (optional)
+     * @param args.twitter - Twitter/X URL for token metadata (optional)
+     * @param args.telegram - Telegram URL for token metadata (optional)
+     * @returns Promise<JupiterLaunchTokenResult> Typed response with IDE autocomplete
+     */
+    launchToken: async (args: JupiterLaunchTokenArgs): Promise<JupiterLaunchTokenResult> => {
+      return sdk.resources.call({
+        resourceId: 'jupiter',
+        method: 'launchToken',
         params: args || {}
       });
     }
