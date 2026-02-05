@@ -1160,6 +1160,7 @@ export interface PolymarketGetEventsArgs {
 }
 export interface PolymarketGetPriceArgs {
   tokenId: string; // The token ID of the outcome to price (available from market.outcomes or market data)
+  side?: string; // Price side: "BUY" or "SELL". Defaults to "BUY".
 }
 export interface PolymarketGetOrderbookArgs {
   tokenId: string; // The token ID of the outcome (available from market data)
@@ -1216,6 +1217,59 @@ export interface PolymarketExecuteExtendedArgs {
   pathParams?: any; // Path parameters, e.g., { id: "abc123" }
   queryParams?: any; // Query string parameters
   body?: any; // Request body for POST/PUT/PATCH operations
+}
+
+// Hypertrade Adapter Types
+export interface HypertradePlaceOrderArgs {
+  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
+  isBuy: boolean; // True for long/buy, false for short/sell
+  size: number; // Order size in asset units
+  limitPrice?: number; // Limit price (required for limit orders)
+  orderType?: string; // Order type: "limit" or "market" (default: "market")
+  triggerPrice?: number; // Trigger price for stop/take-profit orders
+  reduceOnly?: boolean; // Whether order can only reduce position (default: false)
+  postOnly?: boolean; // Whether order should only be maker (default: false)
+  clientOrderId?: string; // Custom client order ID for tracking
+}
+export interface HypertradeCancelOrderArgs {
+  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
+  orderId?: number; // Order ID to cancel
+  clientOrderId?: string; // Client order ID to cancel
+  cancelAll?: boolean; // Cancel all orders for this asset (default: false)
+}
+export interface HypertradeGetPositionsArgs {
+  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
+}
+export interface HypertradeGetOpenOrdersArgs {
+  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
+  asset?: string; // Filter by asset/coin symbol
+}
+export interface HypertradeGetBalancesArgs {
+  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
+}
+export interface HypertradeGetMarketInfoArgs {
+  asset?: string; // Specific asset/coin symbol to get info for (returns all if omitted)
+}
+export interface HypertradeGetOrderbookArgs {
+  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
+  depth?: number; // Number of levels to return (default: all)
+}
+export interface HypertradeGetCandlesArgs {
+  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
+  interval?: string; // Candle interval (e.g. "1m", "5m", "1h", "1d"). Default: "1h"
+  startTime?: number; // Start time in milliseconds (default: 24h ago)
+  endTime?: number; // End time in milliseconds (default: now)
+  limit?: number; // Max number of candles to return
+}
+export interface HypertradeSetLeverageArgs {
+  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
+  leverage: number; // Leverage multiplier (e.g. 5 for 5x)
+  isCrossMargin?: boolean; // Use cross margin (default: true). False for isolated margin.
+}
+export interface HypertradeGetTradeHistoryArgs {
+  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
+  asset?: string; // Filter by asset/coin symbol
+  limit?: number; // Max number of trades to return
 }
 
 
@@ -3990,6 +4044,182 @@ export interface MoltbookGetStatusData {
 }
 
 export type MoltbookGetStatusResult = AdapterResultBase<MoltbookGetStatusData>;
+
+// Hypertrade Response Types
+export interface HypertradePlaceOrderData {
+  type: 'pending_order'; // Response type
+  asset: string; // Asset/coin symbol
+  isBuy: boolean; // Whether buying/longing
+  size: number; // Order size
+  limitPrice: number; // Limit price (0 for market)
+  orderType: string; // Order type (limit/market)
+  triggerPrice: number; // Trigger price (0 if none)
+  reduceOnly: boolean; // Whether reduce-only
+  postOnly: boolean; // Whether post-only
+  clientOrderId: string; // Client order ID (empty if none)
+  signerWallet: string; // Wallet address that needs to sign
+  expiresAt: string; // Expiration timestamp (ISO 8601)
+}
+
+export type HypertradePlaceOrderResult = AdapterResultBase<HypertradePlaceOrderData>;
+
+export interface HypertradeCancelOrderData {
+  type: 'pending_cancel'; // Response type
+  asset: string; // Asset/coin symbol
+  orderId: number; // Order ID to cancel (0 if using clientOrderId)
+  clientOrderId: string; // Client order ID to cancel (empty if using orderId)
+  cancelAll: boolean; // Whether cancelling all orders for the asset
+  signerWallet: string; // Wallet address that needs to sign
+  expiresAt: string; // Expiration timestamp (ISO 8601)
+}
+
+export type HypertradeCancelOrderResult = AdapterResultBase<HypertradeCancelOrderData>;
+
+export interface HypertradePosition {
+  asset: string; // Asset/coin symbol
+  size: number; // Position size (absolute value)
+  entryPrice: number; // Entry price
+  markPrice: number; // Current mark price
+  unrealizedPnl: number; // Unrealized PnL
+  leverage: number; // Current leverage
+  liquidationPrice: number; // Liquidation price
+  marginUsed: number; // Margin used for this position
+  positionValue: number; // Total position value
+  returnOnEquity: number; // Return on equity
+  side: string; // Position side: "long" or "short"
+}
+
+export interface HypertradeGetPositionsData {
+  positions: HypertradePosition[]; // List of open positions
+}
+
+export type HypertradeGetPositionsResult = AdapterResultBase<HypertradeGetPositionsData>;
+
+export interface HypertradeOpenOrder {
+  asset: string; // Asset/coin symbol
+  orderId: number; // Order ID
+  side: string; // Order side (Buy/Sell)
+  size: number; // Current order size
+  originalSize: number; // Original order size
+  price: number; // Limit price
+  orderType: string; // Order type
+  reduceOnly: boolean; // Whether reduce-only
+  timestamp: number; // Order creation timestamp
+  triggerCondition: string; // Trigger condition
+  triggerPrice: number; // Trigger price (0 if not trigger)
+  isTrigger: boolean; // Whether this is a trigger order
+}
+
+export interface HypertradeGetOpenOrdersData {
+  orders: HypertradeOpenOrder[]; // List of open orders
+}
+
+export type HypertradeGetOpenOrdersResult = AdapterResultBase<HypertradeGetOpenOrdersData>;
+
+export interface HypertradeSpotBalance {
+  coin: string; // Coin/token symbol
+  total: number; // Total balance
+  hold: number; // Balance on hold (in orders)
+  available: number; // Available balance
+}
+
+export interface HypertradeGetBalancesData {
+  accountValue: number; // Total account value
+  totalMarginUsed: number; // Total margin used
+  withdrawable: number; // Withdrawable amount
+  perpEquity: number; // Perpetual equity
+  spotBalances: HypertradeSpotBalance[]; // List of spot token balances
+}
+
+export type HypertradeGetBalancesResult = AdapterResultBase<HypertradeGetBalancesData>;
+
+export interface HypertradeMarketInfo {
+  asset: string; // Asset/coin symbol
+  markPrice: number; // Mark price
+  midPrice: number; // Mid price
+  oraclePrice: number; // Oracle price
+  openInterest: number; // Open interest
+  funding: number; // Current funding rate
+  dayVolume: number; // 24h notional volume
+  prevDayPrice: number; // Previous day price
+  maxLeverage: number; // Maximum allowed leverage
+  szDecimals: number; // Size decimals for this asset
+}
+
+export interface HypertradeGetMarketInfoData {
+  markets: HypertradeMarketInfo[]; // List of market info entries
+}
+
+export type HypertradeGetMarketInfoResult = AdapterResultBase<HypertradeGetMarketInfoData>;
+
+export interface HypertradeOrderbookLevel {
+  price: number; // Price level
+  size: number; // Total size at this level
+  numOrders: number; // Number of orders at this level
+}
+
+export interface HypertradeGetOrderbookData {
+  asset: string; // Asset/coin symbol
+  bids: HypertradeOrderbookLevel[]; // Bid levels (best first)
+  asks: HypertradeOrderbookLevel[]; // Ask levels (best first)
+  spread: number; // Best ask - best bid
+  midPrice: number; // Mid price ((best ask + best bid) / 2)
+  timestamp: number; // Snapshot timestamp
+}
+
+export type HypertradeGetOrderbookResult = AdapterResultBase<HypertradeGetOrderbookData>;
+
+export interface HypertradeCandle {
+  timestamp: number; // Candle open time in milliseconds
+  open: number; // Open price
+  high: number; // High price
+  low: number; // Low price
+  close: number; // Close price
+  volume: number; // Volume
+  numTrades: number; // Number of trades
+}
+
+export interface HypertradeGetCandlesData {
+  asset: string; // Asset/coin symbol
+  interval: string; // Candle interval
+  candles: HypertradeCandle[]; // List of candles
+}
+
+export type HypertradeGetCandlesResult = AdapterResultBase<HypertradeGetCandlesData>;
+
+export interface HypertradeSetLeverageData {
+  type: 'pending_leverage'; // Response type
+  asset: string; // Asset/coin symbol
+  leverage: number; // Leverage multiplier
+  leverageMode: string; // Leverage mode (cross/isolated)
+  isCrossMargin: boolean; // Whether cross margin
+  signerWallet: string; // Wallet address that needs to sign
+  expiresAt: string; // Expiration timestamp (ISO 8601)
+}
+
+export type HypertradeSetLeverageResult = AdapterResultBase<HypertradeSetLeverageData>;
+
+export interface HypertradeTradeFill {
+  asset: string; // Asset/coin symbol
+  tradeId: number; // Trade ID
+  orderId: number; // Order ID
+  side: string; // Trade side
+  price: number; // Fill price
+  size: number; // Fill size
+  fee: number; // Fee amount
+  feeToken: string; // Fee token
+  closedPnl: number; // Realized PnL from this trade
+  timestamp: number; // Trade timestamp
+  direction: string; // Trade direction
+  crossed: boolean; // Whether this was a taker fill
+  hash: string; // Transaction hash
+}
+
+export interface HypertradeGetTradeHistoryData {
+  trades: HypertradeTradeFill[]; // List of trade fills
+}
+
+export type HypertradeGetTradeHistoryResult = AdapterResultBase<HypertradeGetTradeHistoryData>;
 
 
 // ============================================================================
@@ -7639,8 +7869,9 @@ function createPolymarketAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get the current midpoint price for a specific market outcome token on the Polymarket CLOB. The tokenId is the unique identifier for one side of a binary market outcome (e.g., the "Yes" token or "No" token). Prices range from 0.00 to 1.00, representing the implied probability.
+     * Get the current price for a specific market outcome token on the Polymarket CLOB. The tokenId is the unique identifier for one side of a binary market outcome (e.g., the "Yes" token or "No" token). Prices range from 0.00 to 1.00, representing the implied probability. Use side to get the BUY or SELL price.
      * @param args.tokenId - The token ID of the outcome to price (available from market.outcomes or market data)
+     * @param args.side - Price side: "BUY" or "SELL". Defaults to "BUY". (optional)
      */
     getPrice: async (args: PolymarketGetPriceArgs): Promise<any> => {
       return sdk.resources.call({
@@ -7827,6 +8058,165 @@ function createPolymarketAdapter(sdk: MirraSDK) {
   };
 }
 
+/**
+ * Hypertrade Adapter
+ * Category: crypto
+ */
+function createHypertradeAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Place an order on Hyperliquid DEX. Returns a pending order for the user to sign in delegated mode, or submits directly in standard mode. FLAT response.
+     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
+     * @param args.isBuy - True for long/buy, false for short/sell
+     * @param args.size - Order size in asset units
+     * @param args.limitPrice - Limit price (required for limit orders) (optional)
+     * @param args.orderType - Order type: "limit" or "market" (default: "market") (optional)
+     * @param args.triggerPrice - Trigger price for stop/take-profit orders (optional)
+     * @param args.reduceOnly - Whether order can only reduce position (default: false) (optional)
+     * @param args.postOnly - Whether order should only be maker (default: false) (optional)
+     * @param args.clientOrderId - Custom client order ID for tracking (optional)
+     * @returns Promise<HypertradePlaceOrderResult> Typed response with IDE autocomplete
+     */
+    placeOrder: async (args: HypertradePlaceOrderArgs): Promise<HypertradePlaceOrderResult> => {
+      return sdk.resources.call({
+        resourceId: 'hypertrade',
+        method: 'placeOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Cancel an open order on Hyperliquid DEX. Can cancel by orderId, clientOrderId, or cancel all orders for an asset.
+     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
+     * @param args.orderId - Order ID to cancel (optional)
+     * @param args.clientOrderId - Client order ID to cancel (optional)
+     * @param args.cancelAll - Cancel all orders for this asset (default: false) (optional)
+     * @returns Promise<HypertradeCancelOrderResult> Typed response with IDE autocomplete
+     */
+    cancelOrder: async (args: HypertradeCancelOrderArgs): Promise<HypertradeCancelOrderResult> => {
+      return sdk.resources.call({
+        resourceId: 'hypertrade',
+        method: 'cancelOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get current perpetual positions for a wallet. Returns normalized FLAT array of positions with asset, size, entryPrice, markPrice, unrealizedPnl, leverage, liquidationPrice, marginUsed, positionValue, returnOnEquity, side.
+     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
+     * @returns Promise<HypertradeGetPositionsResult> Typed response with IDE autocomplete
+     */
+    getPositions: async (args: HypertradeGetPositionsArgs): Promise<HypertradeGetPositionsResult> => {
+      return sdk.resources.call({
+        resourceId: 'hypertrade',
+        method: 'getPositions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get open orders for a wallet. Returns normalized FLAT array of orders.
+     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
+     * @param args.asset - Filter by asset/coin symbol (optional)
+     * @returns Promise<HypertradeGetOpenOrdersResult> Typed response with IDE autocomplete
+     */
+    getOpenOrders: async (args: HypertradeGetOpenOrdersArgs): Promise<HypertradeGetOpenOrdersResult> => {
+      return sdk.resources.call({
+        resourceId: 'hypertrade',
+        method: 'getOpenOrders',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get account balances including perp margin and spot balances. Returns normalized FLAT structure.
+     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
+     * @returns Promise<HypertradeGetBalancesResult> Typed response with IDE autocomplete
+     */
+    getBalances: async (args: HypertradeGetBalancesArgs): Promise<HypertradeGetBalancesResult> => {
+      return sdk.resources.call({
+        resourceId: 'hypertrade',
+        method: 'getBalances',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get market information for perpetual assets. Returns normalized FLAT array of market info. If asset is provided, returns only that asset.
+     * @param args.asset - Specific asset/coin symbol to get info for (returns all if omitted) (optional)
+     * @returns Promise<HypertradeGetMarketInfoResult> Typed response with IDE autocomplete
+     */
+    getMarketInfo: async (args: HypertradeGetMarketInfoArgs): Promise<HypertradeGetMarketInfoResult> => {
+      return sdk.resources.call({
+        resourceId: 'hypertrade',
+        method: 'getMarketInfo',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the L2 orderbook for an asset. Returns normalized FLAT structure with bids and asks arrays.
+     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
+     * @param args.depth - Number of levels to return (default: all) (optional)
+     * @returns Promise<HypertradeGetOrderbookResult> Typed response with IDE autocomplete
+     */
+    getOrderbook: async (args: HypertradeGetOrderbookArgs): Promise<HypertradeGetOrderbookResult> => {
+      return sdk.resources.call({
+        resourceId: 'hypertrade',
+        method: 'getOrderbook',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get candlestick/OHLCV data for an asset. Returns normalized FLAT array of candles.
+     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
+     * @param args.interval - Candle interval (e.g. "1m", "5m", "1h", "1d"). Default: "1h" (optional)
+     * @param args.startTime - Start time in milliseconds (default: 24h ago) (optional)
+     * @param args.endTime - End time in milliseconds (default: now) (optional)
+     * @param args.limit - Max number of candles to return (optional)
+     * @returns Promise<HypertradeGetCandlesResult> Typed response with IDE autocomplete
+     */
+    getCandles: async (args: HypertradeGetCandlesArgs): Promise<HypertradeGetCandlesResult> => {
+      return sdk.resources.call({
+        resourceId: 'hypertrade',
+        method: 'getCandles',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Set leverage for an asset on Hyperliquid. Returns a pending action for the user to sign.
+     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
+     * @param args.leverage - Leverage multiplier (e.g. 5 for 5x)
+     * @param args.isCrossMargin - Use cross margin (default: true). False for isolated margin. (optional)
+     * @returns Promise<HypertradeSetLeverageResult> Typed response with IDE autocomplete
+     */
+    setLeverage: async (args: HypertradeSetLeverageArgs): Promise<HypertradeSetLeverageResult> => {
+      return sdk.resources.call({
+        resourceId: 'hypertrade',
+        method: 'setLeverage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get trade fill history for a wallet. Returns normalized FLAT array of trades.
+     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
+     * @param args.asset - Filter by asset/coin symbol (optional)
+     * @param args.limit - Max number of trades to return (optional)
+     * @returns Promise<HypertradeGetTradeHistoryResult> Typed response with IDE autocomplete
+     */
+    getTradeHistory: async (args: HypertradeGetTradeHistoryArgs): Promise<HypertradeGetTradeHistoryResult> => {
+      return sdk.resources.call({
+        resourceId: 'hypertrade',
+        method: 'getTradeHistory',
+        params: args || {}
+      });
+    }
+  };
+}
+
 
 // ============================================================================
 // Exports
@@ -7856,5 +8246,6 @@ export const generatedAdapters = {
   mirraMessaging: createMirraMessagingAdapter,
   moltbook: createMoltbookAdapter,
   tunnel: createTunnelAdapter,
-  polymarket: createPolymarketAdapter
+  polymarket: createPolymarketAdapter,
+  hypertrade: createHypertradeAdapter
 };
