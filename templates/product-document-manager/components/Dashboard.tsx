@@ -84,7 +84,7 @@ export default function Dashboard({
       }
 
       const linksResult: any = await sdk.memory.query({
-        type: 'document-product-link',
+        type: 'document_product_link',
         limit: 500,
       });
 
@@ -177,7 +177,7 @@ export default function Dashboard({
         });
 
         await sdk.memory.create({
-          type: 'document-product-link',
+          type: 'document_product_link',
           content: `Document ${file.name} linked to ${selectedProduct.name}`,
           metadata: {
             documentId: result.documentId,
@@ -215,7 +215,7 @@ export default function Dashboard({
       await sdk.documents.delete(documentId);
 
       const linksResult: any = await sdk.memory.query({
-        type: 'document-product-link',
+        type: 'document_product_link',
         limit: 500,
       });
 

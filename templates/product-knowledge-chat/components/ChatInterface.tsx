@@ -112,7 +112,7 @@ export default function ChatInterface({
     try {
       // First, get document IDs linked to this product
       const linksResult: any = await sdk.memory.query({
-        type: 'document-product-link',
+        type: 'document_product_link',
         limit: 100,
       });
 
