@@ -16,6 +16,13 @@ Official SDKs, templates, and tools for building on the Mirra platform.
 - **Install**: `pip install mirra-sdk`
 - **Docs**: [README](./packages/mirra-sdk-python/README.md)
 
+### Claude Code Bridge
+- **Location**: [`packages/mirra-cc-bridge/`](./packages/mirra-cc-bridge/)
+- **npm**: `mirra-cc-bridge`
+- **Install**: `npm install -g mirra-cc-bridge`
+- **Docs**: [README](./packages/mirra-cc-bridge/README.md)
+- Control Claude Code sessions from your phone via Mirra
+
 ## 🎨 Templates
 
 Pre-built templates for common use cases:
