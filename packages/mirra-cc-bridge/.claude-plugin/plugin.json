@@ -2,6 +2,18 @@
   "name": "mirra-cc-bridge",
   "version": "1.6.0",
   "description": "Bridge Claude Code to Mirra Messenger - control coding sessions from your phone via text and voice",
-  "author": "Mirra",
-  "homepage": "https://docs.getmirra.app/claude-code"
+  "author": {
+    "name": "Mirra",
+    "url": "https://getmirra.app"
+  },
+  "homepage": "https://docs.getmirra.app/claude-code",
+  "repository": "https://github.com/Oz-Networks/mirra-sdk",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "mirra",
+    "mobile",
+    "remote-coding",
+    "plugin"
+  ]
 }

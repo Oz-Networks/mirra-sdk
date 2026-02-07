@@ -2,6 +2,7 @@
   "name": "mirra-cc-bridge",
   "version": "1.6.0",
   "description": "Bridge Claude Code to Mirra Messenger on iOS or Android - control your coding sessions from text messages and voice calls",
+  "private": true,
   "scripts": {
     "build": "npx tsc",
     "build:plugin": "node build.mjs",
