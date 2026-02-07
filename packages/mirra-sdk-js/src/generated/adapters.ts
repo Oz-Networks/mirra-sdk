@@ -1172,6 +1172,7 @@ export interface PolymarketPlaceOrderArgs {
   side: string; // Order side: "BUY" to buy outcome shares, "SELL" to sell held shares
   type?: string; // Order type: "GTC" (Good Til Cancelled, default), "GTD" (Good Til Date), "FOK" (Fill Or Kill), "FAK" (Fill And Kill)
   expiration?: number; // Unix timestamp expiration for GTD orders only
+  marketQuestion?: string; // Human-readable market question (e.g. "Will Bitcoin reach $100k?"). Pass this from getMarkets results so the order card shows the market name instead of a numeric token ID.
 }
 export interface PolymarketExecuteOrderArgs {
   orderPayload: any; // The order payload from placeOrder: { tokenId, price, size, side, type, expiration }
@@ -7901,6 +7902,7 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * @param args.side - Order side: "BUY" to buy outcome shares, "SELL" to sell held shares
      * @param args.type - Order type: "GTC" (Good Til Cancelled, default), "GTD" (Good Til Date), "FOK" (Fill Or Kill), "FAK" (Fill And Kill) (optional)
      * @param args.expiration - Unix timestamp expiration for GTD orders only (optional)
+     * @param args.marketQuestion - Human-readable market question (e.g. "Will Bitcoin reach $100k?"). Pass this from getMarkets results so the order card shows the market name instead of a numeric token ID. (optional)
      */
     placeOrder: async (args: PolymarketPlaceOrderArgs): Promise<any> => {
       return sdk.resources.call({
