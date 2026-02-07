@@ -128,7 +128,7 @@ export async function startTunnel(portOrOptions: number | TunnelOptions): Promis
 
         // Include tunnel name if provided (for multi-tunnel identification)
         if (tunnelName) {
-          connectMsg.name = tunnelName;
+          connectMsg.tunnelName = tunnelName;
         }
 
         ws!.send(JSON.stringify(connectMsg));

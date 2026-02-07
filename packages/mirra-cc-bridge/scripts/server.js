@@ -37019,7 +37019,7 @@ async function startTunnel(portOrOptions) {
           apiKey: config.apiKey
         };
         if (tunnelName) {
-          connectMsg.name = tunnelName;
+          connectMsg.tunnelName = tunnelName;
         }
         ws.send(JSON.stringify(connectMsg));
       });
@@ -38386,12 +38386,8 @@ async function startServer(options) {
     for (const item of missing) {
       console.log(import_chalk2.default.yellow(`  [-] ${item}`));
     }
-    console.log(import_chalk2.default.gray("\nRun the setup wizard to configure everything:"));
-    console.log(import_chalk2.default.white("  mirra-cc-bridge setup\n"));
-    console.log(import_chalk2.default.gray("Or configure individual components:"));
-    console.log(import_chalk2.default.gray("  mirra-cc-bridge configure    - Set API key"));
-    console.log(import_chalk2.default.gray("  mirra-cc-bridge setup-hooks  - Configure Claude Code hooks"));
-    console.log(import_chalk2.default.gray("  mirra-cc-bridge register     - Register PC as Mirra resource\n"));
+    console.log(import_chalk2.default.gray("\nRun the configure skill in Claude Code:"));
+    console.log(import_chalk2.default.white("  /mirra-cc-bridge:configure\n"));
     process.exit(1);
   }
   let sdk;

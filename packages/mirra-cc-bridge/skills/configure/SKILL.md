@@ -8,10 +8,10 @@ user_invocable: true
 
 Set up the Mirra CC Bridge with your API key and select which chat to send Claude Code output to.
 
-Run the following command and relay any interactive prompts to the user:
+Run the configure script, which is located at `../../scripts/configure.js` relative to this skill's base directory. For example:
 
 ```bash
-node ~/.claude/plugins/mirra-cc-bridge/scripts/configure.js
+node <base_directory>/../../scripts/configure.js
 ```
 
 This will:

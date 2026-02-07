@@ -991,12 +991,8 @@ export async function startServer(options: StartOptions): Promise<void> {
     for (const item of missing) {
       console.log(chalk.yellow(`  [-] ${item}`));
     }
-    console.log(chalk.gray('\nRun the setup wizard to configure everything:'));
-    console.log(chalk.white('  mirra-cc-bridge setup\n'));
-    console.log(chalk.gray('Or configure individual components:'));
-    console.log(chalk.gray('  mirra-cc-bridge configure    - Set API key'));
-    console.log(chalk.gray('  mirra-cc-bridge setup-hooks  - Configure Claude Code hooks'));
-    console.log(chalk.gray('  mirra-cc-bridge register     - Register PC as Mirra resource\n'));
+    console.log(chalk.gray('\nRun the configure skill in Claude Code:'));
+    console.log(chalk.white('  /mirra-cc-bridge:configure\n'));
     process.exit(1);
   }
 

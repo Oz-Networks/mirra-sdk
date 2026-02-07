@@ -8,8 +8,8 @@ user_invocable: true
 
 Show the current status of the Mirra CC Bridge, including configuration state, hook registration, and server connectivity.
 
-Run the following command and display the output to the user:
+Run the status script, which is located at `../../scripts/status.js` relative to this skill's base directory. For example:
 
 ```bash
-node ~/.claude/plugins/mirra-cc-bridge/scripts/status.js
+node <base_directory>/../../scripts/status.js
 ```
