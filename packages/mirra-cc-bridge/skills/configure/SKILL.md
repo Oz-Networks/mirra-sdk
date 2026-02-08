@@ -75,7 +75,10 @@ Run the configure script with `--reconfigure`, `--work-dir`, and `--skip-chat` t
 node <base_directory>/../../scripts/configure.js --reconfigure --work-dir "<currentWorkDir>" --skip-chat
 ```
 
-Use a **5-minute timeout**. After it completes, follow **Change Chat Destination** above to let the user pick a chat.
+Use a **5-minute timeout**. After it completes:
+
+1. Tell the user the working directory is currently set to `<currentWorkDir>`. Ask if they'd like to change it — if yes, follow **Change Working Directory** above.
+2. Follow **Change Chat Destination** above to let the user pick a chat.
 
 ## CLI Flags Reference
 
