@@ -14,12 +14,20 @@ import { loadConfig, saveConfig, getConfigPath, validateApiKey } from '../config
 import { BridgeConfig } from '../types';
 import { runWebSocketAuthFlow, canOpenBrowser } from '../auth-flow';
 
-interface ConfigureOptions {
+export interface ConfigureOptions {
   apiKey?: string;
   workDir?: string;
   manual?: boolean;
   /** When true, reuse valid cached auth without prompting */
   skipAuthPrompt?: boolean;
+  /** When true, skip the "Reconfigure?" prompt and go straight to browser auth */
+  reconfigure?: boolean;
+  /** When set, skip chat selection and use this groupId */
+  groupId?: string;
+  /** When true, fetch and print available chats as JSON, then exit */
+  listChats?: boolean;
+  /** When true, skip the interactive chat selection prompt */
+  skipChatSelection?: boolean;
 }
 
 interface ChatOption {
@@ -147,6 +155,18 @@ async function fetchChats(apiKey: string): Promise<ChatOption[]> {
 export async function configure(options: ConfigureOptions): Promise<void> {
   const existingConfig = loadConfig();
 
+  // --list-chats mode: fetch chats as JSON and exit (for non-interactive use by Claude Code)
+  if (options.listChats) {
+    const key = options.apiKey || existingConfig?.apiKey;
+    if (!key) {
+      console.log(JSON.stringify({ error: 'No API key configured. Run configure first.' }));
+      process.exit(1);
+    }
+    const chats = await fetchChats(key);
+    console.log(JSON.stringify(chats));
+    return;
+  }
+
   // Get API key - three modes:
   // 1. --api-key flag: Use provided key directly
   // 2. --manual flag: Prompt for key in terminal
@@ -169,7 +189,11 @@ export async function configure(options: ConfigureOptions): Promise<void> {
     }
   } else {
     // Default: Browser-based authentication
-    if (existingConfig?.apiKey) {
+    if (options.reconfigure) {
+      // --reconfigure flag: skip validation and prompt, go straight to browser auth
+      console.log(chalk.gray('Reconfiguring authentication...'));
+      // apiKey stays undefined → triggers browser auth below
+    } else if (existingConfig?.apiKey) {
       // Validate the cached API key is still valid
       console.log(chalk.gray('Validating cached API key...'));
       const isValid = await validateApiKey(existingConfig.apiKey);
@@ -253,9 +277,14 @@ export async function configure(options: ConfigureOptions): Promise<void> {
 
   // Fetch and select chat destination.
   // Wrapped in try/catch so failures here don't lose the already-saved API key.
-  let groupId = existingConfig?.groupId;
+  let groupId = options.groupId || existingConfig?.groupId;
 
-  try {
+  // Skip chat selection if groupId was provided or explicitly skipped
+  if (options.groupId) {
+    console.log(chalk.green(`\n[+] Using provided chat destination: ${options.groupId.substring(0, 12)}...`));
+  } else if (options.skipChatSelection) {
+    console.log(chalk.gray('\n  Skipping chat selection (use --list-chats + --group-id to set later).'));
+  } else try {
     console.log(chalk.gray('\nFetching your chats...'));
     const chats = await fetchChats(apiKey);
 

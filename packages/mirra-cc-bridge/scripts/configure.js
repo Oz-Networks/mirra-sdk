@@ -1413,21 +1413,21 @@ var require_source = __commonJS({
       "ansi16m"
     ];
     var styles = /* @__PURE__ */ Object.create(null);
-    var applyOptions = (object, options = {}) => {
-      if (options.level && !(Number.isInteger(options.level) && options.level >= 0 && options.level <= 3)) {
+    var applyOptions = (object, options2 = {}) => {
+      if (options2.level && !(Number.isInteger(options2.level) && options2.level >= 0 && options2.level <= 3)) {
         throw new Error("The `level` option should be an integer from 0 to 3");
       }
       const colorLevel = stdoutColor ? stdoutColor.level : 0;
-      object.level = options.level === void 0 ? colorLevel : options.level;
+      object.level = options2.level === void 0 ? colorLevel : options2.level;
     };
     var ChalkClass = class {
-      constructor(options) {
-        return chalkFactory(options);
+      constructor(options2) {
+        return chalkFactory(options2);
       }
     };
-    var chalkFactory = (options) => {
+    var chalkFactory = (options2) => {
       const chalk4 = {};
-      applyOptions(chalk4, options);
+      applyOptions(chalk4, options2);
       chalk4.template = (...arguments_) => chalkTag(chalk4.template, ...arguments_);
       Object.setPrototypeOf(chalk4, Chalk.prototype);
       Object.setPrototypeOf(chalk4.template, chalk4);
@@ -1437,8 +1437,8 @@ var require_source = __commonJS({
       chalk4.template.Instance = ChalkClass;
       return chalk4.template;
     };
-    function Chalk(options) {
-      return chalkFactory(options);
+    function Chalk(options2) {
+      return chalkFactory(options2);
     }
     for (const [styleName, style] of Object.entries(ansiStyles)) {
       styles[styleName] = {
@@ -1589,11 +1589,11 @@ var require_delayed_stream = __commonJS({
       this._bufferedEvents = [];
     }
     util.inherits(DelayedStream, Stream);
-    DelayedStream.create = function(source, options) {
+    DelayedStream.create = function(source, options2) {
       var delayedStream = new this();
-      options = options || {};
-      for (var option in options) {
-        delayedStream[option] = options[option];
+      options2 = options2 || {};
+      for (var option in options2) {
+        delayedStream[option] = options2[option];
       }
       delayedStream.source = source;
       var realEmit = source.emit;
@@ -1684,11 +1684,11 @@ var require_combined_stream = __commonJS({
       this._pendingNext = false;
     }
     util.inherits(CombinedStream, Stream);
-    CombinedStream.create = function(options) {
+    CombinedStream.create = function(options2) {
       var combinedStream = new this();
-      options = options || {};
-      for (var option in options) {
-        combinedStream[option] = options[option];
+      options2 = options2 || {};
+      for (var option in options2) {
+        combinedStream[option] = options2[option];
       }
       return combinedStream;
     };
@@ -1714,8 +1714,8 @@ var require_combined_stream = __commonJS({
       this._streams.push(stream);
       return this;
     };
-    CombinedStream.prototype.pipe = function(dest, options) {
-      Stream.prototype.pipe.call(this, dest, options);
+    CombinedStream.prototype.pipe = function(dest, options2) {
+      Stream.prototype.pipe.call(this, dest, options2);
       this.resume();
       return dest;
     };
@@ -11541,26 +11541,26 @@ var require_form_data = __commonJS({
     var setToStringTag = require_es_set_tostringtag();
     var hasOwn = require_hasown();
     var populate = require_populate();
-    function FormData2(options) {
+    function FormData2(options2) {
       if (!(this instanceof FormData2)) {
-        return new FormData2(options);
+        return new FormData2(options2);
       }
       this._overheadLength = 0;
       this._valueLength = 0;
       this._valuesToMeasure = [];
       CombinedStream.call(this);
-      options = options || {};
-      for (var option in options) {
-        this[option] = options[option];
+      options2 = options2 || {};
+      for (var option in options2) {
+        this[option] = options2[option];
       }
     }
     util.inherits(FormData2, CombinedStream);
     FormData2.LINE_BREAK = "\r\n";
     FormData2.DEFAULT_CONTENT_TYPE = "application/octet-stream";
-    FormData2.prototype.append = function(field, value, options) {
-      options = options || {};
-      if (typeof options === "string") {
-        options = { filename: options };
+    FormData2.prototype.append = function(field, value, options2) {
+      options2 = options2 || {};
+      if (typeof options2 === "string") {
+        options2 = { filename: options2 };
       }
       var append = CombinedStream.prototype.append.bind(this);
       if (typeof value === "number" || value == null) {
@@ -11570,17 +11570,17 @@ var require_form_data = __commonJS({
         this._error(new Error("Arrays are not supported."));
         return;
       }
-      var header = this._multiPartHeader(field, value, options);
+      var header = this._multiPartHeader(field, value, options2);
       var footer = this._multiPartFooter();
       append(header);
       append(value);
       append(footer);
-      this._trackLength(header, value, options);
+      this._trackLength(header, value, options2);
     };
-    FormData2.prototype._trackLength = function(header, value, options) {
+    FormData2.prototype._trackLength = function(header, value, options2) {
       var valueLength = 0;
-      if (options.knownLength != null) {
-        valueLength += Number(options.knownLength);
+      if (options2.knownLength != null) {
+        valueLength += Number(options2.knownLength);
       } else if (Buffer.isBuffer(value)) {
         valueLength = value.length;
       } else if (typeof value === "string") {
@@ -11591,7 +11591,7 @@ var require_form_data = __commonJS({
       if (!value || !value.path && !(value.readable && hasOwn(value, "httpVersion")) && !(value instanceof Stream)) {
         return;
       }
-      if (!options.knownLength) {
+      if (!options2.knownLength) {
         this._valuesToMeasure.push(value);
       }
     };
@@ -11621,12 +11621,12 @@ var require_form_data = __commonJS({
         callback("Unknown stream");
       }
     };
-    FormData2.prototype._multiPartHeader = function(field, value, options) {
-      if (typeof options.header === "string") {
-        return options.header;
+    FormData2.prototype._multiPartHeader = function(field, value, options2) {
+      if (typeof options2.header === "string") {
+        return options2.header;
       }
-      var contentDisposition = this._getContentDisposition(value, options);
-      var contentType = this._getContentType(value, options);
+      var contentDisposition = this._getContentDisposition(value, options2);
+      var contentType = this._getContentType(value, options2);
       var contents = "";
       var headers = {
         // add custom disposition as third element or keep it two elements if not
@@ -11634,8 +11634,8 @@ var require_form_data = __commonJS({
         // if no content type. allow it to be empty array
         "Content-Type": [].concat(contentType || [])
       };
-      if (typeof options.header === "object") {
-        populate(headers, options.header);
+      if (typeof options2.header === "object") {
+        populate(headers, options2.header);
       }
       var header;
       for (var prop in headers) {
@@ -11654,12 +11654,12 @@ var require_form_data = __commonJS({
       }
       return "--" + this.getBoundary() + FormData2.LINE_BREAK + contents + FormData2.LINE_BREAK;
     };
-    FormData2.prototype._getContentDisposition = function(value, options) {
+    FormData2.prototype._getContentDisposition = function(value, options2) {
       var filename;
-      if (typeof options.filepath === "string") {
-        filename = path.normalize(options.filepath).replace(/\\/g, "/");
-      } else if (options.filename || value && (value.name || value.path)) {
-        filename = path.basename(options.filename || value && (value.name || value.path));
+      if (typeof options2.filepath === "string") {
+        filename = path.normalize(options2.filepath).replace(/\\/g, "/");
+      } else if (options2.filename || value && (value.name || value.path)) {
+        filename = path.basename(options2.filename || value && (value.name || value.path));
       } else if (value && value.readable && hasOwn(value, "httpVersion")) {
         filename = path.basename(value.client._httpMessage.path || "");
       }
@@ -11667,8 +11667,8 @@ var require_form_data = __commonJS({
         return 'filename="' + filename + '"';
       }
     };
-    FormData2.prototype._getContentType = function(value, options) {
-      var contentType = options.contentType;
+    FormData2.prototype._getContentType = function(value, options2) {
+      var contentType = options2.contentType;
       if (!contentType && value && value.name) {
         contentType = mime.lookup(value.name);
       }
@@ -11678,8 +11678,8 @@ var require_form_data = __commonJS({
       if (!contentType && value && value.readable && hasOwn(value, "httpVersion")) {
         contentType = value.headers["content-type"];
       }
-      if (!contentType && (options.filepath || options.filename)) {
-        contentType = mime.lookup(options.filepath || options.filename);
+      if (!contentType && (options2.filepath || options2.filename)) {
+        contentType = mime.lookup(options2.filepath || options2.filename);
       }
       if (!contentType && value && typeof value === "object") {
         contentType = FormData2.DEFAULT_CONTENT_TYPE;
@@ -11782,27 +11782,27 @@ var require_form_data = __commonJS({
     };
     FormData2.prototype.submit = function(params, cb) {
       var request;
-      var options;
+      var options2;
       var defaults = { method: "post" };
       if (typeof params === "string") {
         params = parseUrl(params);
-        options = populate({
+        options2 = populate({
           port: params.port,
           path: params.pathname,
           host: params.hostname,
           protocol: params.protocol
         }, defaults);
       } else {
-        options = populate(params, defaults);
-        if (!options.port) {
-          options.port = options.protocol === "https:" ? 443 : 80;
+        options2 = populate(params, defaults);
+        if (!options2.port) {
+          options2.port = options2.protocol === "https:" ? 443 : 80;
         }
       }
-      options.headers = this.getHeaders(params.headers);
-      if (options.protocol === "https:") {
-        request = https.request(options);
+      options2.headers = this.getHeaders(params.headers);
+      if (options2.protocol === "https:") {
+        request = https.request(options2);
       } else {
-        request = http.request(options);
+        request = http.request(options2);
       }
       this.getLength(function(err, length) {
         if (err && err !== "Unknown stream") {
@@ -11920,13 +11920,13 @@ var require_ms = __commonJS({
     var h = m * 60;
     var d = h * 24;
     var y = d * 365.25;
-    module2.exports = function(val, options) {
-      options = options || {};
+    module2.exports = function(val, options2) {
+      options2 = options2 || {};
       var type = typeof val;
       if (type === "string" && val.length > 0) {
         return parse(val);
       } else if (type === "number" && isNaN(val) === false) {
-        return options.long ? fmtLong(val) : fmtShort(val);
+        return options2.long ? fmtLong(val) : fmtShort(val);
       }
       throw new Error(
         "val is not a non-empty string or a valid number. val=" + JSON.stringify(val)
@@ -12423,10 +12423,10 @@ var require_follow_redirects = __commonJS({
       "write after end"
     );
     var destroy = Writable.prototype.destroy || noop;
-    function RedirectableRequest(options, responseCallback) {
+    function RedirectableRequest(options2, responseCallback) {
       Writable.call(this);
-      this._sanitizeOptions(options);
-      this._options = options;
+      this._sanitizeOptions(options2);
+      this._options = options2;
       this._ended = false;
       this._ending = false;
       this._redirectCount = 0;
@@ -12577,23 +12577,23 @@ var require_follow_redirects = __commonJS({
         }
       });
     });
-    RedirectableRequest.prototype._sanitizeOptions = function(options) {
-      if (!options.headers) {
-        options.headers = {};
+    RedirectableRequest.prototype._sanitizeOptions = function(options2) {
+      if (!options2.headers) {
+        options2.headers = {};
       }
-      if (options.host) {
-        if (!options.hostname) {
-          options.hostname = options.host;
+      if (options2.host) {
+        if (!options2.hostname) {
+          options2.hostname = options2.host;
         }
-        delete options.host;
+        delete options2.host;
       }
-      if (!options.pathname && options.path) {
-        var searchPos = options.path.indexOf("?");
+      if (!options2.pathname && options2.path) {
+        var searchPos = options2.path.indexOf("?");
         if (searchPos < 0) {
-          options.pathname = options.path;
+          options2.pathname = options2.path;
         } else {
-          options.pathname = options.path.substring(0, searchPos);
-          options.search = options.path.substring(searchPos);
+          options2.pathname = options2.path.substring(0, searchPos);
+          options2.search = options2.path.substring(searchPos);
         }
       }
     };
@@ -12713,34 +12713,34 @@ var require_follow_redirects = __commonJS({
         var protocol = scheme + ":";
         var nativeProtocol = nativeProtocols[protocol] = protocols[scheme];
         var wrappedProtocol = exports3[scheme] = Object.create(nativeProtocol);
-        function request(input, options, callback) {
+        function request(input, options2, callback) {
           if (isURL(input)) {
             input = spreadUrlObject(input);
           } else if (isString(input)) {
             input = spreadUrlObject(parseUrl(input));
           } else {
-            callback = options;
-            options = validateUrl(input);
+            callback = options2;
+            options2 = validateUrl(input);
             input = { protocol };
           }
-          if (isFunction(options)) {
-            callback = options;
-            options = null;
+          if (isFunction(options2)) {
+            callback = options2;
+            options2 = null;
           }
-          options = Object.assign({
+          options2 = Object.assign({
             maxRedirects: exports3.maxRedirects,
             maxBodyLength: exports3.maxBodyLength
-          }, input, options);
-          options.nativeProtocols = nativeProtocols;
-          if (!isString(options.host) && !isString(options.hostname)) {
-            options.hostname = "::1";
+          }, input, options2);
+          options2.nativeProtocols = nativeProtocols;
+          if (!isString(options2.host) && !isString(options2.hostname)) {
+            options2.hostname = "::1";
           }
-          assert.equal(options.protocol, protocol, "protocol mismatch");
-          debug("options", options);
-          return new RedirectableRequest(options, callback);
+          assert.equal(options2.protocol, protocol, "protocol mismatch");
+          debug("options", options2);
+          return new RedirectableRequest(options2, callback);
         }
-        function get(input, options, callback) {
-          var wrappedRequest = wrappedProtocol.request(input, options, callback);
+        function get(input, options2, callback) {
+          var wrappedRequest = wrappedProtocol.request(input, options2, callback);
           wrappedRequest.end();
           return wrappedRequest;
         }
@@ -13368,23 +13368,23 @@ var require_axios = __commonJS({
     var predicates = utils$1.toFlatObject(utils$1, {}, null, function filter(prop) {
       return /^is[A-Z]/.test(prop);
     });
-    function toFormData(obj, formData, options) {
+    function toFormData(obj, formData, options2) {
       if (!utils$1.isObject(obj)) {
         throw new TypeError("target must be an object");
       }
       formData = formData || new (FormData__default["default"] || FormData)();
-      options = utils$1.toFlatObject(options, {
+      options2 = utils$1.toFlatObject(options2, {
         metaTokens: true,
         dots: false,
         indexes: false
       }, false, function defined(option, source) {
         return !utils$1.isUndefined(source[option]);
       });
-      const metaTokens = options.metaTokens;
-      const visitor = options.visitor || defaultVisitor;
-      const dots = options.dots;
-      const indexes = options.indexes;
-      const _Blob = options.Blob || typeof Blob !== "undefined" && Blob;
+      const metaTokens = options2.metaTokens;
+      const visitor = options2.visitor || defaultVisitor;
+      const dots = options2.dots;
+      const indexes = options2.indexes;
+      const _Blob = options2.Blob || typeof Blob !== "undefined" && Blob;
       const useBlob = _Blob && utils$1.isSpecCompliantForm(formData);
       if (!utils$1.isFunction(visitor)) {
         throw new TypeError("visitor must be a function");
@@ -13475,9 +13475,9 @@ var require_axios = __commonJS({
         return charMap[match];
       });
     }
-    function AxiosURLSearchParams(params, options) {
+    function AxiosURLSearchParams(params, options2) {
       this._pairs = [];
-      params && toFormData(params, this, options);
+      params && toFormData(params, this, options2);
     }
     var prototype = AxiosURLSearchParams.prototype;
     prototype.append = function append(name, value) {
@@ -13494,14 +13494,14 @@ var require_axios = __commonJS({
     function encode(val) {
       return encodeURIComponent(val).replace(/%3A/gi, ":").replace(/%24/g, "$").replace(/%2C/gi, ",").replace(/%20/g, "+");
     }
-    function buildURL(url2, params, options) {
+    function buildURL(url2, params, options2) {
       if (!params) {
         return url2;
       }
-      const _encode = options && options.encode || encode;
-      const _options = utils$1.isFunction(options) ? {
-        serialize: options
-      } : options;
+      const _encode = options2 && options2.encode || encode;
+      const _options = utils$1.isFunction(options2) ? {
+        serialize: options2
+      } : options2;
       const serializeFn = _options && _options.serialize;
       let serializedParams;
       if (serializeFn) {
@@ -13531,12 +13531,12 @@ var require_axios = __commonJS({
        *
        * @return {Number} An ID used to remove interceptor later
        */
-      use(fulfilled, rejected, options) {
+      use(fulfilled, rejected, options2) {
         this.handlers.push({
           fulfilled,
           rejected,
-          synchronous: options ? options.synchronous : false,
-          runWhen: options ? options.runWhen : null
+          synchronous: options2 ? options2.synchronous : false,
+          runWhen: options2 ? options2.runWhen : null
         });
         return this.handlers.length - 1;
       }
@@ -13635,7 +13635,7 @@ var require_axios = __commonJS({
       ...utils,
       ...platform$1
     };
-    function toURLEncodedForm(data, options) {
+    function toURLEncodedForm(data, options2) {
       return toFormData(data, new platform.classes.URLSearchParams(), {
         visitor: function(value, key, path, helpers) {
           if (platform.isNode && utils$1.isBuffer(value)) {
@@ -13644,7 +13644,7 @@ var require_axios = __commonJS({
           }
           return helpers.defaultVisitor.apply(this, arguments);
         },
-        ...options
+        ...options2
       });
     }
     function parsePropPath(name) {
@@ -14138,8 +14138,8 @@ var require_axios = __commonJS({
       return match && match[1] || "";
     }
     var DATA_URL_PATTERN = /^(?:([^;]+);)?(?:[^;]+;)?(base64|),([\s\S]*)$/;
-    function fromDataURI(uri, asBlob, options) {
-      const _Blob = options && options.Blob || platform.classes.Blob;
+    function fromDataURI(uri, asBlob, options2) {
+      const _Blob = options2 && options2.Blob || platform.classes.Blob;
       const protocol = parseProtocol(uri);
       if (asBlob === void 0 && _Blob) {
         asBlob = true;
@@ -14166,8 +14166,8 @@ var require_axios = __commonJS({
     }
     var kInternals = Symbol("internals");
     var AxiosTransformStream = class extends stream__default["default"].Transform {
-      constructor(options) {
-        options = utils$1.toFlatObject(options, {
+      constructor(options2) {
+        options2 = utils$1.toFlatObject(options2, {
           maxRate: 0,
           chunkSize: 64 * 1024,
           minChunkSize: 100,
@@ -14178,13 +14178,13 @@ var require_axios = __commonJS({
           return !utils$1.isUndefined(source[prop]);
         });
         super({
-          readableHighWaterMark: options.chunkSize
+          readableHighWaterMark: options2.chunkSize
         });
         const internals = this[kInternals] = {
-          timeWindow: options.timeWindow,
-          chunkSize: options.chunkSize,
-          maxRate: options.maxRate,
-          minChunkSize: options.minChunkSize,
+          timeWindow: options2.timeWindow,
+          chunkSize: options2.chunkSize,
+          maxRate: options2.maxRate,
+          minChunkSize: options2.minChunkSize,
           bytesSeen: 0,
           isCaptured: false,
           notifiedBytesLoaded: 0,
@@ -14328,12 +14328,12 @@ var require_axios = __commonJS({
         })[match]);
       }
     };
-    var formDataToStream = (form, headersHandler, options) => {
+    var formDataToStream = (form, headersHandler, options2) => {
       const {
         tag = "form-data-boundary",
         size = 25,
         boundary = tag + "-" + platform.generateString(size, BOUNDARY_ALPHABET)
-      } = options || {};
+      } = options2 || {};
       if (!utils$1.isFormData(form)) {
         throw TypeError("FormData instance required");
       }
@@ -14567,21 +14567,21 @@ var require_axios = __commonJS({
       constructor() {
         this.sessions = /* @__PURE__ */ Object.create(null);
       }
-      getSession(authority, options) {
-        options = Object.assign({
+      getSession(authority, options2) {
+        options2 = Object.assign({
           sessionTimeout: 1e3
-        }, options);
+        }, options2);
         let authoritySessions = this.sessions[authority];
         if (authoritySessions) {
           let len = authoritySessions.length;
           for (let i = 0; i < len; i++) {
             const [sessionHandle, sessionOptions] = authoritySessions[i];
-            if (!sessionHandle.destroyed && !sessionHandle.closed && util__default["default"].isDeepStrictEqual(sessionOptions, options)) {
+            if (!sessionHandle.destroyed && !sessionHandle.closed && util__default["default"].isDeepStrictEqual(sessionOptions, options2)) {
               return sessionHandle;
             }
           }
         }
-        const session = http2__default["default"].connect(authority, options);
+        const session = http2__default["default"].connect(authority, options2);
         let removed;
         const removeSession = () => {
           if (removed) {
@@ -14601,7 +14601,7 @@ var require_axios = __commonJS({
           }
         };
         const originalRequestFn = session.request;
-        const { sessionTimeout } = options;
+        const { sessionTimeout } = options2;
         if (sessionTimeout != null) {
           let timer;
           let streamsCount = 0;
@@ -14626,22 +14626,22 @@ var require_axios = __commonJS({
         session.once("close", removeSession);
         let entry = [
           session,
-          options
+          options2
         ];
         authoritySessions ? authoritySessions.push(entry) : authoritySessions = this.sessions[authority] = [entry];
         return session;
       }
     };
     var http2Sessions = new Http2Sessions();
-    function dispatchBeforeRedirect(options, responseDetails) {
-      if (options.beforeRedirects.proxy) {
-        options.beforeRedirects.proxy(options);
+    function dispatchBeforeRedirect(options2, responseDetails) {
+      if (options2.beforeRedirects.proxy) {
+        options2.beforeRedirects.proxy(options2);
       }
-      if (options.beforeRedirects.config) {
-        options.beforeRedirects.config(options, responseDetails);
+      if (options2.beforeRedirects.config) {
+        options2.beforeRedirects.config(options2, responseDetails);
       }
     }
-    function setProxy(options, configProxy, location) {
+    function setProxy(options2, configProxy, location) {
       let proxy = configProxy;
       if (!proxy && proxy !== false) {
         const proxyUrl = proxyFromEnv__default["default"].getProxyForUrl(location);
@@ -14661,19 +14661,19 @@ var require_axios = __commonJS({
             throw new AxiosError$1("Invalid proxy authorization", AxiosError$1.ERR_BAD_OPTION, { proxy });
           }
           const base64 = Buffer.from(proxy.auth, "utf8").toString("base64");
-          options.headers["Proxy-Authorization"] = "Basic " + base64;
+          options2.headers["Proxy-Authorization"] = "Basic " + base64;
         }
-        options.headers.host = options.hostname + (options.port ? ":" + options.port : "");
+        options2.headers.host = options2.hostname + (options2.port ? ":" + options2.port : "");
         const proxyHost = proxy.hostname || proxy.host;
-        options.hostname = proxyHost;
-        options.host = proxyHost;
-        options.port = proxy.port;
-        options.path = location;
+        options2.hostname = proxyHost;
+        options2.host = proxyHost;
+        options2.port = proxy.port;
+        options2.path = location;
         if (proxy.protocol) {
-          options.protocol = proxy.protocol.includes(":") ? proxy.protocol : `${proxy.protocol}:`;
+          options2.protocol = proxy.protocol.includes(":") ? proxy.protocol : `${proxy.protocol}:`;
         }
       }
-      options.beforeRedirects.proxy = function beforeRedirect(redirectOptions) {
+      options2.beforeRedirects.proxy = function beforeRedirect(redirectOptions) {
         setProxy(redirectOptions, configProxy, redirectOptions.href);
       };
     }
@@ -14709,9 +14709,9 @@ var require_axios = __commonJS({
     };
     var buildAddressEntry = (address, family) => resolveFamily(utils$1.isObject(address) ? address : { address, family });
     var http2Transport = {
-      request(options, cb) {
-        const authority = options.protocol + "//" + options.hostname + ":" + (options.port || (options.protocol === "https:" ? 443 : 80));
-        const { http2Options, headers } = options;
+      request(options2, cb) {
+        const authority = options2.protocol + "//" + options2.hostname + ":" + (options2.port || (options2.protocol === "https:" ? 443 : 80));
+        const { http2Options, headers } = options2;
         const session = http2Sessions.getSession(authority, http2Options);
         const {
           HTTP2_HEADER_SCHEME,
@@ -14720,9 +14720,9 @@ var require_axios = __commonJS({
           HTTP2_HEADER_STATUS
         } = http2__default["default"].constants;
         const http2Headers = {
-          [HTTP2_HEADER_SCHEME]: options.protocol.replace(":", ""),
-          [HTTP2_HEADER_METHOD]: options.method,
-          [HTTP2_HEADER_PATH]: options.path
+          [HTTP2_HEADER_SCHEME]: options2.protocol.replace(":", ""),
+          [HTTP2_HEADER_METHOD]: options2.method,
+          [HTTP2_HEADER_PATH]: options2.path
         };
         utils$1.forEach(headers, (header, name) => {
           name.charAt(0) !== ":" && (http2Headers[name] = header);
@@ -14965,7 +14965,7 @@ var require_axios = __commonJS({
           "gzip, compress, deflate" + (isBrotliSupported ? ", br" : ""),
           false
         );
-        const options = {
+        const options2 = {
           path,
           method,
           headers: headers.toJSON(),
@@ -14977,17 +14977,17 @@ var require_axios = __commonJS({
           beforeRedirects: {},
           http2Options
         };
-        !utils$1.isUndefined(lookup) && (options.lookup = lookup);
+        !utils$1.isUndefined(lookup) && (options2.lookup = lookup);
         if (config.socketPath) {
-          options.socketPath = config.socketPath;
+          options2.socketPath = config.socketPath;
         } else {
-          options.hostname = parsed.hostname.startsWith("[") ? parsed.hostname.slice(1, -1) : parsed.hostname;
-          options.port = parsed.port;
-          setProxy(options, config.proxy, protocol + "//" + parsed.hostname + (parsed.port ? ":" + parsed.port : "") + options.path);
+          options2.hostname = parsed.hostname.startsWith("[") ? parsed.hostname.slice(1, -1) : parsed.hostname;
+          options2.port = parsed.port;
+          setProxy(options2, config.proxy, protocol + "//" + parsed.hostname + (parsed.port ? ":" + parsed.port : "") + options2.path);
         }
         let transport;
-        const isHttpsRequest = isHttps.test(options.protocol);
-        options.agent = isHttpsRequest ? config.httpsAgent : config.httpAgent;
+        const isHttpsRequest = isHttps.test(options2.protocol);
+        options2.agent = isHttpsRequest ? config.httpsAgent : config.httpAgent;
         if (isHttp2) {
           transport = http2Transport;
         } else {
@@ -14997,23 +14997,23 @@ var require_axios = __commonJS({
             transport = isHttpsRequest ? https__default["default"] : http__default["default"];
           } else {
             if (config.maxRedirects) {
-              options.maxRedirects = config.maxRedirects;
+              options2.maxRedirects = config.maxRedirects;
             }
             if (config.beforeRedirect) {
-              options.beforeRedirects.config = config.beforeRedirect;
+              options2.beforeRedirects.config = config.beforeRedirect;
             }
             transport = isHttpsRequest ? httpsFollow : httpFollow;
           }
         }
         if (config.maxBodyLength > -1) {
-          options.maxBodyLength = config.maxBodyLength;
+          options2.maxBodyLength = config.maxBodyLength;
         } else {
-          options.maxBodyLength = Infinity;
+          options2.maxBodyLength = Infinity;
         }
         if (config.insecureHTTPParser) {
-          options.insecureHTTPParser = config.insecureHTTPParser;
+          options2.insecureHTTPParser = config.insecureHTTPParser;
         }
-        req = transport.request(options, function handleResponse(res) {
+        req = transport.request(options2, function handleResponse(res) {
           if (req.destroyed) return;
           const streams = [res];
           const responseLength = utils$1.toFiniteNumber(res.headers["content-length"]);
@@ -15733,9 +15733,9 @@ var require_axios = __commonJS({
           let response = await (isRequestSupported ? _fetch(request, fetchOptions) : _fetch(url2, resolvedOptions));
           const isStreamResponse = supportsResponseStream && (responseType === "stream" || responseType === "response");
           if (supportsResponseStream && (onDownloadProgress || isStreamResponse && unsubscribe)) {
-            const options = {};
+            const options2 = {};
             ["status", "statusText", "headers"].forEach((prop) => {
-              options[prop] = response[prop];
+              options2[prop] = response[prop];
             });
             const responseContentLength = utils$1.toFiniteNumber(response.headers.get("content-length"));
             const [onProgress, flush] = onDownloadProgress && progressEventDecorator(
@@ -15747,7 +15747,7 @@ var require_axios = __commonJS({
                 flush && flush();
                 unsubscribe && unsubscribe();
               }),
-              options
+              options2
             );
           }
           responseType = responseType || "text";
@@ -15938,18 +15938,18 @@ var require_axios = __commonJS({
         return true;
       };
     };
-    function assertOptions(options, schema, allowUnknown) {
-      if (typeof options !== "object") {
+    function assertOptions(options2, schema, allowUnknown) {
+      if (typeof options2 !== "object") {
         throw new AxiosError$1("options must be an object", AxiosError$1.ERR_BAD_OPTION_VALUE);
       }
-      const keys = Object.keys(options);
+      const keys = Object.keys(options2);
       let i = keys.length;
       while (i-- > 0) {
         const opt = keys[i];
         const validator2 = schema[opt];
         if (validator2) {
-          const value = options[opt];
-          const result = value === void 0 || validator2(value, opt, options);
+          const value = options2[opt];
+          const result = value === void 0 || validator2(value, opt, options2);
           if (result !== true) {
             throw new AxiosError$1("option " + opt + " must be " + result, AxiosError$1.ERR_BAD_OPTION_VALUE);
           }
@@ -19814,9 +19814,9 @@ var require_permessage_deflate = __commonJS({
        *     client mode
        * @param {Number} [maxPayload=0] The maximum allowed message length
        */
-      constructor(options, isServer, maxPayload) {
+      constructor(options2, isServer, maxPayload) {
         this._maxPayload = maxPayload | 0;
-        this._options = options || {};
+        this._options = options2 || {};
         this._threshold = this._options.threshold !== void 0 ? this._options.threshold : 1024;
         this._isServer = !!isServer;
         this._deflate = null;
@@ -20396,14 +20396,14 @@ var require_receiver = __commonJS({
        * @param {Boolean} [options.skipUTF8Validation=false] Specifies whether or
        *     not to skip UTF-8 validation for text and close messages
        */
-      constructor(options = {}) {
+      constructor(options2 = {}) {
         super();
-        this._allowSynchronousEvents = options.allowSynchronousEvents !== void 0 ? options.allowSynchronousEvents : true;
-        this._binaryType = options.binaryType || BINARY_TYPES[0];
-        this._extensions = options.extensions || {};
-        this._isServer = !!options.isServer;
-        this._maxPayload = options.maxPayload | 0;
-        this._skipUTF8Validation = !!options.skipUTF8Validation;
+        this._allowSynchronousEvents = options2.allowSynchronousEvents !== void 0 ? options2.allowSynchronousEvents : true;
+        this._binaryType = options2.binaryType || BINARY_TYPES[0];
+        this._extensions = options2.extensions || {};
+        this._isServer = !!options2.isServer;
+        this._maxPayload = options2.maxPayload | 0;
+        this._skipUTF8Validation = !!options2.skipUTF8Validation;
         this[kWebSocket] = void 0;
         this._bufferedBytes = 0;
         this._buffers = [];
@@ -21012,15 +21012,15 @@ var require_sender = __commonJS({
        * @return {(Buffer|String)[]} The framed data
        * @public
        */
-      static frame(data, options) {
+      static frame(data, options2) {
         let mask;
         let merge = false;
         let offset = 2;
         let skipMasking = false;
-        if (options.mask) {
-          mask = options.maskBuffer || maskBuffer;
-          if (options.generateMask) {
-            options.generateMask(mask);
+        if (options2.mask) {
+          mask = options2.maskBuffer || maskBuffer;
+          if (options2.generateMask) {
+            options2.generateMask(mask);
           } else {
             if (randomPoolPointer === RANDOM_POOL_SIZE) {
               if (randomPool === void 0) {
@@ -21039,15 +21039,15 @@ var require_sender = __commonJS({
         }
         let dataLength;
         if (typeof data === "string") {
-          if ((!options.mask || skipMasking) && options[kByteLength] !== void 0) {
-            dataLength = options[kByteLength];
+          if ((!options2.mask || skipMasking) && options2[kByteLength] !== void 0) {
+            dataLength = options2[kByteLength];
           } else {
             data = Buffer.from(data);
             dataLength = data.length;
           }
         } else {
           dataLength = data.length;
-          merge = options.mask && options.readOnly && !skipMasking;
+          merge = options2.mask && options2.readOnly && !skipMasking;
         }
         let payloadLength = dataLength;
         if (dataLength >= 65536) {
@@ -21058,8 +21058,8 @@ var require_sender = __commonJS({
           payloadLength = 126;
         }
         const target = Buffer.allocUnsafe(merge ? dataLength + offset : offset);
-        target[0] = options.fin ? options.opcode | 128 : options.opcode;
-        if (options.rsv1) target[0] |= 64;
+        target[0] = options2.fin ? options2.opcode | 128 : options2.opcode;
+        if (options2.rsv1) target[0] |= 64;
         target[1] = payloadLength;
         if (payloadLength === 126) {
           target.writeUInt16BE(dataLength, 2);
@@ -21067,7 +21067,7 @@ var require_sender = __commonJS({
           target[2] = target[3] = 0;
           target.writeUIntBE(dataLength, 4, 6);
         }
-        if (!options.mask) return [target, data];
+        if (!options2.mask) return [target, data];
         target[1] |= 128;
         target[offset - 4] = mask[0];
         target[offset - 3] = mask[1];
@@ -21112,7 +21112,7 @@ var require_sender = __commonJS({
             buf.set(data, 2);
           }
         }
-        const options = {
+        const options2 = {
           [kByteLength]: buf.length,
           fin: true,
           generateMask: this._generateMask,
@@ -21123,9 +21123,9 @@ var require_sender = __commonJS({
           rsv1: false
         };
         if (this._state !== DEFAULT) {
-          this.enqueue([this.dispatch, buf, false, options, cb]);
+          this.enqueue([this.dispatch, buf, false, options2, cb]);
         } else {
-          this.sendFrame(_Sender.frame(buf, options), cb);
+          this.sendFrame(_Sender.frame(buf, options2), cb);
         }
       }
       /**
@@ -21153,7 +21153,7 @@ var require_sender = __commonJS({
         if (byteLength > 125) {
           throw new RangeError("The data size must not be greater than 125 bytes");
         }
-        const options = {
+        const options2 = {
           [kByteLength]: byteLength,
           fin: true,
           generateMask: this._generateMask,
@@ -21165,14 +21165,14 @@ var require_sender = __commonJS({
         };
         if (isBlob(data)) {
           if (this._state !== DEFAULT) {
-            this.enqueue([this.getBlobData, data, false, options, cb]);
+            this.enqueue([this.getBlobData, data, false, options2, cb]);
           } else {
-            this.getBlobData(data, false, options, cb);
+            this.getBlobData(data, false, options2, cb);
           }
         } else if (this._state !== DEFAULT) {
-          this.enqueue([this.dispatch, data, false, options, cb]);
+          this.enqueue([this.dispatch, data, false, options2, cb]);
         } else {
-          this.sendFrame(_Sender.frame(data, options), cb);
+          this.sendFrame(_Sender.frame(data, options2), cb);
         }
       }
       /**
@@ -21200,7 +21200,7 @@ var require_sender = __commonJS({
         if (byteLength > 125) {
           throw new RangeError("The data size must not be greater than 125 bytes");
         }
-        const options = {
+        const options2 = {
           [kByteLength]: byteLength,
           fin: true,
           generateMask: this._generateMask,
@@ -21212,14 +21212,14 @@ var require_sender = __commonJS({
         };
         if (isBlob(data)) {
           if (this._state !== DEFAULT) {
-            this.enqueue([this.getBlobData, data, false, options, cb]);
+            this.enqueue([this.getBlobData, data, false, options2, cb]);
           } else {
-            this.getBlobData(data, false, options, cb);
+            this.getBlobData(data, false, options2, cb);
           }
         } else if (this._state !== DEFAULT) {
-          this.enqueue([this.dispatch, data, false, options, cb]);
+          this.enqueue([this.dispatch, data, false, options2, cb]);
         } else {
-          this.sendFrame(_Sender.frame(data, options), cb);
+          this.sendFrame(_Sender.frame(data, options2), cb);
         }
       }
       /**
@@ -21238,10 +21238,10 @@ var require_sender = __commonJS({
        * @param {Function} [cb] Callback
        * @public
        */
-      send(data, options, cb) {
+      send(data, options2, cb) {
         const perMessageDeflate = this._extensions[PerMessageDeflate.extensionName];
-        let opcode = options.binary ? 2 : 1;
-        let rsv1 = options.compress;
+        let opcode = options2.binary ? 2 : 1;
+        let rsv1 = options2.compress;
         let byteLength;
         let readOnly;
         if (typeof data === "string") {
@@ -21265,12 +21265,12 @@ var require_sender = __commonJS({
           rsv1 = false;
           opcode = 0;
         }
-        if (options.fin) this._firstFragment = true;
+        if (options2.fin) this._firstFragment = true;
         const opts = {
           [kByteLength]: byteLength,
-          fin: options.fin,
+          fin: options2.fin,
           generateMask: this._generateMask,
-          mask: options.mask,
+          mask: options2.mask,
           maskBuffer: this._maskBuffer,
           opcode,
           readOnly,
@@ -21311,8 +21311,8 @@ var require_sender = __commonJS({
        * @param {Function} [cb] Callback
        * @private
        */
-      getBlobData(blob, compress, options, cb) {
-        this._bufferedBytes += options[kByteLength];
+      getBlobData(blob, compress, options2, cb) {
+        this._bufferedBytes += options2[kByteLength];
         this._state = GET_BLOB_DATA;
         blob.arrayBuffer().then((arrayBuffer) => {
           if (this._socket.destroyed) {
@@ -21322,14 +21322,14 @@ var require_sender = __commonJS({
             process.nextTick(callCallbacks, this, err, cb);
             return;
           }
-          this._bufferedBytes -= options[kByteLength];
+          this._bufferedBytes -= options2[kByteLength];
           const data = toBuffer(arrayBuffer);
           if (!compress) {
             this._state = DEFAULT;
-            this.sendFrame(_Sender.frame(data, options), cb);
+            this.sendFrame(_Sender.frame(data, options2), cb);
             this.dequeue();
           } else {
-            this.dispatch(data, compress, options, cb);
+            this.dispatch(data, compress, options2, cb);
           }
         }).catch((err) => {
           process.nextTick(onError, this, err, cb);
@@ -21358,15 +21358,15 @@ var require_sender = __commonJS({
        * @param {Function} [cb] Callback
        * @private
        */
-      dispatch(data, compress, options, cb) {
+      dispatch(data, compress, options2, cb) {
         if (!compress) {
-          this.sendFrame(_Sender.frame(data, options), cb);
+          this.sendFrame(_Sender.frame(data, options2), cb);
           return;
         }
         const perMessageDeflate = this._extensions[PerMessageDeflate.extensionName];
-        this._bufferedBytes += options[kByteLength];
+        this._bufferedBytes += options2[kByteLength];
         this._state = DEFLATING;
-        perMessageDeflate.compress(data, options.fin, (_, buf) => {
+        perMessageDeflate.compress(data, options2.fin, (_, buf) => {
           if (this._socket.destroyed) {
             const err = new Error(
               "The socket was closed while data was being compressed"
@@ -21374,10 +21374,10 @@ var require_sender = __commonJS({
             callCallbacks(this, err, cb);
             return;
           }
-          this._bufferedBytes -= options[kByteLength];
+          this._bufferedBytes -= options2[kByteLength];
           this._state = DEFAULT;
-          options.readOnly = false;
-          this.sendFrame(_Sender.frame(buf, options), cb);
+          options2.readOnly = false;
+          this.sendFrame(_Sender.frame(buf, options2), cb);
           this.dequeue();
         });
       }
@@ -21490,11 +21490,11 @@ var require_event_target = __commonJS({
        * @param {Boolean} [options.wasClean=false] Indicates whether or not the
        *     connection was cleanly closed
        */
-      constructor(type, options = {}) {
+      constructor(type, options2 = {}) {
         super(type);
-        this[kCode] = options.code === void 0 ? 0 : options.code;
-        this[kReason] = options.reason === void 0 ? "" : options.reason;
-        this[kWasClean] = options.wasClean === void 0 ? false : options.wasClean;
+        this[kCode] = options2.code === void 0 ? 0 : options2.code;
+        this[kReason] = options2.reason === void 0 ? "" : options2.reason;
+        this[kWasClean] = options2.wasClean === void 0 ? false : options2.wasClean;
       }
       /**
        * @type {Number}
@@ -21528,10 +21528,10 @@ var require_event_target = __commonJS({
        * @param {*} [options.error=null] The error that generated this event
        * @param {String} [options.message=''] The error message
        */
-      constructor(type, options = {}) {
+      constructor(type, options2 = {}) {
         super(type);
-        this[kError] = options.error === void 0 ? null : options.error;
-        this[kMessage] = options.message === void 0 ? "" : options.message;
+        this[kError] = options2.error === void 0 ? null : options2.error;
+        this[kMessage] = options2.message === void 0 ? "" : options2.message;
       }
       /**
        * @type {*}
@@ -21557,9 +21557,9 @@ var require_event_target = __commonJS({
        *     attributes via object members of the same name
        * @param {*} [options.data=null] The message content
        */
-      constructor(type, options = {}) {
+      constructor(type, options2 = {}) {
         super(type);
-        this[kData] = options.data === void 0 ? null : options.data;
+        this[kData] = options2.data === void 0 ? null : options2.data;
       }
       /**
        * @type {*}
@@ -21582,9 +21582,9 @@ var require_event_target = __commonJS({
        *     the listener would be automatically removed when invoked.
        * @public
        */
-      addEventListener(type, handler, options = {}) {
+      addEventListener(type, handler, options2 = {}) {
         for (const listener of this.listeners(type)) {
-          if (!options[kForOnEventAttribute] && listener[kListener] === handler && !listener[kForOnEventAttribute]) {
+          if (!options2[kForOnEventAttribute] && listener[kListener] === handler && !listener[kForOnEventAttribute]) {
             return;
           }
         }
@@ -21625,9 +21625,9 @@ var require_event_target = __commonJS({
         } else {
           return;
         }
-        wrapper[kForOnEventAttribute] = !!options[kForOnEventAttribute];
+        wrapper[kForOnEventAttribute] = !!options2[kForOnEventAttribute];
         wrapper[kListener] = handler;
-        if (options.once) {
+        if (options2.once) {
           this.once(type, wrapper);
         } else {
           this.on(type, wrapper);
@@ -21863,7 +21863,7 @@ var require_websocket = __commonJS({
        * @param {(String|String[])} [protocols] The subprotocols
        * @param {Object} [options] Connection options
        */
-      constructor(address, protocols, options) {
+      constructor(address, protocols, options2) {
         super();
         this._binaryType = BINARY_TYPES[0];
         this._closeCode = 1006;
@@ -21887,16 +21887,16 @@ var require_websocket = __commonJS({
             protocols = [];
           } else if (!Array.isArray(protocols)) {
             if (typeof protocols === "object" && protocols !== null) {
-              options = protocols;
+              options2 = protocols;
               protocols = [];
             } else {
               protocols = [protocols];
             }
           }
-          initAsClient(this, address, protocols, options);
+          initAsClient(this, address, protocols, options2);
         } else {
-          this._autoPong = options.autoPong;
-          this._closeTimeout = options.closeTimeout;
+          this._autoPong = options2.autoPong;
+          this._closeTimeout = options2.closeTimeout;
           this._isServer = true;
         }
       }
@@ -21995,16 +21995,16 @@ var require_websocket = __commonJS({
        *     not to skip UTF-8 validation for text and close messages
        * @private
        */
-      setSocket(socket, head, options) {
+      setSocket(socket, head, options2) {
         const receiver = new Receiver2({
-          allowSynchronousEvents: options.allowSynchronousEvents,
+          allowSynchronousEvents: options2.allowSynchronousEvents,
           binaryType: this.binaryType,
           extensions: this._extensions,
           isServer: this._isServer,
-          maxPayload: options.maxPayload,
-          skipUTF8Validation: options.skipUTF8Validation
+          maxPayload: options2.maxPayload,
+          skipUTF8Validation: options2.skipUTF8Validation
         });
-        const sender = new Sender2(socket, this._extensions, options.generateMask);
+        const sender = new Sender2(socket, this._extensions, options2.generateMask);
         this._receiver = receiver;
         this._sender = sender;
         this._socket = socket;
@@ -22182,13 +22182,13 @@ var require_websocket = __commonJS({
        * @param {Function} [cb] Callback which is executed when data is written out
        * @public
        */
-      send(data, options, cb) {
+      send(data, options2, cb) {
         if (this.readyState === _WebSocket.CONNECTING) {
           throw new Error("WebSocket is not open: readyState 0 (CONNECTING)");
         }
-        if (typeof options === "function") {
-          cb = options;
-          options = {};
+        if (typeof options2 === "function") {
+          cb = options2;
+          options2 = {};
         }
         if (typeof data === "number") data = data.toString();
         if (this.readyState !== _WebSocket.OPEN) {
@@ -22200,7 +22200,7 @@ var require_websocket = __commonJS({
           mask: !this._isServer,
           compress: true,
           fin: true,
-          ...options
+          ...options2
         };
         if (!this._extensions[PerMessageDeflate.extensionName]) {
           opts.compress = false;
@@ -22294,7 +22294,7 @@ var require_websocket = __commonJS({
     WebSocket2.prototype.addEventListener = addEventListener;
     WebSocket2.prototype.removeEventListener = removeEventListener;
     module2.exports = WebSocket2;
-    function initAsClient(websocket, address, protocols, options) {
+    function initAsClient(websocket, address, protocols, options2) {
       const opts = {
         allowSynchronousEvents: true,
         autoPong: true,
@@ -22305,7 +22305,7 @@ var require_websocket = __commonJS({
         perMessageDeflate: true,
         followRedirects: false,
         maxRedirects: 10,
-        ...options,
+        ...options2,
         socketPath: void 0,
         hostname: void 0,
         protocol: void 0,
@@ -22417,11 +22417,11 @@ var require_websocket = __commonJS({
           websocket._originalIpc = isIpcUrl;
           websocket._originalSecure = isSecure;
           websocket._originalHostOrSocketPath = isIpcUrl ? opts.socketPath : parsedUrl.host;
-          const headers = options && options.headers;
-          options = { ...options, headers: {} };
+          const headers = options2 && options2.headers;
+          options2 = { ...options2, headers: {} };
           if (headers) {
             for (const [key2, value] of Object.entries(headers)) {
-              options.headers[key2.toLowerCase()] = value;
+              options2.headers[key2.toLowerCase()] = value;
             }
           }
         } else if (websocket.listenerCount("redirect") === 0) {
@@ -22433,8 +22433,8 @@ var require_websocket = __commonJS({
             opts.auth = void 0;
           }
         }
-        if (opts.auth && !options.headers.authorization) {
-          options.headers.authorization = "Basic " + Buffer.from(opts.auth).toString("base64");
+        if (opts.auth && !options2.headers.authorization) {
+          options2.headers.authorization = "Basic " + Buffer.from(opts.auth).toString("base64");
         }
         req = websocket._req = request(opts);
         if (websocket._redirects) {
@@ -22470,7 +22470,7 @@ var require_websocket = __commonJS({
             emitErrorAndClose(websocket, err);
             return;
           }
-          initAsClient(websocket, addr, protocols, options);
+          initAsClient(websocket, addr, protocols, options2);
         } else if (!websocket.emit("unexpected-response", req, res)) {
           abortHandshake(
             websocket,
@@ -22558,16 +22558,16 @@ var require_websocket = __commonJS({
       websocket.emit("error", err);
       websocket.emitClose();
     }
-    function netConnect(options) {
-      options.path = options.socketPath;
-      return net.connect(options);
+    function netConnect(options2) {
+      options2.path = options2.socketPath;
+      return net.connect(options2);
     }
-    function tlsConnect(options) {
-      options.path = void 0;
-      if (!options.servername && options.servername !== "") {
-        options.servername = net.isIP(options.host) ? "" : options.host;
+    function tlsConnect(options2) {
+      options2.path = void 0;
+      if (!options2.servername && options2.servername !== "") {
+        options2.servername = net.isIP(options2.host) ? "" : options2.host;
       }
-      return tls.connect(options);
+      return tls.connect(options2);
     }
     function abortHandshake(websocket, stream, message) {
       websocket._readyState = WebSocket2.CLOSING;
@@ -22726,10 +22726,10 @@ var require_stream = __commonJS({
         this.emit("error", err);
       }
     }
-    function createWebSocketStream2(ws, options) {
+    function createWebSocketStream2(ws, options2) {
       let terminateOnDestroy = true;
       const duplex = new Duplex({
-        ...options,
+        ...options2,
         autoDestroy: false,
         emitClose: false,
         objectMode: false,
@@ -22900,9 +22900,9 @@ var require_websocket_server = __commonJS({
        *     class to use. It must be the `WebSocket` class or class that extends it
        * @param {Function} [callback] A listener for the `listening` event
        */
-      constructor(options, callback) {
+      constructor(options2, callback) {
         super();
-        options = {
+        options2 = {
           allowSynchronousEvents: true,
           autoPong: true,
           maxPayload: 100 * 1024 * 1024,
@@ -22920,14 +22920,14 @@ var require_websocket_server = __commonJS({
           path: null,
           port: null,
           WebSocket: WebSocket2,
-          ...options
+          ...options2
         };
-        if (options.port == null && !options.server && !options.noServer || options.port != null && (options.server || options.noServer) || options.server && options.noServer) {
+        if (options2.port == null && !options2.server && !options2.noServer || options2.port != null && (options2.server || options2.noServer) || options2.server && options2.noServer) {
           throw new TypeError(
             'One and only one of the "port", "server", or "noServer" options must be specified'
           );
         }
-        if (options.port != null) {
+        if (options2.port != null) {
           this._server = http.createServer((req, res) => {
             const body = http.STATUS_CODES[426];
             res.writeHead(426, {
@@ -22937,13 +22937,13 @@ var require_websocket_server = __commonJS({
             res.end(body);
           });
           this._server.listen(
-            options.port,
-            options.host,
-            options.backlog,
+            options2.port,
+            options2.host,
+            options2.backlog,
             callback
           );
-        } else if (options.server) {
-          this._server = options.server;
+        } else if (options2.server) {
+          this._server = options2.server;
         }
         if (this._server) {
           const emitConnection = this.emit.bind(this, "connection");
@@ -22955,12 +22955,12 @@ var require_websocket_server = __commonJS({
             }
           });
         }
-        if (options.perMessageDeflate === true) options.perMessageDeflate = {};
-        if (options.clientTracking) {
+        if (options2.perMessageDeflate === true) options2.perMessageDeflate = {};
+        if (options2.clientTracking) {
           this.clients = /* @__PURE__ */ new Set();
           this._shouldEmitClose = false;
         }
-        this.options = options;
+        this.options = options2;
         this._state = RUNNING;
       }
       /**
@@ -23389,25 +23389,25 @@ var require_open = __commonJS({
       }
       throw latestError;
     };
-    var baseOpen = async (options) => {
-      options = {
+    var baseOpen = async (options2) => {
+      options2 = {
         wait: false,
         background: false,
         newInstance: false,
         allowNonzeroExitCode: false,
-        ...options
+        ...options2
       };
-      if (Array.isArray(options.app)) {
-        return pTryEach(options.app, (singleApp) => baseOpen({
-          ...options,
+      if (Array.isArray(options2.app)) {
+        return pTryEach(options2.app, (singleApp) => baseOpen({
+          ...options2,
           app: singleApp
         }));
       }
-      let { name: app, arguments: appArguments = [] } = options.app || {};
+      let { name: app, arguments: appArguments = [] } = options2.app || {};
       appArguments = [...appArguments];
       if (Array.isArray(app)) {
         return pTryEach(app, (appName) => baseOpen({
-          ...options,
+          ...options2,
           app: {
             name: appName,
             arguments: appArguments
@@ -23419,13 +23419,13 @@ var require_open = __commonJS({
       const childProcessOptions = {};
       if (platform === "darwin") {
         command = "open";
-        if (options.wait) {
+        if (options2.wait) {
           cliArguments.push("--wait-apps");
         }
-        if (options.background) {
+        if (options2.background) {
           cliArguments.push("--background");
         }
-        if (options.newInstance) {
+        if (options2.newInstance) {
           cliArguments.push("--new");
         }
         if (app) {
@@ -23445,22 +23445,22 @@ var require_open = __commonJS({
           childProcessOptions.windowsVerbatimArguments = true;
         }
         const encodedArguments = ["Start"];
-        if (options.wait) {
+        if (options2.wait) {
           encodedArguments.push("-Wait");
         }
         if (app) {
           encodedArguments.push(`"\`"${app}\`""`, "-ArgumentList");
-          if (options.target) {
-            appArguments.unshift(options.target);
+          if (options2.target) {
+            appArguments.unshift(options2.target);
           }
-        } else if (options.target) {
-          encodedArguments.push(`"${options.target}"`);
+        } else if (options2.target) {
+          encodedArguments.push(`"${options2.target}"`);
         }
         if (appArguments.length > 0) {
           appArguments = appArguments.map((arg) => `"\`"${arg}\`""`);
           encodedArguments.push(appArguments.join(","));
         }
-        options.target = Buffer.from(encodedArguments.join(" "), "utf16le").toString("base64");
+        options2.target = Buffer.from(encodedArguments.join(" "), "utf16le").toString("base64");
       } else {
         if (app) {
           command = app;
@@ -23478,23 +23478,23 @@ var require_open = __commonJS({
         if (appArguments.length > 0) {
           cliArguments.push(...appArguments);
         }
-        if (!options.wait) {
+        if (!options2.wait) {
           childProcessOptions.stdio = "ignore";
           childProcessOptions.detached = true;
         }
       }
-      if (options.target) {
-        cliArguments.push(options.target);
+      if (options2.target) {
+        cliArguments.push(options2.target);
       }
       if (platform === "darwin" && appArguments.length > 0) {
         cliArguments.push("--args", ...appArguments);
       }
       const subprocess = childProcess.spawn(command, cliArguments, childProcessOptions);
-      if (options.wait) {
+      if (options2.wait) {
         return new Promise((resolve, reject) => {
           subprocess.once("error", reject);
           subprocess.once("close", (exitCode) => {
-            if (!options.allowNonzeroExitCode && exitCode > 0) {
+            if (!options2.allowNonzeroExitCode && exitCode > 0) {
               reject(new Error(`Exited with code ${exitCode}`));
               return;
             }
@@ -23505,25 +23505,25 @@ var require_open = __commonJS({
       subprocess.unref();
       return subprocess;
     };
-    var open = (target, options) => {
+    var open = (target, options2) => {
       if (typeof target !== "string") {
         throw new TypeError("Expected a `target`");
       }
       return baseOpen({
-        ...options,
+        ...options2,
         target
       });
     };
-    var openApp = (name, options) => {
+    var openApp = (name, options2) => {
       if (typeof name !== "string") {
         throw new TypeError("Expected a `name`");
       }
-      const { arguments: appArguments = [] } = options || {};
+      const { arguments: appArguments = [] } = options2 || {};
       if (appArguments !== void 0 && appArguments !== null && !Array.isArray(appArguments)) {
         throw new TypeError("Expected `appArguments` as Array type");
       }
       return baseOpen({
-        ...options,
+        ...options2,
         app: {
           name,
           arguments: appArguments
@@ -23658,8 +23658,8 @@ var DEFAULT_OPTIONS = {
   // 15 minutes
   openBrowser: true
 };
-async function runWebSocketAuthFlow(options = {}) {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
+async function runWebSocketAuthFlow(options2 = {}) {
+  const opts = { ...DEFAULT_OPTIONS, ...options2 };
   const wsUrl = opts.apiBaseUrl.replace("https://", "wss://").replace("http://", "ws://") + "/tunnel/auth/ws";
   console.log(import_chalk.default.gray("Connecting to Mirra authentication service..."));
   return new Promise((resolve, reject) => {
@@ -23863,13 +23863,23 @@ async function fetchChats(apiKey) {
   }
   return chats;
 }
-async function configure(options) {
+async function configure(options2) {
   const existingConfig = loadConfig();
-  let apiKey = options.apiKey;
+  if (options2.listChats) {
+    const key = options2.apiKey || existingConfig?.apiKey;
+    if (!key) {
+      console.log(JSON.stringify({ error: "No API key configured. Run configure first." }));
+      process.exit(1);
+    }
+    const chats = await fetchChats(key);
+    console.log(JSON.stringify(chats));
+    return;
+  }
+  let apiKey = options2.apiKey;
   let userId;
   if (apiKey) {
     console.log(import_chalk2.default.gray("Using provided API key..."));
-  } else if (options.manual) {
+  } else if (options2.manual) {
     apiKey = await prompt(
       "Enter your Mirra API key",
       existingConfig?.apiKey ? "(keep existing)" : void 0
@@ -23878,11 +23888,13 @@ async function configure(options) {
       apiKey = existingConfig.apiKey;
     }
   } else {
-    if (existingConfig?.apiKey) {
+    if (options2.reconfigure) {
+      console.log(import_chalk2.default.gray("Reconfiguring authentication..."));
+    } else if (existingConfig?.apiKey) {
       console.log(import_chalk2.default.gray("Validating cached API key..."));
       const isValid = await validateApiKey(existingConfig.apiKey);
       if (isValid) {
-        if (options.skipAuthPrompt) {
+        if (options2.skipAuthPrompt) {
           apiKey = existingConfig.apiKey;
           userId = existingConfig.userId;
           console.log(import_chalk2.default.green("  Cached API key is valid."));
@@ -23934,15 +23946,20 @@ Browser authentication failed: ${error.message}`));
     userId: userId || existingConfig?.userId
   };
   saveConfig(immediateConfig);
-  let workDir = options.workDir;
+  let workDir = options2.workDir;
   if (!workDir) {
     workDir = await prompt(
       "Default working directory",
       existingConfig?.defaultWorkDir || process.cwd()
     );
   }
-  let groupId = existingConfig?.groupId;
-  try {
+  let groupId = options2.groupId || existingConfig?.groupId;
+  if (options2.groupId) {
+    console.log(import_chalk2.default.green(`
+[+] Using provided chat destination: ${options2.groupId.substring(0, 12)}...`));
+  } else if (options2.skipChatSelection) {
+    console.log(import_chalk2.default.gray("\n  Skipping chat selection (use --list-chats + --group-id to set later)."));
+  } else try {
     console.log(import_chalk2.default.gray("\nFetching your chats..."));
     const chats = await fetchChats(apiKey);
     if (chats.length > 0) {
@@ -24014,7 +24031,41 @@ Browser authentication failed: ${error.message}`));
 }
 
 // src/entrypoints/configure.ts
-configure({}).catch((error) => {
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const options2 = {};
+  for (let i = 0; i < args.length; i++) {
+    switch (args[i]) {
+      case "--skip-auth":
+        options2.skipAuthPrompt = true;
+        break;
+      case "--reconfigure":
+        options2.reconfigure = true;
+        break;
+      case "--work-dir":
+        options2.workDir = args[++i];
+        break;
+      case "--group-id":
+        options2.groupId = args[++i];
+        break;
+      case "--list-chats":
+        options2.listChats = true;
+        break;
+      case "--skip-chat":
+        options2.skipChatSelection = true;
+        break;
+      case "--manual":
+        options2.manual = true;
+        break;
+      case "--api-key":
+        options2.apiKey = args[++i];
+        break;
+    }
+  }
+  return options2;
+}
+var options = parseArgs();
+configure(options).catch((error) => {
   console.error("Error during configuration:", error.message);
   process.exit(1);
 });
