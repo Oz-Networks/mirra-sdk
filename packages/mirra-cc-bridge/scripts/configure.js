@@ -18985,7 +18985,7 @@ var require_client = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.MirraSDK = void 0;
     var axios_1 = __importDefault(require_axios());
-    var MirraSDK2 = class {
+    var MirraSDK3 = class {
       constructor(config) {
         this.memory = {
           /**
@@ -19583,7 +19583,7 @@ var require_client = __commonJS({
         }
       }
     };
-    exports2.MirraSDK = MirraSDK2;
+    exports2.MirraSDK = MirraSDK3;
   }
 });
 
@@ -23583,12 +23583,13 @@ var require_open = __commonJS({
 // src/commands/configure.ts
 var import_chalk2 = __toESM(require_source());
 var readline = __toESM(require("readline"));
-var import_sdk = __toESM(require_dist());
+var import_sdk2 = __toESM(require_dist());
 
 // src/config.ts
 var import_os = require("os");
 var import_fs = require("fs");
 var import_path = require("path");
+var import_sdk = __toESM(require_dist());
 var CONFIG_DIR = (0, import_path.join)((0, import_os.homedir)(), ".mirra");
 var CONFIG_FILE = (0, import_path.join)(CONFIG_DIR, "cc-bridge.json");
 if (!(0, import_fs.existsSync)(CONFIG_DIR)) {
@@ -23611,6 +23612,15 @@ function saveConfig(config) {
     mode: 384
     // Read/write for owner only
   });
+}
+async function validateApiKey(apiKey) {
+  try {
+    const sdk = new import_sdk.MirraSDK({ apiKey });
+    await sdk.mirraMessaging.getGroups({ limit: 1 });
+    return true;
+  } catch {
+    return false;
+  }
 }
 function getConfigPath() {
   return CONFIG_FILE;
@@ -23657,6 +23667,7 @@ async function runWebSocketAuthFlow(options = {}) {
     let timeoutHandle;
     let authUrl = null;
     let resolved = false;
+    let browserAlreadyOpened = false;
     const cleanup = () => {
       if (timeoutHandle) {
         clearTimeout(timeoutHandle);
@@ -23693,29 +23704,32 @@ async function runWebSocketAuthFlow(options = {}) {
           switch (message.type) {
             case "auth:session_created" /* SESSION_CREATED */:
               authUrl = message.authUrl;
-              console.log("");
-              console.log(import_chalk.default.cyan.bold("  Authentication required"));
-              console.log("");
-              if (opts.openBrowser && openBrowser) {
-                try {
-                  console.log(import_chalk.default.gray("  Opening browser..."));
-                  await openBrowser(authUrl);
-                  console.log(import_chalk.default.green("  \u2713 Browser opened"));
-                } catch {
-                  console.log(import_chalk.default.yellow("  Could not open browser automatically."));
-                  console.log("");
+              if (!browserAlreadyOpened) {
+                browserAlreadyOpened = true;
+                console.log("");
+                console.log(import_chalk.default.cyan.bold("  Authentication required"));
+                console.log("");
+                if (opts.openBrowser && openBrowser) {
+                  try {
+                    console.log(import_chalk.default.gray("  Opening browser..."));
+                    await openBrowser(authUrl);
+                    console.log(import_chalk.default.green("  \u2713 Browser opened"));
+                  } catch {
+                    console.log(import_chalk.default.yellow("  Could not open browser automatically."));
+                    console.log("");
+                    console.log(import_chalk.default.white("  Please open this URL in your browser:"));
+                    console.log(import_chalk.default.cyan(`  ${authUrl}`));
+                  }
+                } else {
                   console.log(import_chalk.default.white("  Please open this URL in your browser:"));
+                  console.log("");
                   console.log(import_chalk.default.cyan(`  ${authUrl}`));
                 }
-              } else {
-                console.log(import_chalk.default.white("  Please open this URL in your browser:"));
                 console.log("");
-                console.log(import_chalk.default.cyan(`  ${authUrl}`));
+                console.log(import_chalk.default.gray("  Waiting for authorization..."));
+                console.log(import_chalk.default.gray(`  (Session expires in ${Math.floor(message.expiresIn / 60)} minutes)`));
+                console.log("");
               }
-              console.log("");
-              console.log(import_chalk.default.gray("  Waiting for authorization..."));
-              console.log(import_chalk.default.gray(`  (Session expires in ${Math.floor(message.expiresIn / 60)} minutes)`));
-              console.log("");
               break;
             case "auth:success" /* SUCCESS */:
               console.log(import_chalk.default.green.bold("  \u2713 Authentication successful!"));
@@ -23767,6 +23781,12 @@ function canOpenBrowser() {
 
 // src/commands/configure.ts
 function prompt(question, defaultValue) {
+  if (!process.stdin.isTTY) {
+    if (defaultValue) {
+      console.log(import_chalk2.default.gray(`  ${question}: ${defaultValue} (auto-selected, non-TTY)`));
+    }
+    return Promise.resolve(defaultValue || "");
+  }
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -23780,7 +23800,7 @@ function prompt(question, defaultValue) {
   });
 }
 async function createNewGroup(apiKey) {
-  const sdk = new import_sdk.MirraSDK({ apiKey });
+  const sdk = new import_sdk2.MirraSDK({ apiKey });
   const name = await prompt("Enter group name");
   if (!name || name.trim().length === 0) {
     console.log(import_chalk2.default.yellow("Group name cannot be empty"));
@@ -23813,7 +23833,7 @@ async function createNewGroup(apiKey) {
   }
 }
 async function fetchChats(apiKey) {
-  const sdk = new import_sdk.MirraSDK({ apiKey });
+  const sdk = new import_sdk2.MirraSDK({ apiKey });
   const chats = [];
   try {
     const groupsResult = await sdk.mirraMessaging.getGroups({ limit: 50 });
@@ -23859,14 +23879,26 @@ async function configure(options) {
     }
   } else {
     if (existingConfig?.apiKey) {
-      const reconfigure = await prompt(
-        "API key already configured. Reconfigure? (y/N)",
-        "n"
-      );
-      if (reconfigure.toLowerCase() !== "y" && reconfigure.toLowerCase() !== "yes") {
-        apiKey = existingConfig.apiKey;
-        userId = existingConfig.userId;
-        console.log(import_chalk2.default.gray("Keeping existing API key."));
+      console.log(import_chalk2.default.gray("Validating cached API key..."));
+      const isValid = await validateApiKey(existingConfig.apiKey);
+      if (isValid) {
+        if (options.skipAuthPrompt) {
+          apiKey = existingConfig.apiKey;
+          userId = existingConfig.userId;
+          console.log(import_chalk2.default.green("  Cached API key is valid."));
+        } else {
+          const reconfigure = await prompt(
+            "API key already configured and valid. Reconfigure? (y/N)",
+            "n"
+          );
+          if (reconfigure.toLowerCase() !== "y" && reconfigure.toLowerCase() !== "yes") {
+            apiKey = existingConfig.apiKey;
+            userId = existingConfig.userId;
+            console.log(import_chalk2.default.gray("Keeping existing API key."));
+          }
+        }
+      } else {
+        console.log(import_chalk2.default.yellow("  Cached API key is no longer valid. Re-authenticating..."));
       }
     }
     if (!apiKey) {
@@ -23896,6 +23928,12 @@ Browser authentication failed: ${error.message}`));
   if (!apiKey.startsWith("mirra_")) {
     console.log(import_chalk2.default.yellow('Warning: API key should start with "mirra_"'));
   }
+  const immediateConfig = {
+    ...existingConfig,
+    apiKey,
+    userId: userId || existingConfig?.userId
+  };
+  saveConfig(immediateConfig);
   let workDir = options.workDir;
   if (!workDir) {
     workDir = await prompt(
@@ -23903,58 +23941,65 @@ Browser authentication failed: ${error.message}`));
       existingConfig?.defaultWorkDir || process.cwd()
     );
   }
-  console.log(import_chalk2.default.gray("\nFetching your chats..."));
-  const chats = await fetchChats(apiKey);
   let groupId = existingConfig?.groupId;
-  if (chats.length > 0) {
-    console.log(import_chalk2.default.gray("\nWhere should Claude Code output be sent?\n"));
-    chats.forEach((chat, index) => {
-      const typeLabel = chat.type === "group" ? import_chalk2.default.cyan("[group]") : import_chalk2.default.gray("[direct]");
-      const isCurrentSelection = chat.groupId === existingConfig?.groupId;
-      const marker = isCurrentSelection ? import_chalk2.default.green(" *") : "  ";
-      console.log(`${marker}${index + 1}. ${typeLabel} ${chat.name}`);
-    });
-    console.log(import_chalk2.default.cyan("\n  [+] Create a new group"));
-    console.log("");
-    const currentIndex = chats.findIndex((c) => c.groupId === existingConfig?.groupId);
-    const defaultSelection = currentIndex >= 0 ? String(currentIndex + 1) : "1";
-    const selection = await prompt('Select destination (or "new" to create)', defaultSelection);
-    if (selection.toLowerCase() === "new" || selection === "+") {
-      const newGroup = await createNewGroup(apiKey);
-      if (newGroup) {
-        groupId = newGroup.groupId;
+  try {
+    console.log(import_chalk2.default.gray("\nFetching your chats..."));
+    const chats = await fetchChats(apiKey);
+    if (chats.length > 0) {
+      console.log(import_chalk2.default.gray("\nWhere should Claude Code output be sent?\n"));
+      chats.forEach((chat, index) => {
+        const typeLabel = chat.type === "group" ? import_chalk2.default.cyan("[group]") : import_chalk2.default.gray("[direct]");
+        const isCurrentSelection = chat.groupId === existingConfig?.groupId;
+        const marker = isCurrentSelection ? import_chalk2.default.green(" *") : "  ";
+        console.log(`${marker}${index + 1}. ${typeLabel} ${chat.name}`);
+      });
+      console.log(import_chalk2.default.cyan("\n  [+] Create a new group"));
+      console.log("");
+      const currentIndex = chats.findIndex((c) => c.groupId === existingConfig?.groupId);
+      const defaultSelection = currentIndex >= 0 ? String(currentIndex + 1) : "1";
+      const selection = await prompt('Select destination (or "new" to create)', defaultSelection);
+      if (selection.toLowerCase() === "new" || selection === "+") {
+        const newGroup = await createNewGroup(apiKey);
+        if (newGroup) {
+          groupId = newGroup.groupId;
+        } else {
+          console.log(import_chalk2.default.yellow("Keeping existing selection"));
+        }
       } else {
-        console.log(import_chalk2.default.yellow("Keeping existing selection"));
-      }
-    } else {
-      const selectedIndex = parseInt(selection, 10) - 1;
-      if (selectedIndex >= 0 && selectedIndex < chats.length) {
-        const selectedChat = chats[selectedIndex];
-        groupId = selectedChat.groupId;
-        console.log(import_chalk2.default.green(`
+        const selectedIndex = parseInt(selection, 10) - 1;
+        if (selectedIndex >= 0 && selectedIndex < chats.length) {
+          const selectedChat = chats[selectedIndex];
+          groupId = selectedChat.groupId;
+          console.log(import_chalk2.default.green(`
 [+] Selected: ${selectedChat.name}`));
-      } else {
-        console.log(import_chalk2.default.yellow("Invalid selection, keeping existing"));
-      }
-    }
-  } else {
-    console.log(import_chalk2.default.gray("    No existing chats found."));
-    const shouldCreate = await prompt("Create a new group? (y/N)", "n");
-    if (shouldCreate.toLowerCase() === "y" || shouldCreate.toLowerCase() === "yes") {
-      const newGroup = await createNewGroup(apiKey);
-      if (newGroup) {
-        groupId = newGroup.groupId;
+        } else {
+          console.log(import_chalk2.default.yellow("Invalid selection, keeping existing"));
+        }
       }
     } else {
-      console.log(import_chalk2.default.gray("    You can set MIRRA_GROUP_ID manually later."));
+      console.log(import_chalk2.default.gray("    No existing chats found."));
+      const shouldCreate = await prompt("Create a new group? (y/N)", "n");
+      if (shouldCreate.toLowerCase() === "y" || shouldCreate.toLowerCase() === "yes") {
+        const newGroup = await createNewGroup(apiKey);
+        if (newGroup) {
+          groupId = newGroup.groupId;
+        }
+      } else {
+        console.log(import_chalk2.default.gray("    You can set MIRRA_GROUP_ID manually later."));
+      }
     }
+  } catch (error) {
+    console.log(import_chalk2.default.yellow(`
+  [!] Chat selection failed: ${error.message}`));
+    console.log(import_chalk2.default.gray("  API key was saved. You can re-run configure to select a chat destination."));
   }
   const config = {
     ...existingConfig,
     apiKey,
     userId: userId || existingConfig?.userId,
     defaultWorkDir: workDir,
-    groupId
+    groupId,
+    setupComplete: true
   };
   saveConfig(config);
   console.log(import_chalk2.default.green("\n[+] Configuration saved"));

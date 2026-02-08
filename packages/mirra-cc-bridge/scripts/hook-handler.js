@@ -17438,7 +17438,7 @@ var require_client = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.MirraSDK = void 0;
     var axios_1 = __importDefault(require_axios());
-    var MirraSDK2 = class {
+    var MirraSDK3 = class {
       constructor(config) {
         this.memory = {
           /**
@@ -18036,7 +18036,7 @@ var require_client = __commonJS({
         }
       }
     };
-    exports2.MirraSDK = MirraSDK2;
+    exports2.MirraSDK = MirraSDK3;
   }
 });
 
@@ -18080,12 +18080,13 @@ var require_dist = __commonJS({
 
 // src/commands/hook.ts
 var path = __toESM(require("path"));
-var import_sdk = __toESM(require_dist());
+var import_sdk2 = __toESM(require_dist());
 
 // src/config.ts
 var import_os = require("os");
 var import_fs = require("fs");
 var import_path = require("path");
+var import_sdk = __toESM(require_dist());
 var CONFIG_DIR = (0, import_path.join)((0, import_os.homedir)(), ".mirra");
 var CONFIG_FILE = (0, import_path.join)(CONFIG_DIR, "cc-bridge.json");
 if (!(0, import_fs.existsSync)(CONFIG_DIR)) {
@@ -18430,7 +18431,7 @@ function loadSessionMarker(cwd) {
 function getSDK() {
   const marker = cachedSessionMarker;
   if (marker?.apiKey) {
-    return new import_sdk.MirraSDK({
+    return new import_sdk2.MirraSDK({
       apiKey: marker.apiKey
     });
   }
@@ -18438,7 +18439,7 @@ function getSDK() {
   if (!config?.apiKey) {
     throw new Error("Not configured. Run `mirra-cc-bridge configure` first.");
   }
-  return new import_sdk.MirraSDK({
+  return new import_sdk2.MirraSDK({
     apiKey: config.apiKey
   });
 }

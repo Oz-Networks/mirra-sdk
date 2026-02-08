@@ -84,6 +84,7 @@ export async function runWebSocketAuthFlow(
     let timeoutHandle: NodeJS.Timeout;
     let authUrl: string | null = null;
     let resolved = false;
+    let browserAlreadyOpened = false;
 
     const cleanup = () => {
       if (timeoutHandle) {
@@ -129,32 +130,39 @@ export async function runWebSocketAuthFlow(
           switch (message.type) {
             case AuthMessageType.SESSION_CREATED:
               authUrl = message.authUrl;
-              console.log('');
-              console.log(chalk.cyan.bold('  Authentication required'));
-              console.log('');
 
-              // Try to open browser
-              if (opts.openBrowser && openBrowser) {
-                try {
-                  console.log(chalk.gray('  Opening browser...'));
-                  await openBrowser(authUrl!);
-                  console.log(chalk.green('  ✓ Browser opened'));
-                } catch {
-                  console.log(chalk.yellow('  Could not open browser automatically.'));
-                  console.log('');
+              // Only open the browser once, even if multiple SESSION_CREATED
+              // messages arrive (e.g., due to WebSocket reconnection/instability)
+              if (!browserAlreadyOpened) {
+                browserAlreadyOpened = true;
+
+                console.log('');
+                console.log(chalk.cyan.bold('  Authentication required'));
+                console.log('');
+
+                // Try to open browser
+                if (opts.openBrowser && openBrowser) {
+                  try {
+                    console.log(chalk.gray('  Opening browser...'));
+                    await openBrowser(authUrl!);
+                    console.log(chalk.green('  ✓ Browser opened'));
+                  } catch {
+                    console.log(chalk.yellow('  Could not open browser automatically.'));
+                    console.log('');
+                    console.log(chalk.white('  Please open this URL in your browser:'));
+                    console.log(chalk.cyan(`  ${authUrl}`));
+                  }
+                } else {
                   console.log(chalk.white('  Please open this URL in your browser:'));
+                  console.log('');
                   console.log(chalk.cyan(`  ${authUrl}`));
                 }
-              } else {
-                console.log(chalk.white('  Please open this URL in your browser:'));
-                console.log('');
-                console.log(chalk.cyan(`  ${authUrl}`));
-              }
 
-              console.log('');
-              console.log(chalk.gray('  Waiting for authorization...'));
-              console.log(chalk.gray(`  (Session expires in ${Math.floor(message.expiresIn / 60)} minutes)`));
-              console.log('');
+                console.log('');
+                console.log(chalk.gray('  Waiting for authorization...'));
+                console.log(chalk.gray(`  (Session expires in ${Math.floor(message.expiresIn / 60)} minutes)`));
+                console.log('');
+              }
               break;
 
             case AuthMessageType.SUCCESS:

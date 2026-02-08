@@ -10,7 +10,7 @@
 import chalk from 'chalk';
 import * as readline from 'readline';
 import { MirraSDK } from '@mirra-messenger/sdk';
-import { loadConfig, saveConfig, getConfigPath } from '../config';
+import { loadConfig, saveConfig, getConfigPath, validateApiKey } from '../config';
 import { BridgeConfig } from '../types';
 import { runWebSocketAuthFlow, canOpenBrowser } from '../auth-flow';
 
@@ -18,6 +18,8 @@ interface ConfigureOptions {
   apiKey?: string;
   workDir?: string;
   manual?: boolean;
+  /** When true, reuse valid cached auth without prompting */
+  skipAuthPrompt?: boolean;
 }
 
 interface ChatOption {
@@ -27,9 +29,19 @@ interface ChatOption {
 }
 
 /**
- * Prompt for input
+ * Prompt for input.
+ * In non-TTY environments (e.g., when run by Claude Code as a background process),
+ * immediately returns the default value to avoid hanging on stdin.
  */
 function prompt(question: string, defaultValue?: string): Promise<string> {
+  // Non-TTY: return default immediately to prevent hanging
+  if (!process.stdin.isTTY) {
+    if (defaultValue) {
+      console.log(chalk.gray(`  ${question}: ${defaultValue} (auto-selected, non-TTY)`));
+    }
+    return Promise.resolve(defaultValue || '');
+  }
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -158,16 +170,31 @@ export async function configure(options: ConfigureOptions): Promise<void> {
   } else {
     // Default: Browser-based authentication
     if (existingConfig?.apiKey) {
-      // Already configured - ask if they want to reconfigure
-      const reconfigure = await prompt(
-        'API key already configured. Reconfigure? (y/N)',
-        'n'
-      );
+      // Validate the cached API key is still valid
+      console.log(chalk.gray('Validating cached API key...'));
+      const isValid = await validateApiKey(existingConfig.apiKey);
 
-      if (reconfigure.toLowerCase() !== 'y' && reconfigure.toLowerCase() !== 'yes') {
-        apiKey = existingConfig.apiKey;
-        userId = existingConfig.userId;
-        console.log(chalk.gray('Keeping existing API key.'));
+      if (isValid) {
+        if (options.skipAuthPrompt) {
+          // Non-interactive mode: reuse valid cached key without prompting
+          apiKey = existingConfig.apiKey;
+          userId = existingConfig.userId;
+          console.log(chalk.green('  Cached API key is valid.'));
+        } else {
+          // Interactive mode: ask if they want to reconfigure
+          const reconfigure = await prompt(
+            'API key already configured and valid. Reconfigure? (y/N)',
+            'n'
+          );
+
+          if (reconfigure.toLowerCase() !== 'y' && reconfigure.toLowerCase() !== 'yes') {
+            apiKey = existingConfig.apiKey;
+            userId = existingConfig.userId;
+            console.log(chalk.gray('Keeping existing API key.'));
+          }
+        }
+      } else {
+        console.log(chalk.yellow('  Cached API key is no longer valid. Re-authenticating...'));
       }
     }
 
@@ -205,6 +232,16 @@ export async function configure(options: ConfigureOptions): Promise<void> {
     console.log(chalk.yellow('Warning: API key should start with "mirra_"'));
   }
 
+  // Save API key immediately so it survives if later steps fail.
+  // This prevents re-triggering browser auth when configure is re-run
+  // after a failure in chat selection or work directory prompting.
+  const immediateConfig: BridgeConfig = {
+    ...existingConfig,
+    apiKey,
+    userId: userId || existingConfig?.userId,
+  };
+  saveConfig(immediateConfig);
+
   // Get default working directory
   let workDir = options.workDir;
   if (!workDir) {
@@ -214,74 +251,81 @@ export async function configure(options: ConfigureOptions): Promise<void> {
     );
   }
 
-  // Fetch and select chat destination
-  console.log(chalk.gray('\nFetching your chats...'));
-  const chats = await fetchChats(apiKey);
-
+  // Fetch and select chat destination.
+  // Wrapped in try/catch so failures here don't lose the already-saved API key.
   let groupId = existingConfig?.groupId;
 
-  if (chats.length > 0) {
-    console.log(chalk.gray('\nWhere should Claude Code output be sent?\n'));
+  try {
+    console.log(chalk.gray('\nFetching your chats...'));
+    const chats = await fetchChats(apiKey);
 
-    // Display chat options
-    chats.forEach((chat, index) => {
-      const typeLabel = chat.type === 'group' ? chalk.cyan('[group]') : chalk.gray('[direct]');
-      const isCurrentSelection = chat.groupId === existingConfig?.groupId;
-      const marker = isCurrentSelection ? chalk.green(' *') : '  ';
-      console.log(`${marker}${index + 1}. ${typeLabel} ${chat.name}`);
-    });
+    if (chats.length > 0) {
+      console.log(chalk.gray('\nWhere should Claude Code output be sent?\n'));
 
-    // Add "create new group" option
-    console.log(chalk.cyan('\n  [+] Create a new group'));
-    console.log('');
+      // Display chat options
+      chats.forEach((chat, index) => {
+        const typeLabel = chat.type === 'group' ? chalk.cyan('[group]') : chalk.gray('[direct]');
+        const isCurrentSelection = chat.groupId === existingConfig?.groupId;
+        const marker = isCurrentSelection ? chalk.green(' *') : '  ';
+        console.log(`${marker}${index + 1}. ${typeLabel} ${chat.name}`);
+      });
 
-    // Find current selection index for default
-    const currentIndex = chats.findIndex((c) => c.groupId === existingConfig?.groupId);
-    const defaultSelection = currentIndex >= 0 ? String(currentIndex + 1) : '1';
+      // Add "create new group" option
+      console.log(chalk.cyan('\n  [+] Create a new group'));
+      console.log('');
 
-    const selection = await prompt('Select destination (or "new" to create)', defaultSelection);
+      // Find current selection index for default
+      const currentIndex = chats.findIndex((c) => c.groupId === existingConfig?.groupId);
+      const defaultSelection = currentIndex >= 0 ? String(currentIndex + 1) : '1';
 
-    // Handle "new" selection
-    if (selection.toLowerCase() === 'new' || selection === '+') {
-      const newGroup = await createNewGroup(apiKey);
-      if (newGroup) {
-        groupId = newGroup.groupId;
+      const selection = await prompt('Select destination (or "new" to create)', defaultSelection);
+
+      // Handle "new" selection
+      if (selection.toLowerCase() === 'new' || selection === '+') {
+        const newGroup = await createNewGroup(apiKey);
+        if (newGroup) {
+          groupId = newGroup.groupId;
+        } else {
+          console.log(chalk.yellow('Keeping existing selection'));
+        }
       } else {
-        console.log(chalk.yellow('Keeping existing selection'));
+        const selectedIndex = parseInt(selection, 10) - 1;
+
+        if (selectedIndex >= 0 && selectedIndex < chats.length) {
+          const selectedChat = chats[selectedIndex];
+          groupId = selectedChat.groupId;
+          console.log(chalk.green(`\n[+] Selected: ${selectedChat.name}`));
+        } else {
+          console.log(chalk.yellow('Invalid selection, keeping existing'));
+        }
       }
     } else {
-      const selectedIndex = parseInt(selection, 10) - 1;
+      // No existing chats - offer to create one
+      console.log(chalk.gray('    No existing chats found.'));
+      const shouldCreate = await prompt('Create a new group? (y/N)', 'n');
 
-      if (selectedIndex >= 0 && selectedIndex < chats.length) {
-        const selectedChat = chats[selectedIndex];
-        groupId = selectedChat.groupId;
-        console.log(chalk.green(`\n[+] Selected: ${selectedChat.name}`));
+      if (shouldCreate.toLowerCase() === 'y' || shouldCreate.toLowerCase() === 'yes') {
+        const newGroup = await createNewGroup(apiKey);
+        if (newGroup) {
+          groupId = newGroup.groupId;
+        }
       } else {
-        console.log(chalk.yellow('Invalid selection, keeping existing'));
+        console.log(chalk.gray('    You can set MIRRA_GROUP_ID manually later.'));
       }
     }
-  } else {
-    // No existing chats - offer to create one
-    console.log(chalk.gray('    No existing chats found.'));
-    const shouldCreate = await prompt('Create a new group? (y/N)', 'n');
-
-    if (shouldCreate.toLowerCase() === 'y' || shouldCreate.toLowerCase() === 'yes') {
-      const newGroup = await createNewGroup(apiKey);
-      if (newGroup) {
-        groupId = newGroup.groupId;
-      }
-    } else {
-      console.log(chalk.gray('    You can set MIRRA_GROUP_ID manually later.'));
-    }
+  } catch (error: any) {
+    console.log(chalk.yellow(`\n  [!] Chat selection failed: ${error.message}`));
+    console.log(chalk.gray('  API key was saved. You can re-run configure to select a chat destination.'));
   }
 
-  // Save configuration
+  // Save configuration with setupComplete flag
   const config: BridgeConfig = {
     ...existingConfig,
     apiKey,
     userId: userId || existingConfig?.userId,
     defaultWorkDir: workDir,
     groupId,
+    setupComplete: true,
   };
 
   saveConfig(config);

@@ -6,6 +6,7 @@ import { homedir } from 'os';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { basename } from 'path';
+import { MirraSDK } from '@mirra-messenger/sdk';
 import { ActiveSession, BridgeConfig, LocalSession, PendingPermissionRequest, SessionMemoryMapping } from './types';
 
 const CONFIG_DIR = join(homedir(), '.mirra');
@@ -70,6 +71,21 @@ export function setConfigValue<K extends keyof BridgeConfig>(
 export function isConfigured(): boolean {
   const config = loadConfig();
   return !!(config?.apiKey);
+}
+
+/**
+ * Validate the cached API key by making a lightweight API call.
+ * Returns true if the key is valid, false otherwise.
+ */
+export async function validateApiKey(apiKey: string): Promise<boolean> {
+  try {
+    const sdk = new MirraSDK({ apiKey }) as any;
+    // Use getGroups with limit 1 as a lightweight validation call
+    await sdk.mirraMessaging.getGroups({ limit: 1 });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

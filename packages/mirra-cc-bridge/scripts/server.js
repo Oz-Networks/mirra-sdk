@@ -31657,7 +31657,7 @@ var require_client = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.MirraSDK = void 0;
     var axios_1 = __importDefault(require_axios());
-    var MirraSDK3 = class {
+    var MirraSDK4 = class {
       constructor(config) {
         this.memory = {
           /**
@@ -32255,7 +32255,7 @@ var require_client = __commonJS({
         }
       }
     };
-    exports2.MirraSDK = MirraSDK3;
+    exports2.MirraSDK = MirraSDK4;
   }
 });
 
@@ -35918,12 +35918,13 @@ var import_chalk2 = __toESM(require_source());
 var import_express = __toESM(require_express2());
 var os2 = __toESM(require("os"));
 var path2 = __toESM(require("path"));
-var import_sdk2 = __toESM(require_dist());
+var import_sdk3 = __toESM(require_dist());
 
 // src/config.ts
 var import_os = require("os");
 var import_fs = require("fs");
 var import_path = require("path");
+var import_sdk = __toESM(require_dist());
 var CONFIG_DIR = (0, import_path.join)((0, import_os.homedir)(), ".mirra");
 var CONFIG_FILE = (0, import_path.join)(CONFIG_DIR, "cc-bridge.json");
 if (!(0, import_fs.existsSync)(CONFIG_DIR)) {
@@ -36103,7 +36104,7 @@ var import_child_process = require("child_process");
 var os = __toESM(require("os"));
 var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
-var import_sdk = __toESM(require_dist());
+var import_sdk2 = __toESM(require_dist());
 function expandPath(inputPath) {
   if (inputPath.startsWith("~/")) {
     return path.join(os.homedir(), inputPath.slice(2));
@@ -36156,7 +36157,7 @@ var SessionManager = class {
     this.maxSessions = 5;
     this.apiKey = apiKey;
     this.pcResourceId = pcResourceId;
-    this.sdk = new import_sdk.MirraSDK({ apiKey });
+    this.sdk = new import_sdk2.MirraSDK({ apiKey });
   }
   /**
    * Get the Claude Code router script ID from the server
@@ -38392,7 +38393,7 @@ async function startServer(options) {
   }
   let sdk;
   try {
-    sdk = new import_sdk2.MirraSDK({ apiKey: config.apiKey });
+    sdk = new import_sdk3.MirraSDK({ apiKey: config.apiKey });
   } catch (error) {
     console.error(import_chalk2.default.red(`
 Failed to initialize SDK: ${error.message}`));
