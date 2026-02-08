@@ -133,6 +133,15 @@ export interface FlowsCreateBatchOperationArgs {
   batchSize?: number; // Number of operations to process per execution (default: 5)
   intervalSeconds?: number; // Seconds between batch executions (default: 60, minimum: 60)
 }
+export interface FlowsPublishFlowArgs {
+  flowId: string; // ID of the flow to publish
+  pricing?: any; // Pricing configuration. Defaults to { model: "free" }. Supported models: "free", "pay-per-execution". For paid models, include basePrice.
+  tags?: any[]; // Tags for marketplace discovery (e.g., ["telegram", "automation"])
+  category?: string; // Marketplace category (e.g., "messaging", "productivity"). Defaults to "uncategorized".
+}
+export interface FlowsUnpublishFlowArgs {
+  flowId: string; // ID of the flow to unpublish
+}
 
 // User Adapter Types
 export interface UserUpdateProfileArgs {
@@ -192,6 +201,7 @@ export interface MemoryCreateArgs {
   type: string; // Memory subtype: "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), "event" (calendar items). For tasks with assignment, use createTask instead.
   content: string; // Main content/description of the memory
   metadata?: any; // Additional metadata (e.g., priority, deadline, tags, etc.)
+  tags?: any[]; // Tags for organizing the memory. Shorthand for metadata.tags.
 }
 export interface MemoryCreateTaskArgs {
   content: string; // Task description/title - what needs to be done. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
@@ -241,7 +251,8 @@ export interface MemoryListGraphsArgs {
 
 // AI Services Adapter Types
 export interface AiChatArgs {
-  messages: any[]; // Array of message objects with role ("system" | "user" | "assistant") and content (string). System messages set AI behavior, user messages are queries, assistant messages are previous AI responses.
+  message?: string; // Simple string shorthand for single-turn queries. Auto-wrapped into messages array. Use "messages" for multi-turn conversations.
+  messages?: any[]; // Array of message objects with role ("system" | "user" | "assistant") and content (string). System messages set AI behavior, user messages are queries, assistant messages are previous AI responses.
   model?: string; // Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names.
   temperature?: number; // Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7
   maxTokens?: number; // Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens).
@@ -750,6 +761,7 @@ export interface TrelloCreateCardArgs {
   name: string; // Card name/title
   idList: string; // ID of the list to add the card to
   desc?: string; // Card description (supports markdown)
+  description?: string; // Card description (alias for "desc", supports markdown)
 }
 export interface TrelloGetCardArgs {
   cardId: string; // The ID of the card to retrieve
@@ -758,6 +770,7 @@ export interface TrelloUpdateCardArgs {
   cardId: string; // The ID of the card to update
   name?: string; // New card name
   desc?: string; // New card description
+  description?: string; // New card description (alias for "desc", supports markdown)
   idList?: string; // Move card to a different list
   closed?: boolean; // Archive the card
 }
@@ -808,7 +821,7 @@ export interface JupiterSwapArgs {
   inputMint: string; // Input token mint address
   outputMint: string; // Output token mint address
   amount: number; // Amount to swap (in smallest unit)
-  inputDecimals: number; // Number of decimals for input token
+  inputDecimals?: number; // Number of decimals for input token. Auto-resolved from Jupiter token registry if not provided.
   slippageBps?: number; // Slippage tolerance in basis points (default: 50)
 }
 export interface JupiterGetHoldingsArgs {
@@ -1606,6 +1619,26 @@ export interface FlowsCreateBatchOperationData {
 }
 
 export type FlowsCreateBatchOperationResult = AdapterResultBase<FlowsCreateBatchOperationData>;
+
+export interface FlowsPublishFlowData {
+  flowId: string; // Published flow ID
+  isPublished: boolean; // Whether flow is published
+  status: string; // Published status
+  publishedAt: string; // Published timestamp (ISO 8601)
+  pricing: object; // Pricing configuration
+  category: string; // Marketplace category
+  tags: string[]; // Marketplace tags
+}
+
+export type FlowsPublishFlowResult = AdapterResultBase<FlowsPublishFlowData>;
+
+export interface FlowsUnpublishFlowData {
+  flowId: string; // Unpublished flow ID
+  isPublished: boolean; // Whether flow is published (false)
+  status: string; // Published status (archived)
+}
+
+export type FlowsUnpublishFlowResult = AdapterResultBase<FlowsUnpublishFlowData>;
 
 // Memory Response Types
 export interface MemoryCreateData {
@@ -4568,6 +4601,35 @@ Returns detailed information about trigger matching, including which conditions 
         method: 'createBatchOperation',
         params: args || {}
       });
+    },
+
+    /**
+     * Publish a flow to the marketplace so other users can discover and install it. The flow must have a deployed script.
+     * @param args.flowId - ID of the flow to publish
+     * @param args.pricing - Pricing configuration. Defaults to { model: "free" }. Supported models: "free", "pay-per-execution". For paid models, include basePrice. (optional)
+     * @param args.tags - Tags for marketplace discovery (e.g., ["telegram", "automation"]) (optional)
+     * @param args.category - Marketplace category (e.g., "messaging", "productivity"). Defaults to "uncategorized". (optional)
+     * @returns Promise<FlowsPublishFlowResult> Typed response with IDE autocomplete
+     */
+    publishFlow: async (args: FlowsPublishFlowArgs): Promise<FlowsPublishFlowResult> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'publishFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Remove a flow from the marketplace. Existing installations will continue to work.
+     * @param args.flowId - ID of the flow to unpublish
+     * @returns Promise<FlowsUnpublishFlowResult> Typed response with IDE autocomplete
+     */
+    unpublishFlow: async (args: FlowsUnpublishFlowArgs): Promise<FlowsUnpublishFlowResult> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'unpublishFlow',
+        params: args || {}
+      });
     }
   };
 }
@@ -4789,6 +4851,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * @param args.type - Memory subtype: "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), "event" (calendar items). For tasks with assignment, use createTask instead.
      * @param args.content - Main content/description of the memory
      * @param args.metadata - Additional metadata (e.g., priority, deadline, tags, etc.) (optional)
+     * @param args.tags - Tags for organizing the memory. Shorthand for metadata.tags. (optional)
      * @returns Promise<MemoryCreateResult> Typed response with IDE autocomplete
      */
     create: async (args: MemoryCreateArgs): Promise<MemoryCreateResult> => {
@@ -4960,7 +5023,8 @@ TYPICAL PATTERNS:
 1. Simple query: [{ role: "user", content: "question" }]
 2. With system prompt: [{ role: "system", content: "instructions" }, { role: "user", content: "question" }]
 3. Multi-turn: [system, user, assistant, user, assistant, ...]
-     * @param args.messages - Array of message objects with role ("system" | "user" | "assistant") and content (string). System messages set AI behavior, user messages are queries, assistant messages are previous AI responses.
+     * @param args.message - Simple string shorthand for single-turn queries. Auto-wrapped into messages array. Use "messages" for multi-turn conversations. (optional)
+     * @param args.messages - Array of message objects with role ("system" | "user" | "assistant") and content (string). System messages set AI behavior, user messages are queries, assistant messages are previous AI responses. (optional)
      * @param args.model - Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names. (optional)
      * @param args.temperature - Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7 (optional)
      * @param args.maxTokens - Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens). (optional)
@@ -6550,6 +6614,7 @@ function createTrelloAdapter(sdk: MirraSDK) {
      * @param args.name - Card name/title
      * @param args.idList - ID of the list to add the card to
      * @param args.desc - Card description (supports markdown) (optional)
+     * @param args.description - Card description (alias for "desc", supports markdown) (optional)
      * @returns Promise<TrelloCreateCardResult> Typed response with IDE autocomplete
      */
     createCard: async (args: TrelloCreateCardArgs): Promise<TrelloCreateCardResult> => {
@@ -6578,6 +6643,7 @@ function createTrelloAdapter(sdk: MirraSDK) {
      * @param args.cardId - The ID of the card to update
      * @param args.name - New card name (optional)
      * @param args.desc - New card description (optional)
+     * @param args.description - New card description (alias for "desc", supports markdown) (optional)
      * @param args.idList - Move card to a different list (optional)
      * @param args.closed - Archive the card (optional)
      * @returns Promise<TrelloUpdateCardResult> Typed response with IDE autocomplete
@@ -6742,7 +6808,7 @@ function createJupiterAdapter(sdk: MirraSDK) {
      * @param args.inputMint - Input token mint address
      * @param args.outputMint - Output token mint address
      * @param args.amount - Amount to swap (in smallest unit)
-     * @param args.inputDecimals - Number of decimals for input token
+     * @param args.inputDecimals - Number of decimals for input token. Auto-resolved from Jupiter token registry if not provided. (optional)
      * @param args.slippageBps - Slippage tolerance in basis points (default: 50) (optional)
      * @returns Promise<JupiterSwapResult> Typed response with IDE autocomplete
      */
