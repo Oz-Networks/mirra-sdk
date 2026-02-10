@@ -202,6 +202,7 @@ export interface MemoryCreateArgs {
   content: string; // Main content/description of the memory
   metadata?: any; // Additional metadata (e.g., priority, deadline, tags, etc.)
   tags?: any[]; // Tags for organizing the memory. Shorthand for metadata.tags.
+  groupId?: string; // Group ID to scope the memory to a specific group. If omitted, memory is created in the user's personal graph.
 }
 export interface MemoryCreateTaskArgs {
   content: string; // Task description/title - what needs to be done. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
@@ -1024,6 +1025,7 @@ export interface FeedbackSubmitFeatureRequestArgs {
 export interface MirraMessagingSendMessageArgs {
   groupId: string; // Group ID to send the message to (use getContacts or getGroups to get the groupId)
   content: string; // Message text content
+  replyToMessageId?: string; // ID of the message to reply to (creates a threaded reply)
   automation?: any; // Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing.
   structuredData?: any[]; // Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }]
 }
@@ -1305,6 +1307,15 @@ export interface DesktopListDirectoryArgs {
   path: string; // Absolute path to the directory to list
   recursive?: boolean; // If true, list recursively (max depth 3). Defaults to false.
   includeHidden?: boolean; // If true, include hidden files (starting with .). Defaults to false.
+}
+export interface DesktopSpawnProcessArgs {
+  command: string; // Path to the executable to run (e.g., "node", "python3", "/usr/local/bin/my-app")
+  args?: any[]; // Command-line arguments to pass to the process
+  env?: any; // Additional environment variables to set for the process
+  cwd?: string; // Working directory for the process (defaults to system default)
+}
+export interface DesktopKillProcessArgs {
+  processId: string; // The process ID returned by spawnProcess
 }
 
 
@@ -4873,6 +4884,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * @param args.content - Main content/description of the memory
      * @param args.metadata - Additional metadata (e.g., priority, deadline, tags, etc.) (optional)
      * @param args.tags - Tags for organizing the memory. Shorthand for metadata.tags. (optional)
+     * @param args.groupId - Group ID to scope the memory to a specific group. If omitted, memory is created in the user's personal graph. (optional)
      * @returns Promise<MemoryCreateResult> Typed response with IDE autocomplete
      */
     create: async (args: MemoryCreateArgs): Promise<MemoryCreateResult> => {
@@ -7420,6 +7432,7 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
      * Send a message to a group (including direct chats). The message is sent as the authenticated user with optional automation metadata. Returns normalized flat structure.
      * @param args.groupId - Group ID to send the message to (use getContacts or getGroups to get the groupId)
      * @param args.content - Message text content
+     * @param args.replyToMessageId - ID of the message to reply to (creates a threaded reply) (optional)
      * @param args.automation - Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing. (optional)
      * @param args.structuredData - Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }] (optional)
      * @returns Promise<MirraMessagingSendMessageResult> Typed response with IDE autocomplete
@@ -8374,6 +8387,33 @@ function createDesktopAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'desktop',
         method: 'getSystemInfo',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Spawn a long-running background process on the user's desktop. The process runs detached with no stdin/stdout (all communication via --sdk-url). Returns a process ID for later management. Requires user consent. A desktop:process_exited event is emitted when the process terminates.
+     * @param args.command - Path to the executable to run (e.g., "node", "python3", "/usr/local/bin/my-app")
+     * @param args.args - Command-line arguments to pass to the process (optional)
+     * @param args.env - Additional environment variables to set for the process (optional)
+     * @param args.cwd - Working directory for the process (defaults to system default) (optional)
+     */
+    spawnProcess: async (args: DesktopSpawnProcessArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'spawnProcess',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Kill a previously spawned background process by its process ID.
+     * @param args.processId - The process ID returned by spawnProcess
+     */
+    killProcess: async (args: DesktopKillProcessArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'killProcess',
         params: args || {}
       });
     }
