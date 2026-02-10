@@ -25619,7 +25619,12 @@ var require_axios = __commonJS({
       kind === "object" && isFunction$1(thing.toString) && thing.toString() === "[object FormData]"));
     };
     var isURLSearchParams = kindOfTest("URLSearchParams");
-    var [isReadableStream, isRequest, isResponse, isHeaders] = ["ReadableStream", "Request", "Response", "Headers"].map(kindOfTest);
+    var [isReadableStream, isRequest, isResponse, isHeaders] = [
+      "ReadableStream",
+      "Request",
+      "Response",
+      "Headers"
+    ].map(kindOfTest);
     var trim = (str) => str.trim ? str.trim() : str.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, "");
     function forEach(obj, fn, { allOwnKeys = false } = {}) {
       if (obj === null || typeof obj === "undefined") {
@@ -25672,6 +25677,9 @@ var require_axios = __commonJS({
       const { caseless, skipUndefined } = isContextDefined(this) && this || {};
       const result = {};
       const assignValue = (val, key) => {
+        if (key === "__proto__" || key === "constructor" || key === "prototype") {
+          return;
+        }
         const targetKey = caseless && findKey(result, key) || key;
         if (isPlainObject(result[targetKey]) && isPlainObject(val)) {
           result[targetKey] = merge(result[targetKey], val);
@@ -25689,23 +25697,27 @@ var require_axios = __commonJS({
       return result;
     }
     var extend = (a, b, thisArg, { allOwnKeys } = {}) => {
-      forEach(b, (val, key) => {
-        if (thisArg && isFunction$1(val)) {
-          Object.defineProperty(a, key, {
-            value: bind(val, thisArg),
-            writable: true,
-            enumerable: true,
-            configurable: true
-          });
-        } else {
-          Object.defineProperty(a, key, {
-            value: val,
-            writable: true,
-            enumerable: true,
-            configurable: true
-          });
-        }
-      }, { allOwnKeys });
+      forEach(
+        b,
+        (val, key) => {
+          if (thisArg && isFunction$1(val)) {
+            Object.defineProperty(a, key, {
+              value: bind(val, thisArg),
+              writable: true,
+              enumerable: true,
+              configurable: true
+            });
+          } else {
+            Object.defineProperty(a, key, {
+              value: val,
+              writable: true,
+              enumerable: true,
+              configurable: true
+            });
+          }
+        },
+        { allOwnKeys }
+      );
       return a;
     };
     var stripBOM = (content) => {
@@ -25715,7 +25727,10 @@ var require_axios = __commonJS({
       return content;
     };
     var inherits = (constructor, superConstructor, props, descriptors) => {
-      constructor.prototype = Object.create(superConstructor.prototype, descriptors);
+      constructor.prototype = Object.create(
+        superConstructor.prototype,
+        descriptors
+      );
       Object.defineProperty(constructor.prototype, "constructor", {
         value: constructor,
         writable: true,
@@ -25792,12 +25807,9 @@ var require_axios = __commonJS({
     };
     var isHTMLForm = kindOfTest("HTMLFormElement");
     var toCamelCase = (str) => {
-      return str.toLowerCase().replace(
-        /[-_\s]([a-z\d])(\w*)/g,
-        function replacer(m, p1, p2) {
-          return p1.toUpperCase() + p2;
-        }
-      );
+      return str.toLowerCase().replace(/[-_\s]([a-z\d])(\w*)/g, function replacer(m, p1, p2) {
+        return p1.toUpperCase() + p2;
+      });
     };
     var hasOwnProperty = (({ hasOwnProperty: hasOwnProperty2 }) => (obj, prop) => hasOwnProperty2.call(obj, prop))(Object.prototype);
     var isRegExp = kindOfTest("RegExp");
@@ -25881,20 +25893,21 @@ var require_axios = __commonJS({
         return setImmediate;
       }
       return postMessageSupported ? ((token, callbacks) => {
-        _global.addEventListener("message", ({ source, data }) => {
-          if (source === _global && data === token) {
-            callbacks.length && callbacks.shift()();
-          }
-        }, false);
+        _global.addEventListener(
+          "message",
+          ({ source, data }) => {
+            if (source === _global && data === token) {
+              callbacks.length && callbacks.shift()();
+            }
+          },
+          false
+        );
         return (cb) => {
           callbacks.push(cb);
           _global.postMessage(token, "*");
         };
       })(`axios@${Math.random()}`, []) : (cb) => setTimeout(cb);
-    })(
-      typeof setImmediate === "function",
-      isFunction$1(_global.postMessage)
-    );
+    })(typeof setImmediate === "function", isFunction$1(_global.postMessage));
     var asap = typeof queueMicrotask !== "undefined" ? queueMicrotask.bind(_global) : typeof process !== "undefined" && process.nextTick || _setImmediate;
     var isIterable = (thing) => thing != null && isFunction$1(thing[iterator]);
     var utils$1 = {
@@ -26256,7 +26269,8 @@ var require_axios = __commonJS({
     var transitionalDefaults = {
       silentJSONParsing: true,
       forcedJSONParsing: true,
-      clarifyTimeoutError: false
+      clarifyTimeoutError: false,
+      legacyInterceptorReqResOrdering: true
     };
     var URLSearchParams = url__default["default"].URLSearchParams;
     var ALPHA = "abcdefghijklmnopqrstuvwxyz";
@@ -26792,6 +26806,9 @@ var require_axios = __commonJS({
       }
     }
     function isAbsoluteURL(url2) {
+      if (typeof url2 !== "string") {
+        return false;
+      }
       return /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url2);
     }
     function combineURLs(baseURL, relativeURL) {
@@ -26804,7 +26821,7 @@ var require_axios = __commonJS({
       }
       return requestedURL;
     }
-    var VERSION = "1.13.4";
+    var VERSION = "1.13.5";
     function parseProtocol(url2) {
       const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url2);
       return match && match[1] || "";
@@ -27982,11 +27999,16 @@ var require_axios = __commonJS({
         validateStatus: mergeDirectKeys,
         headers: (a, b, prop) => mergeDeepProperties(headersToObject(a), headersToObject(b), prop, true)
       };
-      utils$1.forEach(Object.keys({ ...config1, ...config2 }), function computeConfigValue(prop) {
-        const merge2 = mergeMap[prop] || mergeDeepProperties;
-        const configValue = merge2(config1[prop], config2[prop], prop);
-        utils$1.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config[prop] = configValue);
-      });
+      utils$1.forEach(
+        Object.keys({ ...config1, ...config2 }),
+        function computeConfigValue(prop) {
+          if (prop === "__proto__" || prop === "constructor" || prop === "prototype")
+            return;
+          const merge2 = utils$1.hasOwnProp(mergeMap, prop) ? mergeMap[prop] : mergeDeepProperties;
+          const configValue = merge2(config1[prop], config2[prop], prop);
+          utils$1.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config[prop] = configValue);
+        }
+      );
       return config;
     }
     var resolveConfig = (config) => {
@@ -28439,13 +28461,13 @@ var require_axios = __commonJS({
           unsubscribe && unsubscribe();
           if (err && err.name === "TypeError" && /Load failed|fetch/i.test(err.message)) {
             throw Object.assign(
-              new AxiosError$1("Network Error", AxiosError$1.ERR_NETWORK, config, request),
+              new AxiosError$1("Network Error", AxiosError$1.ERR_NETWORK, config, request, err && err.response),
               {
                 cause: err.cause || err
               }
             );
           }
-          throw AxiosError$1.from(err, err && err.code, config, request);
+          throw AxiosError$1.from(err, err && err.code, config, request, err && err.response);
         }
       };
     };
@@ -28686,7 +28708,8 @@ var require_axios = __commonJS({
           validator.assertOptions(transitional, {
             silentJSONParsing: validators.transitional(validators.boolean),
             forcedJSONParsing: validators.transitional(validators.boolean),
-            clarifyTimeoutError: validators.transitional(validators.boolean)
+            clarifyTimeoutError: validators.transitional(validators.boolean),
+            legacyInterceptorReqResOrdering: validators.transitional(validators.boolean)
           }, false);
         }
         if (paramsSerializer != null) {
@@ -28730,7 +28753,13 @@ var require_axios = __commonJS({
             return;
           }
           synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
-          requestInterceptorChain.unshift(interceptor.fulfilled, interceptor.rejected);
+          const transitional2 = config.transitional || transitionalDefaults;
+          const legacyInterceptorReqResOrdering = transitional2 && transitional2.legacyInterceptorReqResOrdering;
+          if (legacyInterceptorReqResOrdering) {
+            requestInterceptorChain.unshift(interceptor.fulfilled, interceptor.rejected);
+          } else {
+            requestInterceptorChain.push(interceptor.fulfilled, interceptor.rejected);
+          }
         });
         const responseInterceptorChain = [];
         this.interceptors.response.forEach(function pushResponseInterceptors(interceptor) {
@@ -38921,5 +38950,5 @@ express/index.js:
    *)
 
 axios/dist/node/axios.cjs:
-  (*! Axios v1.13.4 Copyright (c) 2026 Matt Zabriskie and contributors *)
+  (*! Axios v1.13.5 Copyright (c) 2026 Matt Zabriskie and contributors *)
 */

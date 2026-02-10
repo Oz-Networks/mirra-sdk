@@ -1286,6 +1286,27 @@ export interface HypertradeGetTradeHistoryArgs {
   limit?: number; // Max number of trades to return
 }
 
+// Desktop Adapter Types
+export interface DesktopExecuteCommandArgs {
+  command: string; // Shell command to execute (e.g., "ls -la ~/Documents")
+  cwd?: string; // Working directory for the command (defaults to user home)
+  timeoutMs?: number; // Timeout in milliseconds (defaults to 120000)
+}
+export interface DesktopReadFileArgs {
+  path: string; // Absolute path to the file to read
+  maxBytes?: number; // Maximum bytes to read (defaults to 1048576 = 1 MB)
+}
+export interface DesktopWriteFileArgs {
+  path: string; // Absolute path to the file to write
+  content: string; // Text content to write to the file
+  append?: boolean; // If true, append to existing file instead of overwriting (defaults to false)
+}
+export interface DesktopListDirectoryArgs {
+  path: string; // Absolute path to the directory to list
+  recursive?: boolean; // If true, list recursively (max depth 3). Defaults to false.
+  includeHidden?: boolean; // If true, include hidden files (starting with .). Defaults to false.
+}
+
 
 // ============================================================================
 // Response Type Definitions
@@ -8285,6 +8306,80 @@ function createHypertradeAdapter(sdk: MirraSDK) {
   };
 }
 
+/**
+ * Desktop Adapter
+ * Category: internal
+ */
+function createDesktopAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Run a shell command on the user's desktop and return stdout, stderr, and exit code. The command runs via /bin/sh -c. Output is truncated to 1 MB.
+     * @param args.command - Shell command to execute (e.g., "ls -la ~/Documents")
+     * @param args.cwd - Working directory for the command (defaults to user home) (optional)
+     * @param args.timeoutMs - Timeout in milliseconds (defaults to 120000) (optional)
+     */
+    executeCommand: async (args: DesktopExecuteCommandArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'executeCommand',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read the text contents of a file on the user's desktop. Maximum file size is 1 MB.
+     * @param args.path - Absolute path to the file to read
+     * @param args.maxBytes - Maximum bytes to read (defaults to 1048576 = 1 MB) (optional)
+     */
+    readFile: async (args: DesktopReadFileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'readFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Write or create a file on the user's desktop. Parent directories are created automatically. Requires user consent.
+     * @param args.path - Absolute path to the file to write
+     * @param args.content - Text content to write to the file
+     * @param args.append - If true, append to existing file instead of overwriting (defaults to false) (optional)
+     */
+    writeFile: async (args: DesktopWriteFileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'writeFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List files and directories at a given path on the user's desktop. Returns name, type, size, and modification time for each entry.
+     * @param args.path - Absolute path to the directory to list
+     * @param args.recursive - If true, list recursively (max depth 3). Defaults to false. (optional)
+     * @param args.includeHidden - If true, include hidden files (starting with .). Defaults to false. (optional)
+     */
+    listDirectory: async (args: DesktopListDirectoryArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'listDirectory',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get system information from the user's desktop: hostname, OS, CPU, memory, home directory.
+     */
+    getSystemInfo: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'getSystemInfo',
+        params: args || {}
+      });
+    }
+  };
+}
+
 
 // ============================================================================
 // Exports
@@ -8315,5 +8410,6 @@ export const generatedAdapters = {
   moltbook: createMoltbookAdapter,
   tunnel: createTunnelAdapter,
   polymarket: createPolymarketAdapter,
-  hypertrade: createHypertradeAdapter
+  hypertrade: createHypertradeAdapter,
+  desktop: createDesktopAdapter
 };
