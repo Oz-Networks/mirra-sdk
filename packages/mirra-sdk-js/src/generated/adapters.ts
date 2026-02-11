@@ -58,7 +58,8 @@ export interface FlowsCreateFlowArgs {
   eventType?: string; // Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type.
   eventFilter?: any; // Full event filter with operator and conditions array for complex filtering.
   trigger?: any; // Legacy nested trigger structure. Prefer eventType or eventFilter instead.
-  scriptInput?: any; // Optional static input data for the script
+  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields.
+  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings.
   enabled?: boolean; // Whether the flow is enabled (default: true)
 }
 export interface FlowsCreateTimeFlowArgs {
@@ -66,14 +67,16 @@ export interface FlowsCreateTimeFlowArgs {
   description: string; // Detailed description of what the flow does
   schedule: string; // Cron expression for scheduling (e.g., "0 9 * * *" for daily at 9am)
   scriptId: string; // ID of the script to execute when triggered
-  scriptInput?: any; // Optional static input data for the script
+  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler).
+  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }.
 }
 export interface FlowsCreateEventFlowArgs {
   title: string; // Flow title
   description: string; // Detailed description of what the flow does
   trigger: any; // Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
   scriptId: string; // ID of the script to execute when triggered
-  scriptInput?: any; // Optional static input data for the script
+  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler).
+  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }.
 }
 export interface FlowsListFlowsArgs {
   status?: string; // Filter by status: active, paused, completed, failed
@@ -87,7 +90,8 @@ export interface FlowsUpdateFlowArgs {
   description?: string; // New description
   trigger?: any; // New trigger configuration
   scriptId?: string; // New script ID
-  scriptInput?: any; // New script input data
+  scriptInput?: any; // New static input data for the script. Fields are spread into event.data in handler code.
+  scriptInputSchema?: any; // Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }.
   status?: string; // New status: active, paused, completed, failed
 }
 export interface FlowsDeleteFlowArgs {
@@ -976,6 +980,8 @@ export interface ScriptsModifyFlowScriptArgs {
 }
 export interface ScriptsLintScriptArgs {
   code: string; // The script code to validate
+  eventType?: string; // Event type for event.data field validation (e.g., "telegram.message", "call.ended"). When provided, validates that event.data.fieldName accesses match the event type schema.
+  scriptInputSchema?: any; // Schema of scriptInput fields that will be on event.data at runtime. Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array" }. When provided, event.data field errors are reported as errors instead of warnings.
 }
 
 // Feedback Adapter Types
@@ -1316,6 +1322,342 @@ export interface DesktopSpawnProcessArgs {
 }
 export interface DesktopKillProcessArgs {
   processId: string; // The process ID returned by spawnProcess
+}
+
+// Shopify Adapter Types
+export interface ShopifyListProductsArgs {
+  limit?: number; // Number of products to return per page (1-250). Defaults to 50.
+  pageInfo?: string; // Cursor for pagination. Use the nextPageInfo value from a previous response to get the next page.
+  status?: string; // Filter by product status: "active", "archived", or "draft".
+  vendor?: string; // Filter by product vendor name.
+  productType?: string; // Filter by product type.
+  collectionId?: string; // Filter by collection ID to list products in a specific collection.
+}
+export interface ShopifyGetProductArgs {
+  productId: string; // The Shopify product ID.
+}
+export interface ShopifyCreateProductArgs {
+  title: string; // The product title.
+  bodyHtml?: string; // HTML description of the product.
+  vendor?: string; // The product vendor.
+  productType?: string; // The product type for categorization.
+  tags?: string; // Comma-separated list of tags.
+  status?: string; // Product status: "active", "archived", or "draft". Defaults to "active".
+  variants?: any[]; // Array of variant objects with price, sku, option1/option2/option3, inventory_quantity, weight, weight_unit, barcode, requires_shipping, taxable.
+  images?: any[]; // Array of image objects with src (URL) and optional alt text.
+}
+export interface ShopifyUpdateProductArgs {
+  productId: string; // The Shopify product ID to update.
+  title?: string; // New product title.
+  bodyHtml?: string; // New HTML description.
+  vendor?: string; // New vendor name.
+  productType?: string; // New product type.
+  tags?: string; // New comma-separated tags (replaces existing tags).
+  status?: string; // New status: "active", "archived", or "draft".
+}
+export interface ShopifyDeleteProductArgs {
+  productId: string; // The Shopify product ID to delete.
+}
+export interface ShopifyListOrdersArgs {
+  limit?: number; // Number of orders to return per page (1-250). Defaults to 50.
+  pageInfo?: string; // Cursor for pagination from a previous response.
+  status?: string; // Filter by order status: "open", "closed", "cancelled", or "any". Defaults to "any".
+  financialStatus?: string; // Filter by financial status: "authorized", "pending", "paid", "partially_paid", "refunded", "voided", "partially_refunded", "any", "unpaid".
+  fulfillmentStatus?: string; // Filter by fulfillment status: "shipped", "partial", "unshipped", "any", "unfulfilled".
+  sinceId?: string; // Return orders after this order ID.
+  createdAtMin?: string; // Return orders created after this date (ISO 8601 format).
+  createdAtMax?: string; // Return orders created before this date (ISO 8601 format).
+}
+export interface ShopifyGetOrderArgs {
+  orderId: string; // The Shopify order ID.
+}
+export interface ShopifyCreateOrderArgs {
+  lineItems: any[]; // Array of line items. Each item needs either variant_id or title+price+quantity. Example: [{ variant_id: "123", quantity: 2 }] or [{ title: "Custom Item", price: "10.00", quantity: 1 }].
+  email?: string; // Customer email address for the order.
+  note?: string; // An optional note attached to the order.
+  tags?: string; // Comma-separated tags for the order.
+  financialStatus?: string; // Financial status: "pending", "authorized", "partially_paid", "paid", "partially_refunded", "refunded", "voided". Defaults to "pending".
+  shippingAddress?: any; // Shipping address object with first_name, last_name, address1, address2, city, province, country, zip, phone.
+  customerId?: string; // Associate the order with an existing customer by their Shopify customer ID.
+}
+export interface ShopifyCancelOrderArgs {
+  orderId: string; // The Shopify order ID to cancel.
+  reason?: string; // Cancellation reason: "customer", "fraud", "inventory", "declined", or "other".
+  email?: boolean; // Whether to send a cancellation email to the customer. Defaults to true.
+}
+export interface ShopifyCloseOrderArgs {
+  orderId: string; // The Shopify order ID to close.
+}
+export interface ShopifyListCustomersArgs {
+  limit?: number; // Number of customers to return per page (1-250). Defaults to 50.
+  pageInfo?: string; // Cursor for pagination from a previous response.
+  sinceId?: string; // Return customers after this customer ID.
+  createdAtMin?: string; // Return customers created after this date (ISO 8601 format).
+  createdAtMax?: string; // Return customers created before this date (ISO 8601 format).
+}
+export interface ShopifyGetCustomerArgs {
+  customerId: string; // The Shopify customer ID.
+}
+export interface ShopifyCreateCustomerArgs {
+  firstName?: string; // Customer first name.
+  lastName?: string; // Customer last name.
+  email?: string; // Customer email address. Required if phone is not provided.
+  phone?: string; // Customer phone number in E.164 format. Required if email is not provided.
+  tags?: string; // Comma-separated tags for the customer.
+  note?: string; // A note about the customer.
+  addresses?: any[]; // Array of address objects with address1, city, province, country, zip, phone.
+}
+export interface ShopifyUpdateCustomerArgs {
+  customerId: string; // The Shopify customer ID to update.
+  firstName?: string; // New first name.
+  lastName?: string; // New last name.
+  email?: string; // New email address.
+  phone?: string; // New phone number in E.164 format.
+  tags?: string; // New comma-separated tags (replaces existing).
+  note?: string; // New note about the customer.
+}
+export interface ShopifySearchCustomersArgs {
+  query: string; // Search query string. Examples: "email:john@example.com", "first_name:John", or freeform text like "john doe".
+  limit?: number; // Number of results to return (1-250). Defaults to 50.
+}
+export interface ShopifyGetInventoryLevelsArgs {
+  inventoryItemIds?: string; // Comma-separated list of inventory item IDs to query.
+  locationIds?: string; // Comma-separated list of location IDs to query.
+  limit?: number; // Number of results to return (1-250). Defaults to 50.
+}
+export interface ShopifyAdjustInventoryArgs {
+  inventoryItemId: string; // The inventory item ID to adjust.
+  locationId: string; // The location ID where the inventory is stored.
+  adjustment: number; // The quantity adjustment. Positive to add stock, negative to remove.
+}
+export interface ShopifyListCollectionsArgs {
+  limit?: number; // Maximum number of collections to return per type (1-250). Defaults to 50. Note: up to this many custom collections AND this many smart collections may be returned.
+  pageInfo?: string; // Cursor for pagination from a previous response.
+}
+export interface ShopifyListPagesArgs {
+  limit?: number; // Number of pages per page, 1-250, default 50
+  pageInfo?: string; // Cursor for pagination
+}
+export interface ShopifyGetPageArgs {
+  pageId: string; // The Shopify page ID.
+}
+export interface ShopifyCreatePageArgs {
+  title: string; // The page title.
+  bodyHtml?: string; // HTML body content of the page.
+  author?: string; // The author of the page.
+  templateSuffix?: string; // The template suffix for the page.
+  published?: boolean; // Whether the page is published. Defaults to true.
+}
+export interface ShopifyUpdatePageArgs {
+  pageId: string; // The Shopify page ID to update.
+  title?: string; // New page title.
+  bodyHtml?: string; // New HTML body content.
+  author?: string; // New author name.
+  templateSuffix?: string; // New template suffix.
+  published?: boolean; // Whether the page is published.
+}
+export interface ShopifyDeletePageArgs {
+  pageId: string; // The Shopify page ID to delete.
+}
+export interface ShopifyListBlogsArgs {
+  limit?: number; // Number of blogs per page, 1-250, default 50
+  pageInfo?: string; // Cursor for pagination
+}
+export interface ShopifyGetBlogArgs {
+  blogId: string; // The Shopify blog ID.
+}
+export interface ShopifyCreateBlogArgs {
+  title: string; // The blog title.
+  commentable?: string; // Comment policy: no, moderate, yes
+}
+export interface ShopifyUpdateBlogArgs {
+  blogId: string; // The Shopify blog ID to update.
+  title?: string; // New blog title.
+  commentable?: string; // New comment policy: no, moderate, yes
+}
+export interface ShopifyDeleteBlogArgs {
+  blogId: string; // The Shopify blog ID to delete.
+}
+export interface ShopifyListArticlesArgs {
+  blogId: string; // The blog ID to list articles from.
+  limit?: number; // Number of articles per page, 1-250, default 50
+  pageInfo?: string; // Cursor for pagination
+}
+export interface ShopifyGetArticleArgs {
+  articleId: string; // The Shopify article ID.
+}
+export interface ShopifyCreateArticleArgs {
+  blogId: string; // The blog ID to create the article in.
+  title: string; // The article title.
+  author?: string; // The article author.
+  bodyHtml?: string; // HTML body content of the article.
+  summary?: string; // Summary or excerpt of the article.
+  tags?: string; // Comma-separated list of tags.
+  published?: boolean; // Whether the article is published.
+  imageUrl?: string; // URL of the article featured image.
+  imageAlt?: string; // Alt text for the article featured image.
+}
+export interface ShopifyUpdateArticleArgs {
+  articleId: string; // The Shopify article ID to update.
+  title?: string; // New article title.
+  author?: string; // New author name.
+  bodyHtml?: string; // New HTML body content.
+  summary?: string; // New summary or excerpt.
+  tags?: string; // New comma-separated tags.
+  published?: boolean; // Whether the article is published.
+}
+export interface ShopifyDeleteArticleArgs {
+  articleId: string; // The Shopify article ID to delete.
+}
+export interface ShopifyGetThemeArgs {
+  themeId: string; // The Shopify theme ID.
+}
+export interface ShopifyPublishThemeArgs {
+  themeId: string; // The Shopify theme ID to publish.
+}
+export interface ShopifyListThemeFilesArgs {
+  themeId: string; // The Shopify theme ID.
+  filenames?: string; // Comma-separated glob patterns like templates/*.json
+}
+export interface ShopifyGetThemeFileArgs {
+  themeId: string; // The Shopify theme ID.
+  filename: string; // The filename/path of the theme file (e.g., "templates/index.json").
+}
+export interface ShopifyUpsertThemeFilesArgs {
+  themeId: string; // The Shopify theme ID.
+  files: any[]; // Array of {filename, body} objects
+}
+export interface ShopifyDeleteThemeFilesArgs {
+  themeId: string; // The Shopify theme ID.
+  filenames: any[]; // Array of filenames to delete
+}
+export interface ShopifyListMenusArgs {
+  limit?: number; // Number of menus per page, 1-250, default 50
+  pageInfo?: string; // Cursor for pagination
+}
+export interface ShopifyGetMenuArgs {
+  menuId: string; // The Shopify menu ID.
+}
+export interface ShopifyCreateMenuArgs {
+  title: string; // The menu title.
+  handle?: string; // The menu handle (URL-friendly identifier).
+  items?: any[]; // Array of menu item objects with title, url, type, resourceId
+}
+export interface ShopifyUpdateMenuArgs {
+  menuId: string; // The Shopify menu ID to update.
+  title?: string; // New menu title.
+  handle?: string; // New menu handle.
+  items?: any[]; // New array of menu item objects with title, url, type, resourceId
+}
+export interface ShopifyDeleteMenuArgs {
+  menuId: string; // The Shopify menu ID to delete.
+}
+export interface ShopifyListRedirectsArgs {
+  limit?: number; // Number of redirects per page, 1-250, default 50
+  pageInfo?: string; // Cursor for pagination
+}
+export interface ShopifyCreateRedirectArgs {
+  path: string; // The old path to redirect from
+  target: string; // The new URL to redirect to
+}
+export interface ShopifyUpdateRedirectArgs {
+  redirectId: string; // The Shopify redirect ID to update.
+  path?: string; // New path to redirect from.
+  target?: string; // New URL to redirect to.
+}
+export interface ShopifyDeleteRedirectArgs {
+  redirectId: string; // The Shopify redirect ID to delete.
+}
+
+// Data Adapter Types
+export interface DataDefineCollectionArgs {
+  name: string; // Human-readable name for the collection (e.g. "Contacts", "Sales Metrics")
+  slug?: string; // URL-safe identifier (lowercase, underscores). Auto-generated from name if omitted.
+  fields: any[]; // Array of field definitions. Each field has: name (string), type ("string"|"number"|"boolean"|"date"|"array"|"object"), required (boolean), description (optional string).
+  description?: string; // Optional description of what this collection stores
+}
+export interface DataListCollectionsArgs {
+  status?: string; // Filter by status: "active" (default) or "archived"
+}
+export interface DataGetCollectionArgs {
+  slug: string; // The collection slug (e.g. "contacts")
+}
+export interface DataUpdateCollectionArgs {
+  slug: string; // The collection slug to update
+  addFields?: any[]; // New fields to add to the collection
+  removeFields?: any[]; // Field names to remove from the collection
+  description?: string; // New description for the collection
+}
+export interface DataDropCollectionArgs {
+  slug: string; // The collection slug to drop
+}
+export interface DataInsertRecordArgs {
+  collection: string; // The collection slug to insert into
+  data: any; // The record data -- keys must match the collection fields
+}
+export interface DataInsertRecordsArgs {
+  collection: string; // The collection slug to insert into
+  records: any[]; // Array of record data objects to insert
+}
+export interface DataQueryRecordsArgs {
+  collection: string; // The collection slug to query
+  filter?: any; // MongoDB-style filter object. Supports $eq, $ne, $gt, $gte, $lt, $lte, $in, $regex. Filter keys are automatically prefixed with "data." so use field names directly.
+  sort?: any; // Sort object, e.g. { revenue: -1 } for descending. Keys are auto-prefixed with "data.".
+  limit?: number; // Max records to return (default 50, max 200)
+  offset?: number; // Number of records to skip (for pagination)
+}
+export interface DataUpdateRecordArgs {
+  collection: string; // The collection slug
+  recordId: string; // The record _id to update
+  data: any; // Partial record data to merge/update
+}
+export interface DataDeleteRecordArgs {
+  collection: string; // The collection slug
+  recordId: string; // The record _id to delete
+}
+export interface DataAggregateArgs {
+  collection: string; // The collection slug
+  groupBy?: string; // Field name to group by. Omit for overall aggregation.
+  metrics: any[]; // Array of { field, op } where op is one of "sum", "avg", "count", "min", "max". For "count", field can be omitted.
+}
+
+// Pages Adapter Types
+export interface PagesCreatePageArgs {
+  path: string; // URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
+  title: string; // Display title for the page
+  code: string; // JSX source code. Must define an App component. React, ReactDOM, Recharts, lucide-react, and Tailwind CSS are available globally.
+  description?: string; // Optional description of the page
+  visibility?: string; // Page visibility: "private" (default) or "public"
+}
+export interface PagesUpdatePageArgs {
+  pageId: string; // The page ID to update
+  code?: string; // New JSX source code
+  title?: string; // New title
+  description?: string; // New description
+}
+export interface PagesRevertPageArgs {
+  pageId: string; // The page ID to revert
+  versionIndex: number; // Index of the version to restore (0 = most recent saved version)
+}
+export interface PagesGetPageArgs {
+  pageId?: string; // The page ID
+  path?: string; // The page path (e.g. "/dashboard"). Used with the current graphId.
+}
+export interface PagesListPagesArgs {
+  status?: string; // Filter by status: "active" (default) or "deleted"
+}
+export interface PagesDeletePageArgs {
+  pageId: string; // The page ID to delete
+}
+export interface PagesPublishPageArgs {
+  pageId: string; // The page ID to publish
+  publicCollections?: any[]; // Optional array of collection tags for public discovery
+}
+export interface PagesUnpublishPageArgs {
+  pageId: string; // The page ID to unpublish
+}
+export interface PagesGetPageUrlArgs {
+  pageId: string; // The page ID
 }
 
 
@@ -4287,6 +4629,805 @@ export interface HypertradeGetTradeHistoryData {
 
 export type HypertradeGetTradeHistoryResult = AdapterResultBase<HypertradeGetTradeHistoryData>;
 
+// Shopify Response Types
+export interface ShopifyNormalizedProduct {
+  id: string; // Product ID
+  title: string; // Product title
+  bodyHtml: string; // HTML description
+  vendor: string; // Vendor name
+  productType: string; // Product type
+  status: string; // Status (active, archived, draft)
+  handle: string; // URL handle
+  tags: string; // Comma-separated tags
+  createdAt: string; // Creation timestamp (ISO 8601)
+  updatedAt: string; // Last update timestamp (ISO 8601)
+  publishedAt?: string; // Published timestamp (ISO 8601)
+  variants: ShopifyVariant[]; // Product variants
+  images: ShopifyImage[]; // Product images
+}
+
+export interface ShopifyListProductsData {
+  products: ShopifyNormalizedProduct[]; // List of products
+  nextPageInfo?: string; // Cursor for next page
+  previousPageInfo?: string; // Cursor for previous page
+  totalRetrieved: number; // Number of products retrieved
+}
+
+export type ShopifyListProductsResult = AdapterResultBase<ShopifyListProductsData>;
+
+export interface ShopifyVariant {
+  id: string; // Variant ID
+  title: string; // Variant title
+  price: string; // Price
+  compareAtPrice?: string; // Compare-at price
+  sku: string; // SKU
+  inventoryQuantity: number; // Inventory quantity
+  weight: number; // Weight
+  weightUnit: string; // Weight unit (g, kg, lb, oz)
+  option1?: string; // Option 1 value
+  option2?: string; // Option 2 value
+  option3?: string; // Option 3 value
+  barcode?: string; // Barcode
+  requiresShipping: boolean; // Requires shipping
+  taxable: boolean; // Is taxable
+}
+
+export interface ShopifyImage {
+  id: string; // Image ID
+  src: string; // Image URL
+  alt?: string; // Alt text
+  width: number; // Width in pixels
+  height: number; // Height in pixels
+  position: number; // Display position
+}
+
+export interface ShopifyProductData {
+  id: string; // Product ID
+  title: string; // Product title
+  bodyHtml: string; // HTML description
+  vendor: string; // Vendor name
+  productType: string; // Product type
+  status: string; // Status (active, archived, draft)
+  handle: string; // URL handle
+  tags: string; // Comma-separated tags
+  createdAt: string; // Creation timestamp (ISO 8601)
+  updatedAt: string; // Last update timestamp (ISO 8601)
+  publishedAt?: string; // Published timestamp (ISO 8601)
+  variants: ShopifyVariant[]; // Product variants
+  images: ShopifyImage[]; // Product images
+}
+
+export type ShopifyGetProductResult = AdapterResultBase<ShopifyProductData>;
+
+export interface ShopifyProductData {
+  id: string; // Product ID
+  title: string; // Product title
+  bodyHtml: string; // HTML description
+  vendor: string; // Vendor name
+  productType: string; // Product type
+  status: string; // Status (active, archived, draft)
+  handle: string; // URL handle
+  tags: string; // Comma-separated tags
+  createdAt: string; // Creation timestamp (ISO 8601)
+  updatedAt: string; // Last update timestamp (ISO 8601)
+  publishedAt?: string; // Published timestamp (ISO 8601)
+  variants: ShopifyVariant[]; // Product variants
+  images: ShopifyImage[]; // Product images
+}
+
+export type ShopifyCreateProductResult = AdapterResultBase<ShopifyProductData>;
+
+export interface ShopifyProductData {
+  id: string; // Product ID
+  title: string; // Product title
+  bodyHtml: string; // HTML description
+  vendor: string; // Vendor name
+  productType: string; // Product type
+  status: string; // Status (active, archived, draft)
+  handle: string; // URL handle
+  tags: string; // Comma-separated tags
+  createdAt: string; // Creation timestamp (ISO 8601)
+  updatedAt: string; // Last update timestamp (ISO 8601)
+  publishedAt?: string; // Published timestamp (ISO 8601)
+  variants: ShopifyVariant[]; // Product variants
+  images: ShopifyImage[]; // Product images
+}
+
+export type ShopifyUpdateProductResult = AdapterResultBase<ShopifyProductData>;
+
+export interface ShopifyDeleteProductData {
+  deleted: boolean; // Whether deletion was successful
+  productId: string; // Deleted product ID
+}
+
+export type ShopifyDeleteProductResult = AdapterResultBase<ShopifyDeleteProductData>;
+
+export interface ShopifyNormalizedOrder {
+  id: string; // Order ID
+  orderNumber: number; // Human-readable order number
+  name: string; // Order name (e.g., #1001)
+  email: string; // Customer email
+  totalPrice: string; // Total price
+  subtotalPrice: string; // Subtotal price
+  totalTax: string; // Total tax
+  totalDiscounts: string; // Total discounts
+  currency: string; // Currency code (e.g., USD)
+  financialStatus: string; // Financial status (paid, pending, etc.)
+  fulfillmentStatus?: string; // Fulfillment status
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  closedAt?: string; // Closed timestamp
+  cancelledAt?: string; // Cancelled timestamp
+  cancelReason?: string; // Cancellation reason
+  note?: string; // Order note
+  tags: string; // Comma-separated tags
+  customerFirstName: string; // Customer first name
+  customerLastName: string; // Customer last name
+  customerEmail: string; // Customer email
+  lineItems: ShopifyLineItem[]; // Order line items
+  totalLineItemsQuantity: number; // Total quantity of all line items
+  shippingAddressCity?: string; // Shipping city
+  shippingAddressCountry?: string; // Shipping country
+}
+
+export interface ShopifyListOrdersData {
+  orders: ShopifyNormalizedOrder[]; // List of orders
+  nextPageInfo?: string; // Cursor for next page
+  previousPageInfo?: string; // Cursor for previous page
+  totalRetrieved: number; // Number of orders retrieved
+}
+
+export type ShopifyListOrdersResult = AdapterResultBase<ShopifyListOrdersData>;
+
+export interface ShopifyLineItem {
+  id: string; // Line item ID
+  title: string; // Product title
+  quantity: number; // Quantity ordered
+  price: string; // Unit price
+  sku: string; // SKU
+  variantTitle?: string; // Variant title
+  vendor?: string; // Vendor
+  productId?: string; // Product ID
+  variantId?: string; // Variant ID
+  fulfillmentStatus?: string; // Fulfillment status
+}
+
+export interface ShopifyOrderData {
+  id: string; // Order ID
+  orderNumber: number; // Human-readable order number
+  name: string; // Order name (e.g., #1001)
+  email: string; // Customer email
+  totalPrice: string; // Total price
+  subtotalPrice: string; // Subtotal price
+  totalTax: string; // Total tax
+  totalDiscounts: string; // Total discounts
+  currency: string; // Currency code (e.g., USD)
+  financialStatus: string; // Financial status (paid, pending, etc.)
+  fulfillmentStatus?: string; // Fulfillment status
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  closedAt?: string; // Closed timestamp
+  cancelledAt?: string; // Cancelled timestamp
+  cancelReason?: string; // Cancellation reason
+  note?: string; // Order note
+  tags: string; // Comma-separated tags
+  customerFirstName: string; // Customer first name
+  customerLastName: string; // Customer last name
+  customerEmail: string; // Customer email
+  lineItems: ShopifyLineItem[]; // Order line items
+  totalLineItemsQuantity: number; // Total quantity of all line items
+  shippingAddressCity?: string; // Shipping city
+  shippingAddressCountry?: string; // Shipping country
+}
+
+export type ShopifyGetOrderResult = AdapterResultBase<ShopifyOrderData>;
+
+export interface ShopifyOrderData {
+  id: string; // Order ID
+  orderNumber: number; // Human-readable order number
+  name: string; // Order name (e.g., #1001)
+  email: string; // Customer email
+  totalPrice: string; // Total price
+  subtotalPrice: string; // Subtotal price
+  totalTax: string; // Total tax
+  totalDiscounts: string; // Total discounts
+  currency: string; // Currency code (e.g., USD)
+  financialStatus: string; // Financial status (paid, pending, etc.)
+  fulfillmentStatus?: string; // Fulfillment status
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  closedAt?: string; // Closed timestamp
+  cancelledAt?: string; // Cancelled timestamp
+  cancelReason?: string; // Cancellation reason
+  note?: string; // Order note
+  tags: string; // Comma-separated tags
+  customerFirstName: string; // Customer first name
+  customerLastName: string; // Customer last name
+  customerEmail: string; // Customer email
+  lineItems: ShopifyLineItem[]; // Order line items
+  totalLineItemsQuantity: number; // Total quantity of all line items
+  shippingAddressCity?: string; // Shipping city
+  shippingAddressCountry?: string; // Shipping country
+}
+
+export type ShopifyCreateOrderResult = AdapterResultBase<ShopifyOrderData>;
+
+export interface ShopifyOrderData {
+  id: string; // Order ID
+  orderNumber: number; // Human-readable order number
+  name: string; // Order name (e.g., #1001)
+  email: string; // Customer email
+  totalPrice: string; // Total price
+  subtotalPrice: string; // Subtotal price
+  totalTax: string; // Total tax
+  totalDiscounts: string; // Total discounts
+  currency: string; // Currency code (e.g., USD)
+  financialStatus: string; // Financial status (paid, pending, etc.)
+  fulfillmentStatus?: string; // Fulfillment status
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  closedAt?: string; // Closed timestamp
+  cancelledAt?: string; // Cancelled timestamp
+  cancelReason?: string; // Cancellation reason
+  note?: string; // Order note
+  tags: string; // Comma-separated tags
+  customerFirstName: string; // Customer first name
+  customerLastName: string; // Customer last name
+  customerEmail: string; // Customer email
+  lineItems: ShopifyLineItem[]; // Order line items
+  totalLineItemsQuantity: number; // Total quantity of all line items
+  shippingAddressCity?: string; // Shipping city
+  shippingAddressCountry?: string; // Shipping country
+}
+
+export type ShopifyCancelOrderResult = AdapterResultBase<ShopifyOrderData>;
+
+export interface ShopifyOrderData {
+  id: string; // Order ID
+  orderNumber: number; // Human-readable order number
+  name: string; // Order name (e.g., #1001)
+  email: string; // Customer email
+  totalPrice: string; // Total price
+  subtotalPrice: string; // Subtotal price
+  totalTax: string; // Total tax
+  totalDiscounts: string; // Total discounts
+  currency: string; // Currency code (e.g., USD)
+  financialStatus: string; // Financial status (paid, pending, etc.)
+  fulfillmentStatus?: string; // Fulfillment status
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  closedAt?: string; // Closed timestamp
+  cancelledAt?: string; // Cancelled timestamp
+  cancelReason?: string; // Cancellation reason
+  note?: string; // Order note
+  tags: string; // Comma-separated tags
+  customerFirstName: string; // Customer first name
+  customerLastName: string; // Customer last name
+  customerEmail: string; // Customer email
+  lineItems: ShopifyLineItem[]; // Order line items
+  totalLineItemsQuantity: number; // Total quantity of all line items
+  shippingAddressCity?: string; // Shipping city
+  shippingAddressCountry?: string; // Shipping country
+}
+
+export type ShopifyCloseOrderResult = AdapterResultBase<ShopifyOrderData>;
+
+export interface ShopifyNormalizedCustomer {
+  id: string; // Customer ID
+  firstName: string; // First name
+  lastName: string; // Last name
+  email: string; // Email address
+  phone?: string; // Phone number
+  ordersCount: number; // Number of orders
+  totalSpent: string; // Total amount spent
+  tags: string; // Comma-separated tags
+  state: string; // Account state
+  verifiedEmail: boolean; // Whether email is verified
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  note?: string; // Customer note
+  defaultAddressCity?: string; // Default address city
+  defaultAddressCountry?: string; // Default address country
+}
+
+export interface ShopifyListCustomersData {
+  customers: ShopifyNormalizedCustomer[]; // List of customers
+  nextPageInfo?: string; // Cursor for next page
+  previousPageInfo?: string; // Cursor for previous page
+  totalRetrieved: number; // Number of customers retrieved
+}
+
+export type ShopifyListCustomersResult = AdapterResultBase<ShopifyListCustomersData>;
+
+export interface ShopifyCustomerData {
+  id: string; // Customer ID
+  firstName: string; // First name
+  lastName: string; // Last name
+  email: string; // Email address
+  phone?: string; // Phone number
+  ordersCount: number; // Number of orders
+  totalSpent: string; // Total amount spent
+  tags: string; // Comma-separated tags
+  state: string; // Account state
+  verifiedEmail: boolean; // Whether email is verified
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  note?: string; // Customer note
+  defaultAddressCity?: string; // Default address city
+  defaultAddressCountry?: string; // Default address country
+}
+
+export type ShopifyGetCustomerResult = AdapterResultBase<ShopifyCustomerData>;
+
+export interface ShopifyCustomerData {
+  id: string; // Customer ID
+  firstName: string; // First name
+  lastName: string; // Last name
+  email: string; // Email address
+  phone?: string; // Phone number
+  ordersCount: number; // Number of orders
+  totalSpent: string; // Total amount spent
+  tags: string; // Comma-separated tags
+  state: string; // Account state
+  verifiedEmail: boolean; // Whether email is verified
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  note?: string; // Customer note
+  defaultAddressCity?: string; // Default address city
+  defaultAddressCountry?: string; // Default address country
+}
+
+export type ShopifyCreateCustomerResult = AdapterResultBase<ShopifyCustomerData>;
+
+export interface ShopifyCustomerData {
+  id: string; // Customer ID
+  firstName: string; // First name
+  lastName: string; // Last name
+  email: string; // Email address
+  phone?: string; // Phone number
+  ordersCount: number; // Number of orders
+  totalSpent: string; // Total amount spent
+  tags: string; // Comma-separated tags
+  state: string; // Account state
+  verifiedEmail: boolean; // Whether email is verified
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  note?: string; // Customer note
+  defaultAddressCity?: string; // Default address city
+  defaultAddressCountry?: string; // Default address country
+}
+
+export type ShopifyUpdateCustomerResult = AdapterResultBase<ShopifyCustomerData>;
+
+export interface ShopifySearchCustomersData {
+  customers: ShopifyNormalizedCustomer[]; // Search results
+  totalRetrieved: number; // Number of customers found
+}
+
+export type ShopifySearchCustomersResult = AdapterResultBase<ShopifySearchCustomersData>;
+
+export interface ShopifyNormalizedInventoryLevel {
+  inventoryItemId: string; // Inventory item ID
+  locationId: string; // Location ID
+  available?: number; // Available quantity
+  updatedAt: string; // Last update timestamp
+}
+
+export interface ShopifyInventoryLevelsData {
+  inventoryLevels: ShopifyNormalizedInventoryLevel[]; // Inventory levels
+  totalRetrieved: number; // Number of levels retrieved
+}
+
+export type ShopifyGetInventoryLevelsResult = AdapterResultBase<ShopifyInventoryLevelsData>;
+
+export interface ShopifyInventoryLevelData {
+  inventoryItemId: string; // Inventory item ID
+  locationId: string; // Location ID
+  available?: number; // Available quantity
+  updatedAt: string; // Last update timestamp
+}
+
+export type ShopifyAdjustInventoryResult = AdapterResultBase<ShopifyInventoryLevelData>;
+
+export interface ShopifyNormalizedCollection {
+  id: string; // Collection ID
+  title: string; // Collection title
+  bodyHtml: string; // HTML description
+  handle: string; // URL handle
+  sortOrder: string; // Sort order
+  publishedAt?: string; // Published timestamp
+  updatedAt: string; // Last update timestamp
+  collectionType: string; // Type: "custom" or "smart"
+  imageUrl?: string; // Collection image URL
+  imageAlt?: string; // Image alt text
+}
+
+export interface ShopifyListCollectionsData {
+  collections: ShopifyNormalizedCollection[]; // List of collections
+  totalRetrieved: number; // Number of collections retrieved
+}
+
+export type ShopifyListCollectionsResult = AdapterResultBase<ShopifyListCollectionsData>;
+
+export interface ShopifyNormalizedPage {
+  id: string; // Page ID
+  title: string; // Page title
+  handle: string; // URL handle
+  bodyHtml: string; // HTML content
+  author: string; // Author name
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  publishedAt?: string; // Published timestamp
+  templateSuffix?: string; // Template suffix
+}
+
+export interface ShopifyListPagesData {
+  pages: ShopifyNormalizedPage[]; // List of pages
+  nextPageInfo?: string; // Cursor for next page
+  previousPageInfo?: string; // Cursor for previous page
+  totalRetrieved: number; // Number of pages retrieved
+}
+
+export type ShopifyListPagesResult = AdapterResultBase<ShopifyListPagesData>;
+
+export interface ShopifyPageData {
+  id: string; // Page ID
+  title: string; // Page title
+  handle: string; // URL handle
+  bodyHtml: string; // HTML content
+  author: string; // Author name
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  publishedAt?: string; // Published timestamp
+  templateSuffix?: string; // Template suffix
+}
+
+export type ShopifyGetPageResult = AdapterResultBase<ShopifyPageData>;
+
+export interface ShopifyPageData {
+  id: string; // Page ID
+  title: string; // Page title
+  handle: string; // URL handle
+  bodyHtml: string; // HTML content
+  author: string; // Author name
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  publishedAt?: string; // Published timestamp
+  templateSuffix?: string; // Template suffix
+}
+
+export type ShopifyCreatePageResult = AdapterResultBase<ShopifyPageData>;
+
+export interface ShopifyPageData {
+  id: string; // Page ID
+  title: string; // Page title
+  handle: string; // URL handle
+  bodyHtml: string; // HTML content
+  author: string; // Author name
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  publishedAt?: string; // Published timestamp
+  templateSuffix?: string; // Template suffix
+}
+
+export type ShopifyUpdatePageResult = AdapterResultBase<ShopifyPageData>;
+
+export interface ShopifyDeletePageData {
+  deleted: boolean; // Whether deletion was successful
+  pageId: string; // Deleted page ID
+}
+
+export type ShopifyDeletePageResult = AdapterResultBase<ShopifyDeletePageData>;
+
+export interface ShopifyNormalizedBlog {
+  id: string; // Blog ID
+  title: string; // Blog title
+  handle: string; // URL handle
+  commentable: string; // Comment policy
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  tags: string; // Comma-separated tags
+}
+
+export interface ShopifyListBlogsData {
+  blogs: ShopifyNormalizedBlog[]; // List of blogs
+  nextPageInfo?: string; // Cursor for next page
+  previousPageInfo?: string; // Cursor for previous page
+  totalRetrieved: number; // Number of blogs retrieved
+}
+
+export type ShopifyListBlogsResult = AdapterResultBase<ShopifyListBlogsData>;
+
+export interface ShopifyBlogData {
+  id: string; // Blog ID
+  title: string; // Blog title
+  handle: string; // URL handle
+  commentable: string; // Comment policy
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  tags: string; // Comma-separated tags
+}
+
+export type ShopifyGetBlogResult = AdapterResultBase<ShopifyBlogData>;
+
+export interface ShopifyBlogData {
+  id: string; // Blog ID
+  title: string; // Blog title
+  handle: string; // URL handle
+  commentable: string; // Comment policy
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  tags: string; // Comma-separated tags
+}
+
+export type ShopifyCreateBlogResult = AdapterResultBase<ShopifyBlogData>;
+
+export interface ShopifyBlogData {
+  id: string; // Blog ID
+  title: string; // Blog title
+  handle: string; // URL handle
+  commentable: string; // Comment policy
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  tags: string; // Comma-separated tags
+}
+
+export type ShopifyUpdateBlogResult = AdapterResultBase<ShopifyBlogData>;
+
+export interface ShopifyDeleteBlogData {
+  deleted: boolean; // Whether deletion was successful
+  blogId: string; // Deleted blog ID
+}
+
+export type ShopifyDeleteBlogResult = AdapterResultBase<ShopifyDeleteBlogData>;
+
+export interface ShopifyNormalizedArticle {
+  id: string; // Article ID
+  blogId: string; // Parent blog ID
+  title: string; // Article title
+  author: string; // Author name
+  handle: string; // URL handle
+  bodyHtml: string; // HTML content
+  summary: string; // Article summary
+  tags: string; // Comma-separated tags
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  publishedAt?: string; // Published timestamp
+  imageUrl?: string; // Image URL
+  imageAlt?: string; // Image alt text
+}
+
+export interface ShopifyListArticlesData {
+  articles: ShopifyNormalizedArticle[]; // List of articles
+  nextPageInfo?: string; // Cursor for next page
+  previousPageInfo?: string; // Cursor for previous page
+  totalRetrieved: number; // Number of articles retrieved
+}
+
+export type ShopifyListArticlesResult = AdapterResultBase<ShopifyListArticlesData>;
+
+export interface ShopifyArticleData {
+  id: string; // Article ID
+  blogId: string; // Parent blog ID
+  title: string; // Article title
+  author: string; // Author name
+  handle: string; // URL handle
+  bodyHtml: string; // HTML content
+  summary: string; // Article summary
+  tags: string; // Comma-separated tags
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  publishedAt?: string; // Published timestamp
+  imageUrl?: string; // Image URL
+  imageAlt?: string; // Image alt text
+}
+
+export type ShopifyGetArticleResult = AdapterResultBase<ShopifyArticleData>;
+
+export interface ShopifyArticleData {
+  id: string; // Article ID
+  blogId: string; // Parent blog ID
+  title: string; // Article title
+  author: string; // Author name
+  handle: string; // URL handle
+  bodyHtml: string; // HTML content
+  summary: string; // Article summary
+  tags: string; // Comma-separated tags
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  publishedAt?: string; // Published timestamp
+  imageUrl?: string; // Image URL
+  imageAlt?: string; // Image alt text
+}
+
+export type ShopifyCreateArticleResult = AdapterResultBase<ShopifyArticleData>;
+
+export interface ShopifyArticleData {
+  id: string; // Article ID
+  blogId: string; // Parent blog ID
+  title: string; // Article title
+  author: string; // Author name
+  handle: string; // URL handle
+  bodyHtml: string; // HTML content
+  summary: string; // Article summary
+  tags: string; // Comma-separated tags
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  publishedAt?: string; // Published timestamp
+  imageUrl?: string; // Image URL
+  imageAlt?: string; // Image alt text
+}
+
+export type ShopifyUpdateArticleResult = AdapterResultBase<ShopifyArticleData>;
+
+export interface ShopifyDeleteArticleData {
+  deleted: boolean; // Whether deletion was successful
+  articleId: string; // Deleted article ID
+}
+
+export type ShopifyDeleteArticleResult = AdapterResultBase<ShopifyDeleteArticleData>;
+
+export interface ShopifyNormalizedTheme {
+  id: string; // Theme ID
+  name: string; // Theme name
+  role: string; // Theme role (main, unpublished, demo)
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  processing: boolean; // Whether theme is being processed
+}
+
+export interface ShopifyListThemesData {
+  themes: ShopifyNormalizedTheme[]; // List of themes
+  totalRetrieved: number; // Number of themes retrieved
+}
+
+export type ShopifyListThemesResult = AdapterResultBase<ShopifyListThemesData>;
+
+export interface ShopifyThemeData {
+  id: string; // Theme ID
+  name: string; // Theme name
+  role: string; // Theme role (main, unpublished, demo)
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  processing: boolean; // Whether theme is being processed
+}
+
+export type ShopifyGetThemeResult = AdapterResultBase<ShopifyThemeData>;
+
+export interface ShopifyThemeData {
+  id: string; // Theme ID
+  name: string; // Theme name
+  role: string; // Theme role (main, unpublished, demo)
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  processing: boolean; // Whether theme is being processed
+}
+
+export type ShopifyPublishThemeResult = AdapterResultBase<ShopifyThemeData>;
+
+export interface ShopifyNormalizedThemeFile {
+  filename: string; // File path
+  contentType: string; // MIME type
+  size: number; // File size in bytes
+  checksumMd5?: string; // MD5 checksum
+  body?: string; // File content
+}
+
+export interface ShopifyListThemeFilesData {
+  files: ShopifyNormalizedThemeFile[]; // List of theme files
+  totalRetrieved: number; // Number of files retrieved
+}
+
+export type ShopifyListThemeFilesResult = AdapterResultBase<ShopifyListThemeFilesData>;
+
+export interface ShopifyThemeFileData {
+  filename: string; // File path
+  contentType: string; // MIME type
+  size: number; // File size in bytes
+  checksumMd5?: string; // MD5 checksum
+  body?: string; // File content
+}
+
+export type ShopifyGetThemeFileResult = AdapterResultBase<ShopifyThemeFileData>;
+
+export interface ShopifyUpsertThemeFilesData {
+  upsertedFiles: string[]; // List of upserted file paths
+  totalUpserted: number; // Number of files upserted
+}
+
+export type ShopifyUpsertThemeFilesResult = AdapterResultBase<ShopifyUpsertThemeFilesData>;
+
+export interface ShopifyDeleteThemeFilesData {
+  deletedFiles: string[]; // List of deleted file paths
+  totalDeleted: number; // Number of files deleted
+}
+
+export type ShopifyDeleteThemeFilesResult = AdapterResultBase<ShopifyDeleteThemeFilesData>;
+
+export interface ShopifyNormalizedMenu {
+  id: string; // Menu ID
+  title: string; // Menu title
+  handle: string; // URL handle
+}
+
+export interface ShopifyListMenusData {
+  menus: ShopifyNormalizedMenu[]; // List of menus
+  nextPageInfo?: string; // Cursor for next page
+  previousPageInfo?: string; // Cursor for previous page
+  totalRetrieved: number; // Number of menus retrieved
+}
+
+export type ShopifyListMenusResult = AdapterResultBase<ShopifyListMenusData>;
+
+export interface ShopifyMenuData {
+  id: string; // Menu ID
+  title: string; // Menu title
+  handle: string; // URL handle
+}
+
+export type ShopifyGetMenuResult = AdapterResultBase<ShopifyMenuData>;
+
+export interface ShopifyMenuData {
+  id: string; // Menu ID
+  title: string; // Menu title
+  handle: string; // URL handle
+}
+
+export type ShopifyCreateMenuResult = AdapterResultBase<ShopifyMenuData>;
+
+export interface ShopifyMenuData {
+  id: string; // Menu ID
+  title: string; // Menu title
+  handle: string; // URL handle
+}
+
+export type ShopifyUpdateMenuResult = AdapterResultBase<ShopifyMenuData>;
+
+export interface ShopifyDeleteMenuData {
+  deleted: boolean; // Whether deletion was successful
+  menuId: string; // Deleted menu ID
+}
+
+export type ShopifyDeleteMenuResult = AdapterResultBase<ShopifyDeleteMenuData>;
+
+export interface ShopifyNormalizedRedirect {
+  id: string; // Redirect ID
+  path: string; // Source path
+  target: string; // Target URL
+}
+
+export interface ShopifyListRedirectsData {
+  redirects: ShopifyNormalizedRedirect[]; // List of redirects
+  nextPageInfo?: string; // Cursor for next page
+  previousPageInfo?: string; // Cursor for previous page
+  totalRetrieved: number; // Number of redirects retrieved
+}
+
+export type ShopifyListRedirectsResult = AdapterResultBase<ShopifyListRedirectsData>;
+
+export interface ShopifyRedirectData {
+  id: string; // Redirect ID
+  path: string; // Source path
+  target: string; // Target URL
+}
+
+export type ShopifyCreateRedirectResult = AdapterResultBase<ShopifyRedirectData>;
+
+export interface ShopifyRedirectData {
+  id: string; // Redirect ID
+  path: string; // Source path
+  target: string; // Target URL
+}
+
+export type ShopifyUpdateRedirectResult = AdapterResultBase<ShopifyRedirectData>;
+
+export interface ShopifyDeleteRedirectData {
+  deleted: boolean; // Whether deletion was successful
+  redirectId: string; // Deleted redirect ID
+}
+
+export type ShopifyDeleteRedirectResult = AdapterResultBase<ShopifyDeleteRedirectData>;
+
 
 // ============================================================================
 // Adapter Factory Functions
@@ -4356,7 +5497,8 @@ Failure — something went wrong:
      * @param args.eventType - Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type. (optional)
      * @param args.eventFilter - Full event filter with operator and conditions array for complex filtering. (optional)
      * @param args.trigger - Legacy nested trigger structure. Prefer eventType or eventFilter instead. (optional)
-     * @param args.scriptInput - Optional static input data for the script (optional)
+     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields. (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings. (optional)
      * @param args.enabled - Whether the flow is enabled (default: true) (optional)
      * @returns Promise<FlowsCreateFlowResult> Typed response with IDE autocomplete
      */
@@ -4374,7 +5516,8 @@ Failure — something went wrong:
      * @param args.description - Detailed description of what the flow does
      * @param args.schedule - Cron expression for scheduling (e.g., "0 9 * * *" for daily at 9am)
      * @param args.scriptId - ID of the script to execute when triggered
-     * @param args.scriptInput - Optional static input data for the script (optional)
+     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler). (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }. (optional)
      * @returns Promise<FlowsCreateTimeFlowResult> Typed response with IDE autocomplete
      */
     createTimeFlow: async (args: FlowsCreateTimeFlowArgs): Promise<FlowsCreateTimeFlowResult> => {
@@ -4418,7 +5561,8 @@ COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.acti
      * @param args.description - Detailed description of what the flow does
      * @param args.trigger - Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
      * @param args.scriptId - ID of the script to execute when triggered
-     * @param args.scriptInput - Optional static input data for the script (optional)
+     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler). (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }. (optional)
      * @returns Promise<FlowsCreateEventFlowResult> Typed response with IDE autocomplete
      */
     createEventFlow: async (args: FlowsCreateEventFlowArgs): Promise<FlowsCreateEventFlowResult> => {
@@ -4462,7 +5606,8 @@ COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.acti
      * @param args.description - New description (optional)
      * @param args.trigger - New trigger configuration (optional)
      * @param args.scriptId - New script ID (optional)
-     * @param args.scriptInput - New script input data (optional)
+     * @param args.scriptInput - New static input data for the script. Fields are spread into event.data in handler code. (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }. (optional)
      * @param args.status - New status: active, paused, completed, failed (optional)
      * @returns Promise<FlowsUpdateFlowResult> Typed response with IDE autocomplete
      */
@@ -7333,8 +8478,10 @@ The handler's return object controls how the flow executor records the result:
     },
 
     /**
-     * Validate script code BEFORE creating or deploying. Checks for: 1) Missing async handler wrapper (top-level await errors), 2) Invalid adapter operations. Returns flat validation results with suggestions for fixes. ALWAYS use this before createScript/modifyFlowScript.
+     * Validate script code BEFORE creating or deploying. Checks for: 1) Missing async handler wrapper (top-level await errors), 2) Invalid adapter operations, 3) Invalid event.data field access (when eventType provided). Returns flat validation results with suggestions for fixes. ALWAYS use this before createScript/modifyFlowScript.
      * @param args.code - The script code to validate
+     * @param args.eventType - Event type for event.data field validation (e.g., "telegram.message", "call.ended"). When provided, validates that event.data.fieldName accesses match the event type schema. (optional)
+     * @param args.scriptInputSchema - Schema of scriptInput fields that will be on event.data at runtime. Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array" }. When provided, event.data field errors are reported as errors instead of warnings. (optional)
      * @returns Promise<ScriptsLintScriptResult> Typed response with IDE autocomplete
      */
     lintScript: async (args: ScriptsLintScriptArgs): Promise<ScriptsLintScriptResult> => {
@@ -8444,6 +9591,1043 @@ function createDesktopAdapter(sdk: MirraSDK) {
   };
 }
 
+/**
+ * Shopify Adapter
+ * Category: marketplace
+ */
+function createShopifyAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * List products in the Shopify store with optional filtering and pagination. Returns up to 50 products per page. Use the nextPageInfo cursor from the response to fetch subsequent pages.
+     * @param args.limit - Number of products to return per page (1-250). Defaults to 50. (optional)
+     * @param args.pageInfo - Cursor for pagination. Use the nextPageInfo value from a previous response to get the next page. (optional)
+     * @param args.status - Filter by product status: "active", "archived", or "draft". (optional)
+     * @param args.vendor - Filter by product vendor name. (optional)
+     * @param args.productType - Filter by product type. (optional)
+     * @param args.collectionId - Filter by collection ID to list products in a specific collection. (optional)
+     * @returns Promise<ShopifyListProductsResult> Typed response with IDE autocomplete
+     */
+    listProducts: async (args: ShopifyListProductsArgs): Promise<ShopifyListProductsResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'listProducts',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a single product by its Shopify product ID. Returns full product details including all variants, images, and options.
+     * @param args.productId - The Shopify product ID.
+     * @returns Promise<ShopifyGetProductResult> Typed response with IDE autocomplete
+     */
+    getProduct: async (args: ShopifyGetProductArgs): Promise<ShopifyGetProductResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'getProduct',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new product in the Shopify store. At minimum, a title is required. Variants, images, and options can be added in the same request.
+     * @param args.title - The product title.
+     * @param args.bodyHtml - HTML description of the product. (optional)
+     * @param args.vendor - The product vendor. (optional)
+     * @param args.productType - The product type for categorization. (optional)
+     * @param args.tags - Comma-separated list of tags. (optional)
+     * @param args.status - Product status: "active", "archived", or "draft". Defaults to "active". (optional)
+     * @param args.variants - Array of variant objects with price, sku, option1/option2/option3, inventory_quantity, weight, weight_unit, barcode, requires_shipping, taxable. (optional)
+     * @param args.images - Array of image objects with src (URL) and optional alt text. (optional)
+     * @returns Promise<ShopifyCreateProductResult> Typed response with IDE autocomplete
+     */
+    createProduct: async (args: ShopifyCreateProductArgs): Promise<ShopifyCreateProductResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'createProduct',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing product. Only the fields you provide will be updated; omitted fields remain unchanged.
+     * @param args.productId - The Shopify product ID to update.
+     * @param args.title - New product title. (optional)
+     * @param args.bodyHtml - New HTML description. (optional)
+     * @param args.vendor - New vendor name. (optional)
+     * @param args.productType - New product type. (optional)
+     * @param args.tags - New comma-separated tags (replaces existing tags). (optional)
+     * @param args.status - New status: "active", "archived", or "draft". (optional)
+     * @returns Promise<ShopifyUpdateProductResult> Typed response with IDE autocomplete
+     */
+    updateProduct: async (args: ShopifyUpdateProductArgs): Promise<ShopifyUpdateProductResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'updateProduct',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Permanently delete a product from the Shopify store. This action cannot be undone.
+     * @param args.productId - The Shopify product ID to delete.
+     * @returns Promise<ShopifyDeleteProductResult> Typed response with IDE autocomplete
+     */
+    deleteProduct: async (args: ShopifyDeleteProductArgs): Promise<ShopifyDeleteProductResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'deleteProduct',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List orders from the Shopify store with optional filtering. Returns up to 50 orders per page sorted by creation date descending. By default returns open orders.
+     * @param args.limit - Number of orders to return per page (1-250). Defaults to 50. (optional)
+     * @param args.pageInfo - Cursor for pagination from a previous response. (optional)
+     * @param args.status - Filter by order status: "open", "closed", "cancelled", or "any". Defaults to "any". (optional)
+     * @param args.financialStatus - Filter by financial status: "authorized", "pending", "paid", "partially_paid", "refunded", "voided", "partially_refunded", "any", "unpaid". (optional)
+     * @param args.fulfillmentStatus - Filter by fulfillment status: "shipped", "partial", "unshipped", "any", "unfulfilled". (optional)
+     * @param args.sinceId - Return orders after this order ID. (optional)
+     * @param args.createdAtMin - Return orders created after this date (ISO 8601 format). (optional)
+     * @param args.createdAtMax - Return orders created before this date (ISO 8601 format). (optional)
+     * @returns Promise<ShopifyListOrdersResult> Typed response with IDE autocomplete
+     */
+    listOrders: async (args: ShopifyListOrdersArgs): Promise<ShopifyListOrdersResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'listOrders',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a single order by its Shopify order ID. Returns full order details including line items and customer information.
+     * @param args.orderId - The Shopify order ID.
+     * @returns Promise<ShopifyGetOrderResult> Typed response with IDE autocomplete
+     */
+    getOrder: async (args: ShopifyGetOrderArgs): Promise<ShopifyGetOrderResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'getOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new order in the Shopify store. Requires at least one line item. Can optionally include customer, shipping address, and financial details.
+     * @param args.lineItems - Array of line items. Each item needs either variant_id or title+price+quantity. Example: [{ variant_id: "123", quantity: 2 }] or [{ title: "Custom Item", price: "10.00", quantity: 1 }].
+     * @param args.email - Customer email address for the order. (optional)
+     * @param args.note - An optional note attached to the order. (optional)
+     * @param args.tags - Comma-separated tags for the order. (optional)
+     * @param args.financialStatus - Financial status: "pending", "authorized", "partially_paid", "paid", "partially_refunded", "refunded", "voided". Defaults to "pending". (optional)
+     * @param args.shippingAddress - Shipping address object with first_name, last_name, address1, address2, city, province, country, zip, phone. (optional)
+     * @param args.customerId - Associate the order with an existing customer by their Shopify customer ID. (optional)
+     * @returns Promise<ShopifyCreateOrderResult> Typed response with IDE autocomplete
+     */
+    createOrder: async (args: ShopifyCreateOrderArgs): Promise<ShopifyCreateOrderResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'createOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Cancel an existing order. The order must be open. Optionally specify a reason for cancellation.
+     * @param args.orderId - The Shopify order ID to cancel.
+     * @param args.reason - Cancellation reason: "customer", "fraud", "inventory", "declined", or "other". (optional)
+     * @param args.email - Whether to send a cancellation email to the customer. Defaults to true. (optional)
+     * @returns Promise<ShopifyCancelOrderResult> Typed response with IDE autocomplete
+     */
+    cancelOrder: async (args: ShopifyCancelOrderArgs): Promise<ShopifyCancelOrderResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'cancelOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Close an open order. A closed order is one that has no more work to be done (e.g., fully fulfilled and paid).
+     * @param args.orderId - The Shopify order ID to close.
+     * @returns Promise<ShopifyCloseOrderResult> Typed response with IDE autocomplete
+     */
+    closeOrder: async (args: ShopifyCloseOrderArgs): Promise<ShopifyCloseOrderResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'closeOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List customers from the Shopify store with optional pagination. Returns up to 50 customers per page.
+     * @param args.limit - Number of customers to return per page (1-250). Defaults to 50. (optional)
+     * @param args.pageInfo - Cursor for pagination from a previous response. (optional)
+     * @param args.sinceId - Return customers after this customer ID. (optional)
+     * @param args.createdAtMin - Return customers created after this date (ISO 8601 format). (optional)
+     * @param args.createdAtMax - Return customers created before this date (ISO 8601 format). (optional)
+     * @returns Promise<ShopifyListCustomersResult> Typed response with IDE autocomplete
+     */
+    listCustomers: async (args: ShopifyListCustomersArgs): Promise<ShopifyListCustomersResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'listCustomers',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a single customer by their Shopify customer ID. Returns full customer details including addresses.
+     * @param args.customerId - The Shopify customer ID.
+     * @returns Promise<ShopifyGetCustomerResult> Typed response with IDE autocomplete
+     */
+    getCustomer: async (args: ShopifyGetCustomerArgs): Promise<ShopifyGetCustomerResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'getCustomer',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new customer in the Shopify store. At minimum, either an email or a phone number is required.
+     * @param args.firstName - Customer first name. (optional)
+     * @param args.lastName - Customer last name. (optional)
+     * @param args.email - Customer email address. Required if phone is not provided. (optional)
+     * @param args.phone - Customer phone number in E.164 format. Required if email is not provided. (optional)
+     * @param args.tags - Comma-separated tags for the customer. (optional)
+     * @param args.note - A note about the customer. (optional)
+     * @param args.addresses - Array of address objects with address1, city, province, country, zip, phone. (optional)
+     * @returns Promise<ShopifyCreateCustomerResult> Typed response with IDE autocomplete
+     */
+    createCustomer: async (args: ShopifyCreateCustomerArgs): Promise<ShopifyCreateCustomerResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'createCustomer',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing customer. Only the fields you provide will be updated.
+     * @param args.customerId - The Shopify customer ID to update.
+     * @param args.firstName - New first name. (optional)
+     * @param args.lastName - New last name. (optional)
+     * @param args.email - New email address. (optional)
+     * @param args.phone - New phone number in E.164 format. (optional)
+     * @param args.tags - New comma-separated tags (replaces existing). (optional)
+     * @param args.note - New note about the customer. (optional)
+     * @returns Promise<ShopifyUpdateCustomerResult> Typed response with IDE autocomplete
+     */
+    updateCustomer: async (args: ShopifyUpdateCustomerArgs): Promise<ShopifyUpdateCustomerResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'updateCustomer',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search customers by a query string. Searches across email, name, and other fields. Returns up to 50 results.
+     * @param args.query - Search query string. Examples: "email:john@example.com", "first_name:John", or freeform text like "john doe".
+     * @param args.limit - Number of results to return (1-250). Defaults to 50. (optional)
+     * @returns Promise<ShopifySearchCustomersResult> Typed response with IDE autocomplete
+     */
+    searchCustomers: async (args: ShopifySearchCustomersArgs): Promise<ShopifySearchCustomersResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'searchCustomers',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get inventory levels for items at specific locations. You must provide either inventoryItemIds or locationIds (at least one is required).
+     * @param args.inventoryItemIds - Comma-separated list of inventory item IDs to query. (optional)
+     * @param args.locationIds - Comma-separated list of location IDs to query. (optional)
+     * @param args.limit - Number of results to return (1-250). Defaults to 50. (optional)
+     * @returns Promise<ShopifyGetInventoryLevelsResult> Typed response with IDE autocomplete
+     */
+    getInventoryLevels: async (args: ShopifyGetInventoryLevelsArgs): Promise<ShopifyGetInventoryLevelsResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'getInventoryLevels',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Adjust the available inventory quantity for an item at a specific location. The adjustment is relative (e.g., +5 adds 5 units, -3 removes 3 units).
+     * @param args.inventoryItemId - The inventory item ID to adjust.
+     * @param args.locationId - The location ID where the inventory is stored.
+     * @param args.adjustment - The quantity adjustment. Positive to add stock, negative to remove.
+     * @returns Promise<ShopifyAdjustInventoryResult> Typed response with IDE autocomplete
+     */
+    adjustInventory: async (args: ShopifyAdjustInventoryArgs): Promise<ShopifyAdjustInventoryResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'adjustInventory',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List collections in the Shopify store. Returns both custom collections and smart collections combined, sorted by title.
+     * @param args.limit - Maximum number of collections to return per type (1-250). Defaults to 50. Note: up to this many custom collections AND this many smart collections may be returned. (optional)
+     * @param args.pageInfo - Cursor for pagination from a previous response. (optional)
+     * @returns Promise<ShopifyListCollectionsResult> Typed response with IDE autocomplete
+     */
+    listCollections: async (args: ShopifyListCollectionsArgs): Promise<ShopifyListCollectionsResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'listCollections',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List pages in the Shopify store with optional pagination.
+     * @param args.limit - Number of pages per page, 1-250, default 50 (optional)
+     * @param args.pageInfo - Cursor for pagination (optional)
+     * @returns Promise<ShopifyListPagesResult> Typed response with IDE autocomplete
+     */
+    listPages: async (args: ShopifyListPagesArgs): Promise<ShopifyListPagesResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'listPages',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a single page by ID.
+     * @param args.pageId - The Shopify page ID.
+     * @returns Promise<ShopifyGetPageResult> Typed response with IDE autocomplete
+     */
+    getPage: async (args: ShopifyGetPageArgs): Promise<ShopifyGetPageResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'getPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new page in the Shopify store.
+     * @param args.title - The page title.
+     * @param args.bodyHtml - HTML body content of the page. (optional)
+     * @param args.author - The author of the page. (optional)
+     * @param args.templateSuffix - The template suffix for the page. (optional)
+     * @param args.published - Whether the page is published. Defaults to true. (optional)
+     * @returns Promise<ShopifyCreatePageResult> Typed response with IDE autocomplete
+     */
+    createPage: async (args: ShopifyCreatePageArgs): Promise<ShopifyCreatePageResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'createPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a page.
+     * @param args.pageId - The Shopify page ID to update.
+     * @param args.title - New page title. (optional)
+     * @param args.bodyHtml - New HTML body content. (optional)
+     * @param args.author - New author name. (optional)
+     * @param args.templateSuffix - New template suffix. (optional)
+     * @param args.published - Whether the page is published. (optional)
+     * @returns Promise<ShopifyUpdatePageResult> Typed response with IDE autocomplete
+     */
+    updatePage: async (args: ShopifyUpdatePageArgs): Promise<ShopifyUpdatePageResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'updatePage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Permanently delete a page.
+     * @param args.pageId - The Shopify page ID to delete.
+     * @returns Promise<ShopifyDeletePageResult> Typed response with IDE autocomplete
+     */
+    deletePage: async (args: ShopifyDeletePageArgs): Promise<ShopifyDeletePageResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'deletePage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List blogs in the Shopify store.
+     * @param args.limit - Number of blogs per page, 1-250, default 50 (optional)
+     * @param args.pageInfo - Cursor for pagination (optional)
+     * @returns Promise<ShopifyListBlogsResult> Typed response with IDE autocomplete
+     */
+    listBlogs: async (args: ShopifyListBlogsArgs): Promise<ShopifyListBlogsResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'listBlogs',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a blog by ID.
+     * @param args.blogId - The Shopify blog ID.
+     * @returns Promise<ShopifyGetBlogResult> Typed response with IDE autocomplete
+     */
+    getBlog: async (args: ShopifyGetBlogArgs): Promise<ShopifyGetBlogResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'getBlog',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a blog.
+     * @param args.title - The blog title.
+     * @param args.commentable - Comment policy: no, moderate, yes (optional)
+     * @returns Promise<ShopifyCreateBlogResult> Typed response with IDE autocomplete
+     */
+    createBlog: async (args: ShopifyCreateBlogArgs): Promise<ShopifyCreateBlogResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'createBlog',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a blog.
+     * @param args.blogId - The Shopify blog ID to update.
+     * @param args.title - New blog title. (optional)
+     * @param args.commentable - New comment policy: no, moderate, yes (optional)
+     * @returns Promise<ShopifyUpdateBlogResult> Typed response with IDE autocomplete
+     */
+    updateBlog: async (args: ShopifyUpdateBlogArgs): Promise<ShopifyUpdateBlogResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'updateBlog',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a blog.
+     * @param args.blogId - The Shopify blog ID to delete.
+     * @returns Promise<ShopifyDeleteBlogResult> Typed response with IDE autocomplete
+     */
+    deleteBlog: async (args: ShopifyDeleteBlogArgs): Promise<ShopifyDeleteBlogResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'deleteBlog',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List articles in a blog.
+     * @param args.blogId - The blog ID to list articles from.
+     * @param args.limit - Number of articles per page, 1-250, default 50 (optional)
+     * @param args.pageInfo - Cursor for pagination (optional)
+     * @returns Promise<ShopifyListArticlesResult> Typed response with IDE autocomplete
+     */
+    listArticles: async (args: ShopifyListArticlesArgs): Promise<ShopifyListArticlesResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'listArticles',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get an article by ID.
+     * @param args.articleId - The Shopify article ID.
+     * @returns Promise<ShopifyGetArticleResult> Typed response with IDE autocomplete
+     */
+    getArticle: async (args: ShopifyGetArticleArgs): Promise<ShopifyGetArticleResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'getArticle',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create an article in a blog.
+     * @param args.blogId - The blog ID to create the article in.
+     * @param args.title - The article title.
+     * @param args.author - The article author. (optional)
+     * @param args.bodyHtml - HTML body content of the article. (optional)
+     * @param args.summary - Summary or excerpt of the article. (optional)
+     * @param args.tags - Comma-separated list of tags. (optional)
+     * @param args.published - Whether the article is published. (optional)
+     * @param args.imageUrl - URL of the article featured image. (optional)
+     * @param args.imageAlt - Alt text for the article featured image. (optional)
+     * @returns Promise<ShopifyCreateArticleResult> Typed response with IDE autocomplete
+     */
+    createArticle: async (args: ShopifyCreateArticleArgs): Promise<ShopifyCreateArticleResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'createArticle',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an article.
+     * @param args.articleId - The Shopify article ID to update.
+     * @param args.title - New article title. (optional)
+     * @param args.author - New author name. (optional)
+     * @param args.bodyHtml - New HTML body content. (optional)
+     * @param args.summary - New summary or excerpt. (optional)
+     * @param args.tags - New comma-separated tags. (optional)
+     * @param args.published - Whether the article is published. (optional)
+     * @returns Promise<ShopifyUpdateArticleResult> Typed response with IDE autocomplete
+     */
+    updateArticle: async (args: ShopifyUpdateArticleArgs): Promise<ShopifyUpdateArticleResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'updateArticle',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete an article.
+     * @param args.articleId - The Shopify article ID to delete.
+     * @returns Promise<ShopifyDeleteArticleResult> Typed response with IDE autocomplete
+     */
+    deleteArticle: async (args: ShopifyDeleteArticleArgs): Promise<ShopifyDeleteArticleResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'deleteArticle',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all themes in the Shopify store.
+     * @returns Promise<ShopifyListThemesResult> Typed response with IDE autocomplete
+     */
+    listThemes: async (args?: {}): Promise<ShopifyListThemesResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'listThemes',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a theme by ID.
+     * @param args.themeId - The Shopify theme ID.
+     * @returns Promise<ShopifyGetThemeResult> Typed response with IDE autocomplete
+     */
+    getTheme: async (args: ShopifyGetThemeArgs): Promise<ShopifyGetThemeResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'getTheme',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Publish (activate) a theme as the main theme.
+     * @param args.themeId - The Shopify theme ID to publish.
+     * @returns Promise<ShopifyPublishThemeResult> Typed response with IDE autocomplete
+     */
+    publishTheme: async (args: ShopifyPublishThemeArgs): Promise<ShopifyPublishThemeResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'publishTheme',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List files in a theme.
+     * @param args.themeId - The Shopify theme ID.
+     * @param args.filenames - Comma-separated glob patterns like templates/*.json (optional)
+     * @returns Promise<ShopifyListThemeFilesResult> Typed response with IDE autocomplete
+     */
+    listThemeFiles: async (args: ShopifyListThemeFilesArgs): Promise<ShopifyListThemeFilesResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'listThemeFiles',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a single theme file with its content.
+     * @param args.themeId - The Shopify theme ID.
+     * @param args.filename - The filename/path of the theme file (e.g., "templates/index.json").
+     * @returns Promise<ShopifyGetThemeFileResult> Typed response with IDE autocomplete
+     */
+    getThemeFile: async (args: ShopifyGetThemeFileArgs): Promise<ShopifyGetThemeFileResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'getThemeFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create or update theme files.
+     * @param args.themeId - The Shopify theme ID.
+     * @param args.files - Array of {filename, body} objects
+     * @returns Promise<ShopifyUpsertThemeFilesResult> Typed response with IDE autocomplete
+     */
+    upsertThemeFiles: async (args: ShopifyUpsertThemeFilesArgs): Promise<ShopifyUpsertThemeFilesResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'upsertThemeFiles',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete theme files.
+     * @param args.themeId - The Shopify theme ID.
+     * @param args.filenames - Array of filenames to delete
+     * @returns Promise<ShopifyDeleteThemeFilesResult> Typed response with IDE autocomplete
+     */
+    deleteThemeFiles: async (args: ShopifyDeleteThemeFilesArgs): Promise<ShopifyDeleteThemeFilesResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'deleteThemeFiles',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List navigation menus.
+     * @param args.limit - Number of menus per page, 1-250, default 50 (optional)
+     * @param args.pageInfo - Cursor for pagination (optional)
+     * @returns Promise<ShopifyListMenusResult> Typed response with IDE autocomplete
+     */
+    listMenus: async (args: ShopifyListMenusArgs): Promise<ShopifyListMenusResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'listMenus',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a menu by ID.
+     * @param args.menuId - The Shopify menu ID.
+     * @returns Promise<ShopifyGetMenuResult> Typed response with IDE autocomplete
+     */
+    getMenu: async (args: ShopifyGetMenuArgs): Promise<ShopifyGetMenuResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'getMenu',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a navigation menu.
+     * @param args.title - The menu title.
+     * @param args.handle - The menu handle (URL-friendly identifier). (optional)
+     * @param args.items - Array of menu item objects with title, url, type, resourceId (optional)
+     * @returns Promise<ShopifyCreateMenuResult> Typed response with IDE autocomplete
+     */
+    createMenu: async (args: ShopifyCreateMenuArgs): Promise<ShopifyCreateMenuResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'createMenu',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a menu.
+     * @param args.menuId - The Shopify menu ID to update.
+     * @param args.title - New menu title. (optional)
+     * @param args.handle - New menu handle. (optional)
+     * @param args.items - New array of menu item objects with title, url, type, resourceId (optional)
+     * @returns Promise<ShopifyUpdateMenuResult> Typed response with IDE autocomplete
+     */
+    updateMenu: async (args: ShopifyUpdateMenuArgs): Promise<ShopifyUpdateMenuResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'updateMenu',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a menu.
+     * @param args.menuId - The Shopify menu ID to delete.
+     * @returns Promise<ShopifyDeleteMenuResult> Typed response with IDE autocomplete
+     */
+    deleteMenu: async (args: ShopifyDeleteMenuArgs): Promise<ShopifyDeleteMenuResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'deleteMenu',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List URL redirects.
+     * @param args.limit - Number of redirects per page, 1-250, default 50 (optional)
+     * @param args.pageInfo - Cursor for pagination (optional)
+     * @returns Promise<ShopifyListRedirectsResult> Typed response with IDE autocomplete
+     */
+    listRedirects: async (args: ShopifyListRedirectsArgs): Promise<ShopifyListRedirectsResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'listRedirects',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a URL redirect.
+     * @param args.path - The old path to redirect from
+     * @param args.target - The new URL to redirect to
+     * @returns Promise<ShopifyCreateRedirectResult> Typed response with IDE autocomplete
+     */
+    createRedirect: async (args: ShopifyCreateRedirectArgs): Promise<ShopifyCreateRedirectResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'createRedirect',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a redirect.
+     * @param args.redirectId - The Shopify redirect ID to update.
+     * @param args.path - New path to redirect from. (optional)
+     * @param args.target - New URL to redirect to. (optional)
+     * @returns Promise<ShopifyUpdateRedirectResult> Typed response with IDE autocomplete
+     */
+    updateRedirect: async (args: ShopifyUpdateRedirectArgs): Promise<ShopifyUpdateRedirectResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'updateRedirect',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a redirect.
+     * @param args.redirectId - The Shopify redirect ID to delete.
+     * @returns Promise<ShopifyDeleteRedirectResult> Typed response with IDE autocomplete
+     */
+    deleteRedirect: async (args: ShopifyDeleteRedirectArgs): Promise<ShopifyDeleteRedirectResult> => {
+      return sdk.resources.call({
+        resourceId: 'shopify',
+        method: 'deleteRedirect',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Data Adapter
+ * Category: internal
+ */
+function createDataAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new data collection (schema). Define the fields and their types. A slug is auto-generated from the name if not provided.
+     * @param args.name - Human-readable name for the collection (e.g. "Contacts", "Sales Metrics")
+     * @param args.slug - URL-safe identifier (lowercase, underscores). Auto-generated from name if omitted. (optional)
+     * @param args.fields - Array of field definitions. Each field has: name (string), type ("string"|"number"|"boolean"|"date"|"array"|"object"), required (boolean), description (optional string).
+     * @param args.description - Optional description of what this collection stores (optional)
+     */
+    defineCollection: async (args: DataDefineCollectionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'defineCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all data collections for the current context. Optionally filter by status.
+     * @param args.status - Filter by status: "active" (default) or "archived" (optional)
+     */
+    listCollections: async (args: DataListCollectionsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'listCollections',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a single collection schema by its slug.
+     * @param args.slug - The collection slug (e.g. "contacts")
+     */
+    getCollection: async (args: DataGetCollectionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'getCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a collection schema. Add new fields, remove existing fields, or update the description. Field changes are non-destructive -- existing records are not modified.
+     * @param args.slug - The collection slug to update
+     * @param args.addFields - New fields to add to the collection (optional)
+     * @param args.removeFields - Field names to remove from the collection (optional)
+     * @param args.description - New description for the collection (optional)
+     */
+    updateCollection: async (args: DataUpdateCollectionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'updateCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Archive a collection and delete all its records. The schema is marked as archived and all associated records are permanently deleted. Quota is decremented.
+     * @param args.slug - The collection slug to drop
+     */
+    dropCollection: async (args: DataDropCollectionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'dropCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a single record into a collection. Data is validated against the collection schema. Quota is checked before writing.
+     * @param args.collection - The collection slug to insert into
+     * @param args.data - The record data -- keys must match the collection fields
+     */
+    insertRecord: async (args: DataInsertRecordArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'insertRecord',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Batch insert multiple records into a collection. All records are validated against the schema. Quota is checked for the total size.
+     * @param args.collection - The collection slug to insert into
+     * @param args.records - Array of record data objects to insert
+     */
+    insertRecords: async (args: DataInsertRecordsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'insertRecords',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Query records from a collection with optional filtering, sorting, and pagination. Filters use MongoDB-style syntax (e.g. { revenue: { $gt: 10000 } }).
+     * @param args.collection - The collection slug to query
+     * @param args.filter - MongoDB-style filter object. Supports $eq, $ne, $gt, $gte, $lt, $lte, $in, $regex. Filter keys are automatically prefixed with "data." so use field names directly. (optional)
+     * @param args.sort - Sort object, e.g. { revenue: -1 } for descending. Keys are auto-prefixed with "data.". (optional)
+     * @param args.limit - Max records to return (default 50, max 200) (optional)
+     * @param args.offset - Number of records to skip (for pagination) (optional)
+     */
+    queryRecords: async (args: DataQueryRecordsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'queryRecords',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a single record by its ID. Data is validated against the collection schema.
+     * @param args.collection - The collection slug
+     * @param args.recordId - The record _id to update
+     * @param args.data - Partial record data to merge/update
+     */
+    updateRecord: async (args: DataUpdateRecordArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'updateRecord',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a single record by its ID. Quota is decremented by the record size.
+     * @param args.collection - The collection slug
+     * @param args.recordId - The record _id to delete
+     */
+    deleteRecord: async (args: DataDeleteRecordArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'deleteRecord',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Run aggregation on a collection. Supports sum, avg, count, min, max grouped by a field.
+     * @param args.collection - The collection slug
+     * @param args.groupBy - Field name to group by. Omit for overall aggregation. (optional)
+     * @param args.metrics - Array of { field, op } where op is one of "sum", "avg", "count", "min", "max". For "count", field can be omitted.
+     */
+    aggregate: async (args: DataAggregateArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'aggregate',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the current storage quota usage for this context.
+     */
+    getQuotaUsage: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'getQuotaUsage',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Pages Adapter
+ * Category: internal
+ */
+function createPagesAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new page with JSX code. The code is compiled to HTML with React, Tailwind CSS, Recharts, and Lucide icons available. Define an `App` component as the entry point. The page is rendered client-side.
+     * @param args.path - URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
+     * @param args.title - Display title for the page
+     * @param args.code - JSX source code. Must define an App component. React, ReactDOM, Recharts, lucide-react, and Tailwind CSS are available globally.
+     * @param args.description - Optional description of the page (optional)
+     * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
+     */
+    createPage: async (args: PagesCreatePageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'createPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing page. When code is changed, the current code is saved as a version (max 3 versions kept) and the new code is compiled.
+     * @param args.pageId - The page ID to update
+     * @param args.code - New JSX source code (optional)
+     * @param args.title - New title (optional)
+     * @param args.description - New description (optional)
+     */
+    updatePage: async (args: PagesUpdatePageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'updatePage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Revert a page to a previous version. The current code becomes a new version entry.
+     * @param args.pageId - The page ID to revert
+     * @param args.versionIndex - Index of the version to restore (0 = most recent saved version)
+     */
+    revertPage: async (args: PagesRevertPageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'revertPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a page by its ID or by path within the current graph. Returns page metadata and current code.
+     * @param args.pageId - The page ID (optional)
+     * @param args.path - The page path (e.g. "/dashboard"). Used with the current graphId. (optional)
+     */
+    getPage: async (args: PagesGetPageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'getPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all pages for the current graph. Optionally filter by status.
+     * @param args.status - Filter by status: "active" (default) or "deleted" (optional)
+     */
+    listPages: async (args: PagesListPagesArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'listPages',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Soft-delete a page by setting its status to "deleted".
+     * @param args.pageId - The page ID to delete
+     */
+    deletePage: async (args: PagesDeletePageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'deletePage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Publish a page, making it publicly accessible. Generates an API key for the page.
+     * @param args.pageId - The page ID to publish
+     * @param args.publicCollections - Optional array of collection tags for public discovery (optional)
+     */
+    publishPage: async (args: PagesPublishPageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'publishPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Unpublish a page, making it private.
+     * @param args.pageId - The page ID to unpublish
+     */
+    unpublishPage: async (args: PagesUnpublishPageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'unpublishPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the public URL for a page.
+     * @param args.pageId - The page ID
+     */
+    getPageUrl: async (args: PagesGetPageUrlArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'getPageUrl',
+        params: args || {}
+      });
+    }
+  };
+}
+
 
 // ============================================================================
 // Exports
@@ -8475,5 +10659,8 @@ export const generatedAdapters = {
   tunnel: createTunnelAdapter,
   polymarket: createPolymarketAdapter,
   hypertrade: createHypertradeAdapter,
-  desktop: createDesktopAdapter
+  desktop: createDesktopAdapter,
+  shopify: createShopifyAdapter,
+  data: createDataAdapter,
+  pages: createPagesAdapter
 };
