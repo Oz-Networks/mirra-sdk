@@ -1629,6 +1629,10 @@ export interface PagesCreatePageArgs {
   description?: string; // Optional description of the page
   visibility?: string; // Page visibility: "private" (default) or "public"
 }
+export interface PagesEditPageArgs {
+  pageId: string; // The page ID to edit
+  edits: any[]; // Array of search-and-replace edits. Each edit has oldCode (exact string to find) and newCode (replacement string). Applied sequentially.
+}
 export interface PagesUpdatePageArgs {
   pageId: string; // The page ID to update
   code?: string; // New JSX source code
@@ -10525,7 +10529,20 @@ function createPagesAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Update an existing page. When code is changed, the current code is saved as a version (max 3 versions kept) and the new code is compiled.
+     * Edit a page using search-and-replace. Each edit replaces one exact match of oldCode with newCode in the current source. Much more efficient than updatePage for small changes — only send the parts that change. Use getPage first to read the current code. The old_code string must appear exactly once in the source.
+     * @param args.pageId - The page ID to edit
+     * @param args.edits - Array of search-and-replace edits. Each edit has oldCode (exact string to find) and newCode (replacement string). Applied sequentially.
+     */
+    editPage: async (args: PagesEditPageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'editPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Replace the entire page code. Use editPage instead for small changes — it is more efficient. Only use updatePage when rewriting most of the page.
      * @param args.pageId - The page ID to update
      * @param args.code - New JSX source code (optional)
      * @param args.title - New title (optional)
