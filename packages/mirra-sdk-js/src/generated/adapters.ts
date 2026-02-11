@@ -4332,6 +4332,22 @@ Event flow with existing script:
   eventType: "gmail.email_received",
   scriptId: "existing-script-id"
 }
+
+HANDLER RETURN VALUES:
+The handler's return object controls how the flow executor records the result:
+
+Success — work was done:
+  return { success: true, ...data }
+
+No-Op — nothing to do (not an error):
+  return { success: false, noOp: true, reason: "No transcript available" }
+  Use when the handler correctly determines no action is needed (e.g., no input data,
+  content already processed, empty trigger). No-ops are recorded as successful executions
+  and do NOT count toward the 3-consecutive-failure auto-pause threshold.
+
+Failure — something went wrong:
+  return { success: false, reason: "What went wrong" }
+  Use for actual errors. 3 consecutive failures will auto-pause the flow.
      * @param args.title - Flow title. Required if providing inline code. (optional)
      * @param args.description - Detailed description of what the flow does (optional)
      * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId. (optional)
@@ -7045,6 +7061,14 @@ function createScriptsAdapter(sdk: MirraSDK) {
   return {
     /**
      * Create a new script with initial version and API key. Returns flat structure with id field for subsequent operations.
+
+HANDLER RETURN VALUES (when script is used in a flow):
+The handler's return object controls how the flow executor records the result:
+- Success: return { success: true, ...data }
+- No-Op (nothing to do, not an error): return { success: false, noOp: true, reason: "No input data" }
+  No-ops are recorded as successful executions and do NOT count toward the auto-pause threshold.
+- Failure: return { success: false, reason: "What went wrong" }
+  3 consecutive failures will auto-pause the flow.
      * @param args.name - Name of the script
      * @param args.description - Description of what the script does (optional)
      * @param args.runtime - Lambda runtime (default: nodejs18) (optional)
