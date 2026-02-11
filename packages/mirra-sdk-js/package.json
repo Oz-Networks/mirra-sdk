@@ -1,6 +1,6 @@
 {
   "name": "@mirra-messenger/sdk",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Official TypeScript/JavaScript SDK for the Mirra Messenger API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -50,4 +50,3 @@
     "node": ">=18.0.0"
   }
 }
-
