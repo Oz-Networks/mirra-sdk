@@ -1625,7 +1625,7 @@ export interface DataAggregateArgs {
 export interface PagesCreatePageArgs {
   path: string; // URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
   title: string; // Display title for the page
-  code: string; // JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, and Tailwind CSS are all pre-loaded globals.
+  code: string; // JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
   description?: string; // Optional description of the page
   visibility?: string; // Page visibility: "private" (default) or "public"
 }
@@ -10514,9 +10514,23 @@ function createPagesAdapter(sdk: MirraSDK) {
   return {
     /**
      * Create a new page with JSX code. The code is compiled to HTML with React, Tailwind CSS, Recharts, and Lucide icons available as globals. Define a top-level `function App()` component as the entry point. Do NOT use import/require statements — all libraries are pre-loaded via CDN. Use Recharts components directly (e.g. `<BarChart>`, `<ResponsiveContainer>`) and Lucide icons via `lucide.IconName`.
+
+STYLE — Every page includes the Mirra design system with pre-configured Tailwind theme. Use semantic theme tokens for automatic dark/light support:
+- Backgrounds: bg-m-bg (page), bg-m-surface (cards), bg-m-surface-alt (nested elements)
+- Text: text-m-text (primary), text-m-text-secondary, text-m-text-muted
+- Borders: border-m-border
+- Accent: text-m-accent-text, bg-m-accent, bg-m-accent-soft
+- Brand purple scale: bg-mirra-50 through bg-mirra-950
+- Fonts: font-display (Syne — headings), font-body (Inter — content), font-mono (numbers/data)
+- Charts: use MIRRA_COLORS array for fills/strokes (8 brand-derived colors)
+
+Dark mode is the default. For light pages, add data-theme="light" to the root wrapper div.
+
+DO: Use generous padding (p-8 md:p-12), consistent gaps (gap-4 gap-6), subtle borders (border border-m-border) over heavy shadows, font-mono for numbers/stats, the m-* theme tokens for all colors.
+DO NOT: Use emoji as bullet points, add hover:scale on cards, use bg-slate/bg-gray (use m-* tokens), use multiple flashy gradients.
      * @param args.path - URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
      * @param args.title - Display title for the page
-     * @param args.code - JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, and Tailwind CSS are all pre-loaded globals.
+     * @param args.code - JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
      * @param args.description - Optional description of the page (optional)
      * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
      */
