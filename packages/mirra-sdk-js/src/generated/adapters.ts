@@ -1625,7 +1625,7 @@ export interface DataAggregateArgs {
 export interface PagesCreatePageArgs {
   path: string; // URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
   title: string; // Display title for the page
-  code: string; // JSX source code. Must define an App component. React, ReactDOM, Recharts, lucide-react, and Tailwind CSS are available globally.
+  code: string; // JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, and Tailwind CSS are all pre-loaded globals.
   description?: string; // Optional description of the page
   visibility?: string; // Page visibility: "private" (default) or "public"
 }
@@ -10513,10 +10513,10 @@ function createDataAdapter(sdk: MirraSDK) {
 function createPagesAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new page with JSX code. The code is compiled to HTML with React, Tailwind CSS, Recharts, and Lucide icons available. Define an `App` component as the entry point. The page is rendered client-side.
+     * Create a new page with JSX code. The code is compiled to HTML with React, Tailwind CSS, Recharts, and Lucide icons available as globals. Define a top-level `function App()` component as the entry point. Do NOT use import/require statements — all libraries are pre-loaded via CDN. Use Recharts components directly (e.g. `<BarChart>`, `<ResponsiveContainer>`) and Lucide icons via `lucide.IconName`.
      * @param args.path - URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
      * @param args.title - Display title for the page
-     * @param args.code - JSX source code. Must define an App component. React, ReactDOM, Recharts, lucide-react, and Tailwind CSS are available globally.
+     * @param args.code - JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, and Tailwind CSS are all pre-loaded globals.
      * @param args.description - Optional description of the page (optional)
      * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
      */
