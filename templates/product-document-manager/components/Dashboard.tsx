@@ -240,13 +240,15 @@ export default function Dashboard({
 
   const handleViewDocument = async (documentId: string) => {
     try {
-      const result = await sdk.documents.get(documentId);
-      if (result && result.document) {
+      const result: any = await sdk.documents.get(documentId);
+      // Server returns flat object: { documentId, title, filename, extractedText, ... }
+      const doc = result?.document || result;
+      if (doc && (doc.documentId || doc.filename)) {
         return {
-          title: result.document.title,
-          filename: result.document.filename,
-          extractedText: result.document.extractedText,
-          processingStatus: result.document.processingStatus,
+          title: doc.title,
+          filename: doc.filename,
+          extractedText: doc.extractedText,
+          processingStatus: doc.processingStatus,
         };
       }
       return null;
