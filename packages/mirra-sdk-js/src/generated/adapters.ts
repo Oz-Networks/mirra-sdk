@@ -1343,8 +1343,6 @@ export interface ShopifyCreateProductArgs {
   productType?: string; // The product type for categorization.
   tags?: string; // Comma-separated list of tags.
   status?: string; // Product status: "active", "archived", or "draft". Defaults to "active".
-  variants?: any[]; // Array of variant objects with price, sku, option1/option2/option3, inventory_quantity, weight, weight_unit, barcode, requires_shipping, taxable.
-  images?: any[]; // Array of image objects with src (URL) and optional alt text.
 }
 export interface ShopifyUpdateProductArgs {
   productId: string; // The Shopify product ID to update.
@@ -4648,6 +4646,9 @@ export interface ShopifyNormalizedProduct {
   publishedAt?: string; // Published timestamp (ISO 8601)
   variants: ShopifyVariant[]; // Product variants
   images: ShopifyImage[]; // Product images
+  templateSuffix?: string; // Template suffix for custom templates
+  publishedScope: string; // Published scope (e.g., web)
+  options: object[]; // Product options (e.g., Size, Color) with id, name, values[]
 }
 
 export interface ShopifyListProductsData {
@@ -4666,13 +4667,11 @@ export interface ShopifyVariant {
   compareAtPrice?: string; // Compare-at price
   sku: string; // SKU
   inventoryQuantity: number; // Inventory quantity
-  weight: number; // Weight
-  weightUnit: string; // Weight unit (g, kg, lb, oz)
+  inventoryItemId?: string; // Inventory item ID (for inventory operations)
   option1?: string; // Option 1 value
   option2?: string; // Option 2 value
   option3?: string; // Option 3 value
   barcode?: string; // Barcode
-  requiresShipping: boolean; // Requires shipping
   taxable: boolean; // Is taxable
 }
 
@@ -4699,6 +4698,9 @@ export interface ShopifyProductData {
   publishedAt?: string; // Published timestamp (ISO 8601)
   variants: ShopifyVariant[]; // Product variants
   images: ShopifyImage[]; // Product images
+  templateSuffix?: string; // Template suffix for custom templates
+  publishedScope: string; // Published scope (e.g., web)
+  options: object[]; // Product options (e.g., Size, Color) with id, name, values[]
 }
 
 export type ShopifyGetProductResult = AdapterResultBase<ShopifyProductData>;
@@ -4717,6 +4719,9 @@ export interface ShopifyProductData {
   publishedAt?: string; // Published timestamp (ISO 8601)
   variants: ShopifyVariant[]; // Product variants
   images: ShopifyImage[]; // Product images
+  templateSuffix?: string; // Template suffix for custom templates
+  publishedScope: string; // Published scope (e.g., web)
+  options: object[]; // Product options (e.g., Size, Color) with id, name, values[]
 }
 
 export type ShopifyCreateProductResult = AdapterResultBase<ShopifyProductData>;
@@ -4735,6 +4740,9 @@ export interface ShopifyProductData {
   publishedAt?: string; // Published timestamp (ISO 8601)
   variants: ShopifyVariant[]; // Product variants
   images: ShopifyImage[]; // Product images
+  templateSuffix?: string; // Template suffix for custom templates
+  publishedScope: string; // Published scope (e.g., web)
+  options: object[]; // Product options (e.g., Size, Color) with id, name, values[]
 }
 
 export type ShopifyUpdateProductResult = AdapterResultBase<ShopifyProductData>;
@@ -4932,6 +4940,8 @@ export interface ShopifyNormalizedCustomer {
   note?: string; // Customer note
   defaultAddressCity?: string; // Default address city
   defaultAddressCountry?: string; // Default address country
+  taxExempt: boolean; // Whether customer is tax exempt
+  addresses: object[]; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
 }
 
 export interface ShopifyListCustomersData {
@@ -4959,6 +4969,8 @@ export interface ShopifyCustomerData {
   note?: string; // Customer note
   defaultAddressCity?: string; // Default address city
   defaultAddressCountry?: string; // Default address country
+  taxExempt: boolean; // Whether customer is tax exempt
+  addresses: object[]; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
 }
 
 export type ShopifyGetCustomerResult = AdapterResultBase<ShopifyCustomerData>;
@@ -4979,6 +4991,8 @@ export interface ShopifyCustomerData {
   note?: string; // Customer note
   defaultAddressCity?: string; // Default address city
   defaultAddressCountry?: string; // Default address country
+  taxExempt: boolean; // Whether customer is tax exempt
+  addresses: object[]; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
 }
 
 export type ShopifyCreateCustomerResult = AdapterResultBase<ShopifyCustomerData>;
@@ -4999,6 +5013,8 @@ export interface ShopifyCustomerData {
   note?: string; // Customer note
   defaultAddressCity?: string; // Default address city
   defaultAddressCountry?: string; // Default address country
+  taxExempt: boolean; // Whether customer is tax exempt
+  addresses: object[]; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
 }
 
 export type ShopifyUpdateCustomerResult = AdapterResultBase<ShopifyCustomerData>;
@@ -5044,6 +5060,7 @@ export interface ShopifyNormalizedCollection {
   collectionType: string; // Type: "custom" or "smart"
   imageUrl?: string; // Collection image URL
   imageAlt?: string; // Image alt text
+  productsCount?: number; // Number of products in collection
 }
 
 export interface ShopifyListCollectionsData {
@@ -5058,7 +5075,6 @@ export interface ShopifyNormalizedPage {
   title: string; // Page title
   handle: string; // URL handle
   bodyHtml: string; // HTML content
-  author: string; // Author name
   createdAt: string; // Creation timestamp
   updatedAt: string; // Last update timestamp
   publishedAt?: string; // Published timestamp
@@ -5079,7 +5095,6 @@ export interface ShopifyPageData {
   title: string; // Page title
   handle: string; // URL handle
   bodyHtml: string; // HTML content
-  author: string; // Author name
   createdAt: string; // Creation timestamp
   updatedAt: string; // Last update timestamp
   publishedAt?: string; // Published timestamp
@@ -5093,7 +5108,6 @@ export interface ShopifyPageData {
   title: string; // Page title
   handle: string; // URL handle
   bodyHtml: string; // HTML content
-  author: string; // Author name
   createdAt: string; // Creation timestamp
   updatedAt: string; // Last update timestamp
   publishedAt?: string; // Published timestamp
@@ -5107,7 +5121,6 @@ export interface ShopifyPageData {
   title: string; // Page title
   handle: string; // URL handle
   bodyHtml: string; // HTML content
-  author: string; // Author name
   createdAt: string; // Creation timestamp
   updatedAt: string; // Last update timestamp
   publishedAt?: string; // Published timestamp
@@ -5352,6 +5365,7 @@ export interface ShopifyNormalizedMenu {
   id: string; // Menu ID
   title: string; // Menu title
   handle: string; // URL handle
+  items: object[]; // Menu items, each with id, title, type, url, resourceId, and nested items[]
 }
 
 export interface ShopifyListMenusData {
@@ -5367,6 +5381,7 @@ export interface ShopifyMenuData {
   id: string; // Menu ID
   title: string; // Menu title
   handle: string; // URL handle
+  items: object[]; // Menu items, each with id, title, type, url, resourceId, and nested items[]
 }
 
 export type ShopifyGetMenuResult = AdapterResultBase<ShopifyMenuData>;
@@ -5375,6 +5390,7 @@ export interface ShopifyMenuData {
   id: string; // Menu ID
   title: string; // Menu title
   handle: string; // URL handle
+  items: object[]; // Menu items, each with id, title, type, url, resourceId, and nested items[]
 }
 
 export type ShopifyCreateMenuResult = AdapterResultBase<ShopifyMenuData>;
@@ -5383,6 +5399,7 @@ export interface ShopifyMenuData {
   id: string; // Menu ID
   title: string; // Menu title
   handle: string; // URL handle
+  items: object[]; // Menu items, each with id, title, type, url, resourceId, and nested items[]
 }
 
 export type ShopifyUpdateMenuResult = AdapterResultBase<ShopifyMenuData>;
@@ -9633,15 +9650,13 @@ function createShopifyAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Create a new product in the Shopify store. At minimum, a title is required. Variants, images, and options can be added in the same request.
+     * Create a new product in the Shopify store. At minimum, a title is required. Set status to "draft" to create without publishing.
      * @param args.title - The product title.
      * @param args.bodyHtml - HTML description of the product. (optional)
      * @param args.vendor - The product vendor. (optional)
      * @param args.productType - The product type for categorization. (optional)
      * @param args.tags - Comma-separated list of tags. (optional)
      * @param args.status - Product status: "active", "archived", or "draft". Defaults to "active". (optional)
-     * @param args.variants - Array of variant objects with price, sku, option1/option2/option3, inventory_quantity, weight, weight_unit, barcode, requires_shipping, taxable. (optional)
-     * @param args.images - Array of image objects with src (URL) and optional alt text. (optional)
      * @returns Promise<ShopifyCreateProductResult> Typed response with IDE autocomplete
      */
     createProduct: async (args: ShopifyCreateProductArgs): Promise<ShopifyCreateProductResult> => {
