@@ -486,7 +486,7 @@ class MirraSDK {
              * List all flows for the authenticated user
              */
             list: async (params) => {
-                const response = await this.client.post('/flows/listFlows', params || {});
+                const response = await this.client.post('/flows/searchFlows', params || {});
                 return response.data.data;
             },
             /**

@@ -78,9 +78,6 @@ export interface FlowsCreateEventFlowArgs {
   scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler).
   scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }.
 }
-export interface FlowsListFlowsArgs {
-  status?: string; // Filter by status: active, paused, completed, failed
-}
 export interface FlowsGetFlowArgs {
   id: string; // Flow ID
 }
@@ -106,7 +103,8 @@ export interface FlowsResumeFlowArgs {
 export interface FlowsSearchFlowsArgs {
   status?: string; // Filter by status (or array of statuses)
   triggerType?: string; // Filter by trigger type: time or event
-  limit?: number; // Maximum number of results (default: 100)
+  detail?: string; // Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt.
+  limit?: number; // Maximum number of results (default: 20)
   offset?: number; // Pagination offset (default: 0)
 }
 export interface FlowsRecordExecutionArgs {
@@ -130,6 +128,7 @@ export interface FlowsValidateTriggerArgs {
 }
 export interface FlowsGetFlowsByEventTypeArgs {
   eventType: string; // Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
+  detail?: string; // Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt.
 }
 export interface FlowsCreateBatchOperationArgs {
   title: string; // Human-readable title for this batch operation (e.g., "Leave 100 Telegram groups")
@@ -145,6 +144,37 @@ export interface FlowsPublishFlowArgs {
 }
 export interface FlowsUnpublishFlowArgs {
   flowId: string; // ID of the flow to unpublish
+}
+export interface FlowsCreateGoalFlowArgs {
+  goal: string; // High-level goal description
+  successCriteria: any[]; // Array of criteria that define goal completion
+  constraints?: any[]; // Array of constraints and guidelines
+  tokenBudget?: number; // Token budget (default: 100000)
+  title?: string; // Flow title (auto-generated from goal if not provided)
+  code?: string; // Inline script code for the flow
+  scriptId?: string; // ID of an existing deployed script
+  executionMode?: string; // Execution mode: mirra_only (default), mirra_with_claude_code, or claude_code_only
+  workspacePath?: string; // Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/<goalId>/workspace/
+  iterationTimeoutMs?: number; // Max time per CC iteration in ms (default: 600000 = 10 min)
+}
+export interface FlowsGetGoalProgressArgs {
+  flowId: string; // ID of the goal flow
+}
+export interface FlowsProvideGuidanceArgs {
+  flowId: string; // ID of the goal flow
+  requestId: string; // ID of the guidance request being responded to
+  response: string; // Guidance text to provide to the goal flow
+}
+export interface FlowsCompactHistoryArgs {
+  flowId: string; // ID of the goal flow
+  keepRecentCount?: number; // Unused (deprecated)
+}
+export interface FlowsDelegateSubGoalArgs {
+  parentFlowId: string; // ID of the parent goal flow
+  subGoal: string; // Description of the sub-goal to delegate
+  successCriteria: any[]; // Success criteria for the sub-goal
+  constraints?: any[]; // Constraints for the child flow
+  tokenBudget?: number; // Token budget for child (default: 20% of parent budget)
 }
 
 // User Adapter Types
@@ -825,7 +855,7 @@ export interface TrelloExecuteExtendedArgs {
 export interface JupiterSwapArgs {
   inputMint: string; // Input token mint address
   outputMint: string; // Output token mint address
-  amount: number; // Amount to swap (in smallest unit)
+  amount: number; // Amount to swap (in UI units, e.g. 0.05 for SOL — decimals are auto-resolved)
   inputDecimals?: number; // Number of decimals for input token. Auto-resolved from Jupiter token registry if not provided.
   slippageBps?: number; // Slippage tolerance in basis points (default: 50)
 }
@@ -1891,31 +1921,24 @@ export interface FlowsRecordExecutionData {
 
 export type FlowsRecordExecutionResult = AdapterResultBase<FlowsRecordExecutionData>;
 
-export interface FlowSummary {
+export interface FlowListItem {
   id: string; // Flow ID
   title: string; // Flow title
-  description: string; // Truncated description
   status: string; // Flow status (active, paused, completed, failed)
-  userId: string; // Owner user ID
   triggerType: string; // Trigger type (time or event)
+  isActive: boolean; // Whether flow is active
+  description: string; // Truncated description
+  userId: string; // Owner user ID
   cronExpression: string; // Cron expression for time-based flows
   scriptId: string; // Associated script ID
   executionCount: number; // Number of executions
   lastExecutedAt: string; // Last execution timestamp (ISO 8601)
   createdAt: string; // Created timestamp (ISO 8601)
-  isActive: boolean; // Whether flow is active
 }
-
-export interface FlowsListFlowsData {
-  count: number; // Number of flows
-  flows: FlowSummary[]; // List of flows
-}
-
-export type FlowsListFlowsResult = AdapterResultBase<FlowsListFlowsData>;
 
 export interface FlowsSearchFlowsData {
   count: number; // Number of matching flows
-  flows: FlowSummary[]; // List of matching flows
+  flows: FlowListItem[]; // List of matching flows (minimal by default, summary with detail: "summary")
 }
 
 export type FlowsSearchFlowsResult = AdapterResultBase<FlowsSearchFlowsData>;
@@ -1923,7 +1946,7 @@ export type FlowsSearchFlowsResult = AdapterResultBase<FlowsSearchFlowsData>;
 export interface FlowsGetFlowsByEventTypeData {
   eventType: string; // Queried event type
   count: number; // Number of flows
-  flows: FlowSummary[]; // List of flows for event type
+  flows: FlowListItem[]; // List of flows for event type (minimal by default, summary with detail: "summary")
 }
 
 export type FlowsGetFlowsByEventTypeResult = AdapterResultBase<FlowsGetFlowsByEventTypeData>;
@@ -5595,19 +5618,6 @@ COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.acti
     },
 
     /**
-     * List all flows for the user. Returns normalized flow summaries.
-     * @param args.status - Filter by status: active, paused, completed, failed (optional)
-     * @returns Promise<FlowsListFlowsResult> Typed response with IDE autocomplete
-     */
-    listFlows: async (args: FlowsListFlowsArgs): Promise<FlowsListFlowsResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'listFlows',
-        params: args || {}
-      });
-    },
-
-    /**
      * Get a specific flow by ID. Returns normalized flat structure.
      * @param args.id - Flow ID
      * @returns Promise<FlowsGetFlowResult> Typed response with IDE autocomplete
@@ -5680,10 +5690,11 @@ COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.acti
     },
 
     /**
-     * Search flows with filters. Returns normalized flow summaries.
+     * Search flows with filters. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. Use getFlow for full details on a specific flow.
      * @param args.status - Filter by status (or array of statuses) (optional)
      * @param args.triggerType - Filter by trigger type: time or event (optional)
-     * @param args.limit - Maximum number of results (default: 100) (optional)
+     * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
+     * @param args.limit - Maximum number of results (default: 20) (optional)
      * @param args.offset - Pagination offset (default: 0) (optional)
      * @returns Promise<FlowsSearchFlowsResult> Typed response with IDE autocomplete
      */
@@ -5789,8 +5800,9 @@ Returns detailed information about trigger matching, including which conditions 
     },
 
     /**
-     * Get all active flows that are triggered by a specific event type. Used by frontend to show flow selection for targeted execution (e.g., call.action flows).
+     * Get all active flows triggered by a specific event type. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats.
      * @param args.eventType - Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
+     * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
      * @returns Promise<FlowsGetFlowsByEventTypeResult> Typed response with IDE autocomplete
      */
     getFlowsByEventType: async (args: FlowsGetFlowsByEventTypeArgs): Promise<FlowsGetFlowsByEventTypeResult> => {
@@ -5842,6 +5854,106 @@ Returns detailed information about trigger matching, including which conditions 
       return sdk.resources.call({
         resourceId: 'flows',
         method: 'unpublishFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create an autonomous goal flow that pursues an objective over multiple iterations.
+
+The goal flow will:
+1. Execute iterations autonomously, evaluating progress after each
+2. Detect loops and stagnation, pausing for user guidance when stuck
+3. Track token budget and pause when exhausted
+4. Compact history to manage context window size
+
+EXAMPLES:
+{
+  goal: "Research and compile a report on AI trends in 2026",
+  successCriteria: ["Report has at least 5 sections", "Each section cites sources", "Summary with actionable insights"],
+  constraints: ["Use only publicly available sources"],
+  tokenBudget: 500000,
+  code: "export async function handler(event, context, mirra) { return { success: true }; }"
+}
+     * @param args.goal - High-level goal description
+     * @param args.successCriteria - Array of criteria that define goal completion
+     * @param args.constraints - Array of constraints and guidelines (optional)
+     * @param args.tokenBudget - Token budget (default: 100000) (optional)
+     * @param args.title - Flow title (auto-generated from goal if not provided) (optional)
+     * @param args.code - Inline script code for the flow (optional)
+     * @param args.scriptId - ID of an existing deployed script (optional)
+     * @param args.executionMode - Execution mode: mirra_only (default), mirra_with_claude_code, or claude_code_only (optional)
+     * @param args.workspacePath - Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/<goalId>/workspace/ (optional)
+     * @param args.iterationTimeoutMs - Max time per CC iteration in ms (default: 600000 = 10 min) (optional)
+     */
+    createGoalFlow: async (args: FlowsCreateGoalFlowArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'createGoalFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the progress summary of a goal flow, including velocity, completion percentage, and recent iterations.
+     * @param args.flowId - ID of the goal flow
+     */
+    getGoalProgress: async (args: FlowsGetGoalProgressArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'getGoalProgress',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Provide guidance to a paused goal flow. The flow will resume execution incorporating the guidance.
+     * @param args.flowId - ID of the goal flow
+     * @param args.requestId - ID of the guidance request being responded to
+     * @param args.response - Guidance text to provide to the goal flow
+     */
+    provideGuidance: async (args: FlowsProvideGuidanceArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'provideGuidance',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Deprecated — history compaction is no longer needed in the orchestrator model. Learnings are stored in the memory graph.
+     * @param args.flowId - ID of the goal flow
+     * @param args.keepRecentCount - Unused (deprecated) (optional)
+     */
+    compactHistory: async (args: FlowsCompactHistoryArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'compactHistory',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delegate a sub-goal to a child goal flow. The parent flow spawns a child that pursues the sub-goal independently. Max 10 children per parent, max 3 delegation depth.
+
+EXAMPLES:
+{
+  parentFlowId: "abc123",
+  subGoal: "Research competitor pricing strategies",
+  successCriteria: ["At least 5 competitors analyzed", "Pricing models documented"],
+  constraints: ["Use public data only"],
+  tokenBudget: 20000
+}
+     * @param args.parentFlowId - ID of the parent goal flow
+     * @param args.subGoal - Description of the sub-goal to delegate
+     * @param args.successCriteria - Success criteria for the sub-goal
+     * @param args.constraints - Constraints for the child flow (optional)
+     * @param args.tokenBudget - Token budget for child (default: 20% of parent budget) (optional)
+     */
+    delegateSubGoal: async (args: FlowsDelegateSubGoalArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'delegateSubGoal',
         params: args || {}
       });
     }
@@ -8022,7 +8134,7 @@ function createJupiterAdapter(sdk: MirraSDK) {
      * Execute a token swap on Jupiter DEX. Returns normalized FLAT structure with transaction, signerWallet, inputMint, outputMint, inputAmount, expectedOutputAmount, priceImpact, slippageBps. No nested objects.
      * @param args.inputMint - Input token mint address
      * @param args.outputMint - Output token mint address
-     * @param args.amount - Amount to swap (in smallest unit)
+     * @param args.amount - Amount to swap (in UI units, e.g. 0.05 for SOL — decimals are auto-resolved)
      * @param args.inputDecimals - Number of decimals for input token. Auto-resolved from Jupiter token registry if not provided. (optional)
      * @param args.slippageBps - Slippage tolerance in basis points (default: 50) (optional)
      * @returns Promise<JupiterSwapResult> Typed response with IDE autocomplete
@@ -8127,7 +8239,7 @@ function createJupiterAdapter(sdk: MirraSDK) {
 function createCryptoAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Get the current price of a crypto asset. Returns normalized flat structure.
+     * Get the current price of a crypto asset. Returns normalized flat structure. IMPORTANT: Not all tokens are supported by the pricing service. Before using this operation in a Flow or automation, always make a test call first to verify the token is supported. If the call fails with "not supported", do NOT create the Flow — inform the user that price tracking is not available for that token.
      * @param args.tokenAddress - Token contract address (EVM: 0x..., SVM: base58)
      * @param args.chainName - Specific chain name (auto-detected if not provided) (optional)
      * @returns Promise<CryptoGetPriceResult> Typed response with IDE autocomplete

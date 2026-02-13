@@ -861,7 +861,7 @@ export class MirraSDK {
      */
     list: async (params?: ListFlowsParams): Promise<Flow[]> => {
       const response = await this.client.post<MirraResponse<Flow[]>>(
-        '/flows/listFlows',
+        '/flows/searchFlows',
         params || {}
       );
       return response.data.data!;
