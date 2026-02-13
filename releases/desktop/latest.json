@@ -1,11 +1,11 @@
 {
-  "version": "0.1.1",
-  "notes": "Mirra Desktop v0.1.1",
-  "pub_date": "2026-02-13T02:45:26Z",
+  "version": "0.2.0",
+  "notes": "Mirra Desktop v0.2.0",
+  "pub_date": "2026-02-13T03:10:20Z",
   "platforms": {
     "darwin-aarch64": {
-      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.1.1/Mirra.app.tar.gz",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFpqUzUwcXZycHNpV2RqUlBwWXdPdW4yZGsrcUcvMHNFaVM0cU9RL0VraXdJYXhuaWN3c3UwNFQxRWdjaDAxTFR2eVNGMk5uWjRlRHRiRW1wamRFSVE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcwOTUwNTgxCWZpbGU6TWlycmEuYXBwLnRhci5negoxSk1JNEs0N3UvenRpeTladVRrMmwzL0FicXBiMkJTU0hIenMvU2VCOXNMdG00b1pwZGpNanh4NGNzd0dVcDJ4NFZlSjkxRkNxbDUwL2x1Um0xcmNEUT09Cg=="
+      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.0/Mirra.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFYvQjYxa0dGbkFaYUxDeXVMdENGdXNMM1UrdC9ybUd5WlQvbUxUb04rUkJ6S3h1VG1FU2VsUTBKZkJSRjNGaDNkMjV5RnFZZU82d0RkR081YUNjMndrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcwOTUyMTAxCWZpbGU6TWlycmEuYXBwLnRhci5negpCYzljWjNYZHpLVXZBTndhRHlOUEhQd080V3lQTUE2d2xVZ1I5RTFjWm5HcDRuYTZUMGN4bU4xcWlIUWR5L2N6QnF4SFJHS3M5Vmwvb0RlNzJOVUVDUT09Cg=="
     }
   }
 }
