@@ -6575,7 +6575,7 @@ function createFeedItemsAdapter(sdk: MirraSDK) {
     createFeedItem: async (args: FeedItemsCreateFeedItemArgs): Promise<FeedItemsCreateFeedItemResult> => {
       return sdk.resources.call({
         resourceId: 'feed-items',
-        method: 'create_feed_item',
+        method: 'createFeedItem',
         params: args || {}
       });
     }
