@@ -48,242 +48,6 @@ export interface AdapterResultBase<T = any> {
 // Type Definitions
 // ============================================================================
 
-// Flows Adapter Types
-export interface FlowsCreateFlowArgs {
-  title?: string; // Flow title. Required if providing inline code.
-  description?: string; // Detailed description of what the flow does
-  code?: string; // Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId.
-  scriptId?: string; // ID of existing deployed script. Cannot use with code.
-  schedule?: string; // Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone.
-  eventType?: string; // Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type.
-  eventFilter?: any; // Full event filter with operator and conditions array for complex filtering.
-  trigger?: any; // Legacy nested trigger structure. Prefer eventType or eventFilter instead.
-  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields.
-  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings.
-  enabled?: boolean; // Whether the flow is enabled (default: true)
-}
-export interface FlowsCreateTimeFlowArgs {
-  title: string; // Flow title
-  description: string; // Detailed description of what the flow does
-  schedule: string; // Cron expression for scheduling (e.g., "0 9 * * *" for daily at 9am)
-  scriptId: string; // ID of the script to execute when triggered
-  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler).
-  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }.
-}
-export interface FlowsCreateEventFlowArgs {
-  title: string; // Flow title
-  description: string; // Detailed description of what the flow does
-  trigger: any; // Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
-  scriptId: string; // ID of the script to execute when triggered
-  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler).
-  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }.
-}
-export interface FlowsGetFlowArgs {
-  id: string; // Flow ID
-}
-export interface FlowsUpdateFlowArgs {
-  id: string; // Flow ID to update
-  title?: string; // New title
-  description?: string; // New description
-  trigger?: any; // New trigger configuration
-  scriptId?: string; // New script ID
-  scriptInput?: any; // New static input data for the script. Fields are spread into event.data in handler code.
-  scriptInputSchema?: any; // Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }.
-  status?: string; // New status: active, paused, completed, failed
-}
-export interface FlowsDeleteFlowArgs {
-  id: string; // Flow ID to delete
-}
-export interface FlowsPauseFlowArgs {
-  id: string; // Flow ID to pause
-}
-export interface FlowsResumeFlowArgs {
-  id: string; // Flow ID to resume
-}
-export interface FlowsSearchFlowsArgs {
-  status?: string; // Filter by status (or array of statuses)
-  triggerType?: string; // Filter by trigger type: time or event
-  detail?: string; // Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt.
-  limit?: number; // Maximum number of results (default: 20)
-  offset?: number; // Pagination offset (default: 0)
-}
-export interface FlowsRecordExecutionArgs {
-  id: string; // Flow ID
-  success: boolean; // Whether execution succeeded
-  result?: any; // Execution result data
-  error?: string; // Error message if execution failed
-}
-export interface FlowsListEventTypesArgs {
-  includeTemplates?: boolean; // Include condition templates for each event type
-  includeSchema?: boolean; // Include field schema showing available paths for script access. RECOMMENDED when writing scripts to see correct field access patterns.
-}
-export interface FlowsTestFlowArgs {
-  flowId: string; // ID of the flow to test
-  dryRun?: boolean; // If true (default), only validate trigger matching without executing script. If false, execute the script (causes side effects).
-  eventOverrides?: any; // Custom field values to merge into the generated test event (e.g., {"content.text": "custom message"})
-}
-export interface FlowsValidateTriggerArgs {
-  flowId: string; // ID of the flow
-  event: any; // Event object to test against the trigger (must match IntegrationEvent structure)
-}
-export interface FlowsGetFlowsByEventTypeArgs {
-  eventType: string; // Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
-  detail?: string; // Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt.
-}
-export interface FlowsCreateBatchOperationArgs {
-  title: string; // Human-readable title for this batch operation (e.g., "Leave 100 Telegram groups")
-  operations: any[]; // Array of operations to execute. Each item must have adapter, operation, and args properties.
-  batchSize?: number; // Number of operations to process per execution (default: 5)
-  intervalSeconds?: number; // Seconds between batch executions (default: 60, minimum: 60)
-}
-export interface FlowsPublishFlowArgs {
-  flowId: string; // ID of the flow to publish
-  pricing?: any; // Pricing configuration. Defaults to { model: "free" }. Supported models: "free", "pay-per-execution". For paid models, include basePrice.
-  tags?: any[]; // Tags for marketplace discovery (e.g., ["telegram", "automation"])
-  category?: string; // Marketplace category (e.g., "messaging", "productivity"). Defaults to "uncategorized".
-}
-export interface FlowsUnpublishFlowArgs {
-  flowId: string; // ID of the flow to unpublish
-}
-export interface FlowsCreateGoalFlowArgs {
-  goal: string; // High-level goal description
-  successCriteria: any[]; // Array of criteria that define goal completion
-  constraints?: any[]; // Array of constraints and guidelines
-  tokenBudget?: number; // Token budget (default: 100000)
-  title?: string; // Flow title (auto-generated from goal if not provided)
-  code?: string; // Inline script code for the flow
-  scriptId?: string; // ID of an existing deployed script
-  executionMode?: string; // Execution mode: mirra_only (default), mirra_with_claude_code, or claude_code_only
-  workspacePath?: string; // Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/<goalId>/workspace/
-  iterationTimeoutMs?: number; // Max time per CC iteration in ms (default: 600000 = 10 min)
-}
-export interface FlowsGetGoalProgressArgs {
-  flowId: string; // ID of the goal flow
-}
-export interface FlowsProvideGuidanceArgs {
-  flowId: string; // ID of the goal flow
-  requestId: string; // ID of the guidance request being responded to
-  response: string; // Guidance text to provide to the goal flow
-}
-export interface FlowsCompactHistoryArgs {
-  flowId: string; // ID of the goal flow
-  keepRecentCount?: number; // Unused (deprecated)
-}
-export interface FlowsDelegateSubGoalArgs {
-  parentFlowId: string; // ID of the parent goal flow
-  subGoal: string; // Description of the sub-goal to delegate
-  successCriteria: any[]; // Success criteria for the sub-goal
-  constraints?: any[]; // Constraints for the child flow
-  tokenBudget?: number; // Token budget for child (default: 20% of parent budget)
-}
-
-// User Adapter Types
-export interface UserUpdateProfileArgs {
-  username?: string; // New username (3-30 characters, alphanumeric with underscores/hyphens)
-  email?: string; // New email address
-  timezone?: string; // IANA timezone identifier (e.g., America/Los_Angeles)
-  phoneNumber?: string; // Phone number (7-15 digits with optional formatting)
-}
-export interface UserUpdatePreferencesArgs {
-  timezone?: string; // Preferred timezone for scheduling
-  socials?: any; // Social media links (twitter, discord)
-}
-export interface UserDeactivateAccountArgs {
-  confirm: boolean; // Must be true to confirm account deactivation
-}
-
-// Contacts Adapter Types
-export interface ContactsListContactsArgs {
-  limit?: number; // Maximum number of contacts to return (default: 100)
-  offset?: number; // Number of contacts to skip for pagination (default: 0)
-}
-export interface ContactsGetContactArgs {
-  contactId?: string; // The contact user ID (MongoDB ObjectId)
-  username?: string; // The contact username
-}
-export interface ContactsAddContactArgs {
-  username: string; // Username of the user to add as a contact
-}
-export interface ContactsRemoveContactArgs {
-  contactId?: string; // The contact user ID to remove
-  username?: string; // The contact username to remove
-}
-export interface ContactsSearchContactsArgs {
-  query: string; // Search query - can be username, email, phone, or wallet address
-  searchType?: string; // Type of search to perform: all, username, email, phone, or wallet (default: all)
-  limit?: number; // Maximum number of results (default: 20)
-}
-export interface ContactsBlockContactArgs {
-  contactId?: string; // The user ID to block
-  username?: string; // The username to block
-}
-export interface ContactsUnblockContactArgs {
-  contactId?: string; // The user ID to unblock
-  username?: string; // The username to unblock
-}
-export interface ContactsGetBlockedContactsArgs {
-  limit?: number; // Maximum number of results (default: 100)
-  offset?: number; // Number of items to skip for pagination (default: 0)
-}
-export interface ContactsGetContactRequestsArgs {
-  type?: string; // Type of requests to retrieve: all, sent, or received (default: all)
-  status?: string; // Filter by request status: pending, accepted, or rejected (default: pending)
-}
-
-// Memory Adapter Types
-export interface MemoryCreateArgs {
-  type: string; // Memory subtype: "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), "event" (calendar items). For tasks with assignment, use createTask instead.
-  content: string; // Main content/description of the memory
-  metadata?: any; // Additional metadata (e.g., priority, deadline, tags, etc.)
-  tags?: any[]; // Tags for organizing the memory. Shorthand for metadata.tags.
-  groupId?: string; // Group ID to scope the memory to a specific group. If omitted, memory is created in the user's personal graph.
-}
-export interface MemoryCreateTaskArgs {
-  content: string; // Task description/title - what needs to be done. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
-  assignedTo?: string; // Username of the person to assign this task to (group contexts only). System resolves username to user ID.
-  dueAt?: string; // Due date/time in ISO 8601 format (e.g., "2024-01-15T10:00:00Z") or natural language that will be parsed
-  priority?: string; // Task priority: "high", "medium", or "low"
-  tags?: any[]; // Tags/labels for categorization (e.g., ["work", "urgent"])
-}
-export interface MemorySearchArgs {
-  query: string; // Search query text for semantic matching
-  types?: any[]; // Filter by entity types (e.g., ["TASK", "NOTE", "IDEA"])
-  startTime?: number; // Filter entities created after this timestamp (Unix milliseconds)
-  endTime?: number; // Filter entities created before this timestamp (Unix milliseconds)
-  propertyFilters?: any; // Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] }
-  limit?: number; // Maximum number of results (default: 50, max: 100)
-}
-export interface MemoryQueryArgs {
-  type?: string; // Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against meta_item_type, subType, or semantic_roles
-  filters?: any; // Additional filters (not yet implemented)
-  limit?: number; // Maximum results (default: 50, max: 100)
-  offset?: number; // Pagination offset for fetching more results (default: 0)
-}
-export interface MemoryFindOneArgs {
-  filters: any; // Filter criteria. Use { id: "entity_id" } to find by ID (recommended), or { name: "entity name" } to find by name.
-}
-export interface MemoryUpdateArgs {
-  id: string; // Entity ID to update
-  type?: string; // Entity type
-  content?: string; // Updated content
-  metadata?: any; // Updated metadata
-}
-export interface MemoryDeleteArgs {
-  id: string; // Entity ID to delete
-}
-export interface MemoryShareArgs {
-  entityId: string; // Entity ID to share
-  targetGraphId: string; // Target graph ID to share with (group ID or user contact graph ID)
-  shareReason?: string; // Optional reason for sharing
-}
-export interface MemoryUnshareArgs {
-  entityId: string; // Entity ID to unshare
-  graphId: string; // Graph ID to remove sharing from
-}
-export interface MemoryListGraphsArgs {
-  entityId: string; // Entity ID to list graphs for
-}
-
 // AI Services Adapter Types
 export interface AiChatArgs {
   message?: string; // Simple string shorthand for single-turn queries. Auto-wrapped into messages array. Use "messages" for multi-turn conversations.
@@ -297,6 +61,162 @@ export interface AiDecideArgs {
   options: any[]; // Array of options to choose from. Each option must have: id (unique identifier), label (descriptive name), and optional metadata (additional data)
   context?: string; // Additional context to help the AI make a better decision
   model?: string; // Specific model to use. Defaults to system default.
+}
+
+// Jira Adapter Types
+export interface JiraCreateIssueArgs {
+  projectKey: string; // Jira project key (e.g., "PROJ")
+  summary: string; // Issue summary/title
+  description?: string; // Issue description
+  issueType?: string; // Issue type (Task, Bug, Story, etc.)
+}
+export interface JiraSearchIssuesArgs {
+  jql: string; // JQL query string
+  maxResults?: number; // Maximum number of results (default: 50, max: 100)
+}
+export interface JiraGetIssueArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123") or ID
+}
+export interface JiraUpdateIssueArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+  summary?: string; // New issue summary/title
+  description?: string; // New issue description
+}
+export interface JiraDeleteIssueArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+}
+export interface JiraAddCommentArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+  comment: string; // Comment text
+}
+export interface JiraTransitionIssueArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+  transitionId: string; // ID of the transition to perform
+}
+export interface JiraAssignIssueArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+  accountId: string; // Atlassian account ID of the assignee
+}
+export interface JiraGetProjectMetadataArgs {
+  projectKey: string; // Project key (e.g., "PROJ")
+}
+export interface JiraGetTransitionsArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+}
+export interface JiraListAssignableUsersArgs {
+  projectKey: string; // Project key (e.g., "PROJ")
+}
+export interface JiraGetIssueTypesArgs {
+  projectKey: string; // Project key (e.g., "PROJ")
+}
+export interface JiraDiscoverExtendedArgs {
+  query: string; // Describe what you want to do (e.g., "add label to card")
+  limit?: number; // Max results to return (default 5)
+}
+export interface JiraExecuteExtendedArgs {
+  operationId: string; // The operationId from discoverExtended results
+  pathParams?: any; // Path parameters, e.g., { id: "abc123" }
+  queryParams?: any; // Query string parameters
+  body?: any; // Request body for POST/PUT/PATCH operations
+}
+
+// Claude Code Adapter Types
+export interface ClaudeCodeStartSessionArgs {
+  prompt: string; // The initial prompt/task for Claude Code
+  groupId?: string; // The Mirra group ID to post messages to. If omitted, the desktop user will be prompted to select a group.
+  cwd?: string; // Working directory for Claude Code (defaults to system default)
+  model?: string; // Claude model to use (e.g., "claude-sonnet-4-5-20250929")
+}
+export interface ClaudeCodeResumeSessionArgs {
+  claudeSessionId: string; // The Claude Code session ID to resume (from a previous session)
+  prompt: string; // The follow-up prompt/task
+  groupId?: string; // The Mirra group ID to post messages to. If omitted, the desktop user will be prompted to select a group.
+  cwd?: string; // Working directory for Claude Code
+}
+export interface ClaudeCodeKillSessionArgs {
+  sessionId: string; // The session ID to kill
+}
+
+// Data Adapter Types
+export interface DataDefineCollectionArgs {
+  name: string; // Human-readable name for the collection (e.g. "Contacts", "Sales Metrics")
+  slug?: string; // URL-safe identifier (lowercase, underscores). Auto-generated from name if omitted.
+  fields: any[]; // Array of field definitions. Each field has: name (string), type ("string"|"number"|"boolean"|"date"|"array"|"object"), required (boolean), description (optional string).
+  description?: string; // Optional description of what this collection stores
+}
+export interface DataListCollectionsArgs {
+  status?: string; // Filter by status: "active" (default) or "archived"
+}
+export interface DataGetCollectionArgs {
+  slug: string; // The collection slug (e.g. "contacts")
+}
+export interface DataUpdateCollectionArgs {
+  slug: string; // The collection slug to update
+  addFields?: any[]; // New fields to add to the collection
+  removeFields?: any[]; // Field names to remove from the collection
+  description?: string; // New description for the collection
+}
+export interface DataDropCollectionArgs {
+  slug: string; // The collection slug to drop
+}
+export interface DataInsertRecordArgs {
+  collection: string; // The collection slug to insert into
+  data: any; // The record data -- keys must match the collection fields
+}
+export interface DataInsertRecordsArgs {
+  collection: string; // The collection slug to insert into
+  records: any[]; // Array of record data objects to insert
+}
+export interface DataQueryRecordsArgs {
+  collection: string; // The collection slug to query
+  filter?: any; // MongoDB-style filter object. Supports $eq, $ne, $gt, $gte, $lt, $lte, $in, $regex. Filter keys are automatically prefixed with "data." so use field names directly.
+  sort?: any; // Sort object, e.g. { revenue: -1 } for descending. Keys are auto-prefixed with "data.".
+  limit?: number; // Max records to return (default 50, max 200)
+  offset?: number; // Number of records to skip (for pagination)
+}
+export interface DataUpdateRecordArgs {
+  collection: string; // The collection slug
+  recordId: string; // The record _id to update
+  data: any; // Partial record data to merge/update
+}
+export interface DataDeleteRecordArgs {
+  collection: string; // The collection slug
+  recordId: string; // The record _id to delete
+}
+export interface DataAggregateArgs {
+  collection: string; // The collection slug
+  groupBy?: string; // Field name to group by. Omit for overall aggregation.
+  metrics: any[]; // Array of { field, op } where op is one of "sum", "avg", "count", "min", "max". For "count", field can be omitted.
+}
+
+// Desktop Adapter Types
+export interface DesktopExecuteCommandArgs {
+  command: string; // Shell command to execute (e.g., "ls -la ~/Documents")
+  cwd?: string; // Working directory for the command (defaults to user home)
+  timeoutMs?: number; // Timeout in milliseconds (defaults to 120000)
+}
+export interface DesktopReadFileArgs {
+  path: string; // Absolute path to the file to read
+  maxBytes?: number; // Maximum bytes to read (defaults to 1048576 = 1 MB)
+}
+export interface DesktopWriteFileArgs {
+  path: string; // Absolute path to the file to write
+  content: string; // Text content to write to the file
+  append?: boolean; // If true, append to existing file instead of overwriting (defaults to false)
+}
+export interface DesktopListDirectoryArgs {
+  path: string; // Absolute path to the directory to list
+  recursive?: boolean; // If true, list recursively (max depth 3). Defaults to false.
+  includeHidden?: boolean; // If true, include hidden files (starting with .). Defaults to false.
+}
+export interface DesktopSpawnProcessArgs {
+  command: string; // Path to the executable to run (e.g., "node", "python3", "/usr/local/bin/my-app")
+  args?: any[]; // Command-line arguments to pass to the process
+  env?: any; // Additional environment variables to set for the process
+  cwd?: string; // Working directory for the process (defaults to system default)
+}
+export interface DesktopKillProcessArgs {
+  processId: string; // The process ID returned by spawnProcess
 }
 
 // Documents Adapter Types
@@ -355,108 +275,47 @@ export interface FeedItemsCreateFeedItemArgs {
   metadata?: any; // Additional metadata (searchable, not displayed)
 }
 
-// Telegram Adapter Types
-export interface TelegramSendMessageArgs {
-  chatId: string; // Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from searchChats operation.
-  text: string; // The text content of the message to send
+// Feedback Adapter Types
+export interface FeedbackReportBugArgs {
+  title: string; // Brief bug description
+  description: string; // Detailed description of the bug
+  severity: string; // Bug severity: critical, high, medium, or low
+  stepsToReproduce?: any[]; // Steps to reproduce the bug
+  expectedBehavior?: string; // What should happen
+  actualBehavior?: string; // What actually happens
+  errorDetails?: any; // Error details: { message, stack, code }
+  context?: any; // Additional context: { conversationId, recentMessages, platform, appVersion }
+  llmAnalysis?: string; // LLM analysis of the issue
 }
-export interface TelegramSearchChatsArgs {
-  query?: string; // Text to search in chat names/usernames. Supports fuzzy matching with relevance scoring.
-  type?: string; // Filter by chat type: "private", "group", "channel", or "all" (default: "all")
-  inactiveSince?: string; // Find chats with no activity since date. Accepts ISO date or relative like "30 days ago", "1 week ago"
-  activeSince?: string; // Find chats with activity since date. Accepts ISO date or relative like "7 days ago"
-  hasUnread?: boolean; // Filter by unread status: true = only unread, false = only read
-  archived?: boolean; // Filter by archived status
-  pinned?: boolean; // Filter by pinned status
-  sortBy?: string; // Sort results: "relevance" (default with query), "lastActivity" (default without query), "unreadCount", "name"
-  limit?: number; // Max results (default: 50, max: 100)
-  offset?: number; // Pagination offset (default: 0)
-  forceRefresh?: boolean; // Bypass cache and fetch fresh data
+export interface FeedbackReportToolFailureArgs {
+  adapterType: string; // Adapter type (e.g., jupiter, crypto)
+  operation: string; // Operation that failed (e.g., swap, sendToken)
+  errorMessage: string; // Error message from the failure
+  errorCode?: string; // Error code if available
+  errorStack?: string; // Error stack trace
+  args?: any; // Sanitized arguments that caused the failure
+  llmAnalysis?: string; // LLM analysis of why it failed
+  suggestedFix?: string; // LLM suggested fix
+  context?: any; // Additional context: { conversationId, userId, timestamp }
 }
-export interface TelegramSearchMessagesArgs {
-  query: string; // Text query to search for in messages
-  chatIds?: any[]; // Array of chat IDs to search within. Omit for global search across all chats.
-  chatType?: string; // Filter by chat type (for global search): "private", "group", or "channel"
-  fromDate?: string; // ISO date string for start of date range
-  toDate?: string; // ISO date string for end of date range
-  limit?: number; // Maximum number of messages to return (default: 100, max: 100)
-  senderId?: string; // Filter messages by sender ID
+export interface FeedbackReportMissingCapabilityArgs {
+  userRequest: string; // What the user asked for
+  reason: string; // Why it could not be fulfilled
+  suggestedCapability?: string; // What capability would enable this
+  relatedAdapters?: any[]; // Adapters that might be relevant
+  context?: any; // Additional context: { conversationId }
 }
-export interface TelegramGetChatMessagesArgs {
-  chatId: string; // Chat ID to retrieve messages from
-  limit?: number; // Maximum number of messages to return (default: 50, max: 100)
-  offsetId?: number; // Message ID to use as pagination offset
-  minDate?: string; // ISO date string for minimum message date
-  maxDate?: string; // ISO date string for maximum message date
+export interface FeedbackSubmitFeedbackArgs {
+  sentiment: string; // Sentiment: positive, negative, or neutral
+  feedback: string; // Feedback content
+  category?: string; // Category: ux, performance, feature, or general
+  context?: any; // Additional context: { feature, screen }
 }
-export interface TelegramGetUnreadSummaryArgs {
-  chatIds?: any[]; // Array of chat IDs to filter by. If not provided, checks all chats.
-  priorityOnly?: boolean; // If true, only return chats with unread messages
-  groupBy?: string; // Group results by "chat" or "sender"
-}
-export interface TelegramMarkAsReadArgs {
-  chatId: string; // Chat ID to mark messages as read in
-  maxMessageId?: number; // Maximum message ID to mark as read. If not provided, marks all messages as read.
-}
-export interface TelegramGetMentionsArgs {
-  chatIds?: any[]; // Array of chat IDs to filter mentions by
-  sinceDate?: string; // ISO date string - only return mentions since this date
-  onlyUnread?: boolean; // If true, only return unread mentions
-}
-export interface TelegramLeaveGroupArgs {
-  chatId: string; // The ID of the group, supergroup, or channel to leave. Can be obtained from searchChats operation.
-}
-
-// Gmail Adapter Types
-export interface GoogleGmailSendEmailArgs {
-  to: string; // Valid email address
-  subject: string; // Email subject line
-  body: string; // Email body content
-  cc?: string; // CC recipients (comma-separated email addresses)
-  bcc?: string; // BCC recipients (comma-separated email addresses)
-  isHtml?: boolean; // Whether body is HTML format
-}
-export interface GoogleGmailSearchEmailsArgs {
-  query: string; // Gmail search query (e.g., "from:user@example.com is:unread")
-  maxResults?: number; // Maximum number of results to return (default: 50, max: 100)
-}
-export interface GoogleGmailListEmailsArgs {
-  maxResults?: number; // Maximum number of results to return (default: 50, max: 100)
-}
-export interface GoogleGmailGetEmailArgs {
-  messageId: string; // Gmail message ID
-  includeHtml?: boolean; // Include HTML body content (default: false)
-  includeAttachments?: boolean; // Include attachment metadata (default: false)
-}
-export interface GoogleGmailCreateDraftArgs {
-  to: string; // Valid email address
-  subject: string; // Email subject line
-  body: string; // Email body content
-  cc?: string; // CC recipients (comma-separated email addresses)
-  bcc?: string; // BCC recipients (comma-separated email addresses)
-  isHtml?: boolean; // Whether body is HTML format
-}
-export interface GoogleGmailUpdateDraftArgs {
-  draftId: string; // Gmail draft ID to update
-  to?: string; // Updated recipient email address(es)
-  subject?: string; // Updated email subject line
-  body?: string; // Updated email body content
-  cc?: string; // Updated CC recipients
-  bcc?: string; // Updated BCC recipients
-  isHtml?: boolean; // Whether body is HTML format
-}
-export interface GoogleGmailDeleteDraftArgs {
-  draftId: string; // Gmail draft ID to delete
-}
-export interface GoogleGmailListDraftsArgs {
-  maxResults?: number; // Maximum number of drafts to return (default: 10)
-}
-export interface GoogleGmailDeleteEmailArgs {
-  messageId: string; // Gmail message ID to delete
-}
-export interface GoogleGmailBulkDeleteEmailsArgs {
-  messageIds: any[]; // Array of Gmail message IDs to delete (max 1000 per request)
-  permanently?: boolean; // If true, permanently delete. If false (default), move to trash.
+export interface FeedbackSubmitFeatureRequestArgs {
+  title: string; // Feature title
+  description: string; // Feature description
+  useCase?: string; // Why the user needs this feature
+  priority?: string; // Priority: high, medium, or low
 }
 
 // Google Calendar Adapter Types
@@ -544,311 +403,154 @@ export interface GoogleDriveUpdateFileArgs {
   description?: string; // New description for the file
 }
 
-// Google Sheets Adapter Types
-export interface GoogleSheetsCreateSpreadsheetArgs {
-  title: string; // Title of the spreadsheet
+// Gmail Adapter Types
+export interface GoogleGmailSendEmailArgs {
+  to: string; // Valid email address
+  subject: string; // Email subject line
+  body: string; // Email body content
+  cc?: string; // CC recipients (comma-separated email addresses)
+  bcc?: string; // BCC recipients (comma-separated email addresses)
+  isHtml?: boolean; // Whether body is HTML format
 }
-export interface GoogleSheetsReadRangeArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  range: string; // Cell range (e.g., "Sheet1!A1:B10")
+export interface GoogleGmailSearchEmailsArgs {
+  query: string; // Gmail search query (e.g., "from:user@example.com is:unread")
+  maxResults?: number; // Maximum number of results to return (default: 50, max: 100)
 }
-export interface GoogleSheetsWriteRangeArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  range: string; // Cell range (e.g., "Sheet1!A1:B10")
-  values: any[]; // Data to write (2D array)
+export interface GoogleGmailListEmailsArgs {
+  maxResults?: number; // Maximum number of results to return (default: 50, max: 100)
 }
-export interface GoogleSheetsAppendRowArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  sheetName: string; // Name of the sheet
-  values: any[]; // Row values to append
+export interface GoogleGmailGetEmailArgs {
+  messageId: string; // Gmail message ID
+  includeHtml?: boolean; // Include HTML body content (default: false)
+  includeAttachments?: boolean; // Include attachment metadata (default: false)
 }
-export interface GoogleSheetsGetSpreadsheetArgs {
-  spreadsheetId: string; // ID of the spreadsheet
+export interface GoogleGmailCreateDraftArgs {
+  to: string; // Valid email address
+  subject: string; // Email subject line
+  body: string; // Email body content
+  cc?: string; // CC recipients (comma-separated email addresses)
+  bcc?: string; // BCC recipients (comma-separated email addresses)
+  isHtml?: boolean; // Whether body is HTML format
 }
-export interface GoogleSheetsInsertAtCellArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  cell: string; // Cell reference in format SheetName!A1
-  value: string; // Value to insert
-  bold?: boolean; // Make text bold
-  italic?: boolean; // Make text italic
-  foregroundColor?: string; // Text color (hex or named color)
-  backgroundColor?: string; // Cell background color (hex or named color)
+export interface GoogleGmailUpdateDraftArgs {
+  draftId: string; // Gmail draft ID to update
+  to?: string; // Updated recipient email address(es)
+  subject?: string; // Updated email subject line
+  body?: string; // Updated email body content
+  cc?: string; // Updated CC recipients
+  bcc?: string; // Updated BCC recipients
+  isHtml?: boolean; // Whether body is HTML format
 }
-export interface GoogleSheetsInsertFormulaArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  cell: string; // Cell reference in format SheetName!A1
-  formula: string; // Formula to insert (with or without leading =)
-  note?: string; // Optional note to add to the cell
+export interface GoogleGmailDeleteDraftArgs {
+  draftId: string; // Gmail draft ID to delete
 }
-export interface GoogleSheetsFormatRangeArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  range: string; // Range in format SheetName!A1:B10
-  bold?: boolean; // Make text bold
-  italic?: boolean; // Make text italic
-  foregroundColor?: string; // Text color (hex or named color)
-  backgroundColor?: string; // Cell background color (hex or named color)
-  borders?: boolean; // Add borders to cells
+export interface GoogleGmailListDraftsArgs {
+  maxResults?: number; // Maximum number of drafts to return (default: 10)
 }
-export interface GoogleSheetsCreateChartArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  sheetId: number; // ID of the sheet containing data
-  dataRange: string; // Data range for the chart (e.g., A1:B10)
-  chartType: string; // Chart type: BAR, LINE, AREA, PIE, or SCATTER
-  title: string; // Chart title
-  position: any; // Chart position with row, column, rowCount, columnCount
+export interface GoogleGmailDeleteEmailArgs {
+  messageId: string; // Gmail message ID to delete
 }
-export interface GoogleSheetsFindAndReplaceArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  findText: string; // Text to find
-  replaceText: string; // Text to replace with
-  sheetName?: string; // Limit search to specific sheet
-  matchCase?: boolean; // Case-sensitive search
-  matchEntireCell?: boolean; // Match entire cell content only
-}
-export interface GoogleSheetsInsertMultipleRowsArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  sheetName: string; // Name of the sheet
-  rowsData: any[]; // 2D array of row data to insert
-  startingRow?: number; // Row number to start insertion (1-indexed). If not provided, appends to end
-  formattingOptions?: any; // Optional formatting to apply (bold, italic, foregroundColor, backgroundColor, borders)
-}
-export interface GoogleSheetsClearRangeArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  sheetName: string; // Name of the sheet
-  range: string; // Range to clear (e.g., A1:B10)
-}
-export interface GoogleSheetsInsertRowsArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
-  startRowIndex: number; // Row index to start inserting at (0-indexed). To insert before row 5 in the UI, use index 4.
-  numRows: number; // Number of rows to insert
-}
-export interface GoogleSheetsDeleteRowsArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
-  startRowIndex: number; // Row index to start deleting from (0-indexed). To delete row 5 in the UI, use index 4.
-  numRows: number; // Number of rows to delete
-}
-export interface GoogleSheetsInsertColumnsArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
-  startColumnIndex: number; // Column index to start inserting at (0-indexed: A=0, B=1, C=2, D=3, etc.). To insert before column D, use index 3.
-  numColumns: number; // Number of columns to insert
-}
-export interface GoogleSheetsDeleteColumnsArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
-  startColumnIndex: number; // Column index to start deleting from (0-indexed: A=0, B=1, C=2, D=3, etc.). To delete column D, use index 3.
-  numColumns: number; // Number of columns to delete
-}
-export interface GoogleSheetsCopyRangeArgs {
-  spreadsheetId: string; // ID of the spreadsheet
-  sourceSheetId: number; // Numeric sheet ID of the source sheet (get from getSpreadsheet response: sheets[n].properties.sheetId)
-  sourceRange: string; // Source range in A1 notation WITHOUT sheet name (e.g., "A1:C5", not "Sheet1!A1:C5")
-  targetSheetId: number; // Numeric sheet ID of the target sheet (can be same as sourceSheetId to copy within same sheet)
-  targetStartCell: string; // Target start cell in A1 notation (e.g., "E1"). The copied data will fill cells starting from this position.
+export interface GoogleGmailBulkDeleteEmailsArgs {
+  messageIds: any[]; // Array of Gmail message IDs to delete (max 1000 per request)
+  permanently?: boolean; // If true, permanently delete. If false (default), move to trash.
 }
 
-// Google Docs Adapter Types
-export interface GoogleDocsCreateDocumentArgs {
-  title: string; // Title of the document
+// Hypertrade Adapter Types
+export interface HypertradePlaceOrderArgs {
+  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
+  isBuy: boolean; // True for long/buy, false for short/sell
+  size: number; // Order size in asset units
+  limitPrice?: number; // Limit price (required for limit orders)
+  orderType?: string; // Order type: "limit" or "market" (default: "market")
+  triggerPrice?: number; // Trigger price for stop/take-profit orders
+  reduceOnly?: boolean; // Whether order can only reduce position (default: false)
+  postOnly?: boolean; // Whether order should only be maker (default: false)
+  clientOrderId?: string; // Custom client order ID for tracking
 }
-export interface GoogleDocsGetDocumentArgs {
-  documentId: string; // ID of the document
+export interface HypertradeCancelOrderArgs {
+  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
+  orderId?: number; // Order ID to cancel
+  clientOrderId?: string; // Client order ID to cancel
+  cancelAll?: boolean; // Cancel all orders for this asset (default: false)
 }
-export interface GoogleDocsAppendTextArgs {
-  documentId: string; // ID of the document
-  text: string; // Text to append
+export interface HypertradeGetPositionsArgs {
+  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
 }
-export interface GoogleDocsReplaceTextArgs {
-  documentId: string; // ID of the document
-  searchText: string; // Text to search for
-  replaceText: string; // Text to replace with
+export interface HypertradeGetOpenOrdersArgs {
+  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
+  asset?: string; // Filter by asset/coin symbol
 }
-export interface GoogleDocsGetDocumentContentArgs {
-  documentId: string; // ID of the document
+export interface HypertradeGetBalancesArgs {
+  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
 }
-export interface GoogleDocsInsertTextAtPositionArgs {
-  documentId: string; // ID of the document
-  text: string; // Text to insert
-  position: number; // Character position to insert at (1-indexed)
+export interface HypertradeGetMarketInfoArgs {
+  asset?: string; // Specific asset/coin symbol to get info for (returns all if omitted)
 }
-export interface GoogleDocsInsertTextAfterArgs {
-  documentId: string; // ID of the document
-  searchText: string; // Text to search for
-  textToInsert: string; // Text to insert after the search text
-  occurrence?: number; // Which occurrence to insert after (default: 1)
+export interface HypertradeGetOrderbookArgs {
+  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
+  depth?: number; // Number of levels to return (default: all)
 }
-export interface GoogleDocsInsertHeadingArgs {
-  documentId: string; // ID of the document
-  text: string; // Heading text
-  level: number; // Heading level (1-6)
-  position?: number; // Character position to insert at
-  insertAfterText?: string; // Insert after this text instead of at position
+export interface HypertradeGetCandlesArgs {
+  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
+  interval?: string; // Candle interval (e.g. "1m", "5m", "1h", "1d"). Default: "1h"
+  startTime?: number; // Start time in milliseconds (default: 24h ago)
+  endTime?: number; // End time in milliseconds (default: now)
+  limit?: number; // Max number of candles to return
 }
-export interface GoogleDocsInsertListArgs {
-  documentId: string; // ID of the document
-  items: any[]; // Array of list items
-  listType: string; // Type of list: "bulleted" or "numbered"
-  position?: number; // Character position to insert at
-  insertAfterText?: string; // Insert after this text instead of at position
+export interface HypertradeSetLeverageArgs {
+  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
+  leverage: number; // Leverage multiplier (e.g. 5 for 5x)
+  isCrossMargin?: boolean; // Use cross margin (default: true). False for isolated margin.
 }
-export interface GoogleDocsInsertTableArgs {
-  documentId: string; // ID of the document
-  data: any[]; // 2D array of table data (rows x columns)
-  hasHeader?: boolean; // Whether the first row is a header (default: true)
-  position?: number; // Character position to insert at
-  insertAfterText?: string; // Insert after this text instead of at position
-}
-export interface GoogleDocsUpdateDocumentContentArgs {
-  documentId: string; // ID of the document
-  newContent: string; // New content to replace existing content
-}
-export interface GoogleDocsCreateSectionArgs {
-  documentId: string; // ID of the document
-  heading: string; // Section heading text
-  content: string; // Section content text
-}
-export interface GoogleDocsFindInsertionPointArgs {
-  documentId: string; // ID of the document
-  position: number; // Position to find (1 for start, -1 for end)
-  searchText?: string; // Text to search for (returns position after this text)
+export interface HypertradeGetTradeHistoryArgs {
+  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
+  asset?: string; // Filter by asset/coin symbol
+  limit?: number; // Max number of trades to return
 }
 
-// Jira Adapter Types
-export interface JiraCreateIssueArgs {
-  projectKey: string; // Jira project key (e.g., "PROJ")
-  summary: string; // Issue summary/title
-  description?: string; // Issue description
-  issueType?: string; // Issue type (Task, Bug, Story, etc.)
+// Skills Adapter Types
+export interface SkillsListSkillsArgs {
+  category?: string; // Filter by category
 }
-export interface JiraSearchIssuesArgs {
-  jql: string; // JQL query string
-  maxResults?: number; // Maximum number of results (default: 50, max: 100)
+export interface SkillsGetSkillArgs {
+  skillId: string; // ID of the skill
 }
-export interface JiraGetIssueArgs {
-  issueKey: string; // Issue key (e.g., "PROJ-123") or ID
+export interface SkillsCreateSkillArgs {
+  name: string; // Unique kebab-case name
+  title: string; // Human-readable title
+  description: string; // What this skill does
+  whenToUse: string; // Conditions for using this skill
+  whenNotToUse: string; // Conditions to avoid this skill
+  procedure: any[]; // Step-by-step procedure
+  category: string; // Skill category
+  tags?: any[]; // Tags for discovery
 }
-export interface JiraUpdateIssueArgs {
-  issueKey: string; // Issue key (e.g., "PROJ-123")
-  summary?: string; // New issue summary/title
-  description?: string; // New issue description
+export interface SkillsUpdateSkillArgs {
+  skillId: string; // ID of the skill to update
+  updates: any; // Fields to update
 }
-export interface JiraDeleteIssueArgs {
-  issueKey: string; // Issue key (e.g., "PROJ-123")
+export interface SkillsDeleteSkillArgs {
+  skillId: string; // ID of the skill to delete
 }
-export interface JiraAddCommentArgs {
-  issueKey: string; // Issue key (e.g., "PROJ-123")
-  comment: string; // Comment text
+export interface SkillsSelectSkillsArgs {
+  goalDescription: string; // The goal being pursued
+  currentPhase?: string; // Current execution phase
+  isLooping?: boolean; // Whether loop detection is active
+  budgetPercentage?: number; // Token budget used (0-100)
+  recentFailureCount?: number; // Number of recent failures
+  hasDelegation?: boolean; // Whether delegation is configured
 }
-export interface JiraTransitionIssueArgs {
-  issueKey: string; // Issue key (e.g., "PROJ-123")
-  transitionId: string; // ID of the transition to perform
+export interface SkillsRecordSkillUsageArgs {
+  skillId: string; // ID of the skill used
+  flowId: string; // ID of the goal flow
+  iteration: number; // Iteration number
+  outcome: string; // success or failure
+  notes?: string; // Optional notes
 }
-export interface JiraAssignIssueArgs {
-  issueKey: string; // Issue key (e.g., "PROJ-123")
-  accountId: string; // Atlassian account ID of the assignee
-}
-export interface JiraGetProjectMetadataArgs {
-  projectKey: string; // Project key (e.g., "PROJ")
-}
-export interface JiraGetTransitionsArgs {
-  issueKey: string; // Issue key (e.g., "PROJ-123")
-}
-export interface JiraListAssignableUsersArgs {
-  projectKey: string; // Project key (e.g., "PROJ")
-}
-export interface JiraGetIssueTypesArgs {
-  projectKey: string; // Project key (e.g., "PROJ")
-}
-export interface JiraDiscoverExtendedArgs {
-  query: string; // Describe what you want to do (e.g., "add label to card")
-  limit?: number; // Max results to return (default 5)
-}
-export interface JiraExecuteExtendedArgs {
-  operationId: string; // The operationId from discoverExtended results
-  pathParams?: any; // Path parameters, e.g., { id: "abc123" }
-  queryParams?: any; // Query string parameters
-  body?: any; // Request body for POST/PUT/PATCH operations
-}
-
-// Twitter Adapter Types
-export interface TwitterPostTweetArgs {
-  text: string; // Tweet text (max 280 characters)
-}
-export interface TwitterGetUserTweetsArgs {
-  userId?: string; // Twitter user ID (recommended for stability and speed). Provide userId OR userName, not both.
-  userName?: string; // Twitter username/handle without @ symbol (e.g., "elonmusk"). Provide userName OR userId, not both.
-  cursor?: string; // Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values.
-  includeReplies?: boolean; // Whether to include replies in results. Defaults to false (only original tweets).
-}
-export interface TwitterAdvancedSearchArgs {
-  query: string; // Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR \"machine learning\"". Supported operators: from:user, to:user, since:YYYY-MM-DD, until:YYYY-MM-DD, lang:xx, filter:media, filter:links, -filter:retweets, AND, OR, -keyword, "exact phrase".
-  queryType?: string; // Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". Only these two values are valid.
-  cursor?: string; // Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values.
-}
-
-// Trello Adapter Types
-export interface TrelloGetBoardArgs {
-  boardId: string; // The ID of the board to retrieve
-}
-export interface TrelloCreateCardArgs {
-  name: string; // Card name/title
-  idList: string; // ID of the list to add the card to
-  desc?: string; // Card description (supports markdown)
-  description?: string; // Card description (alias for "desc", supports markdown)
-}
-export interface TrelloGetCardArgs {
-  cardId: string; // The ID of the card to retrieve
-}
-export interface TrelloUpdateCardArgs {
-  cardId: string; // The ID of the card to update
-  name?: string; // New card name
-  desc?: string; // New card description
-  description?: string; // New card description (alias for "desc", supports markdown)
-  idList?: string; // Move card to a different list
-  closed?: boolean; // Archive the card
-}
-export interface TrelloDeleteCardArgs {
-  cardId: string; // The ID of the card to delete
-}
-export interface TrelloCreateChecklistArgs {
-  cardId: string; // The ID of the card to add the checklist to
-  name: string; // Checklist name
-}
-export interface TrelloGetChecklistArgs {
-  checklistId: string; // The ID of the checklist to retrieve
-}
-export interface TrelloUpdateChecklistArgs {
-  checklistId: string; // The ID of the checklist to update
-  name: string; // New checklist name
-}
-export interface TrelloDeleteChecklistArgs {
-  checklistId: string; // The ID of the checklist to delete
-}
-export interface TrelloAddCheckItemArgs {
-  checklistId: string; // The ID of the checklist to add the item to
-  name: string; // Check item text
-}
-export interface TrelloUpdateCheckItemArgs {
-  cardId: string; // The ID of the card containing the check item
-  checkItemId: string; // The ID of the check item to update
-  name?: string; // New check item text
-  state?: string; // Check state: "complete" or "incomplete"
-}
-export interface TrelloDeleteCheckItemArgs {
-  checklistId: string; // The ID of the checklist containing the item
-  checkItemId: string; // The ID of the check item to delete
-}
-export interface TrelloDiscoverExtendedArgs {
-  query: string; // Describe what you want to do (e.g., "add label to card")
-  limit?: number; // Max results to return (default 5)
-}
-export interface TrelloExecuteExtendedArgs {
-  operationId: string; // The operationId from discoverExtended results
-  pathParams?: any; // Path parameters, e.g., { id: "abc123" }
-  queryParams?: any; // Query string parameters
-  body?: any; // Request body for POST/PUT/PATCH operations
+export interface SkillsGetSkillUsageArgs {
+  skillId?: string; // Filter by skill ID
+  flowId?: string; // Filter by flow ID
+  limit?: number; // Max records to return (default 20)
 }
 
 // Jupiter Adapter Types
@@ -893,35 +595,25 @@ export interface JupiterLaunchTokenArgs {
   telegram?: string; // Telegram URL for token metadata
 }
 
-// Crypto Adapter Types
-export interface CryptoGetPriceArgs {
-  tokenAddress: string; // Token contract address (EVM: 0x..., SVM: base58)
-  chainName?: string; // Specific chain name (auto-detected if not provided)
+// Marketplace Resources Adapter Types
+export interface MarketplaceResourcesCallArgs {
+  resourceId: string; // ID of the installed resource
+  method: string; // Method name to call on the resource
+  parameters: any; // Parameters to pass to the method
 }
-export interface CryptoSendTokenArgs {
-  recipient: string; // Contact username, user ID, or Solana wallet address
-  token: string; // Token symbol (SOL, USDC), name, or mint address
-  amount: number; // Amount to send (in UI units)
+export interface MarketplaceResourcesInstallArgs {
+  resourceId: string; // ID of the resource to install
 }
-export interface CryptoMonitorPriceArgs {
-  tokenAddress: string; // Token contract address to monitor
-  direction: string; // Alert direction: "above" or "below"
-  targetPrice: number; // Target price in USD to trigger alert
-  scriptId: string; // ID of the script to execute when price target is reached
-  chainName?: string; // Chain name (auto-detected if not provided)
-  percentStep?: number; // Progressive alert step percentage (default: 0.1 = 10%)
+export interface MarketplaceResourcesUninstallArgs {
+  resourceId: string; // ID of the resource to uninstall
 }
-export interface CryptoUnsubscribeAssetArgs {
-  tokenAddress: string; // Token address to stop monitoring
+export interface MarketplaceResourcesAuthenticateArgs {
+  resourceId: string; // ID of the resource to authenticate with
+  type: string; // Authentication type: api_key, oauth2, basic, or bearer
+  credentials: any; // Credentials object (structure depends on auth type)
 }
-export interface CryptoRefreshTransactionArgs {
-  feedItemId: string; // Feed item ID containing the transaction to refresh
-  transferId: string; // Original transfer ID
-  recipient: string; // Recipient address
-  token: string; // Token symbol or mint address
-  amount: number; // Amount to send
-  tokenMint?: string; // Token mint address (optional, will resolve if not provided)
-  tokenDecimals?: number; // Token decimals (optional)
+export interface MarketplaceResourcesGetInstallationArgs {
+  resourceId: string; // ID of the resource to get installation details for
 }
 
 // Scripts Adapter Types
@@ -1014,47 +706,60 @@ export interface ScriptsLintScriptArgs {
   scriptInputSchema?: any; // Schema of scriptInput fields that will be on event.data at runtime. Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array" }. When provided, event.data field errors are reported as errors instead of warnings.
 }
 
-// Feedback Adapter Types
-export interface FeedbackReportBugArgs {
-  title: string; // Brief bug description
-  description: string; // Detailed description of the bug
-  severity: string; // Bug severity: critical, high, medium, or low
-  stepsToReproduce?: any[]; // Steps to reproduce the bug
-  expectedBehavior?: string; // What should happen
-  actualBehavior?: string; // What actually happens
-  errorDetails?: any; // Error details: { message, stack, code }
-  context?: any; // Additional context: { conversationId, recentMessages, platform, appVersion }
-  llmAnalysis?: string; // LLM analysis of the issue
+// Marketplace Templates Adapter Types
+
+// Memory Adapter Types
+export interface MemoryCreateArgs {
+  type: string; // Memory subtype: "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), "event" (calendar items). For tasks with assignment, use createTask instead.
+  content: string; // Main content/description of the memory
+  metadata?: any; // Additional metadata (e.g., priority, deadline, tags, etc.)
+  tags?: any[]; // Tags for organizing the memory. Shorthand for metadata.tags.
+  groupId?: string; // Group ID to scope the memory to a specific group. If omitted, memory is created in the user's personal graph.
 }
-export interface FeedbackReportToolFailureArgs {
-  adapterType: string; // Adapter type (e.g., jupiter, crypto)
-  operation: string; // Operation that failed (e.g., swap, sendToken)
-  errorMessage: string; // Error message from the failure
-  errorCode?: string; // Error code if available
-  errorStack?: string; // Error stack trace
-  args?: any; // Sanitized arguments that caused the failure
-  llmAnalysis?: string; // LLM analysis of why it failed
-  suggestedFix?: string; // LLM suggested fix
-  context?: any; // Additional context: { conversationId, userId, timestamp }
+export interface MemoryCreateTaskArgs {
+  content: string; // Task description/title - what needs to be done. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
+  assignedTo?: string; // Username of the person to assign this task to (group contexts only). System resolves username to user ID.
+  dueAt?: string; // Due date/time in ISO 8601 format (e.g., "2024-01-15T10:00:00Z") or natural language that will be parsed
+  priority?: string; // Task priority: "high", "medium", or "low"
+  tags?: any[]; // Tags/labels for categorization (e.g., ["work", "urgent"])
 }
-export interface FeedbackReportMissingCapabilityArgs {
-  userRequest: string; // What the user asked for
-  reason: string; // Why it could not be fulfilled
-  suggestedCapability?: string; // What capability would enable this
-  relatedAdapters?: any[]; // Adapters that might be relevant
-  context?: any; // Additional context: { conversationId }
+export interface MemorySearchArgs {
+  query: string; // Search query text for semantic matching
+  types?: any[]; // Filter by entity types (e.g., ["TASK", "NOTE", "IDEA"])
+  startTime?: number; // Filter entities created after this timestamp (Unix milliseconds)
+  endTime?: number; // Filter entities created before this timestamp (Unix milliseconds)
+  propertyFilters?: any; // Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] }
+  limit?: number; // Maximum number of results (default: 50, max: 100)
 }
-export interface FeedbackSubmitFeedbackArgs {
-  sentiment: string; // Sentiment: positive, negative, or neutral
-  feedback: string; // Feedback content
-  category?: string; // Category: ux, performance, feature, or general
-  context?: any; // Additional context: { feature, screen }
+export interface MemoryQueryArgs {
+  type?: string; // Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against meta_item_type, subType, or semantic_roles
+  filters?: any; // Additional filters (not yet implemented)
+  limit?: number; // Maximum results (default: 50, max: 100)
+  offset?: number; // Pagination offset for fetching more results (default: 0)
 }
-export interface FeedbackSubmitFeatureRequestArgs {
-  title: string; // Feature title
-  description: string; // Feature description
-  useCase?: string; // Why the user needs this feature
-  priority?: string; // Priority: high, medium, or low
+export interface MemoryFindOneArgs {
+  filters: any; // Filter criteria. Use { id: "entity_id" } to find by ID (recommended), or { name: "entity name" } to find by name.
+}
+export interface MemoryUpdateArgs {
+  id: string; // Entity ID to update
+  type?: string; // Entity type
+  content?: string; // Updated content
+  metadata?: any; // Updated metadata
+}
+export interface MemoryDeleteArgs {
+  id: string; // Entity ID to delete
+}
+export interface MemoryShareArgs {
+  entityId: string; // Entity ID to share
+  targetGraphId: string; // Target graph ID to share with (group ID or user contact graph ID)
+  shareReason?: string; // Optional reason for sharing
+}
+export interface MemoryUnshareArgs {
+  entityId: string; // Entity ID to unshare
+  graphId: string; // Graph ID to remove sharing from
+}
+export interface MemoryListGraphsArgs {
+  entityId: string; // Entity ID to list graphs for
 }
 
 // Mirra Messaging Adapter Types
@@ -1177,16 +882,47 @@ export interface MoltbookSearchArgs {
   query: string; // Search query
 }
 
-// Tunnel Adapter Types
-export interface TunnelCallArgs {
-  tunnel?: string; // Tunnel name to use (defaults to 'default')
-  method?: string; // HTTP method (defaults to GET)
-  path: string; // Request path (e.g., /api/query)
-  headers?: any; // Request headers
-  body?: any; // Request body (for POST/PUT/PATCH)
+// Pages Adapter Types
+export interface PagesCreatePageArgs {
+  path: string; // URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
+  title: string; // Display title for the page
+  code: string; // JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
+  description?: string; // Optional description of the page
+  visibility?: string; // Page visibility: "private" (default) or "public"
 }
-export interface TunnelStatusArgs {
-  tunnel?: string; // Tunnel name to check (defaults to 'default')
+export interface PagesEditPageArgs {
+  pageId: string; // The page ID to edit
+  edits: any[]; // Array of search-and-replace edits. Each edit has oldCode (exact string to find) and newCode (replacement string). Applied sequentially.
+}
+export interface PagesUpdatePageArgs {
+  pageId: string; // The page ID to update
+  code?: string; // New JSX source code
+  title?: string; // New title
+  description?: string; // New description
+}
+export interface PagesRevertPageArgs {
+  pageId: string; // The page ID to revert
+  versionIndex: number; // Index of the version to restore (0 = most recent saved version)
+}
+export interface PagesGetPageArgs {
+  pageId?: string; // The page ID
+  path?: string; // The page path (e.g. "/dashboard"). Used with the current graphId.
+}
+export interface PagesListPagesArgs {
+  status?: string; // Filter by status: "active" (default) or "deleted"
+}
+export interface PagesDeletePageArgs {
+  pageId: string; // The page ID to delete
+}
+export interface PagesPublishPageArgs {
+  pageId: string; // The page ID to publish
+  publicCollections?: any[]; // Optional array of collection tags for public discovery
+}
+export interface PagesUnpublishPageArgs {
+  pageId: string; // The page ID to unpublish
+}
+export interface PagesGetPageUrlArgs {
+  pageId: string; // The page ID
 }
 
 // Polymarket Adapter Types
@@ -1269,89 +1005,6 @@ export interface PolymarketExecuteExtendedArgs {
   pathParams?: any; // Path parameters, e.g., { id: "abc123" }
   queryParams?: any; // Query string parameters
   body?: any; // Request body for POST/PUT/PATCH operations
-}
-
-// Hypertrade Adapter Types
-export interface HypertradePlaceOrderArgs {
-  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
-  isBuy: boolean; // True for long/buy, false for short/sell
-  size: number; // Order size in asset units
-  limitPrice?: number; // Limit price (required for limit orders)
-  orderType?: string; // Order type: "limit" or "market" (default: "market")
-  triggerPrice?: number; // Trigger price for stop/take-profit orders
-  reduceOnly?: boolean; // Whether order can only reduce position (default: false)
-  postOnly?: boolean; // Whether order should only be maker (default: false)
-  clientOrderId?: string; // Custom client order ID for tracking
-}
-export interface HypertradeCancelOrderArgs {
-  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
-  orderId?: number; // Order ID to cancel
-  clientOrderId?: string; // Client order ID to cancel
-  cancelAll?: boolean; // Cancel all orders for this asset (default: false)
-}
-export interface HypertradeGetPositionsArgs {
-  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
-}
-export interface HypertradeGetOpenOrdersArgs {
-  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
-  asset?: string; // Filter by asset/coin symbol
-}
-export interface HypertradeGetBalancesArgs {
-  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
-}
-export interface HypertradeGetMarketInfoArgs {
-  asset?: string; // Specific asset/coin symbol to get info for (returns all if omitted)
-}
-export interface HypertradeGetOrderbookArgs {
-  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
-  depth?: number; // Number of levels to return (default: all)
-}
-export interface HypertradeGetCandlesArgs {
-  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
-  interval?: string; // Candle interval (e.g. "1m", "5m", "1h", "1d"). Default: "1h"
-  startTime?: number; // Start time in milliseconds (default: 24h ago)
-  endTime?: number; // End time in milliseconds (default: now)
-  limit?: number; // Max number of candles to return
-}
-export interface HypertradeSetLeverageArgs {
-  asset: string; // Asset/coin symbol (e.g. "ETH", "BTC")
-  leverage: number; // Leverage multiplier (e.g. 5 for 5x)
-  isCrossMargin?: boolean; // Use cross margin (default: true). False for isolated margin.
-}
-export interface HypertradeGetTradeHistoryArgs {
-  walletAddress?: string; // EVM wallet address (uses context wallet if not provided)
-  asset?: string; // Filter by asset/coin symbol
-  limit?: number; // Max number of trades to return
-}
-
-// Desktop Adapter Types
-export interface DesktopExecuteCommandArgs {
-  command: string; // Shell command to execute (e.g., "ls -la ~/Documents")
-  cwd?: string; // Working directory for the command (defaults to user home)
-  timeoutMs?: number; // Timeout in milliseconds (defaults to 120000)
-}
-export interface DesktopReadFileArgs {
-  path: string; // Absolute path to the file to read
-  maxBytes?: number; // Maximum bytes to read (defaults to 1048576 = 1 MB)
-}
-export interface DesktopWriteFileArgs {
-  path: string; // Absolute path to the file to write
-  content: string; // Text content to write to the file
-  append?: boolean; // If true, append to existing file instead of overwriting (defaults to false)
-}
-export interface DesktopListDirectoryArgs {
-  path: string; // Absolute path to the directory to list
-  recursive?: boolean; // If true, list recursively (max depth 3). Defaults to false.
-  includeHidden?: boolean; // If true, include hidden files (starting with .). Defaults to false.
-}
-export interface DesktopSpawnProcessArgs {
-  command: string; // Path to the executable to run (e.g., "node", "python3", "/usr/local/bin/my-app")
-  args?: any[]; // Command-line arguments to pass to the process
-  env?: any; // Additional environment variables to set for the process
-  cwd?: string; // Working directory for the process (defaults to system default)
-}
-export interface DesktopKillProcessArgs {
-  processId: string; // The process ID returned by spawnProcess
 }
 
 // Shopify Adapter Types
@@ -1597,99 +1250,544 @@ export interface ShopifyDeleteRedirectArgs {
   redirectId: string; // The Shopify redirect ID to delete.
 }
 
-// Data Adapter Types
-export interface DataDefineCollectionArgs {
-  name: string; // Human-readable name for the collection (e.g. "Contacts", "Sales Metrics")
-  slug?: string; // URL-safe identifier (lowercase, underscores). Auto-generated from name if omitted.
-  fields: any[]; // Array of field definitions. Each field has: name (string), type ("string"|"number"|"boolean"|"date"|"array"|"object"), required (boolean), description (optional string).
-  description?: string; // Optional description of what this collection stores
+// Socket Adapter Types
+export interface SocketSendArgs {
+  channelId?: string; // Channel ID to send to (defaults to 'default')
+  message: any; // JSON message to send to the client
 }
-export interface DataListCollectionsArgs {
-  status?: string; // Filter by status: "active" (default) or "archived"
+export interface SocketStatusArgs {
+  channelId?: string; // Channel ID to check (defaults to 'default')
 }
-export interface DataGetCollectionArgs {
-  slug: string; // The collection slug (e.g. "contacts")
-}
-export interface DataUpdateCollectionArgs {
-  slug: string; // The collection slug to update
-  addFields?: any[]; // New fields to add to the collection
-  removeFields?: any[]; // Field names to remove from the collection
-  description?: string; // New description for the collection
-}
-export interface DataDropCollectionArgs {
-  slug: string; // The collection slug to drop
-}
-export interface DataInsertRecordArgs {
-  collection: string; // The collection slug to insert into
-  data: any; // The record data -- keys must match the collection fields
-}
-export interface DataInsertRecordsArgs {
-  collection: string; // The collection slug to insert into
-  records: any[]; // Array of record data objects to insert
-}
-export interface DataQueryRecordsArgs {
-  collection: string; // The collection slug to query
-  filter?: any; // MongoDB-style filter object. Supports $eq, $ne, $gt, $gte, $lt, $lte, $in, $regex. Filter keys are automatically prefixed with "data." so use field names directly.
-  sort?: any; // Sort object, e.g. { revenue: -1 } for descending. Keys are auto-prefixed with "data.".
-  limit?: number; // Max records to return (default 50, max 200)
-  offset?: number; // Number of records to skip (for pagination)
-}
-export interface DataUpdateRecordArgs {
-  collection: string; // The collection slug
-  recordId: string; // The record _id to update
-  data: any; // Partial record data to merge/update
-}
-export interface DataDeleteRecordArgs {
-  collection: string; // The collection slug
-  recordId: string; // The record _id to delete
-}
-export interface DataAggregateArgs {
-  collection: string; // The collection slug
-  groupBy?: string; // Field name to group by. Omit for overall aggregation.
-  metrics: any[]; // Array of { field, op } where op is one of "sum", "avg", "count", "min", "max". For "count", field can be omitted.
+export interface SocketUpdateMetadataArgs {
+  channelId: string; // Channel ID to update metadata for
+  metadata: any; // Metadata fields to merge into existing connection metadata
 }
 
-// Pages Adapter Types
-export interface PagesCreatePageArgs {
-  path: string; // URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
-  title: string; // Display title for the page
-  code: string; // JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
-  description?: string; // Optional description of the page
-  visibility?: string; // Page visibility: "private" (default) or "public"
+// Telegram Adapter Types
+export interface TelegramSendMessageArgs {
+  chatId: string; // Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from searchChats operation.
+  text: string; // The text content of the message to send
 }
-export interface PagesEditPageArgs {
-  pageId: string; // The page ID to edit
-  edits: any[]; // Array of search-and-replace edits. Each edit has oldCode (exact string to find) and newCode (replacement string). Applied sequentially.
+export interface TelegramSearchChatsArgs {
+  query?: string; // Text to search in chat names/usernames. Supports fuzzy matching with relevance scoring.
+  type?: string; // Filter by chat type: "private", "group", "channel", or "all" (default: "all")
+  inactiveSince?: string; // Find chats with no activity since date. Accepts ISO date or relative like "30 days ago", "1 week ago"
+  activeSince?: string; // Find chats with activity since date. Accepts ISO date or relative like "7 days ago"
+  hasUnread?: boolean; // Filter by unread status: true = only unread, false = only read
+  archived?: boolean; // Filter by archived status
+  pinned?: boolean; // Filter by pinned status
+  sortBy?: string; // Sort results: "relevance" (default with query), "lastActivity" (default without query), "unreadCount", "name"
+  limit?: number; // Max results (default: 50, max: 100)
+  offset?: number; // Pagination offset (default: 0)
+  forceRefresh?: boolean; // Bypass cache and fetch fresh data
 }
-export interface PagesUpdatePageArgs {
-  pageId: string; // The page ID to update
-  code?: string; // New JSX source code
+export interface TelegramSearchMessagesArgs {
+  query: string; // Text query to search for in messages
+  chatIds?: any[]; // Array of chat IDs to search within. Omit for global search across all chats.
+  chatType?: string; // Filter by chat type (for global search): "private", "group", or "channel"
+  fromDate?: string; // ISO date string for start of date range
+  toDate?: string; // ISO date string for end of date range
+  limit?: number; // Maximum number of messages to return (default: 100, max: 100)
+  senderId?: string; // Filter messages by sender ID
+}
+export interface TelegramGetChatMessagesArgs {
+  chatId: string; // Chat ID to retrieve messages from
+  limit?: number; // Maximum number of messages to return (default: 50, max: 100)
+  offsetId?: number; // Message ID to use as pagination offset
+  minDate?: string; // ISO date string for minimum message date
+  maxDate?: string; // ISO date string for maximum message date
+}
+export interface TelegramGetUnreadSummaryArgs {
+  chatIds?: any[]; // Array of chat IDs to filter by. If not provided, checks all chats.
+  priorityOnly?: boolean; // If true, only return chats with unread messages
+  groupBy?: string; // Group results by "chat" or "sender"
+}
+export interface TelegramMarkAsReadArgs {
+  chatId: string; // Chat ID to mark messages as read in
+  maxMessageId?: number; // Maximum message ID to mark as read. If not provided, marks all messages as read.
+}
+export interface TelegramGetMentionsArgs {
+  chatIds?: any[]; // Array of chat IDs to filter mentions by
+  sinceDate?: string; // ISO date string - only return mentions since this date
+  onlyUnread?: boolean; // If true, only return unread mentions
+}
+export interface TelegramLeaveGroupArgs {
+  chatId: string; // The ID of the group, supergroup, or channel to leave. Can be obtained from searchChats operation.
+}
+
+// Trello Adapter Types
+export interface TrelloGetBoardArgs {
+  boardId: string; // The ID of the board to retrieve
+}
+export interface TrelloCreateCardArgs {
+  name: string; // Card name/title
+  idList: string; // ID of the list to add the card to
+  desc?: string; // Card description (supports markdown)
+  description?: string; // Card description (alias for "desc", supports markdown)
+}
+export interface TrelloGetCardArgs {
+  cardId: string; // The ID of the card to retrieve
+}
+export interface TrelloUpdateCardArgs {
+  cardId: string; // The ID of the card to update
+  name?: string; // New card name
+  desc?: string; // New card description
+  description?: string; // New card description (alias for "desc", supports markdown)
+  idList?: string; // Move card to a different list
+  closed?: boolean; // Archive the card
+}
+export interface TrelloDeleteCardArgs {
+  cardId: string; // The ID of the card to delete
+}
+export interface TrelloCreateChecklistArgs {
+  cardId: string; // The ID of the card to add the checklist to
+  name: string; // Checklist name
+}
+export interface TrelloGetChecklistArgs {
+  checklistId: string; // The ID of the checklist to retrieve
+}
+export interface TrelloUpdateChecklistArgs {
+  checklistId: string; // The ID of the checklist to update
+  name: string; // New checklist name
+}
+export interface TrelloDeleteChecklistArgs {
+  checklistId: string; // The ID of the checklist to delete
+}
+export interface TrelloAddCheckItemArgs {
+  checklistId: string; // The ID of the checklist to add the item to
+  name: string; // Check item text
+}
+export interface TrelloUpdateCheckItemArgs {
+  cardId: string; // The ID of the card containing the check item
+  checkItemId: string; // The ID of the check item to update
+  name?: string; // New check item text
+  state?: string; // Check state: "complete" or "incomplete"
+}
+export interface TrelloDeleteCheckItemArgs {
+  checklistId: string; // The ID of the checklist containing the item
+  checkItemId: string; // The ID of the check item to delete
+}
+export interface TrelloDiscoverExtendedArgs {
+  query: string; // Describe what you want to do (e.g., "add label to card")
+  limit?: number; // Max results to return (default 5)
+}
+export interface TrelloExecuteExtendedArgs {
+  operationId: string; // The operationId from discoverExtended results
+  pathParams?: any; // Path parameters, e.g., { id: "abc123" }
+  queryParams?: any; // Query string parameters
+  body?: any; // Request body for POST/PUT/PATCH operations
+}
+
+// Tunnel Adapter Types
+export interface TunnelCallArgs {
+  tunnel?: string; // Tunnel name to use (defaults to 'default')
+  method?: string; // HTTP method (defaults to GET)
+  path: string; // Request path (e.g., /api/query)
+  headers?: any; // Request headers
+  body?: any; // Request body (for POST/PUT/PATCH)
+}
+export interface TunnelStatusArgs {
+  tunnel?: string; // Tunnel name to check (defaults to 'default')
+}
+
+// Twitter Adapter Types
+export interface TwitterPostTweetArgs {
+  text: string; // Tweet text (max 280 characters)
+}
+export interface TwitterGetUserTweetsArgs {
+  userId?: string; // Twitter user ID (recommended for stability and speed). Provide userId OR userName, not both.
+  userName?: string; // Twitter username/handle without @ symbol (e.g., "elonmusk"). Provide userName OR userId, not both.
+  cursor?: string; // Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values.
+  includeReplies?: boolean; // Whether to include replies in results. Defaults to false (only original tweets).
+}
+export interface TwitterAdvancedSearchArgs {
+  query: string; // Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR \"machine learning\"". Supported operators: from:user, to:user, since:YYYY-MM-DD, until:YYYY-MM-DD, lang:xx, filter:media, filter:links, -filter:retweets, AND, OR, -keyword, "exact phrase".
+  queryType?: string; // Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". Only these two values are valid.
+  cursor?: string; // Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values.
+}
+
+// Flows Adapter Types
+export interface FlowsCreateFlowArgs {
+  title?: string; // Flow title. Required if providing inline code.
+  description?: string; // Detailed description of what the flow does
+  code?: string; // Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId.
+  scriptId?: string; // ID of existing deployed script. Cannot use with code.
+  schedule?: string; // Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone.
+  eventType?: string; // Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type.
+  eventFilter?: any; // Full event filter with operator and conditions array for complex filtering.
+  trigger?: any; // Legacy nested trigger structure. Prefer eventType or eventFilter instead.
+  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields.
+  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings.
+  enabled?: boolean; // Whether the flow is enabled (default: true)
+}
+export interface FlowsCreateTimeFlowArgs {
+  title: string; // Flow title
+  description: string; // Detailed description of what the flow does
+  schedule: string; // Cron expression for scheduling (e.g., "0 9 * * *" for daily at 9am)
+  scriptId: string; // ID of the script to execute when triggered
+  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler).
+  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }.
+}
+export interface FlowsCreateEventFlowArgs {
+  title: string; // Flow title
+  description: string; // Detailed description of what the flow does
+  trigger: any; // Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
+  scriptId: string; // ID of the script to execute when triggered
+  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler).
+  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }.
+}
+export interface FlowsGetFlowArgs {
+  id: string; // Flow ID
+}
+export interface FlowsUpdateFlowArgs {
+  id: string; // Flow ID to update
   title?: string; // New title
   description?: string; // New description
+  trigger?: any; // New trigger configuration
+  scriptId?: string; // New script ID
+  scriptInput?: any; // New static input data for the script. Fields are spread into event.data in handler code.
+  scriptInputSchema?: any; // Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }.
+  status?: string; // New status: active, paused, completed, failed
 }
-export interface PagesRevertPageArgs {
-  pageId: string; // The page ID to revert
-  versionIndex: number; // Index of the version to restore (0 = most recent saved version)
+export interface FlowsDeleteFlowArgs {
+  id: string; // Flow ID to delete
 }
-export interface PagesGetPageArgs {
-  pageId?: string; // The page ID
-  path?: string; // The page path (e.g. "/dashboard"). Used with the current graphId.
+export interface FlowsPauseFlowArgs {
+  id: string; // Flow ID to pause
 }
-export interface PagesListPagesArgs {
-  status?: string; // Filter by status: "active" (default) or "deleted"
+export interface FlowsResumeFlowArgs {
+  id: string; // Flow ID to resume
 }
-export interface PagesDeletePageArgs {
-  pageId: string; // The page ID to delete
+export interface FlowsSearchFlowsArgs {
+  status?: string; // Filter by status (or array of statuses)
+  triggerType?: string; // Filter by trigger type: time or event
+  detail?: string; // Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt.
+  limit?: number; // Maximum number of results (default: 20)
+  offset?: number; // Pagination offset (default: 0)
 }
-export interface PagesPublishPageArgs {
-  pageId: string; // The page ID to publish
-  publicCollections?: any[]; // Optional array of collection tags for public discovery
+export interface FlowsRecordExecutionArgs {
+  id: string; // Flow ID
+  success: boolean; // Whether execution succeeded
+  result?: any; // Execution result data
+  error?: string; // Error message if execution failed
 }
-export interface PagesUnpublishPageArgs {
-  pageId: string; // The page ID to unpublish
+export interface FlowsListEventTypesArgs {
+  includeTemplates?: boolean; // Include condition templates for each event type
+  includeSchema?: boolean; // Include field schema showing available paths for script access. RECOMMENDED when writing scripts to see correct field access patterns.
 }
-export interface PagesGetPageUrlArgs {
-  pageId: string; // The page ID
+export interface FlowsTestFlowArgs {
+  flowId: string; // ID of the flow to test
+  dryRun?: boolean; // If true (default), only validate trigger matching without executing script. If false, execute the script (causes side effects).
+  eventOverrides?: any; // Custom field values to merge into the generated test event (e.g., {"content.text": "custom message"})
+}
+export interface FlowsValidateTriggerArgs {
+  flowId: string; // ID of the flow
+  event: any; // Event object to test against the trigger (must match IntegrationEvent structure)
+}
+export interface FlowsGetFlowsByEventTypeArgs {
+  eventType: string; // Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
+  detail?: string; // Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt.
+}
+export interface FlowsCreateBatchOperationArgs {
+  title: string; // Human-readable title for this batch operation (e.g., "Leave 100 Telegram groups")
+  operations: any[]; // Array of operations to execute. Each item must have adapter, operation, and args properties.
+  batchSize?: number; // Number of operations to process per execution (default: 5)
+  intervalSeconds?: number; // Seconds between batch executions (default: 60, minimum: 60)
+}
+export interface FlowsPublishFlowArgs {
+  flowId: string; // ID of the flow to publish
+  pricing?: any; // Pricing configuration. Defaults to { model: "free" }. Supported models: "free", "pay-per-execution". For paid models, include basePrice.
+  tags?: any[]; // Tags for marketplace discovery (e.g., ["telegram", "automation"])
+  category?: string; // Marketplace category (e.g., "messaging", "productivity"). Defaults to "uncategorized".
+}
+export interface FlowsUnpublishFlowArgs {
+  flowId: string; // ID of the flow to unpublish
+}
+export interface FlowsCreateGoalFlowArgs {
+  goal: string; // High-level goal description
+  successCriteria: any[]; // Array of criteria that define goal completion
+  constraints?: any[]; // Array of constraints and guidelines
+  tokenBudget?: number; // Token budget (default: 100000)
+  title?: string; // Flow title (auto-generated from goal if not provided)
+  code?: string; // Inline script code for the flow
+  scriptId?: string; // ID of an existing deployed script
+  executionMode?: string; // Execution mode: mirra_only (default), mirra_with_claude_code, or claude_code_only
+  workspacePath?: string; // Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/<goalId>/workspace/
+  iterationTimeoutMs?: number; // Max time per CC iteration in ms (default: 600000 = 10 min)
+}
+export interface FlowsGetGoalProgressArgs {
+  flowId: string; // ID of the goal flow
+}
+export interface FlowsProvideGuidanceArgs {
+  flowId: string; // ID of the goal flow
+  requestId: string; // ID of the guidance request being responded to
+  response: string; // Guidance text to provide to the goal flow
+}
+export interface FlowsCompactHistoryArgs {
+  flowId: string; // ID of the goal flow
+  keepRecentCount?: number; // Unused (deprecated)
+}
+export interface FlowsDelegateSubGoalArgs {
+  parentFlowId: string; // ID of the parent goal flow
+  subGoal: string; // Description of the sub-goal to delegate
+  successCriteria: any[]; // Success criteria for the sub-goal
+  constraints?: any[]; // Constraints for the child flow
+  tokenBudget?: number; // Token budget for child (default: 20% of parent budget)
+}
+
+// User Adapter Types
+export interface UserUpdateProfileArgs {
+  username?: string; // New username (3-30 characters, alphanumeric with underscores/hyphens)
+  email?: string; // New email address
+  timezone?: string; // IANA timezone identifier (e.g., America/Los_Angeles)
+  phoneNumber?: string; // Phone number (7-15 digits with optional formatting)
+}
+export interface UserUpdatePreferencesArgs {
+  timezone?: string; // Preferred timezone for scheduling
+  socials?: any; // Social media links (twitter, discord)
+}
+export interface UserDeactivateAccountArgs {
+  confirm: boolean; // Must be true to confirm account deactivation
+}
+
+// Contacts Adapter Types
+export interface ContactsListContactsArgs {
+  limit?: number; // Maximum number of contacts to return (default: 100)
+  offset?: number; // Number of contacts to skip for pagination (default: 0)
+}
+export interface ContactsGetContactArgs {
+  contactId?: string; // The contact user ID (MongoDB ObjectId)
+  username?: string; // The contact username
+}
+export interface ContactsAddContactArgs {
+  username: string; // Username of the user to add as a contact
+}
+export interface ContactsRemoveContactArgs {
+  contactId?: string; // The contact user ID to remove
+  username?: string; // The contact username to remove
+}
+export interface ContactsSearchContactsArgs {
+  query: string; // Search query - can be username, email, phone, or wallet address
+  searchType?: string; // Type of search to perform: all, username, email, phone, or wallet (default: all)
+  limit?: number; // Maximum number of results (default: 20)
+}
+export interface ContactsBlockContactArgs {
+  contactId?: string; // The user ID to block
+  username?: string; // The username to block
+}
+export interface ContactsUnblockContactArgs {
+  contactId?: string; // The user ID to unblock
+  username?: string; // The username to unblock
+}
+export interface ContactsGetBlockedContactsArgs {
+  limit?: number; // Maximum number of results (default: 100)
+  offset?: number; // Number of items to skip for pagination (default: 0)
+}
+export interface ContactsGetContactRequestsArgs {
+  type?: string; // Type of requests to retrieve: all, sent, or received (default: all)
+  status?: string; // Filter by request status: pending, accepted, or rejected (default: pending)
+}
+
+// Crypto Adapter Types
+export interface CryptoGetPriceArgs {
+  tokenAddress: string; // Token contract address (EVM: 0x..., SVM: base58)
+  chainName?: string; // Specific chain name (auto-detected if not provided)
+}
+export interface CryptoSendTokenArgs {
+  recipient: string; // Contact username, user ID, or Solana wallet address
+  token: string; // Token symbol (SOL, USDC), name, or mint address
+  amount: number; // Amount to send (in UI units)
+}
+export interface CryptoMonitorPriceArgs {
+  tokenAddress: string; // Token contract address to monitor
+  direction: string; // Alert direction: "above" or "below"
+  targetPrice: number; // Target price in USD to trigger alert
+  scriptId: string; // ID of the script to execute when price target is reached
+  chainName?: string; // Chain name (auto-detected if not provided)
+  percentStep?: number; // Progressive alert step percentage (default: 0.1 = 10%)
+}
+export interface CryptoUnsubscribeAssetArgs {
+  tokenAddress: string; // Token address to stop monitoring
+}
+export interface CryptoRefreshTransactionArgs {
+  feedItemId: string; // Feed item ID containing the transaction to refresh
+  transferId: string; // Original transfer ID
+  recipient: string; // Recipient address
+  token: string; // Token symbol or mint address
+  amount: number; // Amount to send
+  tokenMint?: string; // Token mint address (optional, will resolve if not provided)
+  tokenDecimals?: number; // Token decimals (optional)
+}
+
+// Google Docs Adapter Types
+export interface GoogleDocsCreateDocumentArgs {
+  title: string; // Title of the document
+}
+export interface GoogleDocsGetDocumentArgs {
+  documentId: string; // ID of the document
+}
+export interface GoogleDocsAppendTextArgs {
+  documentId: string; // ID of the document
+  text: string; // Text to append
+}
+export interface GoogleDocsReplaceTextArgs {
+  documentId: string; // ID of the document
+  searchText: string; // Text to search for
+  replaceText: string; // Text to replace with
+}
+export interface GoogleDocsGetDocumentContentArgs {
+  documentId: string; // ID of the document
+}
+export interface GoogleDocsInsertTextAtPositionArgs {
+  documentId: string; // ID of the document
+  text: string; // Text to insert
+  position: number; // Character position to insert at (1-indexed)
+}
+export interface GoogleDocsInsertTextAfterArgs {
+  documentId: string; // ID of the document
+  searchText: string; // Text to search for
+  textToInsert: string; // Text to insert after the search text
+  occurrence?: number; // Which occurrence to insert after (default: 1)
+}
+export interface GoogleDocsInsertHeadingArgs {
+  documentId: string; // ID of the document
+  text: string; // Heading text
+  level: number; // Heading level (1-6)
+  position?: number; // Character position to insert at
+  insertAfterText?: string; // Insert after this text instead of at position
+}
+export interface GoogleDocsInsertListArgs {
+  documentId: string; // ID of the document
+  items: any[]; // Array of list items
+  listType: string; // Type of list: "bulleted" or "numbered"
+  position?: number; // Character position to insert at
+  insertAfterText?: string; // Insert after this text instead of at position
+}
+export interface GoogleDocsInsertTableArgs {
+  documentId: string; // ID of the document
+  data: any[]; // 2D array of table data (rows x columns)
+  hasHeader?: boolean; // Whether the first row is a header (default: true)
+  position?: number; // Character position to insert at
+  insertAfterText?: string; // Insert after this text instead of at position
+}
+export interface GoogleDocsUpdateDocumentContentArgs {
+  documentId: string; // ID of the document
+  newContent: string; // New content to replace existing content
+}
+export interface GoogleDocsCreateSectionArgs {
+  documentId: string; // ID of the document
+  heading: string; // Section heading text
+  content: string; // Section content text
+}
+export interface GoogleDocsFindInsertionPointArgs {
+  documentId: string; // ID of the document
+  position: number; // Position to find (1 for start, -1 for end)
+  searchText?: string; // Text to search for (returns position after this text)
+}
+
+// Google Sheets Adapter Types
+export interface GoogleSheetsCreateSpreadsheetArgs {
+  title: string; // Title of the spreadsheet
+}
+export interface GoogleSheetsReadRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  range: string; // Cell range (e.g., "Sheet1!A1:B10")
+}
+export interface GoogleSheetsWriteRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  range: string; // Cell range (e.g., "Sheet1!A1:B10")
+  values: any[]; // Data to write (2D array)
+}
+export interface GoogleSheetsAppendRowArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetName: string; // Name of the sheet
+  values: any[]; // Row values to append
+}
+export interface GoogleSheetsGetSpreadsheetArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+}
+export interface GoogleSheetsInsertAtCellArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  cell: string; // Cell reference in format SheetName!A1
+  value: string; // Value to insert
+  bold?: boolean; // Make text bold
+  italic?: boolean; // Make text italic
+  foregroundColor?: string; // Text color (hex or named color)
+  backgroundColor?: string; // Cell background color (hex or named color)
+}
+export interface GoogleSheetsInsertFormulaArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  cell: string; // Cell reference in format SheetName!A1
+  formula: string; // Formula to insert (with or without leading =)
+  note?: string; // Optional note to add to the cell
+}
+export interface GoogleSheetsFormatRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  range: string; // Range in format SheetName!A1:B10
+  bold?: boolean; // Make text bold
+  italic?: boolean; // Make text italic
+  foregroundColor?: string; // Text color (hex or named color)
+  backgroundColor?: string; // Cell background color (hex or named color)
+  borders?: boolean; // Add borders to cells
+}
+export interface GoogleSheetsCreateChartArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // ID of the sheet containing data
+  dataRange: string; // Data range for the chart (e.g., A1:B10)
+  chartType: string; // Chart type: BAR, LINE, AREA, PIE, or SCATTER
+  title: string; // Chart title
+  position: any; // Chart position with row, column, rowCount, columnCount
+}
+export interface GoogleSheetsFindAndReplaceArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  findText: string; // Text to find
+  replaceText: string; // Text to replace with
+  sheetName?: string; // Limit search to specific sheet
+  matchCase?: boolean; // Case-sensitive search
+  matchEntireCell?: boolean; // Match entire cell content only
+}
+export interface GoogleSheetsInsertMultipleRowsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetName: string; // Name of the sheet
+  rowsData: any[]; // 2D array of row data to insert
+  startingRow?: number; // Row number to start insertion (1-indexed). If not provided, appends to end
+  formattingOptions?: any; // Optional formatting to apply (bold, italic, foregroundColor, backgroundColor, borders)
+}
+export interface GoogleSheetsClearRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetName: string; // Name of the sheet
+  range: string; // Range to clear (e.g., A1:B10)
+}
+export interface GoogleSheetsInsertRowsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startRowIndex: number; // Row index to start inserting at (0-indexed). To insert before row 5 in the UI, use index 4.
+  numRows: number; // Number of rows to insert
+}
+export interface GoogleSheetsDeleteRowsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startRowIndex: number; // Row index to start deleting from (0-indexed). To delete row 5 in the UI, use index 4.
+  numRows: number; // Number of rows to delete
+}
+export interface GoogleSheetsInsertColumnsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startColumnIndex: number; // Column index to start inserting at (0-indexed: A=0, B=1, C=2, D=3, etc.). To insert before column D, use index 3.
+  numColumns: number; // Number of columns to insert
+}
+export interface GoogleSheetsDeleteColumnsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startColumnIndex: number; // Column index to start deleting from (0-indexed: A=0, B=1, C=2, D=3, etc.). To delete column D, use index 3.
+  numColumns: number; // Number of columns to delete
+}
+export interface GoogleSheetsCopyRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sourceSheetId: number; // Numeric sheet ID of the source sheet (get from getSpreadsheet response: sheets[n].properties.sheetId)
+  sourceRange: string; // Source range in A1 notation WITHOUT sheet name (e.g., "A1:C5", not "Sheet1!A1:C5")
+  targetSheetId: number; // Numeric sheet ID of the target sheet (can be same as sourceSheetId to copy within same sheet)
+  targetStartCell: string; // Target start cell in A1 notation (e.g., "E1"). The copied data will fill cells starting from this position.
 }
 
 
@@ -1697,547 +1795,192 @@ export interface PagesGetPageUrlArgs {
 // Response Type Definitions
 // ============================================================================
 
-// Flows Response Types
-export interface FlowsCreateFlowData {
-  id: string; // Flow ID
-  title: string; // Flow title
-  description: string; // Truncated description
-  status: string; // Flow status (active, paused, completed, failed)
-  userId: string; // Owner user ID
-  triggerType: string; // Trigger type (time or event)
-  cronExpression: string; // Cron expression for time-based flows
-  scriptId: string; // Associated script ID
-  executionCount: number; // Number of executions
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
-  createdAt: string; // Created timestamp (ISO 8601)
-  isActive: boolean; // Whether flow is active
-  scope: string; // Flow scope (user or system)
-  timezone: string; // Timezone for time-based flows
-  eventFilter?: object; // Event filter for event-based flows
-  scriptInstallationId: string; // Script installation ID
-  scriptInput?: object; // Script input data
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  version: number; // Flow version number
-  feedItemId: string; // Associated feed item ID
-  isTimeBased: boolean; // Whether flow is time-based
-  isEventBased: boolean; // Whether flow is event-based
+// Jira Response Types
+export interface JiraGetIssueData {
+  id: string; // Unique issue ID
+  key: string; // Issue key (e.g., PROJ-123)
+  summary: string; // Issue summary/title
+  description: string; // Issue description (extracted from ADF)
+  status: string; // Status name
+  statusId: string; // Status ID
+  issueType: string; // Issue type name
+  issueTypeId: string; // Issue type ID
+  priority: string; // Priority name
+  priorityId: string; // Priority ID
+  assignee: string; // Assignee display name
+  assigneeAccountId: string; // Assignee account ID
+  reporter: string; // Reporter display name
+  reporterAccountId: string; // Reporter account ID
+  projectKey: string; // Project key
+  projectName: string; // Project name
+  projectId: string; // Project ID
+  labels: string[]; // Issue labels
+  created: string; // Created timestamp (ISO 8601)
+  updated: string; // Updated timestamp (ISO 8601)
+  isAssigned: boolean; // Whether issue has an assignee
+  hasLabels: boolean; // Whether issue has labels
 }
 
-export type FlowsCreateFlowResult = AdapterResultBase<FlowsCreateFlowData>;
+export type JiraGetIssueResult = AdapterResultBase<JiraGetIssueData>;
 
-export interface FlowsCreateTimeFlowData {
-  id: string; // Flow ID
-  title: string; // Flow title
-  description: string; // Truncated description
-  status: string; // Flow status (active, paused, completed, failed)
-  userId: string; // Owner user ID
-  triggerType: string; // Trigger type (time or event)
-  cronExpression: string; // Cron expression for time-based flows
-  scriptId: string; // Associated script ID
-  executionCount: number; // Number of executions
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
-  createdAt: string; // Created timestamp (ISO 8601)
-  isActive: boolean; // Whether flow is active
-  scope: string; // Flow scope (user or system)
-  timezone: string; // Timezone for time-based flows
-  eventFilter?: object; // Event filter for event-based flows
-  scriptInstallationId: string; // Script installation ID
-  scriptInput?: object; // Script input data
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  version: number; // Flow version number
-  feedItemId: string; // Associated feed item ID
-  isTimeBased: boolean; // Whether flow is time-based
-  isEventBased: boolean; // Whether flow is event-based
+export interface JiraIssueSummary {
+  id: string; // Unique issue ID
+  key: string; // Issue key (e.g., PROJ-123)
+  summary: string; // Issue summary/title
+  status: string; // Status name
+  statusId: string; // Status ID
+  issueType: string; // Issue type name
+  issueTypeId: string; // Issue type ID
+  priority: string; // Priority name
+  priorityId: string; // Priority ID
+  assignee: string; // Assignee display name
+  assigneeAccountId: string; // Assignee account ID
+  projectKey: string; // Project key
+  projectName: string; // Project name
+  labels: string[]; // Issue labels
+  created: string; // Created timestamp (ISO 8601)
+  updated: string; // Updated timestamp (ISO 8601)
+  isAssigned: boolean; // Whether issue has an assignee
 }
 
-export type FlowsCreateTimeFlowResult = AdapterResultBase<FlowsCreateTimeFlowData>;
-
-export interface FlowsCreateEventFlowData {
-  id: string; // Flow ID
-  title: string; // Flow title
-  description: string; // Truncated description
-  status: string; // Flow status (active, paused, completed, failed)
-  userId: string; // Owner user ID
-  triggerType: string; // Trigger type (time or event)
-  cronExpression: string; // Cron expression for time-based flows
-  scriptId: string; // Associated script ID
-  executionCount: number; // Number of executions
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
-  createdAt: string; // Created timestamp (ISO 8601)
-  isActive: boolean; // Whether flow is active
-  scope: string; // Flow scope (user or system)
-  timezone: string; // Timezone for time-based flows
-  eventFilter?: object; // Event filter for event-based flows
-  scriptInstallationId: string; // Script installation ID
-  scriptInput?: object; // Script input data
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  version: number; // Flow version number
-  feedItemId: string; // Associated feed item ID
-  isTimeBased: boolean; // Whether flow is time-based
-  isEventBased: boolean; // Whether flow is event-based
-}
-
-export type FlowsCreateEventFlowResult = AdapterResultBase<FlowsCreateEventFlowData>;
-
-export interface FlowsGetFlowData {
-  id: string; // Flow ID
-  title: string; // Flow title
-  description: string; // Truncated description
-  status: string; // Flow status (active, paused, completed, failed)
-  userId: string; // Owner user ID
-  triggerType: string; // Trigger type (time or event)
-  cronExpression: string; // Cron expression for time-based flows
-  scriptId: string; // Associated script ID
-  executionCount: number; // Number of executions
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
-  createdAt: string; // Created timestamp (ISO 8601)
-  isActive: boolean; // Whether flow is active
-  scope: string; // Flow scope (user or system)
-  timezone: string; // Timezone for time-based flows
-  eventFilter?: object; // Event filter for event-based flows
-  scriptInstallationId: string; // Script installation ID
-  scriptInput?: object; // Script input data
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  version: number; // Flow version number
-  feedItemId: string; // Associated feed item ID
-  isTimeBased: boolean; // Whether flow is time-based
-  isEventBased: boolean; // Whether flow is event-based
-}
-
-export type FlowsGetFlowResult = AdapterResultBase<FlowsGetFlowData>;
-
-export interface FlowsUpdateFlowData {
-  id: string; // Flow ID
-  title: string; // Flow title
-  description: string; // Truncated description
-  status: string; // Flow status (active, paused, completed, failed)
-  userId: string; // Owner user ID
-  triggerType: string; // Trigger type (time or event)
-  cronExpression: string; // Cron expression for time-based flows
-  scriptId: string; // Associated script ID
-  executionCount: number; // Number of executions
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
-  createdAt: string; // Created timestamp (ISO 8601)
-  isActive: boolean; // Whether flow is active
-  scope: string; // Flow scope (user or system)
-  timezone: string; // Timezone for time-based flows
-  eventFilter?: object; // Event filter for event-based flows
-  scriptInstallationId: string; // Script installation ID
-  scriptInput?: object; // Script input data
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  version: number; // Flow version number
-  feedItemId: string; // Associated feed item ID
-  isTimeBased: boolean; // Whether flow is time-based
-  isEventBased: boolean; // Whether flow is event-based
-}
-
-export type FlowsUpdateFlowResult = AdapterResultBase<FlowsUpdateFlowData>;
-
-export interface FlowsDeleteFlowData {
-  flowId: string; // Deleted flow ID
-  deleted: boolean; // Whether deletion succeeded
-}
-
-export type FlowsDeleteFlowResult = AdapterResultBase<FlowsDeleteFlowData>;
-
-export interface FlowsPauseFlowData {
-  id: string; // Flow ID
-  title: string; // Flow title
-  description: string; // Truncated description
-  status: string; // Flow status (active, paused, completed, failed)
-  userId: string; // Owner user ID
-  triggerType: string; // Trigger type (time or event)
-  cronExpression: string; // Cron expression for time-based flows
-  scriptId: string; // Associated script ID
-  executionCount: number; // Number of executions
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
-  createdAt: string; // Created timestamp (ISO 8601)
-  isActive: boolean; // Whether flow is active
-  scope: string; // Flow scope (user or system)
-  timezone: string; // Timezone for time-based flows
-  eventFilter?: object; // Event filter for event-based flows
-  scriptInstallationId: string; // Script installation ID
-  scriptInput?: object; // Script input data
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  version: number; // Flow version number
-  feedItemId: string; // Associated feed item ID
-  isTimeBased: boolean; // Whether flow is time-based
-  isEventBased: boolean; // Whether flow is event-based
-}
-
-export type FlowsPauseFlowResult = AdapterResultBase<FlowsPauseFlowData>;
-
-export interface FlowsResumeFlowData {
-  id: string; // Flow ID
-  title: string; // Flow title
-  description: string; // Truncated description
-  status: string; // Flow status (active, paused, completed, failed)
-  userId: string; // Owner user ID
-  triggerType: string; // Trigger type (time or event)
-  cronExpression: string; // Cron expression for time-based flows
-  scriptId: string; // Associated script ID
-  executionCount: number; // Number of executions
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
-  createdAt: string; // Created timestamp (ISO 8601)
-  isActive: boolean; // Whether flow is active
-  scope: string; // Flow scope (user or system)
-  timezone: string; // Timezone for time-based flows
-  eventFilter?: object; // Event filter for event-based flows
-  scriptInstallationId: string; // Script installation ID
-  scriptInput?: object; // Script input data
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  version: number; // Flow version number
-  feedItemId: string; // Associated feed item ID
-  isTimeBased: boolean; // Whether flow is time-based
-  isEventBased: boolean; // Whether flow is event-based
-}
-
-export type FlowsResumeFlowResult = AdapterResultBase<FlowsResumeFlowData>;
-
-export interface FlowsRecordExecutionData {
-  id: string; // Flow ID
-  title: string; // Flow title
-  description: string; // Truncated description
-  status: string; // Flow status (active, paused, completed, failed)
-  userId: string; // Owner user ID
-  triggerType: string; // Trigger type (time or event)
-  cronExpression: string; // Cron expression for time-based flows
-  scriptId: string; // Associated script ID
-  executionCount: number; // Number of executions
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
-  createdAt: string; // Created timestamp (ISO 8601)
-  isActive: boolean; // Whether flow is active
-  scope: string; // Flow scope (user or system)
-  timezone: string; // Timezone for time-based flows
-  eventFilter?: object; // Event filter for event-based flows
-  scriptInstallationId: string; // Script installation ID
-  scriptInput?: object; // Script input data
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  version: number; // Flow version number
-  feedItemId: string; // Associated feed item ID
-  isTimeBased: boolean; // Whether flow is time-based
-  isEventBased: boolean; // Whether flow is event-based
-}
-
-export type FlowsRecordExecutionResult = AdapterResultBase<FlowsRecordExecutionData>;
-
-export interface FlowListItem {
-  id: string; // Flow ID
-  title: string; // Flow title
-  status: string; // Flow status (active, paused, completed, failed)
-  triggerType: string; // Trigger type (time or event)
-  isActive: boolean; // Whether flow is active
-  description: string; // Truncated description
-  userId: string; // Owner user ID
-  cronExpression: string; // Cron expression for time-based flows
-  scriptId: string; // Associated script ID
-  executionCount: number; // Number of executions
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
-  createdAt: string; // Created timestamp (ISO 8601)
-}
-
-export interface FlowsSearchFlowsData {
-  count: number; // Number of matching flows
-  flows: FlowListItem[]; // List of matching flows (minimal by default, summary with detail: "summary")
-}
-
-export type FlowsSearchFlowsResult = AdapterResultBase<FlowsSearchFlowsData>;
-
-export interface FlowsGetFlowsByEventTypeData {
-  eventType: string; // Queried event type
-  count: number; // Number of flows
-  flows: FlowListItem[]; // List of flows for event type (minimal by default, summary with detail: "summary")
-}
-
-export type FlowsGetFlowsByEventTypeResult = AdapterResultBase<FlowsGetFlowsByEventTypeData>;
-
-export interface EventType {
-  constant: string; // Event type constant name
-  eventType: string; // Full event type string
-  source: string; // Event source/category
-  description: string; // Event description
-  hasTemplates: boolean; // Whether templates are available
-}
-
-export interface FlowsListEventTypesData {
-  count: number; // Number of event types
-  eventTypes: EventType[]; // List of event types
-}
-
-export type FlowsListEventTypesResult = AdapterResultBase<FlowsListEventTypesData>;
-
-export interface ConditionResult {
-  field: string; // Field name
-  operator: string; // Operator used
-  expected: string; // Expected value (stringified)
-  actual: string; // Actual value (stringified)
-  passed: boolean; // Whether condition passed
-}
-
-export interface TestEvent {
-  id: string; // Test event ID
-  type: string; // Event type
-  source: string; // Event source
-  summary: string; // Human-readable summary
-}
-
-export interface FlowsTestFlowData {
-  success: boolean; // Overall test success
-  flowId: string; // Tested flow ID
-  mode: string; // Test mode (dryRun or fullExecution)
-  triggerMatched: boolean; // Whether trigger conditions matched
-  conditionResults: ConditionResult[]; // Individual condition results
-  testEvent: TestEvent; // Generated test event info
-  executionId: string; // Execution ID (if executed)
-  executionStatus: string; // Execution status (success, error, timeout)
-  executionDuration: number; // Execution duration in ms
-  executionError: string; // Error message if failed
-  tokensConsumed: number; // Tokens consumed
-  recommendations: string[]; // Actionable recommendations
-}
-
-export type FlowsTestFlowResult = AdapterResultBase<FlowsTestFlowData>;
-
-export interface FlowsValidateTriggerData {
-  flowId: string; // Flow ID
-  matched: boolean; // Whether trigger matched
-  conditionResults: ConditionResult[]; // Individual condition results
-}
-
-export type FlowsValidateTriggerResult = AdapterResultBase<FlowsValidateTriggerData>;
-
-export interface FlowsCreateBatchOperationData {
-  flowId: string; // Created batch flow ID
-  title: string; // Batch operation title
-  operationCount: number; // Total operations to process
-  batchSize: number; // Operations per execution
-  intervalSeconds: number; // Seconds between batches
-  estimatedCompletionMinutes: number; // Estimated completion time
-  message: string; // Confirmation message
-  createdAt: string; // Created timestamp (ISO 8601)
-}
-
-export type FlowsCreateBatchOperationResult = AdapterResultBase<FlowsCreateBatchOperationData>;
-
-export interface FlowsPublishFlowData {
-  flowId: string; // Published flow ID
-  isPublished: boolean; // Whether flow is published
-  status: string; // Published status
-  publishedAt: string; // Published timestamp (ISO 8601)
-  pricing: object; // Pricing configuration
-  category: string; // Marketplace category
-  tags: string[]; // Marketplace tags
-}
-
-export type FlowsPublishFlowResult = AdapterResultBase<FlowsPublishFlowData>;
-
-export interface FlowsUnpublishFlowData {
-  flowId: string; // Unpublished flow ID
-  isPublished: boolean; // Whether flow is published (false)
-  status: string; // Published status (archived)
-}
-
-export type FlowsUnpublishFlowResult = AdapterResultBase<FlowsUnpublishFlowData>;
-
-// Memory Response Types
-export interface MemoryCreateData {
-  id: string; // Entity ID
-  type: string; // Entity type
-  name: string; // Entity name/title
-  content: string; // Full entity content
-  status: string; // Entity status
-  priority: string; // Entity priority
-  graphId: string; // Graph ID
-  createdAt: string; // Created timestamp (ISO 8601)
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  createdByUserId: string; // Creator user ID
-  createdByName: string; // Creator username
-  assignedToUserId: string; // Assigned user ID
-  assignedToName: string; // Assigned username
-  dueAt: string; // Due date (ISO 8601)
-  tags: string[]; // Tags array
-}
-
-export type MemoryCreateResult = AdapterResultBase<MemoryCreateData>;
-
-export interface MemoryCreateTaskData {
-  id: string; // Task ID
-  type: string; // Always "task"
-  content: string; // Task content/description
-  status: string; // Task status (pending, completed)
-  priority: string; // Task priority (high, medium, low)
-  graphId: string; // Graph ID where task resides
-  createdAt: string; // Created timestamp (ISO 8601)
-  createdByUserId: string; // Creator user ID
-  createdByName: string; // Creator username
-  assignedToUserId: string; // Assigned user ID
-  assignedToName: string; // Assigned username
-  assignmentWarning: string; // Warning if assignment had issues
-  dueAt: string; // Due date (ISO 8601)
-  tags: string[]; // Tags array
-}
-
-export type MemoryCreateTaskResult = AdapterResultBase<MemoryCreateTaskData>;
-
-export interface MemoryEntitySummary {
-  id: string; // Entity ID
-  type: string; // Entity type (task, note, idea, etc.)
-  name: string; // Entity name/title
-  description: string; // Truncated content preview
-  status: string; // Entity status
-  priority: string; // Entity priority
-  graphId: string; // Graph ID where entity resides
-  createdAt: string; // Created timestamp (ISO 8601)
-  score?: number; // Relevance score (0-1)
-}
-
-export interface MemorySearchData {
-  query: string; // Search query used
+export interface JiraSearchIssuesData {
+  jql: string; // JQL query used
   count: number; // Number of results
-  results: MemoryEntitySummary[]; // Search results
+  issues: JiraIssueSummary[]; // List of matching issues
 }
 
-export type MemorySearchResult = AdapterResultBase<MemorySearchData>;
+export type JiraSearchIssuesResult = AdapterResultBase<JiraSearchIssuesData>;
 
-export interface MemoryQueryData {
-  type: string; // Type filter used or "all"
-  count: number; // Number of results
-  offset: number; // Pagination offset
-  limit: number; // Pagination limit
-  entities: MemoryEntitySummary[]; // Query results
+export interface JiraCreateIssueData {
+  issueKey: string; // Created issue key
+  issueId: string; // Created issue ID
+  summary: string; // Issue summary
 }
 
-export type MemoryQueryResult = AdapterResultBase<MemoryQueryData>;
+export type JiraCreateIssueResult = AdapterResultBase<JiraCreateIssueData>;
 
-export interface MemoryFindOneData {
-  id: string; // Entity ID
-  type: string; // Entity type
-  name: string; // Entity name/title
-  content: string; // Full entity content
-  status: string; // Entity status
-  priority: string; // Entity priority
-  graphId: string; // Graph ID
-  createdAt: string; // Created timestamp (ISO 8601)
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  createdByUserId: string; // Creator user ID
-  createdByName: string; // Creator username
-  assignedToUserId: string; // Assigned user ID
-  assignedToName: string; // Assigned username
-  dueAt: string; // Due date (ISO 8601)
-  tags: string[]; // Tags array
-}
-
-export type MemoryFindOneResult = AdapterResultBase<MemoryFindOneData>;
-
-export interface MemoryUpdateData {
-  id: string; // Updated entity ID
+export interface JiraUpdateIssueData {
+  issueKey: string; // Updated issue key
   updated: boolean; // Whether update succeeded
-  updatedAt: string; // Update timestamp (ISO 8601)
 }
 
-export type MemoryUpdateResult = AdapterResultBase<MemoryUpdateData>;
+export type JiraUpdateIssueResult = AdapterResultBase<JiraUpdateIssueData>;
 
-export interface MemoryDeleteData {
-  id: string; // Deleted entity ID
+export interface JiraDeleteIssueData {
+  issueKey: string; // Deleted issue key
   deleted: boolean; // Whether deletion succeeded
-  deletedAt: string; // Deletion timestamp (ISO 8601)
 }
 
-export type MemoryDeleteResult = AdapterResultBase<MemoryDeleteData>;
+export type JiraDeleteIssueResult = AdapterResultBase<JiraDeleteIssueData>;
 
-export interface MemoryShareData {
-  entityId: string; // Shared entity ID
-  success: boolean; // Whether share succeeded
-  message: string; // Status message
-  graphIds: string[]; // All graphs entity is shared with
-  targetGraphId: string; // Target graph ID
-  sharedAt: string; // Share timestamp (ISO 8601)
+export interface JiraAddCommentData {
+  issueKey: string; // Issue key
+  commentId: string; // Created comment ID
+  added: boolean; // Whether comment was added
 }
 
-export type MemoryShareResult = AdapterResultBase<MemoryShareData>;
+export type JiraAddCommentResult = AdapterResultBase<JiraAddCommentData>;
 
-export interface MemoryUnshareData {
-  entityId: string; // Unshared entity ID
-  success: boolean; // Whether unshare succeeded
-  message: string; // Status message
-  graphIds: string[]; // Remaining graphs
-  removedGraphId: string; // Removed graph ID
+export interface JiraTransitionIssueData {
+  issueKey: string; // Issue key
+  transitioned: boolean; // Whether transition succeeded
+  transitionId: string; // Transition ID used
 }
 
-export type MemoryUnshareResult = AdapterResultBase<MemoryUnshareData>;
+export type JiraTransitionIssueResult = AdapterResultBase<JiraTransitionIssueData>;
 
-export interface MemoryGraphInfo {
-  graphId: string; // Graph ID
-  graphType: string; // Graph type: personal, group, user_contact
-  graphName: string; // Graph display name
-  isPrimary: boolean; // Whether this is the primary graph
-  sharedAt: string; // Share timestamp (ISO 8601)
-  sharedByUserId: string; // User who shared
+export interface JiraAssignIssueData {
+  issueKey: string; // Issue key
+  accountId: string; // Assigned user account ID
+  assigned: boolean; // Whether assignment succeeded
 }
 
-export interface MemoryListGraphsData {
-  entityId: string; // Entity ID
-  primaryGraphId: string; // Primary graph ID
-  totalGraphs: number; // Total graph count
-  graphs: MemoryGraphInfo[]; // Graph information
+export type JiraAssignIssueResult = AdapterResultBase<JiraAssignIssueData>;
+
+export interface JiraProject {
+  id: string; // Project ID
+  key: string; // Project key
+  name: string; // Project name
+  projectTypeKey: string; // Project type key
+  leadName: string; // Project lead name
+  leadAccountId: string; // Project lead account ID
 }
 
-export type MemoryListGraphsResult = AdapterResultBase<MemoryListGraphsData>;
-
-export interface MemoryTaskCompletionData {
-  period: string; // Time period (day, week, month)
-  completed: number; // Completed task count
-  total: number; // Total task count
-  rate: number; // Completion rate percentage (0-100)
+export interface JiraGetProjectsData {
+  count: number; // Number of projects
+  projects: JiraProject[]; // List of projects
 }
 
-export type MemoryGetTaskCompletionResult = AdapterResultBase<MemoryTaskCompletionData>;
+export type JiraGetProjectsResult = AdapterResultBase<JiraGetProjectsData>;
 
-export interface MemoryReminder {
-  id: string; // Reminder ID
-  title: string; // Reminder title
-  type: string; // Reminder type
-  dueAt: string; // Due date (ISO 8601)
-  daysUntilDue: number; // Days until due
+export interface JiraListProjectsData {
+  count: number; // Number of projects
+  projects: JiraProject[]; // List of projects
 }
 
-export interface MemoryUpcomingRemindersData {
-  days: number; // Days lookahead
-  count: number; // Reminder count
-  reminders: MemoryReminder[]; // Upcoming reminders
+export type JiraListProjectsResult = AdapterResultBase<JiraListProjectsData>;
+
+export interface JiraIssueType {
+  id: string; // Issue type ID
+  name: string; // Issue type name
+  description: string; // Issue type description
+  isSubtask: boolean; // Whether this is a subtask type
 }
 
-export type MemoryGetUpcomingRemindersResult = AdapterResultBase<MemoryUpcomingRemindersData>;
-
-export interface MemoryStatsData {
-  period: string; // Time period analyzed
-  total: number; // Total memory count
-  taskCount: number; // Task count
-  noteCount: number; // Note count
-  ideaCount: number; // Idea count
-  completedCount: number; // Completed items count
-  pendingCount: number; // Pending items count
+export interface JiraPriority {
+  id: string; // Priority ID
+  name: string; // Priority name
+  description: string; // Priority description
 }
 
-export type MemoryGetMemoryStatsResult = AdapterResultBase<MemoryStatsData>;
-
-// AI Services Response Types
-export interface AIChatData {
-  content: string; // AI response text content
-  model: string; // Model used for generation
-  inputTokens: number; // Number of input tokens consumed
-  outputTokens: number; // Number of output tokens generated
-  totalTokens: number; // Total tokens (input + output)
+export interface JiraGetProjectMetadataData {
+  projectKey: string; // Project key
+  projectName: string; // Project name
+  issueTypeCount: number; // Number of issue types
+  issueTypes: JiraIssueType[]; // Available issue types
+  priorityCount: number; // Number of priorities
+  priorities: JiraPriority[]; // Available priorities
 }
 
-export type AiChatResult = AdapterResultBase<AIChatData>;
+export type JiraGetProjectMetadataResult = AdapterResultBase<JiraGetProjectMetadataData>;
 
-export interface AIDecideData {
-  selectedOption: string; // ID of the selected option
-  reasoning: string; // Explanation of why this option was chosen
+export interface JiraTransition {
+  id: string; // Transition ID
+  name: string; // Transition name
+  toStatus: string; // Target status name
+  toStatusId: string; // Target status ID
 }
 
-export type AiDecideResult = AdapterResultBase<AIDecideData>;
+export interface JiraGetTransitionsData {
+  issueKey: string; // Issue key
+  count: number; // Number of transitions
+  transitions: JiraTransition[]; // Available transitions
+}
+
+export type JiraGetTransitionsResult = AdapterResultBase<JiraGetTransitionsData>;
+
+export interface JiraUser {
+  accountId: string; // User account ID
+  displayName: string; // User display name
+  emailAddress?: string; // User email address
+  active: boolean; // Whether user is active
+}
+
+export interface JiraListAssignableUsersData {
+  projectKey: string; // Project key
+  count: number; // Number of users
+  users: JiraUser[]; // Assignable users
+}
+
+export type JiraListAssignableUsersResult = AdapterResultBase<JiraListAssignableUsersData>;
+
+export interface JiraGetIssueTypesData {
+  projectKey: string; // Project key
+  count: number; // Number of issue types
+  issueTypes: JiraIssueType[]; // Available issue types
+}
+
+export type JiraGetIssueTypesResult = AdapterResultBase<JiraGetIssueTypesData>;
 
 // Documents Response Types
 export interface DocumentUploadData {
@@ -2388,232 +2131,62 @@ export interface FeedItemCreateData {
 
 export type FeedItemsCreateFeedItemResult = AdapterResultBase<FeedItemCreateData>;
 
-// Telegram Response Types
-export interface TelegramSendMessageData {
-  messageId: number; // ID of the sent message
-  chatId: string; // Chat ID where message was sent
-  text: string; // Message text that was sent
-  sentAt: string; // ISO 8601 timestamp when sent
+// Feedback Response Types
+export interface FeedbackReportBugData {
+  id: string; // Unique identifier for the feedback report
+  createdAt: string; // ISO 8601 timestamp when created
+  source: string; // Source of the report: user_submitted or llm_auto_report
+  type: 'bug'; // Report type indicator
+  title: string; // Brief bug description
+  severity: string; // Bug severity: critical, high, medium, or low
 }
 
-export type TelegramSendMessageResult = AdapterResultBase<TelegramSendMessageData>;
+export type FeedbackReportBugResult = AdapterResultBase<FeedbackReportBugData>;
 
-export interface TelegramChat {
-  id: string; // Chat ID
-  title: string; // Chat title/name
-  type: 'private' | 'group' | 'channel'; // Chat type
-  username: string | null; // Chat username (if available)
-  lastMessageDate: string | null; // ISO 8601 date of last message
-  unreadCount: number; // Number of unread messages
-  unreadMentionsCount: number; // Number of unread mentions
-  pinned: boolean; // Whether chat is pinned
-  archived: boolean; // Whether chat is archived
-  memberCount: number; // Number of members (for groups/channels)
-  relevanceScore?: number; // Relevance score when query is provided
+export interface FeedbackReportToolFailureData {
+  id: string; // Unique identifier for the feedback report
+  createdAt: string; // ISO 8601 timestamp when created
+  source: string; // Source of the report: user_submitted or llm_auto_report
+  type: 'tool_failure'; // Report type indicator
+  adapterType: string; // Adapter type that failed
+  operation: string; // Operation that failed
+  errorMessage: string; // Error message from the failure
 }
 
-export interface TelegramPaginationInfo {
-  totalCount: number; // Total number of matching chats
-  limit: number; // Maximum items per page
-  offset: number; // Current offset
-  hasMore: boolean; // Whether more results are available
+export type FeedbackReportToolFailureResult = AdapterResultBase<FeedbackReportToolFailureData>;
+
+export interface FeedbackReportMissingCapabilityData {
+  id: string; // Unique identifier for the feedback report
+  createdAt: string; // ISO 8601 timestamp when created
+  source: string; // Source of the report: user_submitted or llm_auto_report
+  type: 'missing_capability'; // Report type indicator
+  userRequest: string; // What the user asked for
+  reason: string; // Why it could not be fulfilled
 }
 
-export interface TelegramSearchChatsData {
-  items: TelegramChat[]; // List of matching chats
-  pagination: TelegramPaginationInfo; // Pagination metadata
+export type FeedbackReportMissingCapabilityResult = AdapterResultBase<FeedbackReportMissingCapabilityData>;
+
+export interface FeedbackSubmitFeedbackData {
+  id: string; // Unique identifier for the feedback report
+  createdAt: string; // ISO 8601 timestamp when created
+  source: string; // Source of the report: user_submitted or llm_auto_report
+  type: 'feedback'; // Report type indicator
+  sentiment: string; // Feedback sentiment: positive, negative, or neutral
+  category: string | null; // Feedback category: ux, performance, feature, or general
 }
 
-export type TelegramSearchChatsResult = AdapterResultBase<TelegramSearchChatsData>;
+export type FeedbackSubmitFeedbackResult = AdapterResultBase<FeedbackSubmitFeedbackData>;
 
-export interface TelegramMessage {
-  id: string; // Message ID
-  text: string; // Message text content
-  caption: string | null; // Caption for media messages
-  date: string; // ISO 8601 timestamp
-  chatId: string; // Chat ID where message was sent
-  senderId: string; // Sender user ID
-  senderName: string; // Sender display name
-  hasMedia: boolean; // Whether message has media attachment
-  mediaType: string | null; // Media type: photo, video, document, etc.
-  isOutgoing: boolean; // Whether message was sent by the user
-  replyToMessageId: string | null; // ID of message being replied to
+export interface FeedbackSubmitFeatureRequestData {
+  id: string; // Unique identifier for the feedback report
+  createdAt: string; // ISO 8601 timestamp when created
+  source: string; // Source of the report: user_submitted or llm_auto_report
+  type: 'feature_request'; // Report type indicator
+  title: string; // Feature title
+  priority: string | null; // Priority: high, medium, or low
 }
 
-export interface TelegramSearchMessagesData {
-  messages: TelegramMessage[]; // List of matching messages
-  count: number; // Number of messages returned
-}
-
-export type TelegramSearchMessagesResult = AdapterResultBase<TelegramSearchMessagesData>;
-
-export interface TelegramGetChatMessagesData {
-  messages: TelegramMessage[]; // List of messages from the chat
-  count: number; // Number of messages returned
-  chatId?: string; // Chat ID the messages are from
-}
-
-export type TelegramGetChatMessagesResult = AdapterResultBase<TelegramGetChatMessagesData>;
-
-export interface TelegramUnreadSummaryEntry {
-  chatId: string; // Chat ID
-  chatName: string; // Chat display name
-  chatType: 'private' | 'group' | 'channel'; // Chat type
-  unreadCount: number; // Number of unread messages
-  hasMention: boolean; // Whether there are unread mentions
-  lastMessageText: string | null; // Text of last message
-  lastMessageSender: string | null; // Sender of last message
-  lastMessageDate: string | null; // ISO 8601 date of last message
-}
-
-export interface TelegramUnreadSummaryData {
-  chats: TelegramUnreadSummaryEntry[]; // List of chats with unread information
-  totalUnread: number; // Total unread messages across all chats
-  chatsWithUnread: number; // Number of chats with unread messages
-}
-
-export type TelegramGetUnreadSummaryResult = AdapterResultBase<TelegramUnreadSummaryData>;
-
-export interface TelegramMarkAsReadData {
-  success: boolean; // Whether the operation succeeded
-  chatId: string; // Chat ID that was marked as read
-  markedAt: string; // ISO 8601 timestamp when marked
-}
-
-export type TelegramMarkAsReadResult = AdapterResultBase<TelegramMarkAsReadData>;
-
-export interface TelegramMentionsData {
-  mentions: TelegramMessage[]; // List of messages with mentions
-  count: number; // Number of mentions returned
-}
-
-export type TelegramGetMentionsResult = AdapterResultBase<TelegramMentionsData>;
-
-export interface TelegramLeaveGroupData {
-  success: boolean; // Whether the operation succeeded
-  chatId: string; // Chat ID that was left
-  leftAt: string; // ISO 8601 timestamp when left
-}
-
-export type TelegramLeaveGroupResult = AdapterResultBase<TelegramLeaveGroupData>;
-
-// Gmail Response Types
-export interface GoogleGmailSendEmailData {
-  messageId: string; // ID of the sent message
-  to: string; // Recipient email address
-  subject: string; // Email subject
-  sentAt: string; // ISO timestamp when sent
-}
-
-export type GoogleGmailSendEmailResult = AdapterResultBase<GoogleGmailSendEmailData>;
-
-export interface GoogleGmailAttachment {
-  filename: string; // Attachment filename
-  mimeType: string; // MIME type
-  size: number; // Size in bytes
-  attachmentId: string; // Attachment ID
-}
-
-export interface GoogleGmailGetEmailData {
-  id: string; // Unique email ID
-  threadId: string; // Thread ID
-  subject: string; // Email subject
-  from: string; // Sender email address
-  to: string; // Recipient email address
-  cc?: string; // CC recipients
-  bcc?: string; // BCC recipients
-  date: string; // ISO timestamp of email
-  body: string; // Plain text body content
-  bodyHtml?: string; // HTML body content
-  snippet: string; // Email preview snippet
-  labelIds: string[]; // Gmail label IDs
-  isUnread: boolean; // Whether email is unread
-  hasAttachments: boolean; // Whether email has attachments
-  attachments?: GoogleGmailAttachment[]; // Attachment metadata
-}
-
-export type GoogleGmailGetEmailResult = AdapterResultBase<GoogleGmailGetEmailData>;
-
-export interface GoogleGmailEmailSummary {
-  id: string; // Unique email ID
-  threadId: string; // Thread ID
-  subject: string; // Email subject
-  from: string; // Sender email address
-  to: string; // Recipient email address
-  date: string; // ISO timestamp
-  snippet: string; // Preview snippet
-  labelIds: string[]; // Gmail label IDs
-  isUnread: boolean; // Whether email is unread
-  hasAttachments: boolean; // Whether email has attachments
-}
-
-export interface GoogleGmailSearchEmailsData {
-  query: string; // Search query used
-  count: number; // Number of results
-  emails: GoogleGmailEmailSummary[]; // List of matching emails
-}
-
-export type GoogleGmailSearchEmailsResult = AdapterResultBase<GoogleGmailSearchEmailsData>;
-
-export interface GoogleGmailListEmailsData {
-  query: string; // Search query used
-  count: number; // Number of results
-  emails: GoogleGmailEmailSummary[]; // List of emails
-}
-
-export type GoogleGmailListEmailsResult = AdapterResultBase<GoogleGmailListEmailsData>;
-
-export interface GoogleGmailCreateDraftData {
-  draftId: string; // ID of created draft
-  subject: string; // Draft subject
-  to: string; // Recipient email address
-}
-
-export type GoogleGmailCreateDraftResult = AdapterResultBase<GoogleGmailCreateDraftData>;
-
-export interface GoogleGmailUpdateDraftData {
-  draftId: string; // ID of updated draft
-  updated: boolean; // Whether update succeeded
-}
-
-export type GoogleGmailUpdateDraftResult = AdapterResultBase<GoogleGmailUpdateDraftData>;
-
-export interface GoogleGmailDeleteDraftData {
-  draftId: string; // ID of deleted draft
-  deleted: boolean; // Whether deletion succeeded
-}
-
-export type GoogleGmailDeleteDraftResult = AdapterResultBase<GoogleGmailDeleteDraftData>;
-
-export interface GoogleGmailDraftSummary {
-  id: string; // Draft ID
-  messageId: string; // Associated message ID
-  subject: string; // Draft subject
-  to: string; // Recipient email
-  snippet: string; // Preview snippet
-}
-
-export interface GoogleGmailListDraftsData {
-  count: number; // Number of drafts
-  drafts: GoogleGmailDraftSummary[]; // List of drafts
-}
-
-export type GoogleGmailListDraftsResult = AdapterResultBase<GoogleGmailListDraftsData>;
-
-export interface GoogleGmailDeleteEmailData {
-  messageId: string; // ID of deleted email
-  deleted: 'permanent' | 'trash'; // Type of deletion
-}
-
-export type GoogleGmailDeleteEmailResult = AdapterResultBase<GoogleGmailDeleteEmailData>;
-
-export interface GoogleGmailBulkDeleteEmailsData {
-  deletedCount: number; // Number of emails deleted
-  messageIds: string[]; // IDs of deleted emails
-  deleted: 'permanent' | 'trash'; // Type of deletion
-}
-
-export type GoogleGmailBulkDeleteEmailsResult = AdapterResultBase<GoogleGmailBulkDeleteEmailsData>;
+export type FeedbackSubmitFeatureRequestResult = AdapterResultBase<FeedbackSubmitFeatureRequestData>;
 
 // Google Calendar Response Types
 export interface GoogleCalendarAttendee {
@@ -2820,697 +2393,299 @@ export interface GoogleDriveUpdateFileData {
 
 export type GoogleDriveUpdateFileResult = AdapterResultBase<GoogleDriveUpdateFileData>;
 
-// Google Sheets Response Types
-export interface GoogleSheetsCreateSpreadsheetData {
-  spreadsheetId: string; // Created spreadsheet ID
-  title: string; // Spreadsheet title
-  url: string; // URL to open spreadsheet in browser
+// Gmail Response Types
+export interface GoogleGmailSendEmailData {
+  messageId: string; // ID of the sent message
+  to: string; // Recipient email address
+  subject: string; // Email subject
+  sentAt: string; // ISO timestamp when sent
 }
 
-export type GoogleSheetsCreateSpreadsheetResult = AdapterResultBase<GoogleSheetsCreateSpreadsheetData>;
+export type GoogleGmailSendEmailResult = AdapterResultBase<GoogleGmailSendEmailData>;
 
-export interface GoogleSheetsSheetInfo {
-  sheetId: number; // Numeric sheet ID
-  title: string; // Sheet tab name
-  index: number; // Sheet index (0-based)
-  rowCount: number; // Total rows in sheet
-  columnCount: number; // Total columns in sheet
-  isHidden: boolean; // Whether sheet is hidden
+export interface GoogleGmailAttachment {
+  filename: string; // Attachment filename
+  mimeType: string; // MIME type
+  size: number; // Size in bytes
+  attachmentId: string; // Attachment ID
 }
 
-export interface GoogleSheetsNamedRange {
-  name: string; // Named range identifier
-  range: string; // Range in A1 notation
-  sheetId?: number; // Sheet ID containing the range
+export interface GoogleGmailGetEmailData {
+  id: string; // Unique email ID
+  threadId: string; // Thread ID
+  subject: string; // Email subject
+  from: string; // Sender email address
+  to: string; // Recipient email address
+  cc?: string; // CC recipients
+  bcc?: string; // BCC recipients
+  date: string; // ISO timestamp of email
+  body: string; // Plain text body content
+  bodyHtml?: string; // HTML body content
+  snippet: string; // Email preview snippet
+  labelIds: string[]; // Gmail label IDs
+  isUnread: boolean; // Whether email is unread
+  hasAttachments: boolean; // Whether email has attachments
+  attachments?: GoogleGmailAttachment[]; // Attachment metadata
 }
 
-export interface GoogleSheetsGetSpreadsheetData {
-  spreadsheetId: string; // Spreadsheet ID
-  title: string; // Spreadsheet title
-  url: string; // URL to open spreadsheet
-  locale: string; // Spreadsheet locale (e.g., en_US)
-  timeZone: string; // Spreadsheet timezone
-  sheets: GoogleSheetsSheetInfo[]; // List of sheets in the spreadsheet
-  namedRanges: GoogleSheetsNamedRange[]; // List of named ranges
+export type GoogleGmailGetEmailResult = AdapterResultBase<GoogleGmailGetEmailData>;
+
+export interface GoogleGmailEmailSummary {
+  id: string; // Unique email ID
+  threadId: string; // Thread ID
+  subject: string; // Email subject
+  from: string; // Sender email address
+  to: string; // Recipient email address
+  date: string; // ISO timestamp
+  snippet: string; // Preview snippet
+  labelIds: string[]; // Gmail label IDs
+  isUnread: boolean; // Whether email is unread
+  hasAttachments: boolean; // Whether email has attachments
 }
 
-export type GoogleSheetsGetSpreadsheetResult = AdapterResultBase<GoogleSheetsGetSpreadsheetData>;
-
-export interface GoogleSheetsReadRangeData {
-  spreadsheetId: string; // Spreadsheet ID
-  range: string; // Range that was read
-  values: any[][]; // 2D array of cell values
-  rowCount: number; // Number of rows returned
-  columnCount: number; // Number of columns in widest row
-  isEmpty: boolean; // Whether the range is empty
-}
-
-export type GoogleSheetsReadRangeResult = AdapterResultBase<GoogleSheetsReadRangeData>;
-
-export interface GoogleSheetsWriteRangeData {
-  spreadsheetId: string; // Spreadsheet ID
-  updatedRange: string; // Range that was updated
-  updatedRows: number; // Number of rows updated
-  updatedColumns: number; // Number of columns updated
-  updatedCells: number; // Total cells updated
-}
-
-export type GoogleSheetsWriteRangeResult = AdapterResultBase<GoogleSheetsWriteRangeData>;
-
-export interface GoogleSheetsAppendRowData {
-  spreadsheetId: string; // Spreadsheet ID
-  sheetName: string; // Sheet name
-  appendedRange: string; // Range where data was appended
-  appendedRows: number; // Number of rows appended
-  appendedCells: number; // Total cells appended
-  values: any[]; // Values that were appended
-}
-
-export type GoogleSheetsAppendRowResult = AdapterResultBase<GoogleSheetsAppendRowData>;
-
-export interface GoogleSheetsInsertAtCellData {
-  spreadsheetId: string; // Spreadsheet ID
-  cell: string; // Cell reference (e.g., Sheet1!A1)
-  value: any; // Value that was inserted
-  previousValue?: any; // Previous cell value if any
-  formatted: boolean; // Whether formatting was applied
-}
-
-export type GoogleSheetsInsertAtCellResult = AdapterResultBase<GoogleSheetsInsertAtCellData>;
-
-export interface GoogleSheetsInsertFormulaData {
-  spreadsheetId: string; // Spreadsheet ID
-  cell: string; // Cell reference
-  formula: string; // Formula that was inserted
-}
-
-export type GoogleSheetsInsertFormulaResult = AdapterResultBase<GoogleSheetsInsertFormulaData>;
-
-export interface GoogleSheetsFormatRangeData {
-  spreadsheetId: string; // Spreadsheet ID
-  range: string; // Range that was formatted
-  formattingApplied: string[]; // List of formatting options applied
-}
-
-export type GoogleSheetsFormatRangeResult = AdapterResultBase<GoogleSheetsFormatRangeData>;
-
-export interface GoogleSheetsCreateChartData {
-  spreadsheetId: string; // Spreadsheet ID
-  chartType: string; // Type of chart created
-  title: string; // Chart title
-  dataRange: string; // Data range used for chart
-  positionRow: number; // Row where chart is anchored
-  positionColumn: string; // Column where chart is anchored
-}
-
-export type GoogleSheetsCreateChartResult = AdapterResultBase<GoogleSheetsCreateChartData>;
-
-export interface GoogleSheetsFindAndReplaceData {
-  spreadsheetId: string; // Spreadsheet ID
-  findText: string; // Text that was searched for
-  replaceText: string; // Replacement text
-  occurrencesReplaced: number; // Number of replacements made
-  sheetName?: string; // Sheet searched (null for all)
-  matchCase: boolean; // Whether search was case-sensitive
-  matchEntireCell: boolean; // Whether entire cell match required
-}
-
-export type GoogleSheetsFindAndReplaceResult = AdapterResultBase<GoogleSheetsFindAndReplaceData>;
-
-export interface GoogleSheetsInsertMultipleRowsData {
-  spreadsheetId: string; // Spreadsheet ID
-  sheetName: string; // Sheet name
-  rowsInserted: number; // Number of rows inserted
-  cellsInserted: number; // Total cells inserted
-  startingRow?: number; // Starting row (null if appended)
-  formatted: boolean; // Whether formatting was applied
-}
-
-export type GoogleSheetsInsertMultipleRowsResult = AdapterResultBase<GoogleSheetsInsertMultipleRowsData>;
-
-export interface GoogleSheetsClearRangeData {
-  spreadsheetId: string; // Spreadsheet ID
-  range: string; // Range that was cleared
-  cellsCleared: number; // Number of cells cleared
-}
-
-export type GoogleSheetsClearRangeResult = AdapterResultBase<GoogleSheetsClearRangeData>;
-
-export interface GoogleSheetsInsertRowsData {
-  spreadsheetId: string; // Spreadsheet ID
-  sheetId: number; // Numeric sheet ID
-  operation: string; // Operation type (insert)
-  startRowIndex: number; // Row index where insertion started (0-indexed)
-  numRows: number; // Number of rows inserted
-}
-
-export type GoogleSheetsInsertRowsResult = AdapterResultBase<GoogleSheetsInsertRowsData>;
-
-export interface GoogleSheetsDeleteRowsData {
-  spreadsheetId: string; // Spreadsheet ID
-  sheetId: number; // Numeric sheet ID
-  operation: string; // Operation type (delete)
-  startRowIndex: number; // Row index where deletion started (0-indexed)
-  numRows: number; // Number of rows deleted
-}
-
-export type GoogleSheetsDeleteRowsResult = AdapterResultBase<GoogleSheetsDeleteRowsData>;
-
-export interface GoogleSheetsInsertColumnsData {
-  spreadsheetId: string; // Spreadsheet ID
-  sheetId: number; // Numeric sheet ID
-  operation: string; // Operation type (insert)
-  startColumnIndex: number; // Column index where insertion started (0-indexed)
-  startColumnLetter: string; // Column letter where insertion started
-  numColumns: number; // Number of columns inserted
-}
-
-export type GoogleSheetsInsertColumnsResult = AdapterResultBase<GoogleSheetsInsertColumnsData>;
-
-export interface GoogleSheetsDeleteColumnsData {
-  spreadsheetId: string; // Spreadsheet ID
-  sheetId: number; // Numeric sheet ID
-  operation: string; // Operation type (delete)
-  startColumnIndex: number; // Column index where deletion started (0-indexed)
-  startColumnLetter: string; // Column letter where deletion started
-  numColumns: number; // Number of columns deleted
-}
-
-export type GoogleSheetsDeleteColumnsResult = AdapterResultBase<GoogleSheetsDeleteColumnsData>;
-
-export interface GoogleSheetsCopyRangeData {
-  spreadsheetId: string; // Spreadsheet ID
-  sourceSheetId: number; // Source sheet ID
-  sourceRange: string; // Source range in A1 notation
-  targetSheetId: number; // Target sheet ID
-  targetStartCell: string; // Target start cell
-}
-
-export type GoogleSheetsCopyRangeResult = AdapterResultBase<GoogleSheetsCopyRangeData>;
-
-// Google Docs Response Types
-export interface GoogleDocsCreateDocumentData {
-  documentId: string; // ID of the created document
-  title: string; // Title of the created document
-}
-
-export type GoogleDocsCreateDocumentResult = AdapterResultBase<GoogleDocsCreateDocumentData>;
-
-export interface GoogleDocsDocumentData {
-  documentId: string; // ID of the document
-  title: string; // Title of the document
-  revisionId: string; // Current revision ID
-  body: string; // Plain text content of the document
-  bodyLength: number; // Character count of the body
-  lastEditedTime?: string; // ISO 8601 timestamp of last edit
-  url: string; // URL to the document
-  hasContent: boolean; // Whether document has any text content
-}
-
-export type GoogleDocsGetDocumentResult = AdapterResultBase<GoogleDocsDocumentData>;
-
-export interface GoogleDocsContentData {
-  documentId: string; // ID of the document
-  content: string; // Plain text content of the document
-}
-
-export type GoogleDocsGetDocumentContentResult = AdapterResultBase<GoogleDocsContentData>;
-
-export interface GoogleDocsWriteResultData {
-  documentId: string; // ID of the document
-  success: boolean; // Whether the operation succeeded
-  feedback: string; // Human-readable feedback about the operation
-}
-
-export type GoogleDocsAppendTextResult = AdapterResultBase<GoogleDocsWriteResultData>;
-
-export interface GoogleDocsWriteResultData {
-  documentId: string; // ID of the document
-  success: boolean; // Whether the operation succeeded
-  feedback: string; // Human-readable feedback about the operation
-}
-
-export type GoogleDocsInsertTextAtPositionResult = AdapterResultBase<GoogleDocsWriteResultData>;
-
-export interface GoogleDocsWriteResultData {
-  documentId: string; // ID of the document
-  success: boolean; // Whether the operation succeeded
-  feedback: string; // Human-readable feedback about the operation
-}
-
-export type GoogleDocsInsertTextAfterResult = AdapterResultBase<GoogleDocsWriteResultData>;
-
-export interface GoogleDocsWriteResultData {
-  documentId: string; // ID of the document
-  success: boolean; // Whether the operation succeeded
-  feedback: string; // Human-readable feedback about the operation
-}
-
-export type GoogleDocsInsertHeadingResult = AdapterResultBase<GoogleDocsWriteResultData>;
-
-export interface GoogleDocsWriteResultData {
-  documentId: string; // ID of the document
-  success: boolean; // Whether the operation succeeded
-  feedback: string; // Human-readable feedback about the operation
-}
-
-export type GoogleDocsInsertListResult = AdapterResultBase<GoogleDocsWriteResultData>;
-
-export interface GoogleDocsWriteResultData {
-  documentId: string; // ID of the document
-  success: boolean; // Whether the operation succeeded
-  feedback: string; // Human-readable feedback about the operation
-}
-
-export type GoogleDocsInsertTableResult = AdapterResultBase<GoogleDocsWriteResultData>;
-
-export interface GoogleDocsWriteResultData {
-  documentId: string; // ID of the document
-  success: boolean; // Whether the operation succeeded
-  feedback: string; // Human-readable feedback about the operation
-}
-
-export type GoogleDocsReplaceTextResult = AdapterResultBase<GoogleDocsWriteResultData>;
-
-export interface GoogleDocsWriteResultData {
-  documentId: string; // ID of the document
-  success: boolean; // Whether the operation succeeded
-  feedback: string; // Human-readable feedback about the operation
-}
-
-export type GoogleDocsUpdateDocumentContentResult = AdapterResultBase<GoogleDocsWriteResultData>;
-
-export interface GoogleDocsSectionResultData {
-  documentId: string; // ID of the document
-  title: string; // Title of the document
-  url: string; // URL to the document
-  heading: string; // The heading text that was created
-  insertionIndex: number; // Character position where section was inserted
-  success: boolean; // Whether the operation succeeded
-}
-
-export type GoogleDocsCreateSectionResult = AdapterResultBase<GoogleDocsSectionResultData>;
-
-export interface GoogleDocsInsertionPointData {
-  documentId: string; // ID of the document
-  title: string; // Title of the document
-  url: string; // URL to the document
-  position: number; // Character position for insertion
-  context: string; // Text context around the insertion point
-  documentLength: number; // Total character length of the document
-}
-
-export type GoogleDocsFindInsertionPointResult = AdapterResultBase<GoogleDocsInsertionPointData>;
-
-// Jira Response Types
-export interface JiraGetIssueData {
-  id: string; // Unique issue ID
-  key: string; // Issue key (e.g., PROJ-123)
-  summary: string; // Issue summary/title
-  description: string; // Issue description (extracted from ADF)
-  status: string; // Status name
-  statusId: string; // Status ID
-  issueType: string; // Issue type name
-  issueTypeId: string; // Issue type ID
-  priority: string; // Priority name
-  priorityId: string; // Priority ID
-  assignee: string; // Assignee display name
-  assigneeAccountId: string; // Assignee account ID
-  reporter: string; // Reporter display name
-  reporterAccountId: string; // Reporter account ID
-  projectKey: string; // Project key
-  projectName: string; // Project name
-  projectId: string; // Project ID
-  labels: string[]; // Issue labels
-  created: string; // Created timestamp (ISO 8601)
-  updated: string; // Updated timestamp (ISO 8601)
-  isAssigned: boolean; // Whether issue has an assignee
-  hasLabels: boolean; // Whether issue has labels
-}
-
-export type JiraGetIssueResult = AdapterResultBase<JiraGetIssueData>;
-
-export interface JiraIssueSummary {
-  id: string; // Unique issue ID
-  key: string; // Issue key (e.g., PROJ-123)
-  summary: string; // Issue summary/title
-  status: string; // Status name
-  statusId: string; // Status ID
-  issueType: string; // Issue type name
-  issueTypeId: string; // Issue type ID
-  priority: string; // Priority name
-  priorityId: string; // Priority ID
-  assignee: string; // Assignee display name
-  assigneeAccountId: string; // Assignee account ID
-  projectKey: string; // Project key
-  projectName: string; // Project name
-  labels: string[]; // Issue labels
-  created: string; // Created timestamp (ISO 8601)
-  updated: string; // Updated timestamp (ISO 8601)
-  isAssigned: boolean; // Whether issue has an assignee
-}
-
-export interface JiraSearchIssuesData {
-  jql: string; // JQL query used
+export interface GoogleGmailSearchEmailsData {
+  query: string; // Search query used
   count: number; // Number of results
-  issues: JiraIssueSummary[]; // List of matching issues
+  emails: GoogleGmailEmailSummary[]; // List of matching emails
 }
 
-export type JiraSearchIssuesResult = AdapterResultBase<JiraSearchIssuesData>;
+export type GoogleGmailSearchEmailsResult = AdapterResultBase<GoogleGmailSearchEmailsData>;
 
-export interface JiraCreateIssueData {
-  issueKey: string; // Created issue key
-  issueId: string; // Created issue ID
-  summary: string; // Issue summary
+export interface GoogleGmailListEmailsData {
+  query: string; // Search query used
+  count: number; // Number of results
+  emails: GoogleGmailEmailSummary[]; // List of emails
 }
 
-export type JiraCreateIssueResult = AdapterResultBase<JiraCreateIssueData>;
+export type GoogleGmailListEmailsResult = AdapterResultBase<GoogleGmailListEmailsData>;
 
-export interface JiraUpdateIssueData {
-  issueKey: string; // Updated issue key
+export interface GoogleGmailCreateDraftData {
+  draftId: string; // ID of created draft
+  subject: string; // Draft subject
+  to: string; // Recipient email address
+}
+
+export type GoogleGmailCreateDraftResult = AdapterResultBase<GoogleGmailCreateDraftData>;
+
+export interface GoogleGmailUpdateDraftData {
+  draftId: string; // ID of updated draft
   updated: boolean; // Whether update succeeded
 }
 
-export type JiraUpdateIssueResult = AdapterResultBase<JiraUpdateIssueData>;
+export type GoogleGmailUpdateDraftResult = AdapterResultBase<GoogleGmailUpdateDraftData>;
 
-export interface JiraDeleteIssueData {
-  issueKey: string; // Deleted issue key
+export interface GoogleGmailDeleteDraftData {
+  draftId: string; // ID of deleted draft
   deleted: boolean; // Whether deletion succeeded
 }
 
-export type JiraDeleteIssueResult = AdapterResultBase<JiraDeleteIssueData>;
+export type GoogleGmailDeleteDraftResult = AdapterResultBase<GoogleGmailDeleteDraftData>;
 
-export interface JiraAddCommentData {
-  issueKey: string; // Issue key
-  commentId: string; // Created comment ID
-  added: boolean; // Whether comment was added
+export interface GoogleGmailDraftSummary {
+  id: string; // Draft ID
+  messageId: string; // Associated message ID
+  subject: string; // Draft subject
+  to: string; // Recipient email
+  snippet: string; // Preview snippet
 }
 
-export type JiraAddCommentResult = AdapterResultBase<JiraAddCommentData>;
-
-export interface JiraTransitionIssueData {
-  issueKey: string; // Issue key
-  transitioned: boolean; // Whether transition succeeded
-  transitionId: string; // Transition ID used
+export interface GoogleGmailListDraftsData {
+  count: number; // Number of drafts
+  drafts: GoogleGmailDraftSummary[]; // List of drafts
 }
 
-export type JiraTransitionIssueResult = AdapterResultBase<JiraTransitionIssueData>;
+export type GoogleGmailListDraftsResult = AdapterResultBase<GoogleGmailListDraftsData>;
 
-export interface JiraAssignIssueData {
-  issueKey: string; // Issue key
-  accountId: string; // Assigned user account ID
-  assigned: boolean; // Whether assignment succeeded
+export interface GoogleGmailDeleteEmailData {
+  messageId: string; // ID of deleted email
+  deleted: 'permanent' | 'trash'; // Type of deletion
 }
 
-export type JiraAssignIssueResult = AdapterResultBase<JiraAssignIssueData>;
+export type GoogleGmailDeleteEmailResult = AdapterResultBase<GoogleGmailDeleteEmailData>;
 
-export interface JiraProject {
-  id: string; // Project ID
-  key: string; // Project key
-  name: string; // Project name
-  projectTypeKey: string; // Project type key
-  leadName: string; // Project lead name
-  leadAccountId: string; // Project lead account ID
+export interface GoogleGmailBulkDeleteEmailsData {
+  deletedCount: number; // Number of emails deleted
+  messageIds: string[]; // IDs of deleted emails
+  deleted: 'permanent' | 'trash'; // Type of deletion
 }
 
-export interface JiraGetProjectsData {
-  count: number; // Number of projects
-  projects: JiraProject[]; // List of projects
+export type GoogleGmailBulkDeleteEmailsResult = AdapterResultBase<GoogleGmailBulkDeleteEmailsData>;
+
+// Hypertrade Response Types
+export interface HypertradePlaceOrderData {
+  type: 'pending_order'; // Response type
+  asset: string; // Asset/coin symbol
+  isBuy: boolean; // Whether buying/longing
+  size: number; // Order size
+  limitPrice: number; // Limit price (0 for market)
+  orderType: string; // Order type (limit/market)
+  triggerPrice: number; // Trigger price (0 if none)
+  reduceOnly: boolean; // Whether reduce-only
+  postOnly: boolean; // Whether post-only
+  clientOrderId: string; // Client order ID (empty if none)
+  signerWallet: string; // Wallet address that needs to sign
+  expiresAt: string; // Expiration timestamp (ISO 8601)
 }
 
-export type JiraGetProjectsResult = AdapterResultBase<JiraGetProjectsData>;
+export type HypertradePlaceOrderResult = AdapterResultBase<HypertradePlaceOrderData>;
 
-export interface JiraListProjectsData {
-  count: number; // Number of projects
-  projects: JiraProject[]; // List of projects
+export interface HypertradeCancelOrderData {
+  type: 'pending_cancel'; // Response type
+  asset: string; // Asset/coin symbol
+  orderId: number; // Order ID to cancel (0 if using clientOrderId)
+  clientOrderId: string; // Client order ID to cancel (empty if using orderId)
+  cancelAll: boolean; // Whether cancelling all orders for the asset
+  signerWallet: string; // Wallet address that needs to sign
+  expiresAt: string; // Expiration timestamp (ISO 8601)
 }
 
-export type JiraListProjectsResult = AdapterResultBase<JiraListProjectsData>;
+export type HypertradeCancelOrderResult = AdapterResultBase<HypertradeCancelOrderData>;
 
-export interface JiraIssueType {
-  id: string; // Issue type ID
-  name: string; // Issue type name
-  description: string; // Issue type description
-  isSubtask: boolean; // Whether this is a subtask type
+export interface HypertradePosition {
+  asset: string; // Asset/coin symbol
+  size: number; // Position size (absolute value)
+  entryPrice: number; // Entry price
+  markPrice: number; // Current mark price
+  unrealizedPnl: number; // Unrealized PnL
+  leverage: number; // Current leverage
+  liquidationPrice: number; // Liquidation price
+  marginUsed: number; // Margin used for this position
+  positionValue: number; // Total position value
+  returnOnEquity: number; // Return on equity
+  side: string; // Position side: "long" or "short"
 }
 
-export interface JiraPriority {
-  id: string; // Priority ID
-  name: string; // Priority name
-  description: string; // Priority description
+export interface HypertradeGetPositionsData {
+  positions: HypertradePosition[]; // List of open positions
 }
 
-export interface JiraGetProjectMetadataData {
-  projectKey: string; // Project key
-  projectName: string; // Project name
-  issueTypeCount: number; // Number of issue types
-  issueTypes: JiraIssueType[]; // Available issue types
-  priorityCount: number; // Number of priorities
-  priorities: JiraPriority[]; // Available priorities
+export type HypertradeGetPositionsResult = AdapterResultBase<HypertradeGetPositionsData>;
+
+export interface HypertradeOpenOrder {
+  asset: string; // Asset/coin symbol
+  orderId: number; // Order ID
+  side: string; // Order side (Buy/Sell)
+  size: number; // Current order size
+  originalSize: number; // Original order size
+  price: number; // Limit price
+  orderType: string; // Order type
+  reduceOnly: boolean; // Whether reduce-only
+  timestamp: number; // Order creation timestamp
+  triggerCondition: string; // Trigger condition
+  triggerPrice: number; // Trigger price (0 if not trigger)
+  isTrigger: boolean; // Whether this is a trigger order
 }
 
-export type JiraGetProjectMetadataResult = AdapterResultBase<JiraGetProjectMetadataData>;
-
-export interface JiraTransition {
-  id: string; // Transition ID
-  name: string; // Transition name
-  toStatus: string; // Target status name
-  toStatusId: string; // Target status ID
+export interface HypertradeGetOpenOrdersData {
+  orders: HypertradeOpenOrder[]; // List of open orders
 }
 
-export interface JiraGetTransitionsData {
-  issueKey: string; // Issue key
-  count: number; // Number of transitions
-  transitions: JiraTransition[]; // Available transitions
+export type HypertradeGetOpenOrdersResult = AdapterResultBase<HypertradeGetOpenOrdersData>;
+
+export interface HypertradeSpotBalance {
+  coin: string; // Coin/token symbol
+  total: number; // Total balance
+  hold: number; // Balance on hold (in orders)
+  available: number; // Available balance
 }
 
-export type JiraGetTransitionsResult = AdapterResultBase<JiraGetTransitionsData>;
-
-export interface JiraUser {
-  accountId: string; // User account ID
-  displayName: string; // User display name
-  emailAddress?: string; // User email address
-  active: boolean; // Whether user is active
+export interface HypertradeGetBalancesData {
+  accountValue: number; // Total account value
+  totalMarginUsed: number; // Total margin used
+  withdrawable: number; // Withdrawable amount
+  perpEquity: number; // Perpetual equity
+  spotBalances: HypertradeSpotBalance[]; // List of spot token balances
 }
 
-export interface JiraListAssignableUsersData {
-  projectKey: string; // Project key
-  count: number; // Number of users
-  users: JiraUser[]; // Assignable users
+export type HypertradeGetBalancesResult = AdapterResultBase<HypertradeGetBalancesData>;
+
+export interface HypertradeMarketInfo {
+  asset: string; // Asset/coin symbol
+  markPrice: number; // Mark price
+  midPrice: number; // Mid price
+  oraclePrice: number; // Oracle price
+  openInterest: number; // Open interest
+  funding: number; // Current funding rate
+  dayVolume: number; // 24h notional volume
+  prevDayPrice: number; // Previous day price
+  maxLeverage: number; // Maximum allowed leverage
+  szDecimals: number; // Size decimals for this asset
 }
 
-export type JiraListAssignableUsersResult = AdapterResultBase<JiraListAssignableUsersData>;
-
-export interface JiraGetIssueTypesData {
-  projectKey: string; // Project key
-  count: number; // Number of issue types
-  issueTypes: JiraIssueType[]; // Available issue types
+export interface HypertradeGetMarketInfoData {
+  markets: HypertradeMarketInfo[]; // List of market info entries
 }
 
-export type JiraGetIssueTypesResult = AdapterResultBase<JiraGetIssueTypesData>;
+export type HypertradeGetMarketInfoResult = AdapterResultBase<HypertradeGetMarketInfoData>;
 
-// Twitter Response Types
-export interface TwitterPostTweetData {
-  tweetId: string; // ID of the posted tweet
-  text: string; // Text content of the posted tweet
+export interface HypertradeOrderbookLevel {
+  price: number; // Price level
+  size: number; // Total size at this level
+  numOrders: number; // Number of orders at this level
 }
 
-export type TwitterPostTweetResult = AdapterResultBase<TwitterPostTweetData>;
-
-export interface TwitterNormalizedTweet {
-  id: string; // Tweet ID
-  text: string; // Tweet text content
-  url: string; // Direct URL to the tweet
-  createdAt: string; // Tweet creation time (ISO 8601)
-  lang?: string; // Tweet language code
-  likeCount: number; // Number of likes
-  retweetCount: number; // Number of retweets
-  replyCount: number; // Number of replies
-  quoteCount: number; // Number of quote tweets
-  viewCount: number; // Number of views
-  bookmarkCount: number; // Number of bookmarks
-  isReply: boolean; // Whether this is a reply to another tweet
-  isRetweet: boolean; // Whether this is a retweet
-  source?: string; // Source application of the tweet
-  authorId: string; // Author user ID
-  authorName: string; // Author display name
-  authorUserName: string; // Author username/handle
-  authorFollowers: number; // Author follower count
-  authorFollowing: number; // Author following count
-  authorIsVerified: boolean; // Whether the author is verified
-  authorVerifiedType?: string; // Type of verification (blue, business, government)
-  authorCreatedAt?: string; // Author account creation date
+export interface HypertradeGetOrderbookData {
+  asset: string; // Asset/coin symbol
+  bids: HypertradeOrderbookLevel[]; // Bid levels (best first)
+  asks: HypertradeOrderbookLevel[]; // Ask levels (best first)
+  spread: number; // Best ask - best bid
+  midPrice: number; // Mid price ((best ask + best bid) / 2)
+  timestamp: number; // Snapshot timestamp
 }
 
-export interface TwitterGetUserTweetsData {
-  tweets: TwitterNormalizedTweet[]; // List of normalized tweets
-  hasNextPage: boolean; // Whether more tweets are available
-  nextCursor: string; // Cursor for fetching the next page
-  totalRetrieved: number; // Number of tweets retrieved in this response
+export type HypertradeGetOrderbookResult = AdapterResultBase<HypertradeGetOrderbookData>;
+
+export interface HypertradeCandle {
+  timestamp: number; // Candle open time in milliseconds
+  open: number; // Open price
+  high: number; // High price
+  low: number; // Low price
+  close: number; // Close price
+  volume: number; // Volume
+  numTrades: number; // Number of trades
 }
 
-export type TwitterGetUserTweetsResult = AdapterResultBase<TwitterGetUserTweetsData>;
-
-export interface TwitterAdvancedSearchData {
-  query: string; // Search query used
-  queryType: string; // Type of search: Latest or Top
-  tweets: TwitterNormalizedTweet[]; // List of matching tweets
-  hasNextPage: boolean; // Whether more results are available
-  nextCursor: string; // Cursor for fetching the next page
-  totalRetrieved: number; // Number of tweets retrieved in this response
+export interface HypertradeGetCandlesData {
+  asset: string; // Asset/coin symbol
+  interval: string; // Candle interval
+  candles: HypertradeCandle[]; // List of candles
 }
 
-export type TwitterAdvancedSearchResult = AdapterResultBase<TwitterAdvancedSearchData>;
+export type HypertradeGetCandlesResult = AdapterResultBase<HypertradeGetCandlesData>;
 
-// Trello Response Types
-export interface TrelloBoard {
-  id: string; // Board ID
-  name: string; // Board name
-  description: string; // Board description
-  url: string; // Board URL
-  closed: boolean; // Whether board is closed/archived
-  starred: boolean; // Whether board is starred
-  listCount: number; // Number of lists in the board
+export interface HypertradeSetLeverageData {
+  type: 'pending_leverage'; // Response type
+  asset: string; // Asset/coin symbol
+  leverage: number; // Leverage multiplier
+  leverageMode: string; // Leverage mode (cross/isolated)
+  isCrossMargin: boolean; // Whether cross margin
+  signerWallet: string; // Wallet address that needs to sign
+  expiresAt: string; // Expiration timestamp (ISO 8601)
 }
 
-export interface TrelloGetBoardsData {
-  boards: TrelloBoard[]; // List of boards
-  count: number; // Number of boards returned
+export type HypertradeSetLeverageResult = AdapterResultBase<HypertradeSetLeverageData>;
+
+export interface HypertradeTradeFill {
+  asset: string; // Asset/coin symbol
+  tradeId: number; // Trade ID
+  orderId: number; // Order ID
+  side: string; // Trade side
+  price: number; // Fill price
+  size: number; // Fill size
+  fee: number; // Fee amount
+  feeToken: string; // Fee token
+  closedPnl: number; // Realized PnL from this trade
+  timestamp: number; // Trade timestamp
+  direction: string; // Trade direction
+  crossed: boolean; // Whether this was a taker fill
+  hash: string; // Transaction hash
 }
 
-export type TrelloGetBoardsResult = AdapterResultBase<TrelloGetBoardsData>;
-
-export interface TrelloList {
-  id: string; // List ID
-  name: string; // List name
-  closed: boolean; // Whether list is closed/archived
-  position: number; // List position
-  boardId: string; // ID of the parent board
+export interface HypertradeGetTradeHistoryData {
+  trades: HypertradeTradeFill[]; // List of trade fills
 }
 
-export interface TrelloGetBoardData {
-  id: string; // Board ID
-  name: string; // Board name
-  description: string; // Board description
-  url: string; // Board URL
-  closed: boolean; // Whether board is closed
-  starred: boolean; // Whether board is starred
-  lists: TrelloList[]; // Lists in the board
-  listCount: number; // Number of lists
-}
-
-export type TrelloGetBoardResult = AdapterResultBase<TrelloGetBoardData>;
-
-export interface TrelloCard {
-  id: string; // Card ID
-  name: string; // Card name/title
-  description: string; // Card description
-  url: string; // Card URL
-  shortUrl: string; // Short card URL
-  closed: boolean; // Whether card is archived
-  position: number; // Card position in list
-  listId: string; // ID of the parent list
-  boardId: string; // ID of the parent board
-  dueDate: string | null; // Due date in ISO 8601 format
-  dueComplete: boolean; // Whether due date is marked complete
-  labels: string[]; // Array of label names
-  checklistCount: number; // Number of checklists on the card
-  attachmentCount: number; // Number of attachments
-  commentCount: number; // Number of comments
-}
-
-export interface TrelloCreateCardData {
-  card: TrelloCard; // Created card
-}
-
-export type TrelloCreateCardResult = AdapterResultBase<TrelloCreateCardData>;
-
-export interface TrelloGetCardData {
-  card: TrelloCard; // Card details
-}
-
-export type TrelloGetCardResult = AdapterResultBase<TrelloGetCardData>;
-
-export interface TrelloUpdateCardData {
-  card: TrelloCard; // Updated card
-}
-
-export type TrelloUpdateCardResult = AdapterResultBase<TrelloUpdateCardData>;
-
-export interface TrelloDeleteCardData {
-  success: boolean; // Whether deletion succeeded
-  deletedId: string; // ID of the deleted entity
-  deletedAt: string; // ISO 8601 timestamp of deletion
-}
-
-export type TrelloDeleteCardResult = AdapterResultBase<TrelloDeleteCardData>;
-
-export interface TrelloChecklist {
-  id: string; // Checklist ID
-  name: string; // Checklist name
-  cardId: string; // ID of the parent card
-  boardId: string; // ID of the parent board
-  position: number; // Checklist position
-  checkItemCount: number; // Total number of check items
-  checkItemsChecked: number; // Number of completed check items
-}
-
-export interface TrelloCheckItem {
-  id: string; // Check item ID
-  name: string; // Check item text
-  checklistId: string; // ID of the parent checklist
-  state: 'complete' | 'incomplete'; // Completion state
-  position: number; // Check item position
-}
-
-export interface TrelloCreateChecklistData {
-  checklist: TrelloChecklist; // Created checklist
-  checkItems: TrelloCheckItem[]; // Check items in the checklist
-}
-
-export type TrelloCreateChecklistResult = AdapterResultBase<TrelloCreateChecklistData>;
-
-export interface TrelloGetChecklistData {
-  checklist: TrelloChecklist; // Checklist details
-  checkItems: TrelloCheckItem[]; // Check items in the checklist
-}
-
-export type TrelloGetChecklistResult = AdapterResultBase<TrelloGetChecklistData>;
-
-export interface TrelloUpdateChecklistData {
-  checklist: TrelloChecklist; // Updated checklist
-  checkItems: TrelloCheckItem[]; // Check items in the checklist
-}
-
-export type TrelloUpdateChecklistResult = AdapterResultBase<TrelloUpdateChecklistData>;
-
-export interface TrelloDeleteChecklistData {
-  success: boolean; // Whether deletion succeeded
-  deletedId: string; // ID of the deleted entity
-  deletedAt: string; // ISO 8601 timestamp of deletion
-}
-
-export type TrelloDeleteChecklistResult = AdapterResultBase<TrelloDeleteChecklistData>;
-
-export interface TrelloAddCheckItemData {
-  checkItem: TrelloCheckItem; // Created check item
-}
-
-export type TrelloAddCheckItemResult = AdapterResultBase<TrelloAddCheckItemData>;
-
-export interface TrelloUpdateCheckItemData {
-  checkItem: TrelloCheckItem; // Updated check item
-}
-
-export type TrelloUpdateCheckItemResult = AdapterResultBase<TrelloUpdateCheckItemData>;
-
-export interface TrelloDeleteCheckItemData {
-  success: boolean; // Whether deletion succeeded
-  deletedId: string; // ID of the deleted entity
-  deletedAt: string; // ISO 8601 timestamp of deletion
-}
-
-export type TrelloDeleteCheckItemResult = AdapterResultBase<TrelloDeleteCheckItemData>;
+export type HypertradeGetTradeHistoryResult = AdapterResultBase<HypertradeGetTradeHistoryData>;
 
 // Jupiter Response Types
 export interface JupiterSwapData {
@@ -3651,417 +2826,187 @@ export interface JupiterLaunchTokenData {
 
 export type JupiterLaunchTokenResult = AdapterResultBase<JupiterLaunchTokenData>;
 
-// Crypto Response Types
-export interface CryptoGetPriceData {
-  tokenAddress: string; // Token contract address
-  chain: 'evm' | 'svm'; // Chain type
-  chainName: string; // Chain name (e.g., solana, ethereum)
-  priceUsd: number; // Current price in USD
-  timestamp: string; // Price timestamp (ISO 8601)
-  block: number | null; // Block number of price (if available)
-  source: string | null; // Price data source
-}
-
-export type CryptoGetPriceResult = AdapterResultBase<CryptoGetPriceData>;
-
-export interface CryptoSendTokenData {
-  type: string; // Always "pending_transaction"
-  transferId: string; // Unique transfer identifier
-  transaction: string; // Base64 encoded serialized transaction
-  signerWallet: string; // Wallet address that will sign
-  tokenMint: string; // Token mint address
-  tokenSymbol: string; // Token symbol (e.g., SOL, USDC)
-  tokenName: string; // Token display name
-  tokenDecimals: number; // Token decimal places
-  amount: string; // Amount to send (string for precision)
-  recipientAddress: string; // Recipient wallet address
-  recipientDisplayName: string; // Recipient display name
-  isContact: boolean; // Whether recipient is a contact
-  estimatedFee: string; // Estimated transaction fee
-  senderAddress: string; // Sender wallet address
-  expiresAt: string; // Transaction expiry (ISO 8601)
-}
-
-export type CryptoSendTokenResult = AdapterResultBase<CryptoSendTokenData>;
-
-export interface CryptoMonitorPriceData {
-  flowId: string; // Created flow ID
-  tokenAddress: string; // Token contract address
-  chain: 'evm' | 'svm'; // Chain type
-  chainName: string; // Chain name
-  currentPrice: number; // Current price when monitor was created
-  targetPrice: number; // Target price for alert
-  direction: 'above' | 'below'; // Alert direction
-  percentStep: number; // Progressive alert step percentage
-  status: string; // Monitor status (always "active")
-}
-
-export type CryptoMonitorPriceResult = AdapterResultBase<CryptoMonitorPriceData>;
-
-export interface CryptoMonitorEntry {
-  assignmentId: string; // Flow assignment ID
-  title: string; // Monitor title
-  tokenAddress: string; // Token contract address
-  chain: string; // Chain type (evm or svm)
-  chainName: string; // Chain name
-  direction: string; // Alert direction (above or below)
-  targetPrice?: number; // Target price in USD
-  currentStep?: number; // Current step in progressive alerts
-  maxSteps?: number; // Maximum steps
-  nextThreshold?: number; // Next threshold price
-  stepValue?: number; // Step percentage value
-  status: string; // Monitor status
-  createdAt?: string; // Creation timestamp (ISO 8601)
-}
-
-export interface CryptoListSubscriptionsData {
-  monitors: CryptoMonitorEntry[]; // List of active price monitors
-  count: number; // Number of active monitors
-}
-
-export type CryptoListSubscriptionsResult = AdapterResultBase<CryptoListSubscriptionsData>;
-
-export interface CryptoUnsubscribeAssetData {
-  tokenAddress: string; // Token contract address
-  chain: 'evm' | 'svm'; // Chain type
-  deletedAssignments: string[]; // IDs of deleted assignments
-  count: number; // Number of deleted monitors
-  status: string; // Operation status
-  message?: string; // Optional message
-}
-
-export type CryptoUnsubscribeAssetResult = AdapterResultBase<CryptoUnsubscribeAssetData>;
-
-export interface CryptoRefreshTransactionData {
-  type: string; // Always "pending_transaction"
-  transferId: string; // Unique transfer identifier
-  transaction: string; // Base64 encoded serialized transaction
-  signerWallet: string; // Wallet address that will sign
-  tokenMint: string; // Token mint address
-  tokenSymbol: string; // Token symbol (e.g., SOL, USDC)
-  tokenName: string; // Token display name
-  tokenDecimals: number; // Token decimal places
-  amount: string; // Amount to send (string for precision)
-  recipientAddress: string; // Recipient wallet address
-  recipientDisplayName: string; // Recipient display name
-  isContact: boolean; // Whether recipient is a contact
-  estimatedFee: string; // Estimated transaction fee
-  senderAddress: string; // Sender wallet address
-  expiresAt: string; // Transaction expiry (ISO 8601)
-  refreshedAt: string; // Refresh timestamp (ISO 8601)
-}
-
-export type CryptoRefreshTransactionResult = AdapterResultBase<CryptoRefreshTransactionData>;
-
-// Scripts Response Types
-export interface ScriptCreateData {
-  id: string; // Created script ID
-  name: string; // Script name
-  description: string; // Script description
-  runtime: string; // Lambda runtime (e.g., nodejs18)
-  timeout: number; // Timeout in seconds
-  memory: number; // Memory in MB
-  activeVersion: number; // Active version number
-  isPublished: boolean; // Whether published
-  isPrivate: boolean; // Whether private
-  status: string; // Script status
-  deploymentStatus: string; // Deployment status
-  apiKey: string; // API key for script execution (only returned on creation)
-  installationId: string; // Auto-created installation ID
+// Memory Response Types
+export interface MemoryCreateData {
+  id: string; // Entity ID
+  type: string; // Entity type
+  name: string; // Entity name/title
+  content: string; // Full entity content
+  status: string; // Entity status
+  priority: string; // Entity priority
+  graphId: string; // Graph ID
   createdAt: string; // Created timestamp (ISO 8601)
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  createdByUserId: string; // Creator user ID
+  createdByName: string; // Creator username
+  assignedToUserId: string; // Assigned user ID
+  assignedToName: string; // Assigned username
+  dueAt: string; // Due date (ISO 8601)
+  tags: string[]; // Tags array
 }
 
-export type ScriptsCreateScriptResult = AdapterResultBase<ScriptCreateData>;
+export type MemoryCreateResult = AdapterResultBase<MemoryCreateData>;
 
-export interface ScriptDeleteData {
+export interface MemoryCreateTaskData {
+  id: string; // Task ID
+  type: string; // Always "task"
+  content: string; // Task content/description
+  status: string; // Task status (pending, completed)
+  priority: string; // Task priority (high, medium, low)
+  graphId: string; // Graph ID where task resides
+  createdAt: string; // Created timestamp (ISO 8601)
+  createdByUserId: string; // Creator user ID
+  createdByName: string; // Creator username
+  assignedToUserId: string; // Assigned user ID
+  assignedToName: string; // Assigned username
+  assignmentWarning: string; // Warning if assignment had issues
+  dueAt: string; // Due date (ISO 8601)
+  tags: string[]; // Tags array
+}
+
+export type MemoryCreateTaskResult = AdapterResultBase<MemoryCreateTaskData>;
+
+export interface MemoryEntitySummary {
+  id: string; // Entity ID
+  type: string; // Entity type (task, note, idea, etc.)
+  name: string; // Entity name/title
+  description: string; // Truncated content preview
+  status: string; // Entity status
+  priority: string; // Entity priority
+  graphId: string; // Graph ID where entity resides
+  createdAt: string; // Created timestamp (ISO 8601)
+  score?: number; // Relevance score (0-1)
+}
+
+export interface MemorySearchData {
+  query: string; // Search query used
+  count: number; // Number of results
+  results: MemoryEntitySummary[]; // Search results
+}
+
+export type MemorySearchResult = AdapterResultBase<MemorySearchData>;
+
+export interface MemoryQueryData {
+  type: string; // Type filter used or "all"
+  count: number; // Number of results
+  offset: number; // Pagination offset
+  limit: number; // Pagination limit
+  entities: MemoryEntitySummary[]; // Query results
+}
+
+export type MemoryQueryResult = AdapterResultBase<MemoryQueryData>;
+
+export interface MemoryFindOneData {
+  id: string; // Entity ID
+  type: string; // Entity type
+  name: string; // Entity name/title
+  content: string; // Full entity content
+  status: string; // Entity status
+  priority: string; // Entity priority
+  graphId: string; // Graph ID
+  createdAt: string; // Created timestamp (ISO 8601)
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  createdByUserId: string; // Creator user ID
+  createdByName: string; // Creator username
+  assignedToUserId: string; // Assigned user ID
+  assignedToName: string; // Assigned username
+  dueAt: string; // Due date (ISO 8601)
+  tags: string[]; // Tags array
+}
+
+export type MemoryFindOneResult = AdapterResultBase<MemoryFindOneData>;
+
+export interface MemoryUpdateData {
+  id: string; // Updated entity ID
+  updated: boolean; // Whether update succeeded
+  updatedAt: string; // Update timestamp (ISO 8601)
+}
+
+export type MemoryUpdateResult = AdapterResultBase<MemoryUpdateData>;
+
+export interface MemoryDeleteData {
+  id: string; // Deleted entity ID
   deleted: boolean; // Whether deletion succeeded
-  scriptId: string; // Deleted script ID
-  hardDeleted: boolean; // Whether script was permanently deleted
-  installationsRemoved: number; // Number of installations removed
-  preservedInstallations: number; // Number of installations preserved (soft delete)
+  deletedAt: string; // Deletion timestamp (ISO 8601)
 }
 
-export type ScriptsDeleteScriptResult = AdapterResultBase<ScriptDeleteData>;
+export type MemoryDeleteResult = AdapterResultBase<MemoryDeleteData>;
 
-export interface ScriptVersionCreateData {
-  id: string; // Version document ID
-  scriptId: string; // Parent script ID
-  version: number; // Version number
-  isActive: boolean; // Whether this version is active
-  commitMessage: string; // Commit message for this version
-  codeHash: string; // Hash of the code
-  createdAt: string; // Created timestamp (ISO 8601)
-  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+export interface MemoryShareData {
+  entityId: string; // Shared entity ID
+  success: boolean; // Whether share succeeded
+  message: string; // Status message
+  graphIds: string[]; // All graphs entity is shared with
+  targetGraphId: string; // Target graph ID
+  sharedAt: string; // Share timestamp (ISO 8601)
 }
 
-export type ScriptsCreateVersionResult = AdapterResultBase<ScriptVersionCreateData>;
+export type MemoryShareResult = AdapterResultBase<MemoryShareData>;
 
-export interface ScriptVersion {
-  id: string; // Version document ID
-  scriptId: string; // Parent script ID
-  version: number; // Version number
-  isActive: boolean; // Whether this version is active
-  commitMessage: string; // Commit message for this version
-  codeHash: string; // Hash of the code
-  createdAt: string; // Created timestamp (ISO 8601)
-  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+export interface MemoryUnshareData {
+  entityId: string; // Unshared entity ID
+  success: boolean; // Whether unshare succeeded
+  message: string; // Status message
+  graphIds: string[]; // Remaining graphs
+  removedGraphId: string; // Removed graph ID
 }
 
-export interface ScriptVersionListData {
-  count: number; // Number of versions
-  versions: ScriptVersion[]; // List of script versions
+export type MemoryUnshareResult = AdapterResultBase<MemoryUnshareData>;
+
+export interface MemoryGraphInfo {
+  graphId: string; // Graph ID
+  graphType: string; // Graph type: personal, group, user_contact
+  graphName: string; // Graph display name
+  isPrimary: boolean; // Whether this is the primary graph
+  sharedAt: string; // Share timestamp (ISO 8601)
+  sharedByUserId: string; // User who shared
 }
 
-export type ScriptsListVersionsResult = AdapterResultBase<ScriptVersionListData>;
-
-export interface ScriptDeployData {
-  scriptId: string; // Deployed script ID
-  version: number; // Deployed version number
-  lambdaFunctionName: string; // AWS Lambda function name
-  lambdaArn: string; // AWS Lambda ARN
-  deployedAt: string; // Deployment timestamp (ISO 8601)
+export interface MemoryListGraphsData {
+  entityId: string; // Entity ID
+  primaryGraphId: string; // Primary graph ID
+  totalGraphs: number; // Total graph count
+  graphs: MemoryGraphInfo[]; // Graph information
 }
 
-export type ScriptsDeployScriptResult = AdapterResultBase<ScriptDeployData>;
+export type MemoryListGraphsResult = AdapterResultBase<MemoryListGraphsData>;
 
-export interface ScriptExecuteData {
-  executionId: string; // Unique execution ID
-  scriptId: string; // Executed script ID
-  status: string; // Execution status
-  output: any; // Script output data
-  duration: number; // Execution duration in milliseconds
-  logs: string[]; // Execution logs
-  error: string; // Error message (empty if no error)
-  createdAt: string; // Execution timestamp (ISO 8601)
+export interface MemoryTaskCompletionData {
+  period: string; // Time period (day, week, month)
+  completed: number; // Completed task count
+  total: number; // Total task count
+  rate: number; // Completion rate percentage (0-100)
 }
 
-export type ScriptsExecuteScriptResult = AdapterResultBase<ScriptExecuteData>;
+export type MemoryGetTaskCompletionResult = AdapterResultBase<MemoryTaskCompletionData>;
 
-export interface ScriptGetData {
-  id: string; // Script ID
-  name: string; // Script name
-  description: string; // Script description
-  runtime: string; // Lambda runtime
-  timeout: number; // Timeout in seconds
-  memory: number; // Memory in MB
-  activeVersion: number; // Active version number
-  isPublished: boolean; // Whether published
-  isPrivate: boolean; // Whether private
-  status: string; // Script status
-  deploymentStatus: string; // Deployment status
-  lambdaFunctionName: string; // Lambda function name
-  lambdaArn: string; // Lambda ARN
-  totalExecutions: number; // Total executions
-  totalCost: number; // Total cost in USD
-  avgDuration: number; // Average duration in ms
-  errorRate: number; // Error rate (0-1)
-  createdAt: string; // Created timestamp (ISO 8601)
-  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
-  publishedAt: string; // Published timestamp (ISO 8601) or empty
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
+export interface MemoryReminder {
+  id: string; // Reminder ID
+  title: string; // Reminder title
+  type: string; // Reminder type
+  dueAt: string; // Due date (ISO 8601)
+  daysUntilDue: number; // Days until due
 }
 
-export type ScriptsGetScriptResult = AdapterResultBase<ScriptGetData>;
-
-export interface ScriptSummary {
-  id: string; // Unique script ID
-  name: string; // Script name
-  description: string; // Script description
-  activeVersion: number; // Currently active version number
-  isPublished: boolean; // Whether script is published to marketplace
-  status: string; // Script status (draft, published, archived)
-  deploymentStatus: string; // Deployment status (pending, deploying, deployed, failed)
-  totalExecutions: number; // Total number of executions
-  createdAt: string; // Created timestamp (ISO 8601)
+export interface MemoryUpcomingRemindersData {
+  days: number; // Days lookahead
+  count: number; // Reminder count
+  reminders: MemoryReminder[]; // Upcoming reminders
 }
 
-export interface ScriptListData {
-  count: number; // Number of scripts
-  scripts: ScriptSummary[]; // List of scripts
+export type MemoryGetUpcomingRemindersResult = AdapterResultBase<MemoryUpcomingRemindersData>;
+
+export interface MemoryStatsData {
+  period: string; // Time period analyzed
+  total: number; // Total memory count
+  taskCount: number; // Task count
+  noteCount: number; // Note count
+  ideaCount: number; // Idea count
+  completedCount: number; // Completed items count
+  pendingCount: number; // Pending items count
 }
 
-export type ScriptsListScriptsResult = AdapterResultBase<ScriptListData>;
-
-export interface ScriptExecutionSummary {
-  executionId: string; // Unique execution ID
-  scriptId: string; // Script that was executed
-  status: string; // Execution status (running, completed, failed)
-  duration: number; // Execution duration in milliseconds
-  createdAt: string; // Execution timestamp (ISO 8601)
-  hasError: boolean; // Whether execution had an error
-}
-
-export interface ScriptExecutionsData {
-  scriptId: string; // Script ID
-  count: number; // Number of executions
-  executions: ScriptExecutionSummary[]; // List of executions
-}
-
-export type ScriptsGetExecutionsResult = AdapterResultBase<ScriptExecutionsData>;
-
-export interface ScriptExecutionData {
-  executionId: string; // Execution ID
-  scriptId: string; // Script ID
-  status: string; // Execution status
-  output: any; // Script output
-  duration: number; // Duration in milliseconds
-  logs: string[]; // Execution logs
-  error: string; // Error message (empty if no error)
-  createdAt: string; // Execution timestamp (ISO 8601)
-}
-
-export type ScriptsGetExecutionResult = AdapterResultBase<ScriptExecutionData>;
-
-export interface ScriptPublishData {
-  scriptId: string; // Published script ID
-  isPublished: boolean; // Publication status (true)
-  status: string; // Script status
-  publishedAt: string; // Publish timestamp (ISO 8601)
-}
-
-export type ScriptsPublishScriptResult = AdapterResultBase<ScriptPublishData>;
-
-export interface ScriptUnpublishData {
-  scriptId: string; // Unpublished script ID
-  unpublished: boolean; // Whether unpublish succeeded
-}
-
-export type ScriptsUnpublishScriptResult = AdapterResultBase<ScriptUnpublishData>;
-
-export interface ScriptMarketplaceListData {
-  total: number; // Total number of matching scripts
-  limit: number; // Page size limit
-  offset: number; // Current offset
-  scripts: ScriptSummary[]; // List of marketplace scripts
-}
-
-export type ScriptsListMarketplaceScriptsResult = AdapterResultBase<ScriptMarketplaceListData>;
-
-export interface ScriptMetricsData {
-  scriptId: string; // Script ID
-  totalExecutions: number; // Total number of executions
-  totalCost: number; // Total cost in USD
-  avgDuration: number; // Average duration in ms
-  successRate: number; // Success rate (0-1)
-  errorRate: number; // Error rate (0-1)
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
-}
-
-export type ScriptsGetMetricsResult = AdapterResultBase<ScriptMetricsData>;
-
-export interface ScriptWebhookData {
-  scriptId: string; // Script ID
-  webhookUrl: string; // Webhook URL endpoint
-  webhookSecret: string; // Webhook secret for verification
-  name: string; // Webhook name
-  enabled: boolean; // Whether webhook is enabled
-}
-
-export type ScriptsCreateWebhookResult = AdapterResultBase<ScriptWebhookData>;
-
-export interface ScriptScheduleData {
-  scheduleId: string; // Schedule ID
-  scriptId: string; // Script ID
-  name: string; // Schedule name
-  cronExpression: string; // Cron expression
-  enabled: boolean; // Whether schedule is enabled
-}
-
-export type ScriptsCreateScheduleResult = AdapterResultBase<ScriptScheduleData>;
-
-export interface ScriptFlowGetData {
-  code: string; // Script source code
-  version: number; // Active version number
-  scriptId: string; // Script ID
-  scriptName: string; // Script name
-  description: string; // Script description
-  isOwned: boolean; // Whether user owns the script
-}
-
-export type ScriptsGetFlowScriptResult = AdapterResultBase<ScriptFlowGetData>;
-
-export interface ScriptFlowModifyData {
-  copied: boolean; // Whether a copy was created (user did not own original)
-  scriptId: string; // Script ID (new if copied, original if owned)
-  versionId: string; // New version ID
-  version: number; // New version number
-}
-
-export type ScriptsModifyFlowScriptResult = AdapterResultBase<ScriptFlowModifyData>;
-
-export interface LintIssue {
-  severity: string; // Issue severity (error, warning)
-  message: string; // Issue description
-  line: number; // Line number where issue was found
-  suggestion: string; // Suggested fix
-}
-
-export interface ScriptLintData {
-  valid: boolean; // Whether script is valid
-  issueCount: number; // Number of issues found
-  issues: LintIssue[]; // List of lint issues
-  callAdapterCallsCount: number; // Number of callAdapter calls found
-  mirraSDKCallsCount: number; // Number of mirra SDK calls found
-}
-
-export type ScriptsLintScriptResult = AdapterResultBase<ScriptLintData>;
-
-// Feedback Response Types
-export interface FeedbackReportBugData {
-  id: string; // Unique identifier for the feedback report
-  createdAt: string; // ISO 8601 timestamp when created
-  source: string; // Source of the report: user_submitted or llm_auto_report
-  type: 'bug'; // Report type indicator
-  title: string; // Brief bug description
-  severity: string; // Bug severity: critical, high, medium, or low
-}
-
-export type FeedbackReportBugResult = AdapterResultBase<FeedbackReportBugData>;
-
-export interface FeedbackReportToolFailureData {
-  id: string; // Unique identifier for the feedback report
-  createdAt: string; // ISO 8601 timestamp when created
-  source: string; // Source of the report: user_submitted or llm_auto_report
-  type: 'tool_failure'; // Report type indicator
-  adapterType: string; // Adapter type that failed
-  operation: string; // Operation that failed
-  errorMessage: string; // Error message from the failure
-}
-
-export type FeedbackReportToolFailureResult = AdapterResultBase<FeedbackReportToolFailureData>;
-
-export interface FeedbackReportMissingCapabilityData {
-  id: string; // Unique identifier for the feedback report
-  createdAt: string; // ISO 8601 timestamp when created
-  source: string; // Source of the report: user_submitted or llm_auto_report
-  type: 'missing_capability'; // Report type indicator
-  userRequest: string; // What the user asked for
-  reason: string; // Why it could not be fulfilled
-}
-
-export type FeedbackReportMissingCapabilityResult = AdapterResultBase<FeedbackReportMissingCapabilityData>;
-
-export interface FeedbackSubmitFeedbackData {
-  id: string; // Unique identifier for the feedback report
-  createdAt: string; // ISO 8601 timestamp when created
-  source: string; // Source of the report: user_submitted or llm_auto_report
-  type: 'feedback'; // Report type indicator
-  sentiment: string; // Feedback sentiment: positive, negative, or neutral
-  category: string | null; // Feedback category: ux, performance, feature, or general
-}
-
-export type FeedbackSubmitFeedbackResult = AdapterResultBase<FeedbackSubmitFeedbackData>;
-
-export interface FeedbackSubmitFeatureRequestData {
-  id: string; // Unique identifier for the feedback report
-  createdAt: string; // ISO 8601 timestamp when created
-  source: string; // Source of the report: user_submitted or llm_auto_report
-  type: 'feature_request'; // Report type indicator
-  title: string; // Feature title
-  priority: string | null; // Priority: high, medium, or low
-}
-
-export type FeedbackSubmitFeatureRequestResult = AdapterResultBase<FeedbackSubmitFeatureRequestData>;
+export type MemoryGetMemoryStatsResult = AdapterResultBase<MemoryStatsData>;
 
 // Mirra Messaging Response Types
 export interface MirraMessagingSendMessageData {
@@ -4477,182 +3422,6 @@ export interface MoltbookGetStatusData {
 }
 
 export type MoltbookGetStatusResult = AdapterResultBase<MoltbookGetStatusData>;
-
-// Hypertrade Response Types
-export interface HypertradePlaceOrderData {
-  type: 'pending_order'; // Response type
-  asset: string; // Asset/coin symbol
-  isBuy: boolean; // Whether buying/longing
-  size: number; // Order size
-  limitPrice: number; // Limit price (0 for market)
-  orderType: string; // Order type (limit/market)
-  triggerPrice: number; // Trigger price (0 if none)
-  reduceOnly: boolean; // Whether reduce-only
-  postOnly: boolean; // Whether post-only
-  clientOrderId: string; // Client order ID (empty if none)
-  signerWallet: string; // Wallet address that needs to sign
-  expiresAt: string; // Expiration timestamp (ISO 8601)
-}
-
-export type HypertradePlaceOrderResult = AdapterResultBase<HypertradePlaceOrderData>;
-
-export interface HypertradeCancelOrderData {
-  type: 'pending_cancel'; // Response type
-  asset: string; // Asset/coin symbol
-  orderId: number; // Order ID to cancel (0 if using clientOrderId)
-  clientOrderId: string; // Client order ID to cancel (empty if using orderId)
-  cancelAll: boolean; // Whether cancelling all orders for the asset
-  signerWallet: string; // Wallet address that needs to sign
-  expiresAt: string; // Expiration timestamp (ISO 8601)
-}
-
-export type HypertradeCancelOrderResult = AdapterResultBase<HypertradeCancelOrderData>;
-
-export interface HypertradePosition {
-  asset: string; // Asset/coin symbol
-  size: number; // Position size (absolute value)
-  entryPrice: number; // Entry price
-  markPrice: number; // Current mark price
-  unrealizedPnl: number; // Unrealized PnL
-  leverage: number; // Current leverage
-  liquidationPrice: number; // Liquidation price
-  marginUsed: number; // Margin used for this position
-  positionValue: number; // Total position value
-  returnOnEquity: number; // Return on equity
-  side: string; // Position side: "long" or "short"
-}
-
-export interface HypertradeGetPositionsData {
-  positions: HypertradePosition[]; // List of open positions
-}
-
-export type HypertradeGetPositionsResult = AdapterResultBase<HypertradeGetPositionsData>;
-
-export interface HypertradeOpenOrder {
-  asset: string; // Asset/coin symbol
-  orderId: number; // Order ID
-  side: string; // Order side (Buy/Sell)
-  size: number; // Current order size
-  originalSize: number; // Original order size
-  price: number; // Limit price
-  orderType: string; // Order type
-  reduceOnly: boolean; // Whether reduce-only
-  timestamp: number; // Order creation timestamp
-  triggerCondition: string; // Trigger condition
-  triggerPrice: number; // Trigger price (0 if not trigger)
-  isTrigger: boolean; // Whether this is a trigger order
-}
-
-export interface HypertradeGetOpenOrdersData {
-  orders: HypertradeOpenOrder[]; // List of open orders
-}
-
-export type HypertradeGetOpenOrdersResult = AdapterResultBase<HypertradeGetOpenOrdersData>;
-
-export interface HypertradeSpotBalance {
-  coin: string; // Coin/token symbol
-  total: number; // Total balance
-  hold: number; // Balance on hold (in orders)
-  available: number; // Available balance
-}
-
-export interface HypertradeGetBalancesData {
-  accountValue: number; // Total account value
-  totalMarginUsed: number; // Total margin used
-  withdrawable: number; // Withdrawable amount
-  perpEquity: number; // Perpetual equity
-  spotBalances: HypertradeSpotBalance[]; // List of spot token balances
-}
-
-export type HypertradeGetBalancesResult = AdapterResultBase<HypertradeGetBalancesData>;
-
-export interface HypertradeMarketInfo {
-  asset: string; // Asset/coin symbol
-  markPrice: number; // Mark price
-  midPrice: number; // Mid price
-  oraclePrice: number; // Oracle price
-  openInterest: number; // Open interest
-  funding: number; // Current funding rate
-  dayVolume: number; // 24h notional volume
-  prevDayPrice: number; // Previous day price
-  maxLeverage: number; // Maximum allowed leverage
-  szDecimals: number; // Size decimals for this asset
-}
-
-export interface HypertradeGetMarketInfoData {
-  markets: HypertradeMarketInfo[]; // List of market info entries
-}
-
-export type HypertradeGetMarketInfoResult = AdapterResultBase<HypertradeGetMarketInfoData>;
-
-export interface HypertradeOrderbookLevel {
-  price: number; // Price level
-  size: number; // Total size at this level
-  numOrders: number; // Number of orders at this level
-}
-
-export interface HypertradeGetOrderbookData {
-  asset: string; // Asset/coin symbol
-  bids: HypertradeOrderbookLevel[]; // Bid levels (best first)
-  asks: HypertradeOrderbookLevel[]; // Ask levels (best first)
-  spread: number; // Best ask - best bid
-  midPrice: number; // Mid price ((best ask + best bid) / 2)
-  timestamp: number; // Snapshot timestamp
-}
-
-export type HypertradeGetOrderbookResult = AdapterResultBase<HypertradeGetOrderbookData>;
-
-export interface HypertradeCandle {
-  timestamp: number; // Candle open time in milliseconds
-  open: number; // Open price
-  high: number; // High price
-  low: number; // Low price
-  close: number; // Close price
-  volume: number; // Volume
-  numTrades: number; // Number of trades
-}
-
-export interface HypertradeGetCandlesData {
-  asset: string; // Asset/coin symbol
-  interval: string; // Candle interval
-  candles: HypertradeCandle[]; // List of candles
-}
-
-export type HypertradeGetCandlesResult = AdapterResultBase<HypertradeGetCandlesData>;
-
-export interface HypertradeSetLeverageData {
-  type: 'pending_leverage'; // Response type
-  asset: string; // Asset/coin symbol
-  leverage: number; // Leverage multiplier
-  leverageMode: string; // Leverage mode (cross/isolated)
-  isCrossMargin: boolean; // Whether cross margin
-  signerWallet: string; // Wallet address that needs to sign
-  expiresAt: string; // Expiration timestamp (ISO 8601)
-}
-
-export type HypertradeSetLeverageResult = AdapterResultBase<HypertradeSetLeverageData>;
-
-export interface HypertradeTradeFill {
-  asset: string; // Asset/coin symbol
-  tradeId: number; // Trade ID
-  orderId: number; // Order ID
-  side: string; // Trade side
-  price: number; // Fill price
-  size: number; // Fill size
-  fee: number; // Fee amount
-  feeToken: string; // Fee token
-  closedPnl: number; // Realized PnL from this trade
-  timestamp: number; // Trade timestamp
-  direction: string; // Trade direction
-  crossed: boolean; // Whether this was a taker fill
-  hash: string; // Transaction hash
-}
-
-export interface HypertradeGetTradeHistoryData {
-  trades: HypertradeTradeFill[]; // List of trade fills
-}
-
-export type HypertradeGetTradeHistoryResult = AdapterResultBase<HypertradeGetTradeHistoryData>;
 
 // Shopify Response Types
 export interface ShopifyNormalizedProduct {
@@ -5472,859 +4241,624 @@ export interface ShopifyDeleteRedirectData {
 
 export type ShopifyDeleteRedirectResult = AdapterResultBase<ShopifyDeleteRedirectData>;
 
+// Telegram Response Types
+export interface TelegramSendMessageData {
+  messageId: number; // ID of the sent message
+  chatId: string; // Chat ID where message was sent
+  text: string; // Message text that was sent
+  sentAt: string; // ISO 8601 timestamp when sent
+}
+
+export type TelegramSendMessageResult = AdapterResultBase<TelegramSendMessageData>;
+
+export interface TelegramChat {
+  id: string; // Chat ID
+  title: string; // Chat title/name
+  type: 'private' | 'group' | 'channel'; // Chat type
+  username: string | null; // Chat username (if available)
+  lastMessageDate: string | null; // ISO 8601 date of last message
+  unreadCount: number; // Number of unread messages
+  unreadMentionsCount: number; // Number of unread mentions
+  pinned: boolean; // Whether chat is pinned
+  archived: boolean; // Whether chat is archived
+  memberCount: number; // Number of members (for groups/channels)
+  relevanceScore?: number; // Relevance score when query is provided
+}
+
+export interface TelegramPaginationInfo {
+  totalCount: number; // Total number of matching chats
+  limit: number; // Maximum items per page
+  offset: number; // Current offset
+  hasMore: boolean; // Whether more results are available
+}
+
+export interface TelegramSearchChatsData {
+  items: TelegramChat[]; // List of matching chats
+  pagination: TelegramPaginationInfo; // Pagination metadata
+}
+
+export type TelegramSearchChatsResult = AdapterResultBase<TelegramSearchChatsData>;
+
+export interface TelegramMessage {
+  id: string; // Message ID
+  text: string; // Message text content
+  caption: string | null; // Caption for media messages
+  date: string; // ISO 8601 timestamp
+  chatId: string; // Chat ID where message was sent
+  senderId: string; // Sender user ID
+  senderName: string; // Sender display name
+  hasMedia: boolean; // Whether message has media attachment
+  mediaType: string | null; // Media type: photo, video, document, etc.
+  isOutgoing: boolean; // Whether message was sent by the user
+  replyToMessageId: string | null; // ID of message being replied to
+}
+
+export interface TelegramSearchMessagesData {
+  messages: TelegramMessage[]; // List of matching messages
+  count: number; // Number of messages returned
+}
+
+export type TelegramSearchMessagesResult = AdapterResultBase<TelegramSearchMessagesData>;
+
+export interface TelegramGetChatMessagesData {
+  messages: TelegramMessage[]; // List of messages from the chat
+  count: number; // Number of messages returned
+  chatId?: string; // Chat ID the messages are from
+}
+
+export type TelegramGetChatMessagesResult = AdapterResultBase<TelegramGetChatMessagesData>;
+
+export interface TelegramUnreadSummaryEntry {
+  chatId: string; // Chat ID
+  chatName: string; // Chat display name
+  chatType: 'private' | 'group' | 'channel'; // Chat type
+  unreadCount: number; // Number of unread messages
+  hasMention: boolean; // Whether there are unread mentions
+  lastMessageText: string | null; // Text of last message
+  lastMessageSender: string | null; // Sender of last message
+  lastMessageDate: string | null; // ISO 8601 date of last message
+}
+
+export interface TelegramUnreadSummaryData {
+  chats: TelegramUnreadSummaryEntry[]; // List of chats with unread information
+  totalUnread: number; // Total unread messages across all chats
+  chatsWithUnread: number; // Number of chats with unread messages
+}
+
+export type TelegramGetUnreadSummaryResult = AdapterResultBase<TelegramUnreadSummaryData>;
+
+export interface TelegramMarkAsReadData {
+  success: boolean; // Whether the operation succeeded
+  chatId: string; // Chat ID that was marked as read
+  markedAt: string; // ISO 8601 timestamp when marked
+}
+
+export type TelegramMarkAsReadResult = AdapterResultBase<TelegramMarkAsReadData>;
+
+export interface TelegramMentionsData {
+  mentions: TelegramMessage[]; // List of messages with mentions
+  count: number; // Number of mentions returned
+}
+
+export type TelegramGetMentionsResult = AdapterResultBase<TelegramMentionsData>;
+
+export interface TelegramLeaveGroupData {
+  success: boolean; // Whether the operation succeeded
+  chatId: string; // Chat ID that was left
+  leftAt: string; // ISO 8601 timestamp when left
+}
+
+export type TelegramLeaveGroupResult = AdapterResultBase<TelegramLeaveGroupData>;
+
+// Trello Response Types
+export interface TrelloBoard {
+  id: string; // Board ID
+  name: string; // Board name
+  description: string; // Board description
+  url: string; // Board URL
+  closed: boolean; // Whether board is closed/archived
+  starred: boolean; // Whether board is starred
+  listCount: number; // Number of lists in the board
+}
+
+export interface TrelloGetBoardsData {
+  boards: TrelloBoard[]; // List of boards
+  count: number; // Number of boards returned
+}
+
+export type TrelloGetBoardsResult = AdapterResultBase<TrelloGetBoardsData>;
+
+export interface TrelloList {
+  id: string; // List ID
+  name: string; // List name
+  closed: boolean; // Whether list is closed/archived
+  position: number; // List position
+  boardId: string; // ID of the parent board
+}
+
+export interface TrelloGetBoardData {
+  id: string; // Board ID
+  name: string; // Board name
+  description: string; // Board description
+  url: string; // Board URL
+  closed: boolean; // Whether board is closed
+  starred: boolean; // Whether board is starred
+  lists: TrelloList[]; // Lists in the board
+  listCount: number; // Number of lists
+}
+
+export type TrelloGetBoardResult = AdapterResultBase<TrelloGetBoardData>;
+
+export interface TrelloCard {
+  id: string; // Card ID
+  name: string; // Card name/title
+  description: string; // Card description
+  url: string; // Card URL
+  shortUrl: string; // Short card URL
+  closed: boolean; // Whether card is archived
+  position: number; // Card position in list
+  listId: string; // ID of the parent list
+  boardId: string; // ID of the parent board
+  dueDate: string | null; // Due date in ISO 8601 format
+  dueComplete: boolean; // Whether due date is marked complete
+  labels: string[]; // Array of label names
+  checklistCount: number; // Number of checklists on the card
+  attachmentCount: number; // Number of attachments
+  commentCount: number; // Number of comments
+}
+
+export interface TrelloCreateCardData {
+  card: TrelloCard; // Created card
+}
+
+export type TrelloCreateCardResult = AdapterResultBase<TrelloCreateCardData>;
+
+export interface TrelloGetCardData {
+  card: TrelloCard; // Card details
+}
+
+export type TrelloGetCardResult = AdapterResultBase<TrelloGetCardData>;
+
+export interface TrelloUpdateCardData {
+  card: TrelloCard; // Updated card
+}
+
+export type TrelloUpdateCardResult = AdapterResultBase<TrelloUpdateCardData>;
+
+export interface TrelloDeleteCardData {
+  success: boolean; // Whether deletion succeeded
+  deletedId: string; // ID of the deleted entity
+  deletedAt: string; // ISO 8601 timestamp of deletion
+}
+
+export type TrelloDeleteCardResult = AdapterResultBase<TrelloDeleteCardData>;
+
+export interface TrelloChecklist {
+  id: string; // Checklist ID
+  name: string; // Checklist name
+  cardId: string; // ID of the parent card
+  boardId: string; // ID of the parent board
+  position: number; // Checklist position
+  checkItemCount: number; // Total number of check items
+  checkItemsChecked: number; // Number of completed check items
+}
+
+export interface TrelloCheckItem {
+  id: string; // Check item ID
+  name: string; // Check item text
+  checklistId: string; // ID of the parent checklist
+  state: 'complete' | 'incomplete'; // Completion state
+  position: number; // Check item position
+}
+
+export interface TrelloCreateChecklistData {
+  checklist: TrelloChecklist; // Created checklist
+  checkItems: TrelloCheckItem[]; // Check items in the checklist
+}
+
+export type TrelloCreateChecklistResult = AdapterResultBase<TrelloCreateChecklistData>;
+
+export interface TrelloGetChecklistData {
+  checklist: TrelloChecklist; // Checklist details
+  checkItems: TrelloCheckItem[]; // Check items in the checklist
+}
+
+export type TrelloGetChecklistResult = AdapterResultBase<TrelloGetChecklistData>;
+
+export interface TrelloUpdateChecklistData {
+  checklist: TrelloChecklist; // Updated checklist
+  checkItems: TrelloCheckItem[]; // Check items in the checklist
+}
+
+export type TrelloUpdateChecklistResult = AdapterResultBase<TrelloUpdateChecklistData>;
+
+export interface TrelloDeleteChecklistData {
+  success: boolean; // Whether deletion succeeded
+  deletedId: string; // ID of the deleted entity
+  deletedAt: string; // ISO 8601 timestamp of deletion
+}
+
+export type TrelloDeleteChecklistResult = AdapterResultBase<TrelloDeleteChecklistData>;
+
+export interface TrelloAddCheckItemData {
+  checkItem: TrelloCheckItem; // Created check item
+}
+
+export type TrelloAddCheckItemResult = AdapterResultBase<TrelloAddCheckItemData>;
+
+export interface TrelloUpdateCheckItemData {
+  checkItem: TrelloCheckItem; // Updated check item
+}
+
+export type TrelloUpdateCheckItemResult = AdapterResultBase<TrelloUpdateCheckItemData>;
+
+export interface TrelloDeleteCheckItemData {
+  success: boolean; // Whether deletion succeeded
+  deletedId: string; // ID of the deleted entity
+  deletedAt: string; // ISO 8601 timestamp of deletion
+}
+
+export type TrelloDeleteCheckItemResult = AdapterResultBase<TrelloDeleteCheckItemData>;
+
+// Twitter Response Types
+export interface TwitterPostTweetData {
+  tweetId: string; // ID of the posted tweet
+  text: string; // Text content of the posted tweet
+}
+
+export type TwitterPostTweetResult = AdapterResultBase<TwitterPostTweetData>;
+
+export interface TwitterNormalizedTweet {
+  id: string; // Tweet ID
+  text: string; // Tweet text content
+  url: string; // Direct URL to the tweet
+  createdAt: string; // Tweet creation time (ISO 8601)
+  lang?: string; // Tweet language code
+  likeCount: number; // Number of likes
+  retweetCount: number; // Number of retweets
+  replyCount: number; // Number of replies
+  quoteCount: number; // Number of quote tweets
+  viewCount: number; // Number of views
+  bookmarkCount: number; // Number of bookmarks
+  isReply: boolean; // Whether this is a reply to another tweet
+  isRetweet: boolean; // Whether this is a retweet
+  source?: string; // Source application of the tweet
+  authorId: string; // Author user ID
+  authorName: string; // Author display name
+  authorUserName: string; // Author username/handle
+  authorFollowers: number; // Author follower count
+  authorFollowing: number; // Author following count
+  authorIsVerified: boolean; // Whether the author is verified
+  authorVerifiedType?: string; // Type of verification (blue, business, government)
+  authorCreatedAt?: string; // Author account creation date
+}
+
+export interface TwitterGetUserTweetsData {
+  tweets: TwitterNormalizedTweet[]; // List of normalized tweets
+  hasNextPage: boolean; // Whether more tweets are available
+  nextCursor: string; // Cursor for fetching the next page
+  totalRetrieved: number; // Number of tweets retrieved in this response
+}
+
+export type TwitterGetUserTweetsResult = AdapterResultBase<TwitterGetUserTweetsData>;
+
+export interface TwitterAdvancedSearchData {
+  query: string; // Search query used
+  queryType: string; // Type of search: Latest or Top
+  tweets: TwitterNormalizedTweet[]; // List of matching tweets
+  hasNextPage: boolean; // Whether more results are available
+  nextCursor: string; // Cursor for fetching the next page
+  totalRetrieved: number; // Number of tweets retrieved in this response
+}
+
+export type TwitterAdvancedSearchResult = AdapterResultBase<TwitterAdvancedSearchData>;
+
+// Google Docs Response Types
+export interface GoogleDocsCreateDocumentData {
+  documentId: string; // ID of the created document
+  title: string; // Title of the created document
+}
+
+export type GoogleDocsCreateDocumentResult = AdapterResultBase<GoogleDocsCreateDocumentData>;
+
+export interface GoogleDocsDocumentData {
+  documentId: string; // ID of the document
+  title: string; // Title of the document
+  revisionId: string; // Current revision ID
+  body: string; // Plain text content of the document
+  bodyLength: number; // Character count of the body
+  lastEditedTime?: string; // ISO 8601 timestamp of last edit
+  url: string; // URL to the document
+  hasContent: boolean; // Whether document has any text content
+}
+
+export type GoogleDocsGetDocumentResult = AdapterResultBase<GoogleDocsDocumentData>;
+
+export interface GoogleDocsContentData {
+  documentId: string; // ID of the document
+  content: string; // Plain text content of the document
+}
+
+export type GoogleDocsGetDocumentContentResult = AdapterResultBase<GoogleDocsContentData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsAppendTextResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsInsertTextAtPositionResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsInsertTextAfterResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsInsertHeadingResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsInsertListResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsInsertTableResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsReplaceTextResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsUpdateDocumentContentResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsSectionResultData {
+  documentId: string; // ID of the document
+  title: string; // Title of the document
+  url: string; // URL to the document
+  heading: string; // The heading text that was created
+  insertionIndex: number; // Character position where section was inserted
+  success: boolean; // Whether the operation succeeded
+}
+
+export type GoogleDocsCreateSectionResult = AdapterResultBase<GoogleDocsSectionResultData>;
+
+export interface GoogleDocsInsertionPointData {
+  documentId: string; // ID of the document
+  title: string; // Title of the document
+  url: string; // URL to the document
+  position: number; // Character position for insertion
+  context: string; // Text context around the insertion point
+  documentLength: number; // Total character length of the document
+}
+
+export type GoogleDocsFindInsertionPointResult = AdapterResultBase<GoogleDocsInsertionPointData>;
+
+// Google Sheets Response Types
+export interface GoogleSheetsCreateSpreadsheetData {
+  spreadsheetId: string; // Created spreadsheet ID
+  title: string; // Spreadsheet title
+  url: string; // URL to open spreadsheet in browser
+}
+
+export type GoogleSheetsCreateSpreadsheetResult = AdapterResultBase<GoogleSheetsCreateSpreadsheetData>;
+
+export interface GoogleSheetsSheetInfo {
+  sheetId: number; // Numeric sheet ID
+  title: string; // Sheet tab name
+  index: number; // Sheet index (0-based)
+  rowCount: number; // Total rows in sheet
+  columnCount: number; // Total columns in sheet
+  isHidden: boolean; // Whether sheet is hidden
+}
+
+export interface GoogleSheetsNamedRange {
+  name: string; // Named range identifier
+  range: string; // Range in A1 notation
+  sheetId?: number; // Sheet ID containing the range
+}
+
+export interface GoogleSheetsGetSpreadsheetData {
+  spreadsheetId: string; // Spreadsheet ID
+  title: string; // Spreadsheet title
+  url: string; // URL to open spreadsheet
+  locale: string; // Spreadsheet locale (e.g., en_US)
+  timeZone: string; // Spreadsheet timezone
+  sheets: GoogleSheetsSheetInfo[]; // List of sheets in the spreadsheet
+  namedRanges: GoogleSheetsNamedRange[]; // List of named ranges
+}
+
+export type GoogleSheetsGetSpreadsheetResult = AdapterResultBase<GoogleSheetsGetSpreadsheetData>;
+
+export interface GoogleSheetsReadRangeData {
+  spreadsheetId: string; // Spreadsheet ID
+  range: string; // Range that was read
+  values: any[][]; // 2D array of cell values
+  rowCount: number; // Number of rows returned
+  columnCount: number; // Number of columns in widest row
+  isEmpty: boolean; // Whether the range is empty
+}
+
+export type GoogleSheetsReadRangeResult = AdapterResultBase<GoogleSheetsReadRangeData>;
+
+export interface GoogleSheetsWriteRangeData {
+  spreadsheetId: string; // Spreadsheet ID
+  updatedRange: string; // Range that was updated
+  updatedRows: number; // Number of rows updated
+  updatedColumns: number; // Number of columns updated
+  updatedCells: number; // Total cells updated
+}
+
+export type GoogleSheetsWriteRangeResult = AdapterResultBase<GoogleSheetsWriteRangeData>;
+
+export interface GoogleSheetsAppendRowData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetName: string; // Sheet name
+  appendedRange: string; // Range where data was appended
+  appendedRows: number; // Number of rows appended
+  appendedCells: number; // Total cells appended
+  values: any[]; // Values that were appended
+}
+
+export type GoogleSheetsAppendRowResult = AdapterResultBase<GoogleSheetsAppendRowData>;
+
+export interface GoogleSheetsInsertAtCellData {
+  spreadsheetId: string; // Spreadsheet ID
+  cell: string; // Cell reference (e.g., Sheet1!A1)
+  value: any; // Value that was inserted
+  previousValue?: any; // Previous cell value if any
+  formatted: boolean; // Whether formatting was applied
+}
+
+export type GoogleSheetsInsertAtCellResult = AdapterResultBase<GoogleSheetsInsertAtCellData>;
+
+export interface GoogleSheetsInsertFormulaData {
+  spreadsheetId: string; // Spreadsheet ID
+  cell: string; // Cell reference
+  formula: string; // Formula that was inserted
+}
+
+export type GoogleSheetsInsertFormulaResult = AdapterResultBase<GoogleSheetsInsertFormulaData>;
+
+export interface GoogleSheetsFormatRangeData {
+  spreadsheetId: string; // Spreadsheet ID
+  range: string; // Range that was formatted
+  formattingApplied: string[]; // List of formatting options applied
+}
+
+export type GoogleSheetsFormatRangeResult = AdapterResultBase<GoogleSheetsFormatRangeData>;
+
+export interface GoogleSheetsCreateChartData {
+  spreadsheetId: string; // Spreadsheet ID
+  chartType: string; // Type of chart created
+  title: string; // Chart title
+  dataRange: string; // Data range used for chart
+  positionRow: number; // Row where chart is anchored
+  positionColumn: string; // Column where chart is anchored
+}
+
+export type GoogleSheetsCreateChartResult = AdapterResultBase<GoogleSheetsCreateChartData>;
+
+export interface GoogleSheetsFindAndReplaceData {
+  spreadsheetId: string; // Spreadsheet ID
+  findText: string; // Text that was searched for
+  replaceText: string; // Replacement text
+  occurrencesReplaced: number; // Number of replacements made
+  sheetName?: string; // Sheet searched (null for all)
+  matchCase: boolean; // Whether search was case-sensitive
+  matchEntireCell: boolean; // Whether entire cell match required
+}
+
+export type GoogleSheetsFindAndReplaceResult = AdapterResultBase<GoogleSheetsFindAndReplaceData>;
+
+export interface GoogleSheetsInsertMultipleRowsData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetName: string; // Sheet name
+  rowsInserted: number; // Number of rows inserted
+  cellsInserted: number; // Total cells inserted
+  startingRow?: number; // Starting row (null if appended)
+  formatted: boolean; // Whether formatting was applied
+}
+
+export type GoogleSheetsInsertMultipleRowsResult = AdapterResultBase<GoogleSheetsInsertMultipleRowsData>;
+
+export interface GoogleSheetsClearRangeData {
+  spreadsheetId: string; // Spreadsheet ID
+  range: string; // Range that was cleared
+  cellsCleared: number; // Number of cells cleared
+}
+
+export type GoogleSheetsClearRangeResult = AdapterResultBase<GoogleSheetsClearRangeData>;
+
+export interface GoogleSheetsInsertRowsData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetId: number; // Numeric sheet ID
+  operation: string; // Operation type (insert)
+  startRowIndex: number; // Row index where insertion started (0-indexed)
+  numRows: number; // Number of rows inserted
+}
+
+export type GoogleSheetsInsertRowsResult = AdapterResultBase<GoogleSheetsInsertRowsData>;
+
+export interface GoogleSheetsDeleteRowsData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetId: number; // Numeric sheet ID
+  operation: string; // Operation type (delete)
+  startRowIndex: number; // Row index where deletion started (0-indexed)
+  numRows: number; // Number of rows deleted
+}
+
+export type GoogleSheetsDeleteRowsResult = AdapterResultBase<GoogleSheetsDeleteRowsData>;
+
+export interface GoogleSheetsInsertColumnsData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetId: number; // Numeric sheet ID
+  operation: string; // Operation type (insert)
+  startColumnIndex: number; // Column index where insertion started (0-indexed)
+  startColumnLetter: string; // Column letter where insertion started
+  numColumns: number; // Number of columns inserted
+}
+
+export type GoogleSheetsInsertColumnsResult = AdapterResultBase<GoogleSheetsInsertColumnsData>;
+
+export interface GoogleSheetsDeleteColumnsData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetId: number; // Numeric sheet ID
+  operation: string; // Operation type (delete)
+  startColumnIndex: number; // Column index where deletion started (0-indexed)
+  startColumnLetter: string; // Column letter where deletion started
+  numColumns: number; // Number of columns deleted
+}
+
+export type GoogleSheetsDeleteColumnsResult = AdapterResultBase<GoogleSheetsDeleteColumnsData>;
+
+export interface GoogleSheetsCopyRangeData {
+  spreadsheetId: string; // Spreadsheet ID
+  sourceSheetId: number; // Source sheet ID
+  sourceRange: string; // Source range in A1 notation
+  targetSheetId: number; // Target sheet ID
+  targetStartCell: string; // Target start cell
+}
+
+export type GoogleSheetsCopyRangeResult = AdapterResultBase<GoogleSheetsCopyRangeData>;
+
 
 // ============================================================================
 // Adapter Factory Functions
 // ============================================================================
-
-/**
- * Flows Adapter
- * Category: internal
- */
-function createFlowsAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Create a flow (event-triggered or time-scheduled). This is the unified, simplified interface for flow creation.
-
-TRIGGER TYPE (provide exactly one):
-- schedule: Cron expression for time-based flows (e.g., "0 9 * * *"). Times are automatically in the user's local timezone.
-- eventType: Event type shorthand for event flows (e.g., "telegram.message")
-- eventFilter: Full filter object for complex event conditions
-- trigger: Legacy nested structure (still supported)
-
-SCRIPT (provide exactly one):
-- code: Inline script code - will auto-create, deploy, and link the script
-- scriptId: ID of an existing deployed script
-
-EXAMPLES:
-
-Time flow with inline code:
-{
-  title: "Daily Report",
-  schedule: "0 9 * * *",
-  code: "export async function handler(event, context, mirra) { await mirra.telegram.sendMessage({...}); return { done: true }; }"
-}
-
-Event flow with eventType shorthand:
-{
-  title: "Handle Messages",
-  eventType: "telegram.message",
-  code: "export async function handler(event, context, mirra) { return { handled: true }; }"
-}
-
-Event flow with existing script:
-{
-  eventType: "gmail.email_received",
-  scriptId: "existing-script-id"
-}
-
-HANDLER RETURN VALUES:
-The handler's return object controls how the flow executor records the result:
-
-Success — work was done:
-  return { success: true, ...data }
-
-No-Op — nothing to do (not an error):
-  return { success: false, noOp: true, reason: "No transcript available" }
-  Use when the handler correctly determines no action is needed (e.g., no input data,
-  content already processed, empty trigger). No-ops are recorded as successful executions
-  and do NOT count toward the 3-consecutive-failure auto-pause threshold.
-
-Failure — something went wrong:
-  return { success: false, reason: "What went wrong" }
-  Use for actual errors. 3 consecutive failures will auto-pause the flow.
-     * @param args.title - Flow title. Required if providing inline code. (optional)
-     * @param args.description - Detailed description of what the flow does (optional)
-     * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId. (optional)
-     * @param args.scriptId - ID of existing deployed script. Cannot use with code. (optional)
-     * @param args.schedule - Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone. (optional)
-     * @param args.eventType - Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type. (optional)
-     * @param args.eventFilter - Full event filter with operator and conditions array for complex filtering. (optional)
-     * @param args.trigger - Legacy nested trigger structure. Prefer eventType or eventFilter instead. (optional)
-     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields. (optional)
-     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings. (optional)
-     * @param args.enabled - Whether the flow is enabled (default: true) (optional)
-     * @returns Promise<FlowsCreateFlowResult> Typed response with IDE autocomplete
-     */
-    createFlow: async (args: FlowsCreateFlowArgs): Promise<FlowsCreateFlowResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'createFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create a new time-based flow with cron schedule. NOTE: Consider using createFlow instead for a simpler interface with inline code support.
-     * @param args.title - Flow title
-     * @param args.description - Detailed description of what the flow does
-     * @param args.schedule - Cron expression for scheduling (e.g., "0 9 * * *" for daily at 9am)
-     * @param args.scriptId - ID of the script to execute when triggered
-     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler). (optional)
-     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }. (optional)
-     * @returns Promise<FlowsCreateTimeFlowResult> Typed response with IDE autocomplete
-     */
-    createTimeFlow: async (args: FlowsCreateTimeFlowArgs): Promise<FlowsCreateTimeFlowResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'createTimeFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create an event-based flow with pre-filtering conditions. NOTE: Consider using createFlow instead for a simpler interface with inline code support.
-
-EFFICIENCY RULE: Always filter in eventFilter, not the script.
-- eventFilter conditions: FREE (evaluated in-memory before script runs)
-- Script filtering: EXPENSIVE (invokes Lambda for every event)
-
-BAD: Trigger on "telegram.message" with no filter → script checks sender
-GOOD: Trigger on "telegram.message" with eventFilter for sender
-
-TRIGGER STRUCTURE:
-{
-  type: "event",
-  config: {
-    eventFilter: {
-      operator: "and" | "or",
-      conditions: [
-        { operator: "equals", field: "type", value: "call.ended" },
-        { operator: "contains", field: "content.text", value: "urgent" }
-      ]
-    }
-  }
-}
-
-IMPORTANT: Use field: "type" (not "eventType") to filter by event type. This is required for testFlow to auto-generate test events.
-
-VALID OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not
-
-COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.action, telegram.message, gmail.email_received
-     * @param args.title - Flow title
-     * @param args.description - Detailed description of what the flow does
-     * @param args.trigger - Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
-     * @param args.scriptId - ID of the script to execute when triggered
-     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler). (optional)
-     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }. (optional)
-     * @returns Promise<FlowsCreateEventFlowResult> Typed response with IDE autocomplete
-     */
-    createEventFlow: async (args: FlowsCreateEventFlowArgs): Promise<FlowsCreateEventFlowResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'createEventFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get a specific flow by ID. Returns normalized flat structure.
-     * @param args.id - Flow ID
-     * @returns Promise<FlowsGetFlowResult> Typed response with IDE autocomplete
-     */
-    getFlow: async (args: FlowsGetFlowArgs): Promise<FlowsGetFlowResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'getFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update an existing flow. Returns normalized flat structure.
-     * @param args.id - Flow ID to update
-     * @param args.title - New title (optional)
-     * @param args.description - New description (optional)
-     * @param args.trigger - New trigger configuration (optional)
-     * @param args.scriptId - New script ID (optional)
-     * @param args.scriptInput - New static input data for the script. Fields are spread into event.data in handler code. (optional)
-     * @param args.scriptInputSchema - Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }. (optional)
-     * @param args.status - New status: active, paused, completed, failed (optional)
-     * @returns Promise<FlowsUpdateFlowResult> Typed response with IDE autocomplete
-     */
-    updateFlow: async (args: FlowsUpdateFlowArgs): Promise<FlowsUpdateFlowResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'updateFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete a flow
-     * @param args.id - Flow ID to delete
-     * @returns Promise<FlowsDeleteFlowResult> Typed response with IDE autocomplete
-     */
-    deleteFlow: async (args: FlowsDeleteFlowArgs): Promise<FlowsDeleteFlowResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'deleteFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Pause an active flow. Returns normalized flat structure.
-     * @param args.id - Flow ID to pause
-     * @returns Promise<FlowsPauseFlowResult> Typed response with IDE autocomplete
-     */
-    pauseFlow: async (args: FlowsPauseFlowArgs): Promise<FlowsPauseFlowResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'pauseFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Resume a paused flow. Returns normalized flat structure.
-     * @param args.id - Flow ID to resume
-     * @returns Promise<FlowsResumeFlowResult> Typed response with IDE autocomplete
-     */
-    resumeFlow: async (args: FlowsResumeFlowArgs): Promise<FlowsResumeFlowResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'resumeFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Search flows with filters. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. Use getFlow for full details on a specific flow.
-     * @param args.status - Filter by status (or array of statuses) (optional)
-     * @param args.triggerType - Filter by trigger type: time or event (optional)
-     * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
-     * @param args.limit - Maximum number of results (default: 20) (optional)
-     * @param args.offset - Pagination offset (default: 0) (optional)
-     * @returns Promise<FlowsSearchFlowsResult> Typed response with IDE autocomplete
-     */
-    searchFlows: async (args: FlowsSearchFlowsArgs): Promise<FlowsSearchFlowsResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'searchFlows',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Record execution result for a flow. Returns normalized flat structure.
-     * @param args.id - Flow ID
-     * @param args.success - Whether execution succeeded
-     * @param args.result - Execution result data (optional)
-     * @param args.error - Error message if execution failed (optional)
-     * @returns Promise<FlowsRecordExecutionResult> Typed response with IDE autocomplete
-     */
-    recordExecution: async (args: FlowsRecordExecutionArgs): Promise<FlowsRecordExecutionResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'recordExecution',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List all available event types that can trigger automations. Returns normalized event types.
-
-IMPORTANT: Use includeSchema: true when writing scripts to see available fields and correct access patterns.
-
-Scripts receive an ExecutionRequest, NOT the raw IntegrationEvent. Correct access patterns:
-- event.data.text (normalized text content)
-- event.data.sender (normalized sender name)
-- event.data.event (full IntegrationEvent object)
-- event.trigger.event (also full IntegrationEvent)
-
-Common WRONG patterns that don't work:
-- event.summary (doesn't exist)
-- event.content.text (wrong path)
-- event.timestamp (wrong path)
-     * @param args.includeTemplates - Include condition templates for each event type (optional)
-     * @param args.includeSchema - Include field schema showing available paths for script access. RECOMMENDED when writing scripts to see correct field access patterns. (optional)
-     * @returns Promise<FlowsListEventTypesResult> Typed response with IDE autocomplete
-     */
-    listEventTypes: async (args: FlowsListEventTypesArgs): Promise<FlowsListEventTypesResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'listEventTypes',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Test a flow by generating an event that matches the trigger conditions.
-
-REQUIREMENT: The flow's trigger conditions MUST include a condition with field: "type" or field: "source" so the system knows what kind of test event to generate.
-
-CORRECT condition: { operator: "equals", field: "type", value: "telegram.message" }
-WRONG condition: { operator: "equals", field: "eventType", value: "telegram.message" }
-
-If your flow lacks a "type" or "source" condition, use validateTrigger instead with a manually constructed event.
-
-MODES:
-- dryRun=true (DEFAULT): Validates trigger matching only. Safe, no side effects, no token consumption.
-- dryRun=false: Executes the real script. WARNING: This causes real side effects (sends messages, makes API calls, consumes tokens).
-
-Use dryRun=true first to verify trigger conditions work, then dryRun=false only when ready to test full execution.
-
-WORKFLOW:
-1. Generates a test event from the flow's trigger conditions (requires "type" or "source" field)
-2. Validates the event matches the trigger (always)
-3. If dryRun=false, executes the script with the test event
-
-RESULT:
-Returns detailed information about trigger matching, including which conditions passed/failed, and optionally full execution results.
-     * @param args.flowId - ID of the flow to test
-     * @param args.dryRun - If true (default), only validate trigger matching without executing script. If false, execute the script (causes side effects). (optional)
-     * @param args.eventOverrides - Custom field values to merge into the generated test event (e.g., {"content.text": "custom message"}) (optional)
-     * @returns Promise<FlowsTestFlowResult> Typed response with IDE autocomplete
-     */
-    testFlow: async (args: FlowsTestFlowArgs): Promise<FlowsTestFlowResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'testFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Check if a custom event would match a flow trigger without any execution. Useful for debugging trigger conditions or testing with real event data.
-     * @param args.flowId - ID of the flow
-     * @param args.event - Event object to test against the trigger (must match IntegrationEvent structure)
-     * @returns Promise<FlowsValidateTriggerResult> Typed response with IDE autocomplete
-     */
-    validateTrigger: async (args: FlowsValidateTriggerArgs): Promise<FlowsValidateTriggerResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'validateTrigger',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get all active flows triggered by a specific event type. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats.
-     * @param args.eventType - Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
-     * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
-     * @returns Promise<FlowsGetFlowsByEventTypeResult> Typed response with IDE autocomplete
-     */
-    getFlowsByEventType: async (args: FlowsGetFlowsByEventTypeArgs): Promise<FlowsGetFlowsByEventTypeResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'getFlowsByEventType',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create a self-managing flow that processes multiple adapter operations over time, respecting rate limits. The flow automatically cleans up when complete and notifies the user via feed item.
-     * @param args.title - Human-readable title for this batch operation (e.g., "Leave 100 Telegram groups")
-     * @param args.operations - Array of operations to execute. Each item must have adapter, operation, and args properties.
-     * @param args.batchSize - Number of operations to process per execution (default: 5) (optional)
-     * @param args.intervalSeconds - Seconds between batch executions (default: 60, minimum: 60) (optional)
-     * @returns Promise<FlowsCreateBatchOperationResult> Typed response with IDE autocomplete
-     */
-    createBatchOperation: async (args: FlowsCreateBatchOperationArgs): Promise<FlowsCreateBatchOperationResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'createBatchOperation',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Publish a flow to the marketplace so other users can discover and install it. The flow must have a deployed script.
-     * @param args.flowId - ID of the flow to publish
-     * @param args.pricing - Pricing configuration. Defaults to { model: "free" }. Supported models: "free", "pay-per-execution". For paid models, include basePrice. (optional)
-     * @param args.tags - Tags for marketplace discovery (e.g., ["telegram", "automation"]) (optional)
-     * @param args.category - Marketplace category (e.g., "messaging", "productivity"). Defaults to "uncategorized". (optional)
-     * @returns Promise<FlowsPublishFlowResult> Typed response with IDE autocomplete
-     */
-    publishFlow: async (args: FlowsPublishFlowArgs): Promise<FlowsPublishFlowResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'publishFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Remove a flow from the marketplace. Existing installations will continue to work.
-     * @param args.flowId - ID of the flow to unpublish
-     * @returns Promise<FlowsUnpublishFlowResult> Typed response with IDE autocomplete
-     */
-    unpublishFlow: async (args: FlowsUnpublishFlowArgs): Promise<FlowsUnpublishFlowResult> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'unpublishFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create an autonomous goal flow that pursues an objective over multiple iterations.
-
-The goal flow will:
-1. Execute iterations autonomously, evaluating progress after each
-2. Detect loops and stagnation, pausing for user guidance when stuck
-3. Track token budget and pause when exhausted
-4. Compact history to manage context window size
-
-EXAMPLES:
-{
-  goal: "Research and compile a report on AI trends in 2026",
-  successCriteria: ["Report has at least 5 sections", "Each section cites sources", "Summary with actionable insights"],
-  constraints: ["Use only publicly available sources"],
-  tokenBudget: 500000,
-  code: "export async function handler(event, context, mirra) { return { success: true }; }"
-}
-     * @param args.goal - High-level goal description
-     * @param args.successCriteria - Array of criteria that define goal completion
-     * @param args.constraints - Array of constraints and guidelines (optional)
-     * @param args.tokenBudget - Token budget (default: 100000) (optional)
-     * @param args.title - Flow title (auto-generated from goal if not provided) (optional)
-     * @param args.code - Inline script code for the flow (optional)
-     * @param args.scriptId - ID of an existing deployed script (optional)
-     * @param args.executionMode - Execution mode: mirra_only (default), mirra_with_claude_code, or claude_code_only (optional)
-     * @param args.workspacePath - Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/<goalId>/workspace/ (optional)
-     * @param args.iterationTimeoutMs - Max time per CC iteration in ms (default: 600000 = 10 min) (optional)
-     */
-    createGoalFlow: async (args: FlowsCreateGoalFlowArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'createGoalFlow',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get the progress summary of a goal flow, including velocity, completion percentage, and recent iterations.
-     * @param args.flowId - ID of the goal flow
-     */
-    getGoalProgress: async (args: FlowsGetGoalProgressArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'getGoalProgress',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Provide guidance to a paused goal flow. The flow will resume execution incorporating the guidance.
-     * @param args.flowId - ID of the goal flow
-     * @param args.requestId - ID of the guidance request being responded to
-     * @param args.response - Guidance text to provide to the goal flow
-     */
-    provideGuidance: async (args: FlowsProvideGuidanceArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'provideGuidance',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Deprecated — history compaction is no longer needed in the orchestrator model. Learnings are stored in the memory graph.
-     * @param args.flowId - ID of the goal flow
-     * @param args.keepRecentCount - Unused (deprecated) (optional)
-     */
-    compactHistory: async (args: FlowsCompactHistoryArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'compactHistory',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delegate a sub-goal to a child goal flow. The parent flow spawns a child that pursues the sub-goal independently. Max 10 children per parent, max 3 delegation depth.
-
-EXAMPLES:
-{
-  parentFlowId: "abc123",
-  subGoal: "Research competitor pricing strategies",
-  successCriteria: ["At least 5 competitors analyzed", "Pricing models documented"],
-  constraints: ["Use public data only"],
-  tokenBudget: 20000
-}
-     * @param args.parentFlowId - ID of the parent goal flow
-     * @param args.subGoal - Description of the sub-goal to delegate
-     * @param args.successCriteria - Success criteria for the sub-goal
-     * @param args.constraints - Constraints for the child flow (optional)
-     * @param args.tokenBudget - Token budget for child (default: 20% of parent budget) (optional)
-     */
-    delegateSubGoal: async (args: FlowsDelegateSubGoalArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'flows',
-        method: 'delegateSubGoal',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * User Adapter
- * Category: internal
- */
-function createUserAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Get user profile information including username, email, timezone, phone, and usage stats
-     */
-    getProfile: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'user',
-        method: 'getProfile',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update user profile fields (username, email, timezone, phone)
-     * @param args.username - New username (3-30 characters, alphanumeric with underscores/hyphens) (optional)
-     * @param args.email - New email address (optional)
-     * @param args.timezone - IANA timezone identifier (e.g., America/Los_Angeles) (optional)
-     * @param args.phoneNumber - Phone number (7-15 digits with optional formatting) (optional)
-     */
-    updateProfile: async (args: UserUpdateProfileArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'user',
-        method: 'updateProfile',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update user preferences (notification settings, etc)
-     * @param args.timezone - Preferred timezone for scheduling (optional)
-     * @param args.socials - Social media links (twitter, discord) (optional)
-     */
-    updatePreferences: async (args: UserUpdatePreferencesArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'user',
-        method: 'updatePreferences',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get token usage statistics, quota, and billing information
-     */
-    getUsageStats: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'user',
-        method: 'getUsageStats',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get active sessions/devices (based on push token registrations)
-     */
-    getSessions: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'user',
-        method: 'getSessions',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Soft delete user account (set inactive flag) - CAUTION: This marks the account for deletion
-     * @param args.confirm - Must be true to confirm account deactivation
-     */
-    deactivateAccount: async (args: UserDeactivateAccountArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'user',
-        method: 'deactivateAccount',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Contacts Adapter
- * Category: internal
- */
-function createContactsAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Get a list of all accepted contacts for the user with their profile information
-     * @param args.limit - Maximum number of contacts to return (default: 100) (optional)
-     * @param args.offset - Number of contacts to skip for pagination (default: 0) (optional)
-     */
-    listContacts: async (args: ContactsListContactsArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'contacts',
-        method: 'listContacts',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get detailed information about a specific contact by their ID or username
-     * @param args.contactId - The contact user ID (MongoDB ObjectId) (optional)
-     * @param args.username - The contact username (optional)
-     */
-    getContact: async (args: ContactsGetContactArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'contacts',
-        method: 'getContact',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Send a contact request to another user by their username
-     * @param args.username - Username of the user to add as a contact
-     */
-    addContact: async (args: ContactsAddContactArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'contacts',
-        method: 'addContact',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Remove a user from your contacts list (unfriend)
-     * @param args.contactId - The contact user ID to remove (optional)
-     * @param args.username - The contact username to remove (optional)
-     */
-    removeContact: async (args: ContactsRemoveContactArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'contacts',
-        method: 'removeContact',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Search your contacts by username, email, phone, or wallet address
-     * @param args.query - Search query - can be username, email, phone, or wallet address
-     * @param args.searchType - Type of search to perform: all, username, email, phone, or wallet (default: all) (optional)
-     * @param args.limit - Maximum number of results (default: 20) (optional)
-     */
-    searchContacts: async (args: ContactsSearchContactsArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'contacts',
-        method: 'searchContacts',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Block a user (prevents them from contacting you)
-     * @param args.contactId - The user ID to block (optional)
-     * @param args.username - The username to block (optional)
-     */
-    blockContact: async (args: ContactsBlockContactArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'contacts',
-        method: 'blockContact',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Unblock a previously blocked user
-     * @param args.contactId - The user ID to unblock (optional)
-     * @param args.username - The username to unblock (optional)
-     */
-    unblockContact: async (args: ContactsUnblockContactArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'contacts',
-        method: 'unblockContact',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get a list of all users you have blocked
-     * @param args.limit - Maximum number of results (default: 100) (optional)
-     * @param args.offset - Number of items to skip for pagination (default: 0) (optional)
-     */
-    getBlockedContacts: async (args: ContactsGetBlockedContactsArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'contacts',
-        method: 'getBlockedContacts',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get pending contact requests (sent by you or received from others)
-     * @param args.type - Type of requests to retrieve: all, sent, or received (default: all) (optional)
-     * @param args.status - Filter by request status: pending, accepted, or rejected (default: pending) (optional)
-     */
-    getContactRequests: async (args: ContactsGetContactRequestsArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'contacts',
-        method: 'getContactRequests',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Memory Adapter
- * Category: internal
- */
-function createMemoryAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Create a new memory entity in the knowledge graph. Use the type field to specify what kind of memory (note, idea, shopping_item, etc.). For tasks with assignment or timing features, use `createTask` instead. All memory types can be queried, updated, and deleted using the standard operations.
-     * @param args.type - Memory subtype: "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), "event" (calendar items). For tasks with assignment, use createTask instead.
-     * @param args.content - Main content/description of the memory
-     * @param args.metadata - Additional metadata (e.g., priority, deadline, tags, etc.) (optional)
-     * @param args.tags - Tags for organizing the memory. Shorthand for metadata.tags. (optional)
-     * @param args.groupId - Group ID to scope the memory to a specific group. If omitted, memory is created in the user's personal graph. (optional)
-     * @returns Promise<MemoryCreateResult> Typed response with IDE autocomplete
-     */
-    create: async (args: MemoryCreateArgs): Promise<MemoryCreateResult> => {
-      return sdk.resources.call({
-        resourceId: 'memory',
-        method: 'create',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create a task in the knowledge graph. Tasks are a specialized memory type with assignment, timing, priority, and status lifecycle. Use this instead of `create` when you need task-specific features like assigning to users. Tasks can be queried, updated, and deleted using the standard memory operations (`query`, `update`, `delete`) with type="task". For group contexts, the task is stored in the group's shared graph.
-     * @param args.content - Task description/title - what needs to be done. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
-     * @param args.assignedTo - Username of the person to assign this task to (group contexts only). System resolves username to user ID. (optional)
-     * @param args.dueAt - Due date/time in ISO 8601 format (e.g., "2024-01-15T10:00:00Z") or natural language that will be parsed (optional)
-     * @param args.priority - Task priority: "high", "medium", or "low" (optional)
-     * @param args.tags - Tags/labels for categorization (e.g., ["work", "urgent"]) (optional)
-     * @returns Promise<MemoryCreateTaskResult> Typed response with IDE autocomplete
-     */
-    createTask: async (args: MemoryCreateTaskArgs): Promise<MemoryCreateTaskResult> => {
-      return sdk.resources.call({
-        resourceId: 'memory',
-        method: 'createTask',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Semantic search across memory entities with advanced filtering. IMPORTANT: Search results return TRUNCATED content (max 300 chars) to prevent huge payloads. To get the full untruncated text of a specific entity, use `findOne` with the entity ID after searching. Recommended workflow: (1) Use `search` to find matching entities, (2) Use `findOne` with { filters: { id: "entity_id" } } to retrieve full content for entities you need.
-     * @param args.query - Search query text for semantic matching
-     * @param args.types - Filter by entity types (e.g., ["TASK", "NOTE", "IDEA"]) (optional)
-     * @param args.startTime - Filter entities created after this timestamp (Unix milliseconds) (optional)
-     * @param args.endTime - Filter entities created before this timestamp (Unix milliseconds) (optional)
-     * @param args.propertyFilters - Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] } (optional)
-     * @param args.limit - Maximum number of results (default: 50, max: 100) (optional)
-     * @returns Promise<MemorySearchResult> Typed response with IDE autocomplete
-     */
-    search: async (args: MemorySearchArgs): Promise<MemorySearchResult> => {
-      return sdk.resources.call({
-        resourceId: 'memory',
-        method: 'search',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Query memory entities with filters. Returns lightweight summaries with TRUNCATED content (max 200 chars) to prevent large payloads. Use type="task" to list all tasks (including those created via createTask). To get full untruncated content for a specific entity, use `findOne` with the entity ID.
-     * @param args.type - Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against meta_item_type, subType, or semantic_roles (optional)
-     * @param args.filters - Additional filters (not yet implemented) (optional)
-     * @param args.limit - Maximum results (default: 50, max: 100) (optional)
-     * @param args.offset - Pagination offset for fetching more results (default: 0) (optional)
-     * @returns Promise<MemoryQueryResult> Typed response with IDE autocomplete
-     */
-    query: async (args: MemoryQueryArgs): Promise<MemoryQueryResult> => {
-      return sdk.resources.call({
-        resourceId: 'memory',
-        method: 'query',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Find a single entity by ID or name. Returns the FULL untruncated entity content. Use this after `search` or `query` to retrieve complete content for a specific entity (since those operations return truncated results to prevent large payloads).
-     * @param args.filters - Filter criteria. Use { id: "entity_id" } to find by ID (recommended), or { name: "entity name" } to find by name.
-     * @returns Promise<MemoryFindOneResult> Typed response with IDE autocomplete
-     */
-    findOne: async (args: MemoryFindOneArgs): Promise<MemoryFindOneResult> => {
-      return sdk.resources.call({
-        resourceId: 'memory',
-        method: 'findOne',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update an existing memory entity. Works with all memory types including tasks created via createTask. Use this to mark tasks complete, update content, or modify metadata.
-     * @param args.id - Entity ID to update
-     * @param args.type - Entity type (optional)
-     * @param args.content - Updated content (optional)
-     * @param args.metadata - Updated metadata (optional)
-     * @returns Promise<MemoryUpdateResult> Typed response with IDE autocomplete
-     */
-    update: async (args: MemoryUpdateArgs): Promise<MemoryUpdateResult> => {
-      return sdk.resources.call({
-        resourceId: 'memory',
-        method: 'update',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete a memory entity. Works with all memory types including tasks, notes, ideas, etc.
-     * @param args.id - Entity ID to delete
-     * @returns Promise<MemoryDeleteResult> Typed response with IDE autocomplete
-     */
-    delete: async (args: MemoryDeleteArgs): Promise<MemoryDeleteResult> => {
-      return sdk.resources.call({
-        resourceId: 'memory',
-        method: 'delete',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Share a memory entity with another graph (group or contact). Only the creator can share memories. Recipients can view and complete tasks but cannot edit or delete.
-     * @param args.entityId - Entity ID to share
-     * @param args.targetGraphId - Target graph ID to share with (group ID or user contact graph ID)
-     * @param args.shareReason - Optional reason for sharing (optional)
-     * @returns Promise<MemoryShareResult> Typed response with IDE autocomplete
-     */
-    share: async (args: MemoryShareArgs): Promise<MemoryShareResult> => {
-      return sdk.resources.call({
-        resourceId: 'memory',
-        method: 'share',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Remove sharing of a memory entity from a graph. Only the creator can unshare. Cannot unshare from the primary graph (where it was created).
-     * @param args.entityId - Entity ID to unshare
-     * @param args.graphId - Graph ID to remove sharing from
-     * @returns Promise<MemoryUnshareResult> Typed response with IDE autocomplete
-     */
-    unshare: async (args: MemoryUnshareArgs): Promise<MemoryUnshareResult> => {
-      return sdk.resources.call({
-        resourceId: 'memory',
-        method: 'unshare',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List all graphs a memory entity is shared with, including share history and metadata.
-     * @param args.entityId - Entity ID to list graphs for
-     * @returns Promise<MemoryListGraphsResult> Typed response with IDE autocomplete
-     */
-    listGraphs: async (args: MemoryListGraphsArgs): Promise<MemoryListGraphsResult> => {
-      return sdk.resources.call({
-        resourceId: 'memory',
-        method: 'listGraphs',
-        params: args || {}
-      });
-    }
-  };
-}
 
 /**
  * AI Services Adapter
@@ -6355,9 +4889,8 @@ TYPICAL PATTERNS:
      * @param args.model - Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names. (optional)
      * @param args.temperature - Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7 (optional)
      * @param args.maxTokens - Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens). (optional)
-     * @returns Promise<AiChatResult> Typed response with IDE autocomplete
      */
-    chat: async (args: AiChatArgs): Promise<AiChatResult> => {
+    chat: async (args: AiChatArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'ai',
         method: 'chat',
@@ -6392,12 +4925,566 @@ BEST PRACTICES:
      * @param args.options - Array of options to choose from. Each option must have: id (unique identifier), label (descriptive name), and optional metadata (additional data)
      * @param args.context - Additional context to help the AI make a better decision (optional)
      * @param args.model - Specific model to use. Defaults to system default. (optional)
-     * @returns Promise<AiDecideResult> Typed response with IDE autocomplete
      */
-    decide: async (args: AiDecideArgs): Promise<AiDecideResult> => {
+    decide: async (args: AiDecideArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'ai',
         method: 'decide',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Jira Adapter
+ * Category: project
+ */
+function createJiraAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new Jira issue
+     * @param args.projectKey - Jira project key (e.g., "PROJ")
+     * @param args.summary - Issue summary/title
+     * @param args.description - Issue description (optional)
+     * @param args.issueType - Issue type (Task, Bug, Story, etc.) (optional)
+     * @returns Promise<JiraCreateIssueResult> Typed response with IDE autocomplete
+     */
+    createIssue: async (args: JiraCreateIssueArgs): Promise<JiraCreateIssueResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'createIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search Jira issues using JQL. Returns normalized flat issue summaries.
+     * @param args.jql - JQL query string
+     * @param args.maxResults - Maximum number of results (default: 50, max: 100) (optional)
+     * @returns Promise<JiraSearchIssuesResult> Typed response with IDE autocomplete
+     */
+    searchIssues: async (args: JiraSearchIssuesArgs): Promise<JiraSearchIssuesResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'searchIssues',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific Jira issue by key or ID. Returns normalized flat structure.
+     * @param args.issueKey - Issue key (e.g., "PROJ-123") or ID
+     * @returns Promise<JiraGetIssueResult> Typed response with IDE autocomplete
+     */
+    getIssue: async (args: JiraGetIssueArgs): Promise<JiraGetIssueResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'getIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing Jira issue
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @param args.summary - New issue summary/title (optional)
+     * @param args.description - New issue description (optional)
+     * @returns Promise<JiraUpdateIssueResult> Typed response with IDE autocomplete
+     */
+    updateIssue: async (args: JiraUpdateIssueArgs): Promise<JiraUpdateIssueResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'updateIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a Jira issue
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @returns Promise<JiraDeleteIssueResult> Typed response with IDE autocomplete
+     */
+    deleteIssue: async (args: JiraDeleteIssueArgs): Promise<JiraDeleteIssueResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'deleteIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Add a comment to a Jira issue
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @param args.comment - Comment text
+     * @returns Promise<JiraAddCommentResult> Typed response with IDE autocomplete
+     */
+    addComment: async (args: JiraAddCommentArgs): Promise<JiraAddCommentResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'addComment',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Transition a Jira issue to a different status
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @param args.transitionId - ID of the transition to perform
+     * @returns Promise<JiraTransitionIssueResult> Typed response with IDE autocomplete
+     */
+    transitionIssue: async (args: JiraTransitionIssueArgs): Promise<JiraTransitionIssueResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'transitionIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Assign a Jira issue to a user
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @param args.accountId - Atlassian account ID of the assignee
+     * @returns Promise<JiraAssignIssueResult> Typed response with IDE autocomplete
+     */
+    assignIssue: async (args: JiraAssignIssueArgs): Promise<JiraAssignIssueResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'assignIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get all accessible Jira projects. Returns normalized flat project structures.
+     * @returns Promise<JiraGetProjectsResult> Typed response with IDE autocomplete
+     */
+    getProjects: async (args?: {}): Promise<JiraGetProjectsResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'getProjects',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all accessible Jira projects (alias for getProjects). Returns normalized flat structures.
+     * @returns Promise<JiraListProjectsResult> Typed response with IDE autocomplete
+     */
+    listProjects: async (args?: {}): Promise<JiraListProjectsResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'listProjects',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get metadata for a specific Jira project. Returns normalized flat structures.
+     * @param args.projectKey - Project key (e.g., "PROJ")
+     * @returns Promise<JiraGetProjectMetadataResult> Typed response with IDE autocomplete
+     */
+    getProjectMetadata: async (args: JiraGetProjectMetadataArgs): Promise<JiraGetProjectMetadataResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'getProjectMetadata',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get available transitions for a Jira issue. Returns normalized flat structures.
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @returns Promise<JiraGetTransitionsResult> Typed response with IDE autocomplete
+     */
+    getTransitions: async (args: JiraGetTransitionsArgs): Promise<JiraGetTransitionsResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'getTransitions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List users that can be assigned to issues in a project
+     * @param args.projectKey - Project key (e.g., "PROJ")
+     * @returns Promise<JiraListAssignableUsersResult> Typed response with IDE autocomplete
+     */
+    listAssignableUsers: async (args: JiraListAssignableUsersArgs): Promise<JiraListAssignableUsersResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'listAssignableUsers',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get available issue types for a project. Returns normalized flat structures.
+     * @param args.projectKey - Project key (e.g., "PROJ")
+     * @returns Promise<JiraGetIssueTypesResult> Typed response with IDE autocomplete
+     */
+    getIssueTypes: async (args: JiraGetIssueTypesArgs): Promise<JiraGetIssueTypesResult> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'getIssueTypes',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search Jira API for available operations beyond core tools
+     * @param args.query - Describe what you want to do (e.g., "add label to card")
+     * @param args.limit - Max results to return (default 5) (optional)
+     */
+    discoverExtended: async (args: JiraDiscoverExtendedArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'discoverExtended',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Execute a Jira API operation by operationId
+     * @param args.operationId - The operationId from discoverExtended results
+     * @param args.pathParams - Path parameters, e.g., { id: "abc123" } (optional)
+     * @param args.queryParams - Query string parameters (optional)
+     * @param args.body - Request body for POST/PUT/PATCH operations (optional)
+     */
+    executeExtended: async (args: JiraExecuteExtendedArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'jira',
+        method: 'executeExtended',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Claude Code Adapter
+ * Category: internal
+ */
+function createClaudeCodeAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Start a new Claude Code session on the user's desktop. Spawns Claude Code with the given prompt and creates Flows to process protocol messages and route replies.
+     * @param args.prompt - The initial prompt/task for Claude Code
+     * @param args.groupId - The Mirra group ID to post messages to. If omitted, the desktop user will be prompted to select a group. (optional)
+     * @param args.cwd - Working directory for Claude Code (defaults to system default) (optional)
+     * @param args.model - Claude model to use (e.g., "claude-sonnet-4-5-20250929") (optional)
+     */
+    startSession: async (args: ClaudeCodeStartSessionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'claudeCode',
+        method: 'startSession',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Resume an existing Claude Code session with a new prompt. The session continues from where it left off.
+     * @param args.claudeSessionId - The Claude Code session ID to resume (from a previous session)
+     * @param args.prompt - The follow-up prompt/task
+     * @param args.groupId - The Mirra group ID to post messages to. If omitted, the desktop user will be prompted to select a group. (optional)
+     * @param args.cwd - Working directory for Claude Code (optional)
+     */
+    resumeSession: async (args: ClaudeCodeResumeSessionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'claudeCode',
+        method: 'resumeSession',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all active Claude Code sessions for the user
+     */
+    listSessions: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'claudeCode',
+        method: 'listSessions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Kill a running Claude Code session and clean up associated Flows
+     * @param args.sessionId - The session ID to kill
+     */
+    killSession: async (args: ClaudeCodeKillSessionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'claudeCode',
+        method: 'killSession',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Data Adapter
+ * Category: internal
+ */
+function createDataAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new data collection (schema). Define the fields and their types. A slug is auto-generated from the name if not provided.
+     * @param args.name - Human-readable name for the collection (e.g. "Contacts", "Sales Metrics")
+     * @param args.slug - URL-safe identifier (lowercase, underscores). Auto-generated from name if omitted. (optional)
+     * @param args.fields - Array of field definitions. Each field has: name (string), type ("string"|"number"|"boolean"|"date"|"array"|"object"), required (boolean), description (optional string).
+     * @param args.description - Optional description of what this collection stores (optional)
+     */
+    defineCollection: async (args: DataDefineCollectionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'defineCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all data collections for the current context. Optionally filter by status.
+     * @param args.status - Filter by status: "active" (default) or "archived" (optional)
+     */
+    listCollections: async (args: DataListCollectionsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'listCollections',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a single collection schema by its slug.
+     * @param args.slug - The collection slug (e.g. "contacts")
+     */
+    getCollection: async (args: DataGetCollectionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'getCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a collection schema. Add new fields, remove existing fields, or update the description. Field changes are non-destructive -- existing records are not modified.
+     * @param args.slug - The collection slug to update
+     * @param args.addFields - New fields to add to the collection (optional)
+     * @param args.removeFields - Field names to remove from the collection (optional)
+     * @param args.description - New description for the collection (optional)
+     */
+    updateCollection: async (args: DataUpdateCollectionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'updateCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Archive a collection and delete all its records. The schema is marked as archived and all associated records are permanently deleted. Quota is decremented.
+     * @param args.slug - The collection slug to drop
+     */
+    dropCollection: async (args: DataDropCollectionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'dropCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a single record into a collection. Data is validated against the collection schema. Quota is checked before writing.
+     * @param args.collection - The collection slug to insert into
+     * @param args.data - The record data -- keys must match the collection fields
+     */
+    insertRecord: async (args: DataInsertRecordArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'insertRecord',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Batch insert multiple records into a collection. All records are validated against the schema. Quota is checked for the total size.
+     * @param args.collection - The collection slug to insert into
+     * @param args.records - Array of record data objects to insert
+     */
+    insertRecords: async (args: DataInsertRecordsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'insertRecords',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Query records from a collection with optional filtering, sorting, and pagination. Filters use MongoDB-style syntax (e.g. { revenue: { $gt: 10000 } }).
+     * @param args.collection - The collection slug to query
+     * @param args.filter - MongoDB-style filter object. Supports $eq, $ne, $gt, $gte, $lt, $lte, $in, $regex. Filter keys are automatically prefixed with "data." so use field names directly. (optional)
+     * @param args.sort - Sort object, e.g. { revenue: -1 } for descending. Keys are auto-prefixed with "data.". (optional)
+     * @param args.limit - Max records to return (default 50, max 200) (optional)
+     * @param args.offset - Number of records to skip (for pagination) (optional)
+     */
+    queryRecords: async (args: DataQueryRecordsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'queryRecords',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a single record by its ID. Data is validated against the collection schema.
+     * @param args.collection - The collection slug
+     * @param args.recordId - The record _id to update
+     * @param args.data - Partial record data to merge/update
+     */
+    updateRecord: async (args: DataUpdateRecordArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'updateRecord',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a single record by its ID. Quota is decremented by the record size.
+     * @param args.collection - The collection slug
+     * @param args.recordId - The record _id to delete
+     */
+    deleteRecord: async (args: DataDeleteRecordArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'deleteRecord',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Run aggregation on a collection. Supports sum, avg, count, min, max grouped by a field.
+     * @param args.collection - The collection slug
+     * @param args.groupBy - Field name to group by. Omit for overall aggregation. (optional)
+     * @param args.metrics - Array of { field, op } where op is one of "sum", "avg", "count", "min", "max". For "count", field can be omitted.
+     */
+    aggregate: async (args: DataAggregateArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'aggregate',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the current storage quota usage for this context.
+     */
+    getQuotaUsage: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'data',
+        method: 'getQuotaUsage',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Desktop Adapter
+ * Category: internal
+ */
+function createDesktopAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Run a shell command on the user's desktop and return stdout, stderr, and exit code. The command runs via /bin/sh -c. Output is truncated to 1 MB.
+     * @param args.command - Shell command to execute (e.g., "ls -la ~/Documents")
+     * @param args.cwd - Working directory for the command (defaults to user home) (optional)
+     * @param args.timeoutMs - Timeout in milliseconds (defaults to 120000) (optional)
+     */
+    executeCommand: async (args: DesktopExecuteCommandArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'executeCommand',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read the text contents of a file on the user's desktop. Maximum file size is 1 MB.
+     * @param args.path - Absolute path to the file to read
+     * @param args.maxBytes - Maximum bytes to read (defaults to 1048576 = 1 MB) (optional)
+     */
+    readFile: async (args: DesktopReadFileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'readFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Write or create a file on the user's desktop. Parent directories are created automatically. Requires user consent.
+     * @param args.path - Absolute path to the file to write
+     * @param args.content - Text content to write to the file
+     * @param args.append - If true, append to existing file instead of overwriting (defaults to false) (optional)
+     */
+    writeFile: async (args: DesktopWriteFileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'writeFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List files and directories at a given path on the user's desktop. Returns name, type, size, and modification time for each entry.
+     * @param args.path - Absolute path to the directory to list
+     * @param args.recursive - If true, list recursively (max depth 3). Defaults to false. (optional)
+     * @param args.includeHidden - If true, include hidden files (starting with .). Defaults to false. (optional)
+     */
+    listDirectory: async (args: DesktopListDirectoryArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'listDirectory',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get system information from the user's desktop: hostname, OS, CPU, memory, home directory.
+     */
+    getSystemInfo: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'getSystemInfo',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Spawn a long-running background process on the user's desktop. The process runs detached with no stdin/stdout (all communication via --sdk-url). Returns a process ID for later management. Requires user consent. A desktop:process_exited event is emitted when the process terminates.
+     * @param args.command - Path to the executable to run (e.g., "node", "python3", "/usr/local/bin/my-app")
+     * @param args.args - Command-line arguments to pass to the process (optional)
+     * @param args.env - Additional environment variables to set for the process (optional)
+     * @param args.cwd - Working directory for the process (defaults to system default) (optional)
+     */
+    spawnProcess: async (args: DesktopSpawnProcessArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'spawnProcess',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Kill a previously spawned background process by its process ID.
+     * @param args.processId - The process ID returned by spawnProcess
+     */
+    killProcess: async (args: DesktopKillProcessArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'killProcess',
         params: args || {}
       });
     }
@@ -6583,295 +5670,98 @@ function createFeedItemsAdapter(sdk: MirraSDK) {
 }
 
 /**
- * Telegram Adapter
- * Category: social
+ * Feedback Adapter
+ * Category: internal
  */
-function createTelegramAdapter(sdk: MirraSDK) {
+function createFeedbackAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Send a text message to a Telegram chat or user. Supports both chat IDs and usernames.
-     * @param args.chatId - Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from searchChats operation.
-     * @param args.text - The text content of the message to send
-     * @returns Promise<TelegramSendMessageResult> Typed response with IDE autocomplete
+     * Report a bug with detailed context and reproduction steps
+     * @param args.title - Brief bug description
+     * @param args.description - Detailed description of the bug
+     * @param args.severity - Bug severity: critical, high, medium, or low
+     * @param args.stepsToReproduce - Steps to reproduce the bug (optional)
+     * @param args.expectedBehavior - What should happen (optional)
+     * @param args.actualBehavior - What actually happens (optional)
+     * @param args.errorDetails - Error details: { message, stack, code } (optional)
+     * @param args.context - Additional context: { conversationId, recentMessages, platform, appVersion } (optional)
+     * @param args.llmAnalysis - LLM analysis of the issue (optional)
+     * @returns Promise<FeedbackReportBugResult> Typed response with IDE autocomplete
      */
-    sendMessage: async (args: TelegramSendMessageArgs): Promise<TelegramSendMessageResult> => {
+    reportBug: async (args: FeedbackReportBugArgs): Promise<FeedbackReportBugResult> => {
       return sdk.resources.call({
-        resourceId: 'telegram',
-        method: 'sendMessage',
+        resourceId: 'feedback',
+        method: 'reportBug',
         params: args || {}
       });
     },
 
     /**
-     * Powerful unified chat search with filtering, sorting, and activity tracking. Replaces getChats, findChatByName, and getRecentContacts. Use with no filters to list all chats.
-     * @param args.query - Text to search in chat names/usernames. Supports fuzzy matching with relevance scoring. (optional)
-     * @param args.type - Filter by chat type: "private", "group", "channel", or "all" (default: "all") (optional)
-     * @param args.inactiveSince - Find chats with no activity since date. Accepts ISO date or relative like "30 days ago", "1 week ago" (optional)
-     * @param args.activeSince - Find chats with activity since date. Accepts ISO date or relative like "7 days ago" (optional)
-     * @param args.hasUnread - Filter by unread status: true = only unread, false = only read (optional)
-     * @param args.archived - Filter by archived status (optional)
-     * @param args.pinned - Filter by pinned status (optional)
-     * @param args.sortBy - Sort results: "relevance" (default with query), "lastActivity" (default without query), "unreadCount", "name" (optional)
-     * @param args.limit - Max results (default: 50, max: 100) (optional)
-     * @param args.offset - Pagination offset (default: 0) (optional)
-     * @param args.forceRefresh - Bypass cache and fetch fresh data (optional)
-     * @returns Promise<TelegramSearchChatsResult> Typed response with IDE autocomplete
+     * Auto-report tool or adapter failures for debugging
+     * @param args.adapterType - Adapter type (e.g., jupiter, crypto)
+     * @param args.operation - Operation that failed (e.g., swap, sendToken)
+     * @param args.errorMessage - Error message from the failure
+     * @param args.errorCode - Error code if available (optional)
+     * @param args.errorStack - Error stack trace (optional)
+     * @param args.args - Sanitized arguments that caused the failure (optional)
+     * @param args.llmAnalysis - LLM analysis of why it failed (optional)
+     * @param args.suggestedFix - LLM suggested fix (optional)
+     * @param args.context - Additional context: { conversationId, userId, timestamp } (optional)
+     * @returns Promise<FeedbackReportToolFailureResult> Typed response with IDE autocomplete
      */
-    searchChats: async (args: TelegramSearchChatsArgs): Promise<TelegramSearchChatsResult> => {
+    reportToolFailure: async (args: FeedbackReportToolFailureArgs): Promise<FeedbackReportToolFailureResult> => {
       return sdk.resources.call({
-        resourceId: 'telegram',
-        method: 'searchChats',
+        resourceId: 'feedback',
+        method: 'reportToolFailure',
         params: args || {}
       });
     },
 
     /**
-     * Search for messages across Telegram chats. When chatIds is omitted, performs global search across all chats (replaces globalSearch operation).
-     * @param args.query - Text query to search for in messages
-     * @param args.chatIds - Array of chat IDs to search within. Omit for global search across all chats. (optional)
-     * @param args.chatType - Filter by chat type (for global search): "private", "group", or "channel" (optional)
-     * @param args.fromDate - ISO date string for start of date range (optional)
-     * @param args.toDate - ISO date string for end of date range (optional)
-     * @param args.limit - Maximum number of messages to return (default: 100, max: 100) (optional)
-     * @param args.senderId - Filter messages by sender ID (optional)
-     * @returns Promise<TelegramSearchMessagesResult> Typed response with IDE autocomplete
+     * Report when LLM cannot fulfill a user request
+     * @param args.userRequest - What the user asked for
+     * @param args.reason - Why it could not be fulfilled
+     * @param args.suggestedCapability - What capability would enable this (optional)
+     * @param args.relatedAdapters - Adapters that might be relevant (optional)
+     * @param args.context - Additional context: { conversationId } (optional)
+     * @returns Promise<FeedbackReportMissingCapabilityResult> Typed response with IDE autocomplete
      */
-    searchMessages: async (args: TelegramSearchMessagesArgs): Promise<TelegramSearchMessagesResult> => {
+    reportMissingCapability: async (args: FeedbackReportMissingCapabilityArgs): Promise<FeedbackReportMissingCapabilityResult> => {
       return sdk.resources.call({
-        resourceId: 'telegram',
-        method: 'searchMessages',
+        resourceId: 'feedback',
+        method: 'reportMissingCapability',
         params: args || {}
       });
     },
 
     /**
-     * Get message history from a specific Telegram chat with pagination and date filtering.
-     * @param args.chatId - Chat ID to retrieve messages from
-     * @param args.limit - Maximum number of messages to return (default: 50, max: 100) (optional)
-     * @param args.offsetId - Message ID to use as pagination offset (optional)
-     * @param args.minDate - ISO date string for minimum message date (optional)
-     * @param args.maxDate - ISO date string for maximum message date (optional)
-     * @returns Promise<TelegramGetChatMessagesResult> Typed response with IDE autocomplete
+     * Submit general user feedback
+     * @param args.sentiment - Sentiment: positive, negative, or neutral
+     * @param args.feedback - Feedback content
+     * @param args.category - Category: ux, performance, feature, or general (optional)
+     * @param args.context - Additional context: { feature, screen } (optional)
+     * @returns Promise<FeedbackSubmitFeedbackResult> Typed response with IDE autocomplete
      */
-    getChatMessages: async (args: TelegramGetChatMessagesArgs): Promise<TelegramGetChatMessagesResult> => {
+    submitFeedback: async (args: FeedbackSubmitFeedbackArgs): Promise<FeedbackSubmitFeedbackResult> => {
       return sdk.resources.call({
-        resourceId: 'telegram',
-        method: 'getChatMessages',
+        resourceId: 'feedback',
+        method: 'submitFeedback',
         params: args || {}
       });
     },
 
     /**
-     * Get summary of unread messages across Telegram chats, including mentions and flattened last message info.
-     * @param args.chatIds - Array of chat IDs to filter by. If not provided, checks all chats. (optional)
-     * @param args.priorityOnly - If true, only return chats with unread messages (optional)
-     * @param args.groupBy - Group results by "chat" or "sender" (optional)
-     * @returns Promise<TelegramGetUnreadSummaryResult> Typed response with IDE autocomplete
+     * Submit a feature request
+     * @param args.title - Feature title
+     * @param args.description - Feature description
+     * @param args.useCase - Why the user needs this feature (optional)
+     * @param args.priority - Priority: high, medium, or low (optional)
+     * @returns Promise<FeedbackSubmitFeatureRequestResult> Typed response with IDE autocomplete
      */
-    getUnreadSummary: async (args: TelegramGetUnreadSummaryArgs): Promise<TelegramGetUnreadSummaryResult> => {
+    submitFeatureRequest: async (args: FeedbackSubmitFeatureRequestArgs): Promise<FeedbackSubmitFeatureRequestResult> => {
       return sdk.resources.call({
-        resourceId: 'telegram',
-        method: 'getUnreadSummary',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Mark messages as read in a Telegram chat up to a specific message ID.
-     * @param args.chatId - Chat ID to mark messages as read in
-     * @param args.maxMessageId - Maximum message ID to mark as read. If not provided, marks all messages as read. (optional)
-     * @returns Promise<TelegramMarkAsReadResult> Typed response with IDE autocomplete
-     */
-    markAsRead: async (args: TelegramMarkAsReadArgs): Promise<TelegramMarkAsReadResult> => {
-      return sdk.resources.call({
-        resourceId: 'telegram',
-        method: 'markAsRead',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get messages where the user is mentioned in Telegram chats.
-     * @param args.chatIds - Array of chat IDs to filter mentions by (optional)
-     * @param args.sinceDate - ISO date string - only return mentions since this date (optional)
-     * @param args.onlyUnread - If true, only return unread mentions (optional)
-     * @returns Promise<TelegramGetMentionsResult> Typed response with IDE autocomplete
-     */
-    getMentions: async (args: TelegramGetMentionsArgs): Promise<TelegramGetMentionsResult> => {
-      return sdk.resources.call({
-        resourceId: 'telegram',
-        method: 'getMentions',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Leave a Telegram group, supergroup, or channel. Removes the user from the group and clears it from the local cache.
-     * @param args.chatId - The ID of the group, supergroup, or channel to leave. Can be obtained from searchChats operation.
-     * @returns Promise<TelegramLeaveGroupResult> Typed response with IDE autocomplete
-     */
-    leaveGroup: async (args: TelegramLeaveGroupArgs): Promise<TelegramLeaveGroupResult> => {
-      return sdk.resources.call({
-        resourceId: 'telegram',
-        method: 'leaveGroup',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Gmail Adapter
- * Category: communication
- */
-function createGoogleGmailAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Send an email via Gmail
-     * @param args.to - Valid email address
-     * @param args.subject - Email subject line
-     * @param args.body - Email body content
-     * @param args.cc - CC recipients (comma-separated email addresses) (optional)
-     * @param args.bcc - BCC recipients (comma-separated email addresses) (optional)
-     * @param args.isHtml - Whether body is HTML format (optional)
-     * @returns Promise<GoogleGmailSendEmailResult> Typed response with IDE autocomplete
-     */
-    sendEmail: async (args: GoogleGmailSendEmailArgs): Promise<GoogleGmailSendEmailResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'sendEmail',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Search emails with Gmail query syntax. Returns normalized email summaries.
-     * @param args.query - Gmail search query (e.g., "from:user@example.com is:unread")
-     * @param args.maxResults - Maximum number of results to return (default: 50, max: 100) (optional)
-     * @returns Promise<GoogleGmailSearchEmailsResult> Typed response with IDE autocomplete
-     */
-    searchEmails: async (args: GoogleGmailSearchEmailsArgs): Promise<GoogleGmailSearchEmailsResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'searchEmails',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List recent emails from inbox. Returns normalized email summaries.
-     * @param args.maxResults - Maximum number of results to return (default: 50, max: 100) (optional)
-     * @returns Promise<GoogleGmailListEmailsResult> Typed response with IDE autocomplete
-     */
-    listEmails: async (args: GoogleGmailListEmailsArgs): Promise<GoogleGmailListEmailsResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'listEmails',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get full details of a specific email by ID. Returns normalized flat structure.
-     * @param args.messageId - Gmail message ID
-     * @param args.includeHtml - Include HTML body content (default: false) (optional)
-     * @param args.includeAttachments - Include attachment metadata (default: false) (optional)
-     * @returns Promise<GoogleGmailGetEmailResult> Typed response with IDE autocomplete
-     */
-    getEmail: async (args: GoogleGmailGetEmailArgs): Promise<GoogleGmailGetEmailResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'getEmail',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create a draft email in Gmail
-     * @param args.to - Valid email address
-     * @param args.subject - Email subject line
-     * @param args.body - Email body content
-     * @param args.cc - CC recipients (comma-separated email addresses) (optional)
-     * @param args.bcc - BCC recipients (comma-separated email addresses) (optional)
-     * @param args.isHtml - Whether body is HTML format (optional)
-     * @returns Promise<GoogleGmailCreateDraftResult> Typed response with IDE autocomplete
-     */
-    createDraft: async (args: GoogleGmailCreateDraftArgs): Promise<GoogleGmailCreateDraftResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'createDraft',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update an existing draft email
-     * @param args.draftId - Gmail draft ID to update
-     * @param args.to - Updated recipient email address(es) (optional)
-     * @param args.subject - Updated email subject line (optional)
-     * @param args.body - Updated email body content (optional)
-     * @param args.cc - Updated CC recipients (optional)
-     * @param args.bcc - Updated BCC recipients (optional)
-     * @param args.isHtml - Whether body is HTML format (optional)
-     * @returns Promise<GoogleGmailUpdateDraftResult> Typed response with IDE autocomplete
-     */
-    updateDraft: async (args: GoogleGmailUpdateDraftArgs): Promise<GoogleGmailUpdateDraftResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'updateDraft',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete a draft email
-     * @param args.draftId - Gmail draft ID to delete
-     * @returns Promise<GoogleGmailDeleteDraftResult> Typed response with IDE autocomplete
-     */
-    deleteDraft: async (args: GoogleGmailDeleteDraftArgs): Promise<GoogleGmailDeleteDraftResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'deleteDraft',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List all draft emails. Returns normalized draft summaries.
-     * @param args.maxResults - Maximum number of drafts to return (default: 10) (optional)
-     * @returns Promise<GoogleGmailListDraftsResult> Typed response with IDE autocomplete
-     */
-    listDrafts: async (args: GoogleGmailListDraftsArgs): Promise<GoogleGmailListDraftsResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'listDrafts',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete an email
-     * @param args.messageId - Gmail message ID to delete
-     * @returns Promise<GoogleGmailDeleteEmailResult> Typed response with IDE autocomplete
-     */
-    deleteEmail: async (args: GoogleGmailDeleteEmailArgs): Promise<GoogleGmailDeleteEmailResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'deleteEmail',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete multiple emails at once. Uses Gmail batchDelete API for efficiency.
-     * @param args.messageIds - Array of Gmail message IDs to delete (max 1000 per request)
-     * @param args.permanently - If true, permanently delete. If false (default), move to trash. (optional)
-     * @returns Promise<GoogleGmailBulkDeleteEmailsResult> Typed response with IDE autocomplete
-     */
-    bulkDeleteEmails: async (args: GoogleGmailBulkDeleteEmailsArgs): Promise<GoogleGmailBulkDeleteEmailsResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-gmail',
-        method: 'bulkDeleteEmails',
+        resourceId: 'feedback',
+        method: 'submitFeatureRequest',
         params: args || {}
       });
     }
@@ -7146,280 +6036,157 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
 }
 
 /**
- * Google Sheets Adapter
- * Category: productivity
+ * Gmail Adapter
+ * Category: communication
  */
-function createGoogleSheetsAdapter(sdk: MirraSDK) {
+function createGoogleGmailAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new Google Sheets spreadsheet
-     * @param args.title - Title of the spreadsheet
-     * @returns Promise<GoogleSheetsCreateSpreadsheetResult> Typed response with IDE autocomplete
+     * Send an email via Gmail
+     * @param args.to - Valid email address
+     * @param args.subject - Email subject line
+     * @param args.body - Email body content
+     * @param args.cc - CC recipients (comma-separated email addresses) (optional)
+     * @param args.bcc - BCC recipients (comma-separated email addresses) (optional)
+     * @param args.isHtml - Whether body is HTML format (optional)
+     * @returns Promise<GoogleGmailSendEmailResult> Typed response with IDE autocomplete
      */
-    createSpreadsheet: async (args: GoogleSheetsCreateSpreadsheetArgs): Promise<GoogleSheetsCreateSpreadsheetResult> => {
+    sendEmail: async (args: GoogleGmailSendEmailArgs): Promise<GoogleGmailSendEmailResult> => {
       return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'createSpreadsheet',
+        resourceId: 'google-gmail',
+        method: 'sendEmail',
         params: args || {}
       });
     },
 
     /**
-     * Read data from a range in a spreadsheet
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.range - Cell range (e.g., "Sheet1!A1:B10")
-     * @returns Promise<GoogleSheetsReadRangeResult> Typed response with IDE autocomplete
+     * Search emails with Gmail query syntax. Returns normalized email summaries.
+     * @param args.query - Gmail search query (e.g., "from:user@example.com is:unread")
+     * @param args.maxResults - Maximum number of results to return (default: 50, max: 100) (optional)
+     * @returns Promise<GoogleGmailSearchEmailsResult> Typed response with IDE autocomplete
      */
-    readRange: async (args: GoogleSheetsReadRangeArgs): Promise<GoogleSheetsReadRangeResult> => {
+    searchEmails: async (args: GoogleGmailSearchEmailsArgs): Promise<GoogleGmailSearchEmailsResult> => {
       return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'readRange',
+        resourceId: 'google-gmail',
+        method: 'searchEmails',
         params: args || {}
       });
     },
 
     /**
-     * Write data to a range in a spreadsheet
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.range - Cell range (e.g., "Sheet1!A1:B10")
-     * @param args.values - Data to write (2D array)
-     * @returns Promise<GoogleSheetsWriteRangeResult> Typed response with IDE autocomplete
+     * List recent emails from inbox. Returns normalized email summaries.
+     * @param args.maxResults - Maximum number of results to return (default: 50, max: 100) (optional)
+     * @returns Promise<GoogleGmailListEmailsResult> Typed response with IDE autocomplete
      */
-    writeRange: async (args: GoogleSheetsWriteRangeArgs): Promise<GoogleSheetsWriteRangeResult> => {
+    listEmails: async (args: GoogleGmailListEmailsArgs): Promise<GoogleGmailListEmailsResult> => {
       return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'writeRange',
+        resourceId: 'google-gmail',
+        method: 'listEmails',
         params: args || {}
       });
     },
 
     /**
-     * Append a row to a spreadsheet
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetName - Name of the sheet
-     * @param args.values - Row values to append
-     * @returns Promise<GoogleSheetsAppendRowResult> Typed response with IDE autocomplete
+     * Get full details of a specific email by ID. Returns normalized flat structure.
+     * @param args.messageId - Gmail message ID
+     * @param args.includeHtml - Include HTML body content (default: false) (optional)
+     * @param args.includeAttachments - Include attachment metadata (default: false) (optional)
+     * @returns Promise<GoogleGmailGetEmailResult> Typed response with IDE autocomplete
      */
-    appendRow: async (args: GoogleSheetsAppendRowArgs): Promise<GoogleSheetsAppendRowResult> => {
+    getEmail: async (args: GoogleGmailGetEmailArgs): Promise<GoogleGmailGetEmailResult> => {
       return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'appendRow',
+        resourceId: 'google-gmail',
+        method: 'getEmail',
         params: args || {}
       });
     },
 
     /**
-     * Get spreadsheet metadata and properties
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @returns Promise<GoogleSheetsGetSpreadsheetResult> Typed response with IDE autocomplete
+     * Create a draft email in Gmail
+     * @param args.to - Valid email address
+     * @param args.subject - Email subject line
+     * @param args.body - Email body content
+     * @param args.cc - CC recipients (comma-separated email addresses) (optional)
+     * @param args.bcc - BCC recipients (comma-separated email addresses) (optional)
+     * @param args.isHtml - Whether body is HTML format (optional)
+     * @returns Promise<GoogleGmailCreateDraftResult> Typed response with IDE autocomplete
      */
-    getSpreadsheet: async (args: GoogleSheetsGetSpreadsheetArgs): Promise<GoogleSheetsGetSpreadsheetResult> => {
+    createDraft: async (args: GoogleGmailCreateDraftArgs): Promise<GoogleGmailCreateDraftResult> => {
       return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'getSpreadsheet',
+        resourceId: 'google-gmail',
+        method: 'createDraft',
         params: args || {}
       });
     },
 
     /**
-     * Insert a value at a specific cell with optional formatting
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.cell - Cell reference in format SheetName!A1
-     * @param args.value - Value to insert
-     * @param args.bold - Make text bold (optional)
-     * @param args.italic - Make text italic (optional)
-     * @param args.foregroundColor - Text color (hex or named color) (optional)
-     * @param args.backgroundColor - Cell background color (hex or named color) (optional)
-     * @returns Promise<GoogleSheetsInsertAtCellResult> Typed response with IDE autocomplete
+     * Update an existing draft email
+     * @param args.draftId - Gmail draft ID to update
+     * @param args.to - Updated recipient email address(es) (optional)
+     * @param args.subject - Updated email subject line (optional)
+     * @param args.body - Updated email body content (optional)
+     * @param args.cc - Updated CC recipients (optional)
+     * @param args.bcc - Updated BCC recipients (optional)
+     * @param args.isHtml - Whether body is HTML format (optional)
+     * @returns Promise<GoogleGmailUpdateDraftResult> Typed response with IDE autocomplete
      */
-    insertAtCell: async (args: GoogleSheetsInsertAtCellArgs): Promise<GoogleSheetsInsertAtCellResult> => {
+    updateDraft: async (args: GoogleGmailUpdateDraftArgs): Promise<GoogleGmailUpdateDraftResult> => {
       return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'insertAtCell',
+        resourceId: 'google-gmail',
+        method: 'updateDraft',
         params: args || {}
       });
     },
 
     /**
-     * Insert a formula at a specific cell
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.cell - Cell reference in format SheetName!A1
-     * @param args.formula - Formula to insert (with or without leading =)
-     * @param args.note - Optional note to add to the cell (optional)
-     * @returns Promise<GoogleSheetsInsertFormulaResult> Typed response with IDE autocomplete
+     * Delete a draft email
+     * @param args.draftId - Gmail draft ID to delete
+     * @returns Promise<GoogleGmailDeleteDraftResult> Typed response with IDE autocomplete
      */
-    insertFormula: async (args: GoogleSheetsInsertFormulaArgs): Promise<GoogleSheetsInsertFormulaResult> => {
+    deleteDraft: async (args: GoogleGmailDeleteDraftArgs): Promise<GoogleGmailDeleteDraftResult> => {
       return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'insertFormula',
+        resourceId: 'google-gmail',
+        method: 'deleteDraft',
         params: args || {}
       });
     },
 
     /**
-     * Apply formatting to a range of cells
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.range - Range in format SheetName!A1:B10
-     * @param args.bold - Make text bold (optional)
-     * @param args.italic - Make text italic (optional)
-     * @param args.foregroundColor - Text color (hex or named color) (optional)
-     * @param args.backgroundColor - Cell background color (hex or named color) (optional)
-     * @param args.borders - Add borders to cells (optional)
-     * @returns Promise<GoogleSheetsFormatRangeResult> Typed response with IDE autocomplete
+     * List all draft emails. Returns normalized draft summaries.
+     * @param args.maxResults - Maximum number of drafts to return (default: 10) (optional)
+     * @returns Promise<GoogleGmailListDraftsResult> Typed response with IDE autocomplete
      */
-    formatRange: async (args: GoogleSheetsFormatRangeArgs): Promise<GoogleSheetsFormatRangeResult> => {
+    listDrafts: async (args: GoogleGmailListDraftsArgs): Promise<GoogleGmailListDraftsResult> => {
       return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'formatRange',
+        resourceId: 'google-gmail',
+        method: 'listDrafts',
         params: args || {}
       });
     },
 
     /**
-     * Create a chart from spreadsheet data
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetId - ID of the sheet containing data
-     * @param args.dataRange - Data range for the chart (e.g., A1:B10)
-     * @param args.chartType - Chart type: BAR, LINE, AREA, PIE, or SCATTER
-     * @param args.title - Chart title
-     * @param args.position - Chart position with row, column, rowCount, columnCount
-     * @returns Promise<GoogleSheetsCreateChartResult> Typed response with IDE autocomplete
+     * Delete an email
+     * @param args.messageId - Gmail message ID to delete
+     * @returns Promise<GoogleGmailDeleteEmailResult> Typed response with IDE autocomplete
      */
-    createChart: async (args: GoogleSheetsCreateChartArgs): Promise<GoogleSheetsCreateChartResult> => {
+    deleteEmail: async (args: GoogleGmailDeleteEmailArgs): Promise<GoogleGmailDeleteEmailResult> => {
       return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'createChart',
+        resourceId: 'google-gmail',
+        method: 'deleteEmail',
         params: args || {}
       });
     },
 
     /**
-     * Find and replace text in a spreadsheet
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.findText - Text to find
-     * @param args.replaceText - Text to replace with
-     * @param args.sheetName - Limit search to specific sheet (optional)
-     * @param args.matchCase - Case-sensitive search (optional)
-     * @param args.matchEntireCell - Match entire cell content only (optional)
-     * @returns Promise<GoogleSheetsFindAndReplaceResult> Typed response with IDE autocomplete
+     * Delete multiple emails at once. Uses Gmail batchDelete API for efficiency.
+     * @param args.messageIds - Array of Gmail message IDs to delete (max 1000 per request)
+     * @param args.permanently - If true, permanently delete. If false (default), move to trash. (optional)
+     * @returns Promise<GoogleGmailBulkDeleteEmailsResult> Typed response with IDE autocomplete
      */
-    findAndReplace: async (args: GoogleSheetsFindAndReplaceArgs): Promise<GoogleSheetsFindAndReplaceResult> => {
+    bulkDeleteEmails: async (args: GoogleGmailBulkDeleteEmailsArgs): Promise<GoogleGmailBulkDeleteEmailsResult> => {
       return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'findAndReplace',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Insert multiple rows of data at once
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetName - Name of the sheet
-     * @param args.rowsData - 2D array of row data to insert
-     * @param args.startingRow - Row number to start insertion (1-indexed). If not provided, appends to end (optional)
-     * @param args.formattingOptions - Optional formatting to apply (bold, italic, foregroundColor, backgroundColor, borders) (optional)
-     * @returns Promise<GoogleSheetsInsertMultipleRowsResult> Typed response with IDE autocomplete
-     */
-    insertMultipleRows: async (args: GoogleSheetsInsertMultipleRowsArgs): Promise<GoogleSheetsInsertMultipleRowsResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'insertMultipleRows',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Clear content from a range of cells
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetName - Name of the sheet
-     * @param args.range - Range to clear (e.g., A1:B10)
-     * @returns Promise<GoogleSheetsClearRangeResult> Typed response with IDE autocomplete
-     */
-    clearRange: async (args: GoogleSheetsClearRangeArgs): Promise<GoogleSheetsClearRangeResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'clearRange',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Insert empty rows at a specific position in a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Row indices are 0-indexed (row 1 in UI = index 0).
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
-     * @param args.startRowIndex - Row index to start inserting at (0-indexed). To insert before row 5 in the UI, use index 4.
-     * @param args.numRows - Number of rows to insert
-     * @returns Promise<GoogleSheetsInsertRowsResult> Typed response with IDE autocomplete
-     */
-    insertRows: async (args: GoogleSheetsInsertRowsArgs): Promise<GoogleSheetsInsertRowsResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'insertRows',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete rows from a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Row indices are 0-indexed (row 1 in UI = index 0).
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
-     * @param args.startRowIndex - Row index to start deleting from (0-indexed). To delete row 5 in the UI, use index 4.
-     * @param args.numRows - Number of rows to delete
-     * @returns Promise<GoogleSheetsDeleteRowsResult> Typed response with IDE autocomplete
-     */
-    deleteRows: async (args: GoogleSheetsDeleteRowsArgs): Promise<GoogleSheetsDeleteRowsResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'deleteRows',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Insert empty columns at a specific position in a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Column indices are 0-indexed (A=0, B=1, C=2, etc.).
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
-     * @param args.startColumnIndex - Column index to start inserting at (0-indexed: A=0, B=1, C=2, D=3, etc.). To insert before column D, use index 3.
-     * @param args.numColumns - Number of columns to insert
-     * @returns Promise<GoogleSheetsInsertColumnsResult> Typed response with IDE autocomplete
-     */
-    insertColumns: async (args: GoogleSheetsInsertColumnsArgs): Promise<GoogleSheetsInsertColumnsResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'insertColumns',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete columns from a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Column indices are 0-indexed (A=0, B=1, C=2, etc.).
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
-     * @param args.startColumnIndex - Column index to start deleting from (0-indexed: A=0, B=1, C=2, D=3, etc.). To delete column D, use index 3.
-     * @param args.numColumns - Number of columns to delete
-     * @returns Promise<GoogleSheetsDeleteColumnsResult> Typed response with IDE autocomplete
-     */
-    deleteColumns: async (args: GoogleSheetsDeleteColumnsArgs): Promise<GoogleSheetsDeleteColumnsResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'deleteColumns',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Copy data from one range to another location within the same spreadsheet. IMPORTANT: Requires numeric sheetIds (get from getSpreadsheet), not sheet names. Can copy within same sheet or across sheets.
-     * @param args.spreadsheetId - ID of the spreadsheet
-     * @param args.sourceSheetId - Numeric sheet ID of the source sheet (get from getSpreadsheet response: sheets[n].properties.sheetId)
-     * @param args.sourceRange - Source range in A1 notation WITHOUT sheet name (e.g., "A1:C5", not "Sheet1!A1:C5")
-     * @param args.targetSheetId - Numeric sheet ID of the target sheet (can be same as sourceSheetId to copy within same sheet)
-     * @param args.targetStartCell - Target start cell in A1 notation (e.g., "E1"). The copied data will fill cells starting from this position.
-     * @returns Promise<GoogleSheetsCopyRangeResult> Typed response with IDE autocomplete
-     */
-    copyRange: async (args: GoogleSheetsCopyRangeArgs): Promise<GoogleSheetsCopyRangeResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-sheets',
-        method: 'copyRange',
+        resourceId: 'google-gmail',
+        method: 'bulkDeleteEmails',
         params: args || {}
       });
     }
@@ -7427,201 +6194,158 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
 }
 
 /**
- * Google Docs Adapter
- * Category: productivity
+ * Hypertrade Adapter
+ * Category: crypto
  */
-function createGoogleDocsAdapter(sdk: MirraSDK) {
+function createHypertradeAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new Google Doc
-     * @param args.title - Title of the document
-     * @returns Promise<GoogleDocsCreateDocumentResult> Typed response with IDE autocomplete
+     * Place an order on Hyperliquid DEX. Returns a pending order for the user to sign in delegated mode, or submits directly in standard mode. FLAT response.
+     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
+     * @param args.isBuy - True for long/buy, false for short/sell
+     * @param args.size - Order size in asset units
+     * @param args.limitPrice - Limit price (required for limit orders) (optional)
+     * @param args.orderType - Order type: "limit" or "market" (default: "market") (optional)
+     * @param args.triggerPrice - Trigger price for stop/take-profit orders (optional)
+     * @param args.reduceOnly - Whether order can only reduce position (default: false) (optional)
+     * @param args.postOnly - Whether order should only be maker (default: false) (optional)
+     * @param args.clientOrderId - Custom client order ID for tracking (optional)
+     * @returns Promise<HypertradePlaceOrderResult> Typed response with IDE autocomplete
      */
-    createDocument: async (args: GoogleDocsCreateDocumentArgs): Promise<GoogleDocsCreateDocumentResult> => {
+    placeOrder: async (args: HypertradePlaceOrderArgs): Promise<HypertradePlaceOrderResult> => {
       return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'createDocument',
+        resourceId: 'hypertrade',
+        method: 'placeOrder',
         params: args || {}
       });
     },
 
     /**
-     * Get a Google Doc by ID. Returns normalized flat structure with extracted fields.
-     * @param args.documentId - ID of the document
-     * @returns Promise<GoogleDocsGetDocumentResult> Typed response with IDE autocomplete
+     * Cancel an open order on Hyperliquid DEX. Can cancel by orderId, clientOrderId, or cancel all orders for an asset.
+     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
+     * @param args.orderId - Order ID to cancel (optional)
+     * @param args.clientOrderId - Client order ID to cancel (optional)
+     * @param args.cancelAll - Cancel all orders for this asset (default: false) (optional)
+     * @returns Promise<HypertradeCancelOrderResult> Typed response with IDE autocomplete
      */
-    getDocument: async (args: GoogleDocsGetDocumentArgs): Promise<GoogleDocsGetDocumentResult> => {
+    cancelOrder: async (args: HypertradeCancelOrderArgs): Promise<HypertradeCancelOrderResult> => {
       return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'getDocument',
+        resourceId: 'hypertrade',
+        method: 'cancelOrder',
         params: args || {}
       });
     },
 
     /**
-     * Append text to the end of a document
-     * @param args.documentId - ID of the document
-     * @param args.text - Text to append
-     * @returns Promise<GoogleDocsAppendTextResult> Typed response with IDE autocomplete
+     * Get current perpetual positions for a wallet. Returns normalized FLAT array of positions with asset, size, entryPrice, markPrice, unrealizedPnl, leverage, liquidationPrice, marginUsed, positionValue, returnOnEquity, side.
+     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
+     * @returns Promise<HypertradeGetPositionsResult> Typed response with IDE autocomplete
      */
-    appendText: async (args: GoogleDocsAppendTextArgs): Promise<GoogleDocsAppendTextResult> => {
+    getPositions: async (args: HypertradeGetPositionsArgs): Promise<HypertradeGetPositionsResult> => {
       return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'appendText',
+        resourceId: 'hypertrade',
+        method: 'getPositions',
         params: args || {}
       });
     },
 
     /**
-     * Replace text in a document
-     * @param args.documentId - ID of the document
-     * @param args.searchText - Text to search for
-     * @param args.replaceText - Text to replace with
-     * @returns Promise<GoogleDocsReplaceTextResult> Typed response with IDE autocomplete
+     * Get open orders for a wallet. Returns normalized FLAT array of orders.
+     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
+     * @param args.asset - Filter by asset/coin symbol (optional)
+     * @returns Promise<HypertradeGetOpenOrdersResult> Typed response with IDE autocomplete
      */
-    replaceText: async (args: GoogleDocsReplaceTextArgs): Promise<GoogleDocsReplaceTextResult> => {
+    getOpenOrders: async (args: HypertradeGetOpenOrdersArgs): Promise<HypertradeGetOpenOrdersResult> => {
       return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'replaceText',
+        resourceId: 'hypertrade',
+        method: 'getOpenOrders',
         params: args || {}
       });
     },
 
     /**
-     * Get the text content of a Google Doc
-     * @param args.documentId - ID of the document
-     * @returns Promise<GoogleDocsGetDocumentContentResult> Typed response with IDE autocomplete
+     * Get account balances including perp margin and spot balances. Returns normalized FLAT structure.
+     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
+     * @returns Promise<HypertradeGetBalancesResult> Typed response with IDE autocomplete
      */
-    getDocumentContent: async (args: GoogleDocsGetDocumentContentArgs): Promise<GoogleDocsGetDocumentContentResult> => {
+    getBalances: async (args: HypertradeGetBalancesArgs): Promise<HypertradeGetBalancesResult> => {
       return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'getDocumentContent',
+        resourceId: 'hypertrade',
+        method: 'getBalances',
         params: args || {}
       });
     },
 
     /**
-     * Insert text at a specific position in the document
-     * @param args.documentId - ID of the document
-     * @param args.text - Text to insert
-     * @param args.position - Character position to insert at (1-indexed)
-     * @returns Promise<GoogleDocsInsertTextAtPositionResult> Typed response with IDE autocomplete
+     * Get market information for perpetual assets. Returns normalized FLAT array of market info. If asset is provided, returns only that asset.
+     * @param args.asset - Specific asset/coin symbol to get info for (returns all if omitted) (optional)
+     * @returns Promise<HypertradeGetMarketInfoResult> Typed response with IDE autocomplete
      */
-    insertTextAtPosition: async (args: GoogleDocsInsertTextAtPositionArgs): Promise<GoogleDocsInsertTextAtPositionResult> => {
+    getMarketInfo: async (args: HypertradeGetMarketInfoArgs): Promise<HypertradeGetMarketInfoResult> => {
       return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'insertTextAtPosition',
+        resourceId: 'hypertrade',
+        method: 'getMarketInfo',
         params: args || {}
       });
     },
 
     /**
-     * Insert text after a search string in the document
-     * @param args.documentId - ID of the document
-     * @param args.searchText - Text to search for
-     * @param args.textToInsert - Text to insert after the search text
-     * @param args.occurrence - Which occurrence to insert after (default: 1) (optional)
-     * @returns Promise<GoogleDocsInsertTextAfterResult> Typed response with IDE autocomplete
+     * Get the L2 orderbook for an asset. Returns normalized FLAT structure with bids and asks arrays.
+     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
+     * @param args.depth - Number of levels to return (default: all) (optional)
+     * @returns Promise<HypertradeGetOrderbookResult> Typed response with IDE autocomplete
      */
-    insertTextAfter: async (args: GoogleDocsInsertTextAfterArgs): Promise<GoogleDocsInsertTextAfterResult> => {
+    getOrderbook: async (args: HypertradeGetOrderbookArgs): Promise<HypertradeGetOrderbookResult> => {
       return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'insertTextAfter',
+        resourceId: 'hypertrade',
+        method: 'getOrderbook',
         params: args || {}
       });
     },
 
     /**
-     * Insert a heading into the document
-     * @param args.documentId - ID of the document
-     * @param args.text - Heading text
-     * @param args.level - Heading level (1-6)
-     * @param args.position - Character position to insert at (optional)
-     * @param args.insertAfterText - Insert after this text instead of at position (optional)
-     * @returns Promise<GoogleDocsInsertHeadingResult> Typed response with IDE autocomplete
+     * Get candlestick/OHLCV data for an asset. Returns normalized FLAT array of candles.
+     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
+     * @param args.interval - Candle interval (e.g. "1m", "5m", "1h", "1d"). Default: "1h" (optional)
+     * @param args.startTime - Start time in milliseconds (default: 24h ago) (optional)
+     * @param args.endTime - End time in milliseconds (default: now) (optional)
+     * @param args.limit - Max number of candles to return (optional)
+     * @returns Promise<HypertradeGetCandlesResult> Typed response with IDE autocomplete
      */
-    insertHeading: async (args: GoogleDocsInsertHeadingArgs): Promise<GoogleDocsInsertHeadingResult> => {
+    getCandles: async (args: HypertradeGetCandlesArgs): Promise<HypertradeGetCandlesResult> => {
       return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'insertHeading',
+        resourceId: 'hypertrade',
+        method: 'getCandles',
         params: args || {}
       });
     },
 
     /**
-     * Insert a bulleted or numbered list into the document
-     * @param args.documentId - ID of the document
-     * @param args.items - Array of list items
-     * @param args.listType - Type of list: "bulleted" or "numbered"
-     * @param args.position - Character position to insert at (optional)
-     * @param args.insertAfterText - Insert after this text instead of at position (optional)
-     * @returns Promise<GoogleDocsInsertListResult> Typed response with IDE autocomplete
+     * Set leverage for an asset on Hyperliquid. Returns a pending action for the user to sign.
+     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
+     * @param args.leverage - Leverage multiplier (e.g. 5 for 5x)
+     * @param args.isCrossMargin - Use cross margin (default: true). False for isolated margin. (optional)
+     * @returns Promise<HypertradeSetLeverageResult> Typed response with IDE autocomplete
      */
-    insertList: async (args: GoogleDocsInsertListArgs): Promise<GoogleDocsInsertListResult> => {
+    setLeverage: async (args: HypertradeSetLeverageArgs): Promise<HypertradeSetLeverageResult> => {
       return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'insertList',
+        resourceId: 'hypertrade',
+        method: 'setLeverage',
         params: args || {}
       });
     },
 
     /**
-     * Insert a table into the document
-     * @param args.documentId - ID of the document
-     * @param args.data - 2D array of table data (rows x columns)
-     * @param args.hasHeader - Whether the first row is a header (default: true) (optional)
-     * @param args.position - Character position to insert at (optional)
-     * @param args.insertAfterText - Insert after this text instead of at position (optional)
-     * @returns Promise<GoogleDocsInsertTableResult> Typed response with IDE autocomplete
+     * Get trade fill history for a wallet. Returns normalized FLAT array of trades.
+     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
+     * @param args.asset - Filter by asset/coin symbol (optional)
+     * @param args.limit - Max number of trades to return (optional)
+     * @returns Promise<HypertradeGetTradeHistoryResult> Typed response with IDE autocomplete
      */
-    insertTable: async (args: GoogleDocsInsertTableArgs): Promise<GoogleDocsInsertTableResult> => {
+    getTradeHistory: async (args: HypertradeGetTradeHistoryArgs): Promise<HypertradeGetTradeHistoryResult> => {
       return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'insertTable',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Replace the entire content of a document
-     * @param args.documentId - ID of the document
-     * @param args.newContent - New content to replace existing content
-     * @returns Promise<GoogleDocsUpdateDocumentContentResult> Typed response with IDE autocomplete
-     */
-    updateDocumentContent: async (args: GoogleDocsUpdateDocumentContentArgs): Promise<GoogleDocsUpdateDocumentContentResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'updateDocumentContent',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create a new section with a heading and content. Returns normalized result with insertion details.
-     * @param args.documentId - ID of the document
-     * @param args.heading - Section heading text
-     * @param args.content - Section content text
-     * @returns Promise<GoogleDocsCreateSectionResult> Typed response with IDE autocomplete
-     */
-    createSection: async (args: GoogleDocsCreateSectionArgs): Promise<GoogleDocsCreateSectionResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'createSection',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Find the character position for insertion based on position or search text. Returns normalized result with position and context.
-     * @param args.documentId - ID of the document
-     * @param args.position - Position to find (1 for start, -1 for end)
-     * @param args.searchText - Text to search for (returns position after this text) (optional)
-     * @returns Promise<GoogleDocsFindInsertionPointResult> Typed response with IDE autocomplete
-     */
-    findInsertionPoint: async (args: GoogleDocsFindInsertionPointArgs): Promise<GoogleDocsFindInsertionPointResult> => {
-      return sdk.resources.call({
-        resourceId: 'google-docs',
-        method: 'findInsertionPoint',
+        resourceId: 'hypertrade',
+        method: 'getTradeHistory',
         params: args || {}
       });
     }
@@ -7629,495 +6353,122 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
 }
 
 /**
- * Jira Adapter
- * Category: project
+ * Skills Adapter
+ * Category: internal
  */
-function createJiraAdapter(sdk: MirraSDK) {
+function createSkillsAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new Jira issue
-     * @param args.projectKey - Jira project key (e.g., "PROJ")
-     * @param args.summary - Issue summary/title
-     * @param args.description - Issue description (optional)
-     * @param args.issueType - Issue type (Task, Bug, Story, etc.) (optional)
-     * @returns Promise<JiraCreateIssueResult> Typed response with IDE autocomplete
+     * List skills available to the user (built-in + user-created).
+     * @param args.category - Filter by category (optional)
      */
-    createIssue: async (args: JiraCreateIssueArgs): Promise<JiraCreateIssueResult> => {
+    listSkills: async (args: SkillsListSkillsArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'createIssue',
+        resourceId: 'skills',
+        method: 'listSkills',
         params: args || {}
       });
     },
 
     /**
-     * Search Jira issues using JQL. Returns normalized flat issue summaries.
-     * @param args.jql - JQL query string
-     * @param args.maxResults - Maximum number of results (default: 50, max: 100) (optional)
-     * @returns Promise<JiraSearchIssuesResult> Typed response with IDE autocomplete
+     * Get full details of a skill by ID.
+     * @param args.skillId - ID of the skill
      */
-    searchIssues: async (args: JiraSearchIssuesArgs): Promise<JiraSearchIssuesResult> => {
+    getSkill: async (args: SkillsGetSkillArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'searchIssues',
+        resourceId: 'skills',
+        method: 'getSkill',
         params: args || {}
       });
     },
 
     /**
-     * Get a specific Jira issue by key or ID. Returns normalized flat structure.
-     * @param args.issueKey - Issue key (e.g., "PROJ-123") or ID
-     * @returns Promise<JiraGetIssueResult> Typed response with IDE autocomplete
+     * Create a new user skill.
+     * @param args.name - Unique kebab-case name
+     * @param args.title - Human-readable title
+     * @param args.description - What this skill does
+     * @param args.whenToUse - Conditions for using this skill
+     * @param args.whenNotToUse - Conditions to avoid this skill
+     * @param args.procedure - Step-by-step procedure
+     * @param args.category - Skill category
+     * @param args.tags - Tags for discovery (optional)
      */
-    getIssue: async (args: JiraGetIssueArgs): Promise<JiraGetIssueResult> => {
+    createSkill: async (args: SkillsCreateSkillArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'getIssue',
+        resourceId: 'skills',
+        method: 'createSkill',
         params: args || {}
       });
     },
 
     /**
-     * Update an existing Jira issue
-     * @param args.issueKey - Issue key (e.g., "PROJ-123")
-     * @param args.summary - New issue summary/title (optional)
-     * @param args.description - New issue description (optional)
-     * @returns Promise<JiraUpdateIssueResult> Typed response with IDE autocomplete
+     * Update a user skill procedure, templates, or metadata.
+     * @param args.skillId - ID of the skill to update
+     * @param args.updates - Fields to update
      */
-    updateIssue: async (args: JiraUpdateIssueArgs): Promise<JiraUpdateIssueResult> => {
+    updateSkill: async (args: SkillsUpdateSkillArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'updateIssue',
+        resourceId: 'skills',
+        method: 'updateSkill',
         params: args || {}
       });
     },
 
     /**
-     * Delete a Jira issue
-     * @param args.issueKey - Issue key (e.g., "PROJ-123")
-     * @returns Promise<JiraDeleteIssueResult> Typed response with IDE autocomplete
+     * Delete a user skill. Cannot delete built-in skills.
+     * @param args.skillId - ID of the skill to delete
      */
-    deleteIssue: async (args: JiraDeleteIssueArgs): Promise<JiraDeleteIssueResult> => {
+    deleteSkill: async (args: SkillsDeleteSkillArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'deleteIssue',
+        resourceId: 'skills',
+        method: 'deleteSkill',
         params: args || {}
       });
     },
 
     /**
-     * Add a comment to a Jira issue
-     * @param args.issueKey - Issue key (e.g., "PROJ-123")
-     * @param args.comment - Comment text
-     * @returns Promise<JiraAddCommentResult> Typed response with IDE autocomplete
+     * Select relevant skills for a goal flow iteration. Returns ranked skills with full procedure text.
+     * @param args.goalDescription - The goal being pursued
+     * @param args.currentPhase - Current execution phase (optional)
+     * @param args.isLooping - Whether loop detection is active (optional)
+     * @param args.budgetPercentage - Token budget used (0-100) (optional)
+     * @param args.recentFailureCount - Number of recent failures (optional)
+     * @param args.hasDelegation - Whether delegation is configured (optional)
      */
-    addComment: async (args: JiraAddCommentArgs): Promise<JiraAddCommentResult> => {
+    selectSkills: async (args: SkillsSelectSkillsArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'addComment',
+        resourceId: 'skills',
+        method: 'selectSkills',
         params: args || {}
       });
     },
 
     /**
-     * Transition a Jira issue to a different status
-     * @param args.issueKey - Issue key (e.g., "PROJ-123")
-     * @param args.transitionId - ID of the transition to perform
-     * @returns Promise<JiraTransitionIssueResult> Typed response with IDE autocomplete
+     * Record that a skill was used during goal flow execution.
+     * @param args.skillId - ID of the skill used
+     * @param args.flowId - ID of the goal flow
+     * @param args.iteration - Iteration number
+     * @param args.outcome - success or failure
+     * @param args.notes - Optional notes (optional)
      */
-    transitionIssue: async (args: JiraTransitionIssueArgs): Promise<JiraTransitionIssueResult> => {
+    recordSkillUsage: async (args: SkillsRecordSkillUsageArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'transitionIssue',
+        resourceId: 'skills',
+        method: 'recordSkillUsage',
         params: args || {}
       });
     },
 
     /**
-     * Assign a Jira issue to a user
-     * @param args.issueKey - Issue key (e.g., "PROJ-123")
-     * @param args.accountId - Atlassian account ID of the assignee
-     * @returns Promise<JiraAssignIssueResult> Typed response with IDE autocomplete
+     * Get usage records for a skill or flow.
+     * @param args.skillId - Filter by skill ID (optional)
+     * @param args.flowId - Filter by flow ID (optional)
+     * @param args.limit - Max records to return (default 20) (optional)
      */
-    assignIssue: async (args: JiraAssignIssueArgs): Promise<JiraAssignIssueResult> => {
+    getSkillUsage: async (args: SkillsGetSkillUsageArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'assignIssue',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get all accessible Jira projects. Returns normalized flat project structures.
-     * @returns Promise<JiraGetProjectsResult> Typed response with IDE autocomplete
-     */
-    getProjects: async (args?: {}): Promise<JiraGetProjectsResult> => {
-      return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'getProjects',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List all accessible Jira projects (alias for getProjects). Returns normalized flat structures.
-     * @returns Promise<JiraListProjectsResult> Typed response with IDE autocomplete
-     */
-    listProjects: async (args?: {}): Promise<JiraListProjectsResult> => {
-      return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'listProjects',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get metadata for a specific Jira project. Returns normalized flat structures.
-     * @param args.projectKey - Project key (e.g., "PROJ")
-     * @returns Promise<JiraGetProjectMetadataResult> Typed response with IDE autocomplete
-     */
-    getProjectMetadata: async (args: JiraGetProjectMetadataArgs): Promise<JiraGetProjectMetadataResult> => {
-      return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'getProjectMetadata',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get available transitions for a Jira issue. Returns normalized flat structures.
-     * @param args.issueKey - Issue key (e.g., "PROJ-123")
-     * @returns Promise<JiraGetTransitionsResult> Typed response with IDE autocomplete
-     */
-    getTransitions: async (args: JiraGetTransitionsArgs): Promise<JiraGetTransitionsResult> => {
-      return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'getTransitions',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List users that can be assigned to issues in a project
-     * @param args.projectKey - Project key (e.g., "PROJ")
-     * @returns Promise<JiraListAssignableUsersResult> Typed response with IDE autocomplete
-     */
-    listAssignableUsers: async (args: JiraListAssignableUsersArgs): Promise<JiraListAssignableUsersResult> => {
-      return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'listAssignableUsers',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get available issue types for a project. Returns normalized flat structures.
-     * @param args.projectKey - Project key (e.g., "PROJ")
-     * @returns Promise<JiraGetIssueTypesResult> Typed response with IDE autocomplete
-     */
-    getIssueTypes: async (args: JiraGetIssueTypesArgs): Promise<JiraGetIssueTypesResult> => {
-      return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'getIssueTypes',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Search Jira API for available operations beyond core tools
-     * @param args.query - Describe what you want to do (e.g., "add label to card")
-     * @param args.limit - Max results to return (default 5) (optional)
-     */
-    discoverExtended: async (args: JiraDiscoverExtendedArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'discoverExtended',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Execute a Jira API operation by operationId
-     * @param args.operationId - The operationId from discoverExtended results
-     * @param args.pathParams - Path parameters, e.g., { id: "abc123" } (optional)
-     * @param args.queryParams - Query string parameters (optional)
-     * @param args.body - Request body for POST/PUT/PATCH operations (optional)
-     */
-    executeExtended: async (args: JiraExecuteExtendedArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'jira',
-        method: 'executeExtended',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Twitter Adapter
- * Category: social
- */
-function createTwitterAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Post a tweet
-     * @param args.text - Tweet text (max 280 characters)
-     * @returns Promise<TwitterPostTweetResult> Typed response with IDE autocomplete
-     */
-    postTweet: async (args: TwitterPostTweetArgs): Promise<TwitterPostTweetResult> => {
-      return sdk.resources.call({
-        resourceId: 'twitter',
-        method: 'postTweet',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Retrieve tweets from a Twitter user. Must provide either userId OR userName (not both). NOTE: This operation ONLY accepts the 4 parameters listed below. There is NO maxResults, limit, count, or similar parameters - the API returns ~20 tweets per page, use cursor for pagination.
-     * @param args.userId - Twitter user ID (recommended for stability and speed). Provide userId OR userName, not both. (optional)
-     * @param args.userName - Twitter username/handle without @ symbol (e.g., "elonmusk"). Provide userName OR userId, not both. (optional)
-     * @param args.cursor - Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values. (optional)
-     * @param args.includeReplies - Whether to include replies in results. Defaults to false (only original tweets). (optional)
-     * @returns Promise<TwitterGetUserTweetsResult> Typed response with IDE autocomplete
-     */
-    getUserTweets: async (args: TwitterGetUserTweetsArgs): Promise<TwitterGetUserTweetsResult> => {
-      return sdk.resources.call({
-        resourceId: 'twitter',
-        method: 'getUserTweets',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Search tweets using advanced Twitter search syntax. Supports operators like from:username, since:date, until:date, lang:en, and boolean operators (AND, OR). NOTE: This operation ONLY accepts the 3 parameters listed below (query, queryType, cursor). There is NO minFollowers, maxResults, limit, or other filtering parameters - filter results client-side after fetching.
-     * @param args.query - Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR \"machine learning\"". Supported operators: from:user, to:user, since:YYYY-MM-DD, until:YYYY-MM-DD, lang:xx, filter:media, filter:links, -filter:retweets, AND, OR, -keyword, "exact phrase".
-     * @param args.queryType - Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". Only these two values are valid. (optional)
-     * @param args.cursor - Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values. (optional)
-     * @returns Promise<TwitterAdvancedSearchResult> Typed response with IDE autocomplete
-     */
-    advancedSearch: async (args: TwitterAdvancedSearchArgs): Promise<TwitterAdvancedSearchResult> => {
-      return sdk.resources.call({
-        resourceId: 'twitter',
-        method: 'advancedSearch',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Trello Adapter
- * Category: productivity
- */
-function createTrelloAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Get all boards for the authenticated user
-     * @returns Promise<TrelloGetBoardsResult> Typed response with IDE autocomplete
-     */
-    getBoards: async (args?: {}): Promise<TrelloGetBoardsResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'getBoards',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get a specific board by ID including its lists
-     * @param args.boardId - The ID of the board to retrieve
-     * @returns Promise<TrelloGetBoardResult> Typed response with IDE autocomplete
-     */
-    getBoard: async (args: TrelloGetBoardArgs): Promise<TrelloGetBoardResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'getBoard',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create a new card in a Trello list
-     * @param args.name - Card name/title
-     * @param args.idList - ID of the list to add the card to
-     * @param args.desc - Card description (supports markdown) (optional)
-     * @param args.description - Card description (alias for "desc", supports markdown) (optional)
-     * @returns Promise<TrelloCreateCardResult> Typed response with IDE autocomplete
-     */
-    createCard: async (args: TrelloCreateCardArgs): Promise<TrelloCreateCardResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'createCard',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get a specific card by ID
-     * @param args.cardId - The ID of the card to retrieve
-     * @returns Promise<TrelloGetCardResult> Typed response with IDE autocomplete
-     */
-    getCard: async (args: TrelloGetCardArgs): Promise<TrelloGetCardResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'getCard',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update an existing card
-     * @param args.cardId - The ID of the card to update
-     * @param args.name - New card name (optional)
-     * @param args.desc - New card description (optional)
-     * @param args.description - New card description (alias for "desc", supports markdown) (optional)
-     * @param args.idList - Move card to a different list (optional)
-     * @param args.closed - Archive the card (optional)
-     * @returns Promise<TrelloUpdateCardResult> Typed response with IDE autocomplete
-     */
-    updateCard: async (args: TrelloUpdateCardArgs): Promise<TrelloUpdateCardResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'updateCard',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete a card permanently
-     * @param args.cardId - The ID of the card to delete
-     * @returns Promise<TrelloDeleteCardResult> Typed response with IDE autocomplete
-     */
-    deleteCard: async (args: TrelloDeleteCardArgs): Promise<TrelloDeleteCardResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'deleteCard',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create a new checklist on a card
-     * @param args.cardId - The ID of the card to add the checklist to
-     * @param args.name - Checklist name
-     * @returns Promise<TrelloCreateChecklistResult> Typed response with IDE autocomplete
-     */
-    createChecklist: async (args: TrelloCreateChecklistArgs): Promise<TrelloCreateChecklistResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'createChecklist',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get a specific checklist by ID
-     * @param args.checklistId - The ID of the checklist to retrieve
-     * @returns Promise<TrelloGetChecklistResult> Typed response with IDE autocomplete
-     */
-    getChecklist: async (args: TrelloGetChecklistArgs): Promise<TrelloGetChecklistResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'getChecklist',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update a checklist name
-     * @param args.checklistId - The ID of the checklist to update
-     * @param args.name - New checklist name
-     * @returns Promise<TrelloUpdateChecklistResult> Typed response with IDE autocomplete
-     */
-    updateChecklist: async (args: TrelloUpdateChecklistArgs): Promise<TrelloUpdateChecklistResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'updateChecklist',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete a checklist from a card
-     * @param args.checklistId - The ID of the checklist to delete
-     * @returns Promise<TrelloDeleteChecklistResult> Typed response with IDE autocomplete
-     */
-    deleteChecklist: async (args: TrelloDeleteChecklistArgs): Promise<TrelloDeleteChecklistResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'deleteChecklist',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Add a check item to a checklist
-     * @param args.checklistId - The ID of the checklist to add the item to
-     * @param args.name - Check item text
-     * @returns Promise<TrelloAddCheckItemResult> Typed response with IDE autocomplete
-     */
-    addCheckItem: async (args: TrelloAddCheckItemArgs): Promise<TrelloAddCheckItemResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'addCheckItem',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update a check item (name or completion state)
-     * @param args.cardId - The ID of the card containing the check item
-     * @param args.checkItemId - The ID of the check item to update
-     * @param args.name - New check item text (optional)
-     * @param args.state - Check state: "complete" or "incomplete" (optional)
-     * @returns Promise<TrelloUpdateCheckItemResult> Typed response with IDE autocomplete
-     */
-    updateCheckItem: async (args: TrelloUpdateCheckItemArgs): Promise<TrelloUpdateCheckItemResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'updateCheckItem',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete a check item from a checklist
-     * @param args.checklistId - The ID of the checklist containing the item
-     * @param args.checkItemId - The ID of the check item to delete
-     * @returns Promise<TrelloDeleteCheckItemResult> Typed response with IDE autocomplete
-     */
-    deleteCheckItem: async (args: TrelloDeleteCheckItemArgs): Promise<TrelloDeleteCheckItemResult> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'deleteCheckItem',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Search Trello API for available operations beyond core tools
-     * @param args.query - Describe what you want to do (e.g., "add label to card")
-     * @param args.limit - Max results to return (default 5) (optional)
-     */
-    discoverExtended: async (args: TrelloDiscoverExtendedArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'discoverExtended',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Execute a Trello API operation by operationId
-     * @param args.operationId - The operationId from discoverExtended results
-     * @param args.pathParams - Path parameters, e.g., { id: "abc123" } (optional)
-     * @param args.queryParams - Query string parameters (optional)
-     * @param args.body - Request body for POST/PUT/PATCH operations (optional)
-     */
-    executeExtended: async (args: TrelloExecuteExtendedArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'trello',
-        method: 'executeExtended',
+        resourceId: 'skills',
+        method: 'getSkillUsage',
         params: args || {}
       });
     }
@@ -8233,98 +6584,82 @@ function createJupiterAdapter(sdk: MirraSDK) {
 }
 
 /**
- * Crypto Adapter
- * Category: crypto
+ * Marketplace Resources Adapter
+ * Category: marketplace
  */
-function createCryptoAdapter(sdk: MirraSDK) {
+function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Get the current price of a crypto asset. Returns normalized flat structure. IMPORTANT: Not all tokens are supported by the pricing service. Before using this operation in a Flow or automation, always make a test call first to verify the token is supported. If the call fails with "not supported", do NOT create the Flow — inform the user that price tracking is not available for that token.
-     * @param args.tokenAddress - Token contract address (EVM: 0x..., SVM: base58)
-     * @param args.chainName - Specific chain name (auto-detected if not provided) (optional)
-     * @returns Promise<CryptoGetPriceResult> Typed response with IDE autocomplete
+     * Call a method on an installed marketplace resource. Returns flat response with result, cost, duration, and statusCode.
+     * @param args.resourceId - ID of the installed resource
+     * @param args.method - Method name to call on the resource
+     * @param args.parameters - Parameters to pass to the method
      */
-    getPrice: async (args: CryptoGetPriceArgs): Promise<CryptoGetPriceResult> => {
+    call: async (args: MarketplaceResourcesCallArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'crypto',
-        method: 'getPrice',
+        resourceId: 'marketplace-resources',
+        method: 'call',
         params: args || {}
       });
     },
 
     /**
-     * Send cryptocurrency or tokens (creates pending transaction for signing). Returns normalized flat structure.
-     * @param args.recipient - Contact username, user ID, or Solana wallet address
-     * @param args.token - Token symbol (SOL, USDC), name, or mint address
-     * @param args.amount - Amount to send (in UI units)
-     * @returns Promise<CryptoSendTokenResult> Typed response with IDE autocomplete
+     * Install a marketplace resource for the user. Returns flat installation details.
+     * @param args.resourceId - ID of the resource to install
      */
-    sendToken: async (args: CryptoSendTokenArgs): Promise<CryptoSendTokenResult> => {
+    install: async (args: MarketplaceResourcesInstallArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'crypto',
-        method: 'sendToken',
+        resourceId: 'marketplace-resources',
+        method: 'install',
         params: args || {}
       });
     },
 
     /**
-     * Set up automated price monitoring with progressive alerts. Returns normalized flat structure.
-     * @param args.tokenAddress - Token contract address to monitor
-     * @param args.direction - Alert direction: "above" or "below"
-     * @param args.targetPrice - Target price in USD to trigger alert
-     * @param args.scriptId - ID of the script to execute when price target is reached
-     * @param args.chainName - Chain name (auto-detected if not provided) (optional)
-     * @param args.percentStep - Progressive alert step percentage (default: 0.1 = 10%) (optional)
-     * @returns Promise<CryptoMonitorPriceResult> Typed response with IDE autocomplete
+     * Uninstall a marketplace resource. Returns confirmation.
+     * @param args.resourceId - ID of the resource to uninstall
      */
-    monitorPrice: async (args: CryptoMonitorPriceArgs): Promise<CryptoMonitorPriceResult> => {
+    uninstall: async (args: MarketplaceResourcesUninstallArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'crypto',
-        method: 'monitorPrice',
+        resourceId: 'marketplace-resources',
+        method: 'uninstall',
         params: args || {}
       });
     },
 
     /**
-     * List all active crypto price monitoring assignments. Returns normalized flat structures.
-     * @returns Promise<CryptoListSubscriptionsResult> Typed response with IDE autocomplete
+     * Authenticate with a marketplace resource that requires credentials.
+     * @param args.resourceId - ID of the resource to authenticate with
+     * @param args.type - Authentication type: api_key, oauth2, basic, or bearer
+     * @param args.credentials - Credentials object (structure depends on auth type)
      */
-    listSubscriptions: async (args?: {}): Promise<CryptoListSubscriptionsResult> => {
+    authenticate: async (args: MarketplaceResourcesAuthenticateArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'crypto',
-        method: 'listSubscriptions',
+        resourceId: 'marketplace-resources',
+        method: 'authenticate',
         params: args || {}
       });
     },
 
     /**
-     * Stop monitoring a crypto asset. Returns normalized flat structure.
-     * @param args.tokenAddress - Token address to stop monitoring
-     * @returns Promise<CryptoUnsubscribeAssetResult> Typed response with IDE autocomplete
+     * List all installed marketplace resources for the user.
      */
-    unsubscribeAsset: async (args: CryptoUnsubscribeAssetArgs): Promise<CryptoUnsubscribeAssetResult> => {
+    listInstalled: async (args?: {}): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'crypto',
-        method: 'unsubscribeAsset',
+        resourceId: 'marketplace-resources',
+        method: 'listInstalled',
         params: args || {}
       });
     },
 
     /**
-     * Refresh an expired transaction with new blockhash and updated details. Returns normalized flat structure.
-     * @param args.feedItemId - Feed item ID containing the transaction to refresh
-     * @param args.transferId - Original transfer ID
-     * @param args.recipient - Recipient address
-     * @param args.token - Token symbol or mint address
-     * @param args.amount - Amount to send
-     * @param args.tokenMint - Token mint address (optional, will resolve if not provided) (optional)
-     * @param args.tokenDecimals - Token decimals (optional) (optional)
-     * @returns Promise<CryptoRefreshTransactionResult> Typed response with IDE autocomplete
+     * Get details of a specific resource installation.
+     * @param args.resourceId - ID of the resource to get installation details for
      */
-    refreshTransaction: async (args: CryptoRefreshTransactionArgs): Promise<CryptoRefreshTransactionResult> => {
+    getInstallation: async (args: MarketplaceResourcesGetInstallationArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'crypto',
-        method: 'refreshTransaction',
+        resourceId: 'marketplace-resources',
+        method: 'getInstallation',
         params: args || {}
       });
     }
@@ -8352,9 +6687,8 @@ The handler's return object controls how the flow executor records the result:
      * @param args.runtime - Lambda runtime (default: nodejs18) (optional)
      * @param args.config - Script configuration (timeout, memory, maxCostPerExecution, etc.) (optional)
      * @param args.code - Initial JavaScript/TypeScript code for the script
-     * @returns Promise<ScriptsCreateScriptResult> Typed response with IDE autocomplete
      */
-    createScript: async (args: ScriptsCreateScriptArgs): Promise<ScriptsCreateScriptResult> => {
+    createScript: async (args: ScriptsCreateScriptArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'createScript',
@@ -8365,9 +6699,8 @@ The handler's return object controls how the flow executor records the result:
     /**
      * Delete a script and all its versions. Returns flat deletion confirmation.
      * @param args.scriptId - ID of the script to delete
-     * @returns Promise<ScriptsDeleteScriptResult> Typed response with IDE autocomplete
      */
-    deleteScript: async (args: ScriptsDeleteScriptArgs): Promise<ScriptsDeleteScriptResult> => {
+    deleteScript: async (args: ScriptsDeleteScriptArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'deleteScript',
@@ -8380,9 +6713,8 @@ The handler's return object controls how the flow executor records the result:
      * @param args.scriptId - ID of the script
      * @param args.code - Updated code for the new version
      * @param args.commitMessage - Description of changes in this version (optional)
-     * @returns Promise<ScriptsCreateVersionResult> Typed response with IDE autocomplete
      */
-    createVersion: async (args: ScriptsCreateVersionArgs): Promise<ScriptsCreateVersionResult> => {
+    createVersion: async (args: ScriptsCreateVersionArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'createVersion',
@@ -8393,9 +6725,8 @@ The handler's return object controls how the flow executor records the result:
     /**
      * List all versions of a script. Returns flat version structures.
      * @param args.scriptId - ID of the script
-     * @returns Promise<ScriptsListVersionsResult> Typed response with IDE autocomplete
      */
-    listVersions: async (args: ScriptsListVersionsArgs): Promise<ScriptsListVersionsResult> => {
+    listVersions: async (args: ScriptsListVersionsArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'listVersions',
@@ -8407,9 +6738,8 @@ The handler's return object controls how the flow executor records the result:
      * Deploy a script version to AWS Lambda. Must be called after createScript to make the script executable.
      * @param args.scriptId - ID of the script to deploy (from createScript response at data._id)
      * @param args.version - Version number to deploy (default: latest) (optional)
-     * @returns Promise<ScriptsDeployScriptResult> Typed response with IDE autocomplete
      */
-    deployScript: async (args: ScriptsDeployScriptArgs): Promise<ScriptsDeployScriptResult> => {
+    deployScript: async (args: ScriptsDeployScriptArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'deployScript',
@@ -8422,9 +6752,8 @@ The handler's return object controls how the flow executor records the result:
      * @param args.scriptId - ID of the script to execute (from createScript response at data.id)
      * @param args.data - Input data to pass to the script (optional)
      * @param args.trigger - Trigger information (type, source, event) (optional)
-     * @returns Promise<ScriptsExecuteScriptResult> Typed response with IDE autocomplete
      */
-    executeScript: async (args: ScriptsExecuteScriptArgs): Promise<ScriptsExecuteScriptResult> => {
+    executeScript: async (args: ScriptsExecuteScriptArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'executeScript',
@@ -8435,9 +6764,8 @@ The handler's return object controls how the flow executor records the result:
     /**
      * Get details of a specific script. Returns flat normalized structure.
      * @param args.scriptId - ID of the script
-     * @returns Promise<ScriptsGetScriptResult> Typed response with IDE autocomplete
      */
-    getScript: async (args: ScriptsGetScriptArgs): Promise<ScriptsGetScriptResult> => {
+    getScript: async (args: ScriptsGetScriptArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'getScript',
@@ -8447,9 +6775,8 @@ The handler's return object controls how the flow executor records the result:
 
     /**
      * List all scripts owned by the user. Returns flat script summaries.
-     * @returns Promise<ScriptsListScriptsResult> Typed response with IDE autocomplete
      */
-    listScripts: async (args?: {}): Promise<ScriptsListScriptsResult> => {
+    listScripts: async (args?: {}): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'listScripts',
@@ -8462,9 +6789,8 @@ The handler's return object controls how the flow executor records the result:
      * @param args.scriptId - ID of the script
      * @param args.status - Filter by status (completed, failed, running) (optional)
      * @param args.limit - Maximum number of executions to return (default: 100) (optional)
-     * @returns Promise<ScriptsGetExecutionsResult> Typed response with IDE autocomplete
      */
-    getExecutions: async (args: ScriptsGetExecutionsArgs): Promise<ScriptsGetExecutionsResult> => {
+    getExecutions: async (args: ScriptsGetExecutionsArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'getExecutions',
@@ -8475,9 +6801,8 @@ The handler's return object controls how the flow executor records the result:
     /**
      * Get details of a specific execution. Returns flat execution structure.
      * @param args.executionId - ID of the execution
-     * @returns Promise<ScriptsGetExecutionResult> Typed response with IDE autocomplete
      */
-    getExecution: async (args: ScriptsGetExecutionArgs): Promise<ScriptsGetExecutionResult> => {
+    getExecution: async (args: ScriptsGetExecutionArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'getExecution',
@@ -8489,9 +6814,8 @@ The handler's return object controls how the flow executor records the result:
      * Publish a script to the marketplace. Returns flat publish confirmation.
      * @param args.scriptId - ID of the script to publish
      * @param args.pricing - Pricing configuration for the marketplace (optional)
-     * @returns Promise<ScriptsPublishScriptResult> Typed response with IDE autocomplete
      */
-    publishScript: async (args: ScriptsPublishScriptArgs): Promise<ScriptsPublishScriptResult> => {
+    publishScript: async (args: ScriptsPublishScriptArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'publishScript',
@@ -8502,9 +6826,8 @@ The handler's return object controls how the flow executor records the result:
     /**
      * Remove a script from the marketplace. Returns flat unpublish confirmation.
      * @param args.scriptId - ID of the script to unpublish
-     * @returns Promise<ScriptsUnpublishScriptResult> Typed response with IDE autocomplete
      */
-    unpublishScript: async (args: ScriptsUnpublishScriptArgs): Promise<ScriptsUnpublishScriptResult> => {
+    unpublishScript: async (args: ScriptsUnpublishScriptArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'unpublishScript',
@@ -8527,9 +6850,8 @@ The handler's return object controls how the flow executor records the result:
      * @param args.sortOrder - Sort order: asc or desc (default: desc) (optional)
      * @param args.limit - Maximum number of results to return (default: 50, max: 100) (optional)
      * @param args.offset - Number of results to skip for pagination (default: 0) (optional)
-     * @returns Promise<ScriptsListMarketplaceScriptsResult> Typed response with IDE autocomplete
      */
-    listMarketplaceScripts: async (args: ScriptsListMarketplaceScriptsArgs): Promise<ScriptsListMarketplaceScriptsResult> => {
+    listMarketplaceScripts: async (args: ScriptsListMarketplaceScriptsArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'listMarketplaceScripts',
@@ -8540,9 +6862,8 @@ The handler's return object controls how the flow executor records the result:
     /**
      * Get execution metrics for a script. Returns flat metrics structure.
      * @param args.scriptId - ID of the script
-     * @returns Promise<ScriptsGetMetricsResult> Typed response with IDE autocomplete
      */
-    getMetrics: async (args: ScriptsGetMetricsArgs): Promise<ScriptsGetMetricsResult> => {
+    getMetrics: async (args: ScriptsGetMetricsArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'getMetrics',
@@ -8555,9 +6876,8 @@ The handler's return object controls how the flow executor records the result:
      * @param args.scriptId - ID of the script
      * @param args.name - Name of the webhook
      * @param args.enabled - Whether webhook is enabled (default: true) (optional)
-     * @returns Promise<ScriptsCreateWebhookResult> Typed response with IDE autocomplete
      */
-    createWebhook: async (args: ScriptsCreateWebhookArgs): Promise<ScriptsCreateWebhookResult> => {
+    createWebhook: async (args: ScriptsCreateWebhookArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'createWebhook',
@@ -8572,9 +6892,8 @@ The handler's return object controls how the flow executor records the result:
      * @param args.cronExpression - Cron expression (e.g., "0 9 * * *" for daily at 9am)
      * @param args.enabled - Whether schedule is enabled (default: true) (optional)
      * @param args.data - Data to pass to the script on scheduled execution (optional)
-     * @returns Promise<ScriptsCreateScheduleResult> Typed response with IDE autocomplete
      */
-    createSchedule: async (args: ScriptsCreateScheduleArgs): Promise<ScriptsCreateScheduleResult> => {
+    createSchedule: async (args: ScriptsCreateScheduleArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'createSchedule',
@@ -8585,9 +6904,8 @@ The handler's return object controls how the flow executor records the result:
     /**
      * Get the script code for a specific flow. Returns flat flow script structure.
      * @param args.flowId - ID of the flow to get script code for
-     * @returns Promise<ScriptsGetFlowScriptResult> Typed response with IDE autocomplete
      */
-    getFlowScript: async (args: ScriptsGetFlowScriptArgs): Promise<ScriptsGetFlowScriptResult> => {
+    getFlowScript: async (args: ScriptsGetFlowScriptArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'getFlowScript',
@@ -8600,9 +6918,8 @@ The handler's return object controls how the flow executor records the result:
      * @param args.flowId - ID of the flow to modify
      * @param args.newCode - New code to deploy
      * @param args.commitMessage - Description of changes (optional)
-     * @returns Promise<ScriptsModifyFlowScriptResult> Typed response with IDE autocomplete
      */
-    modifyFlowScript: async (args: ScriptsModifyFlowScriptArgs): Promise<ScriptsModifyFlowScriptResult> => {
+    modifyFlowScript: async (args: ScriptsModifyFlowScriptArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'modifyFlowScript',
@@ -8615,9 +6932,8 @@ The handler's return object controls how the flow executor records the result:
      * @param args.code - The script code to validate
      * @param args.eventType - Event type for event.data field validation (e.g., "telegram.message", "call.ended"). When provided, validates that event.data.fieldName accesses match the event type schema. (optional)
      * @param args.scriptInputSchema - Schema of scriptInput fields that will be on event.data at runtime. Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array" }. When provided, event.data field errors are reported as errors instead of warnings. (optional)
-     * @returns Promise<ScriptsLintScriptResult> Typed response with IDE autocomplete
      */
-    lintScript: async (args: ScriptsLintScriptArgs): Promise<ScriptsLintScriptResult> => {
+    lintScript: async (args: ScriptsLintScriptArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'scripts',
         method: 'lintScript',
@@ -8628,98 +6944,321 @@ The handler's return object controls how the flow executor records the result:
 }
 
 /**
- * Feedback Adapter
- * Category: internal
+ * Marketplace Templates Adapter
+ * Category: marketplace
  */
-function createFeedbackAdapter(sdk: MirraSDK) {
+function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Report a bug with detailed context and reproduction steps
-     * @param args.title - Brief bug description
-     * @param args.description - Detailed description of the bug
-     * @param args.severity - Bug severity: critical, high, medium, or low
-     * @param args.stepsToReproduce - Steps to reproduce the bug (optional)
-     * @param args.expectedBehavior - What should happen (optional)
-     * @param args.actualBehavior - What actually happens (optional)
-     * @param args.errorDetails - Error details: { message, stack, code } (optional)
-     * @param args.context - Additional context: { conversationId, recentMessages, platform, appVersion } (optional)
-     * @param args.llmAnalysis - LLM analysis of the issue (optional)
-     * @returns Promise<FeedbackReportBugResult> Typed response with IDE autocomplete
+     * Create a new template
      */
-    reportBug: async (args: FeedbackReportBugArgs): Promise<FeedbackReportBugResult> => {
+    create: async (args?: {}): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'feedback',
-        method: 'reportBug',
+        resourceId: 'marketplace-templates',
+        method: 'create',
         params: args || {}
       });
     },
 
     /**
-     * Auto-report tool or adapter failures for debugging
-     * @param args.adapterType - Adapter type (e.g., jupiter, crypto)
-     * @param args.operation - Operation that failed (e.g., swap, sendToken)
-     * @param args.errorMessage - Error message from the failure
-     * @param args.errorCode - Error code if available (optional)
-     * @param args.errorStack - Error stack trace (optional)
-     * @param args.args - Sanitized arguments that caused the failure (optional)
-     * @param args.llmAnalysis - LLM analysis of why it failed (optional)
-     * @param args.suggestedFix - LLM suggested fix (optional)
-     * @param args.context - Additional context: { conversationId, userId, timestamp } (optional)
-     * @returns Promise<FeedbackReportToolFailureResult> Typed response with IDE autocomplete
+     * Sync template from GitHub
      */
-    reportToolFailure: async (args: FeedbackReportToolFailureArgs): Promise<FeedbackReportToolFailureResult> => {
+    sync: async (args?: {}): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'feedback',
-        method: 'reportToolFailure',
+        resourceId: 'marketplace-templates',
+        method: 'sync',
         params: args || {}
       });
     },
 
     /**
-     * Report when LLM cannot fulfill a user request
-     * @param args.userRequest - What the user asked for
-     * @param args.reason - Why it could not be fulfilled
-     * @param args.suggestedCapability - What capability would enable this (optional)
-     * @param args.relatedAdapters - Adapters that might be relevant (optional)
-     * @param args.context - Additional context: { conversationId } (optional)
-     * @returns Promise<FeedbackReportMissingCapabilityResult> Typed response with IDE autocomplete
+     * Build a template
      */
-    reportMissingCapability: async (args: FeedbackReportMissingCapabilityArgs): Promise<FeedbackReportMissingCapabilityResult> => {
+    build: async (args?: {}): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'feedback',
-        method: 'reportMissingCapability',
+        resourceId: 'marketplace-templates',
+        method: 'build',
         params: args || {}
       });
     },
 
     /**
-     * Submit general user feedback
-     * @param args.sentiment - Sentiment: positive, negative, or neutral
-     * @param args.feedback - Feedback content
-     * @param args.category - Category: ux, performance, feature, or general (optional)
-     * @param args.context - Additional context: { feature, screen } (optional)
-     * @returns Promise<FeedbackSubmitFeedbackResult> Typed response with IDE autocomplete
+     * Publish template to marketplace
      */
-    submitFeedback: async (args: FeedbackSubmitFeedbackArgs): Promise<FeedbackSubmitFeedbackResult> => {
+    publish: async (args?: {}): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'feedback',
-        method: 'submitFeedback',
+        resourceId: 'marketplace-templates',
+        method: 'publish',
         params: args || {}
       });
     },
 
     /**
-     * Submit a feature request
-     * @param args.title - Feature title
-     * @param args.description - Feature description
-     * @param args.useCase - Why the user needs this feature (optional)
-     * @param args.priority - Priority: high, medium, or low (optional)
-     * @returns Promise<FeedbackSubmitFeatureRequestResult> Typed response with IDE autocomplete
+     * Install a template
      */
-    submitFeatureRequest: async (args: FeedbackSubmitFeatureRequestArgs): Promise<FeedbackSubmitFeatureRequestResult> => {
+    install: async (args?: {}): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'feedback',
-        method: 'submitFeatureRequest',
+        resourceId: 'marketplace-templates',
+        method: 'install',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Uninstall a template
+     */
+    uninstall: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'marketplace-templates',
+        method: 'uninstall',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List user template installations
+     */
+    listInstallations: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'marketplace-templates',
+        method: 'listInstallations',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get installation details
+     */
+    getInstallation: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'marketplace-templates',
+        method: 'getInstallation',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update installation to new version
+     */
+    updateInstallation: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'marketplace-templates',
+        method: 'updateInstallation',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Check installation requirements
+     */
+    checkRequirements: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'marketplace-templates',
+        method: 'checkRequirements',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Estimate installation cost
+     */
+    estimateCost: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'marketplace-templates',
+        method: 'estimateCost',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List template versions
+     */
+    listVersions: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'marketplace-templates',
+        method: 'listVersions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create new template version
+     */
+    createVersion: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'marketplace-templates',
+        method: 'createVersion',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get template build status
+     */
+    getBuildStatus: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'marketplace-templates',
+        method: 'getBuildStatus',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Memory Adapter
+ * Category: internal
+ */
+function createMemoryAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new memory entity in the knowledge graph. Use the type field to specify what kind of memory (note, idea, shopping_item, etc.). For tasks with assignment or timing features, use `createTask` instead. All memory types can be queried, updated, and deleted using the standard operations.
+     * @param args.type - Memory subtype: "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), "event" (calendar items). For tasks with assignment, use createTask instead.
+     * @param args.content - Main content/description of the memory
+     * @param args.metadata - Additional metadata (e.g., priority, deadline, tags, etc.) (optional)
+     * @param args.tags - Tags for organizing the memory. Shorthand for metadata.tags. (optional)
+     * @param args.groupId - Group ID to scope the memory to a specific group. If omitted, memory is created in the user's personal graph. (optional)
+     * @returns Promise<MemoryCreateResult> Typed response with IDE autocomplete
+     */
+    create: async (args: MemoryCreateArgs): Promise<MemoryCreateResult> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'create',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a task in the knowledge graph. Tasks are a specialized memory type with assignment, timing, priority, and status lifecycle. Use this instead of `create` when you need task-specific features like assigning to users. Tasks can be queried, updated, and deleted using the standard memory operations (`query`, `update`, `delete`) with type="task". For group contexts, the task is stored in the group's shared graph.
+     * @param args.content - Task description/title - what needs to be done. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
+     * @param args.assignedTo - Username of the person to assign this task to (group contexts only). System resolves username to user ID. (optional)
+     * @param args.dueAt - Due date/time in ISO 8601 format (e.g., "2024-01-15T10:00:00Z") or natural language that will be parsed (optional)
+     * @param args.priority - Task priority: "high", "medium", or "low" (optional)
+     * @param args.tags - Tags/labels for categorization (e.g., ["work", "urgent"]) (optional)
+     * @returns Promise<MemoryCreateTaskResult> Typed response with IDE autocomplete
+     */
+    createTask: async (args: MemoryCreateTaskArgs): Promise<MemoryCreateTaskResult> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'createTask',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Semantic search across memory entities with advanced filtering. IMPORTANT: Search results return TRUNCATED content (max 300 chars) to prevent huge payloads. To get the full untruncated text of a specific entity, use `findOne` with the entity ID after searching. Recommended workflow: (1) Use `search` to find matching entities, (2) Use `findOne` with { filters: { id: "entity_id" } } to retrieve full content for entities you need.
+     * @param args.query - Search query text for semantic matching
+     * @param args.types - Filter by entity types (e.g., ["TASK", "NOTE", "IDEA"]) (optional)
+     * @param args.startTime - Filter entities created after this timestamp (Unix milliseconds) (optional)
+     * @param args.endTime - Filter entities created before this timestamp (Unix milliseconds) (optional)
+     * @param args.propertyFilters - Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] } (optional)
+     * @param args.limit - Maximum number of results (default: 50, max: 100) (optional)
+     * @returns Promise<MemorySearchResult> Typed response with IDE autocomplete
+     */
+    search: async (args: MemorySearchArgs): Promise<MemorySearchResult> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'search',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Query memory entities with filters. Returns lightweight summaries with TRUNCATED content (max 200 chars) to prevent large payloads. Use type="task" to list all tasks (including those created via createTask). To get full untruncated content for a specific entity, use `findOne` with the entity ID.
+     * @param args.type - Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against meta_item_type, subType, or semantic_roles (optional)
+     * @param args.filters - Additional filters (not yet implemented) (optional)
+     * @param args.limit - Maximum results (default: 50, max: 100) (optional)
+     * @param args.offset - Pagination offset for fetching more results (default: 0) (optional)
+     * @returns Promise<MemoryQueryResult> Typed response with IDE autocomplete
+     */
+    query: async (args: MemoryQueryArgs): Promise<MemoryQueryResult> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'query',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Find a single entity by ID or name. Returns the FULL untruncated entity content. Use this after `search` or `query` to retrieve complete content for a specific entity (since those operations return truncated results to prevent large payloads).
+     * @param args.filters - Filter criteria. Use { id: "entity_id" } to find by ID (recommended), or { name: "entity name" } to find by name.
+     * @returns Promise<MemoryFindOneResult> Typed response with IDE autocomplete
+     */
+    findOne: async (args: MemoryFindOneArgs): Promise<MemoryFindOneResult> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'findOne',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing memory entity. Works with all memory types including tasks created via createTask. Use this to mark tasks complete, update content, or modify metadata.
+     * @param args.id - Entity ID to update
+     * @param args.type - Entity type (optional)
+     * @param args.content - Updated content (optional)
+     * @param args.metadata - Updated metadata (optional)
+     * @returns Promise<MemoryUpdateResult> Typed response with IDE autocomplete
+     */
+    update: async (args: MemoryUpdateArgs): Promise<MemoryUpdateResult> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'update',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a memory entity. Works with all memory types including tasks, notes, ideas, etc.
+     * @param args.id - Entity ID to delete
+     * @returns Promise<MemoryDeleteResult> Typed response with IDE autocomplete
+     */
+    delete: async (args: MemoryDeleteArgs): Promise<MemoryDeleteResult> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'delete',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Share a memory entity with another graph (group or contact). Only the creator can share memories. Recipients can view and complete tasks but cannot edit or delete.
+     * @param args.entityId - Entity ID to share
+     * @param args.targetGraphId - Target graph ID to share with (group ID or user contact graph ID)
+     * @param args.shareReason - Optional reason for sharing (optional)
+     * @returns Promise<MemoryShareResult> Typed response with IDE autocomplete
+     */
+    share: async (args: MemoryShareArgs): Promise<MemoryShareResult> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'share',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Remove sharing of a memory entity from a graph. Only the creator can unshare. Cannot unshare from the primary graph (where it was created).
+     * @param args.entityId - Entity ID to unshare
+     * @param args.graphId - Graph ID to remove sharing from
+     * @returns Promise<MemoryUnshareResult> Typed response with IDE autocomplete
+     */
+    unshare: async (args: MemoryUnshareArgs): Promise<MemoryUnshareResult> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'unshare',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all graphs a memory entity is shared with, including share history and metadata.
+     * @param args.entityId - Entity ID to list graphs for
+     * @returns Promise<MemoryListGraphsResult> Typed response with IDE autocomplete
+     */
+    listGraphs: async (args: MemoryListGraphsArgs): Promise<MemoryListGraphsResult> => {
+      return sdk.resources.call({
+        resourceId: 'memory',
+        method: 'listGraphs',
         params: args || {}
       });
     }
@@ -9175,46 +7714,152 @@ function createMoltbookAdapter(sdk: MirraSDK) {
 }
 
 /**
- * Tunnel Adapter
+ * Pages Adapter
  * Category: internal
  */
-function createTunnelAdapter(sdk: MirraSDK) {
+function createPagesAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Make an HTTP request through a tunnel to a local service
-     * @param args.tunnel - Tunnel name to use (defaults to 'default') (optional)
-     * @param args.method - HTTP method (defaults to GET) (optional)
-     * @param args.path - Request path (e.g., /api/query)
-     * @param args.headers - Request headers (optional)
-     * @param args.body - Request body (for POST/PUT/PATCH) (optional)
+     * Create a new page with JSX code. The code is compiled to HTML with React, Tailwind CSS, Recharts, and Lucide icons available as globals. Define a top-level `function App()` component as the entry point. Do NOT use import/require statements — all libraries are pre-loaded via CDN. Use Recharts components directly (e.g. `<BarChart>`, `<ResponsiveContainer>`) and Lucide icons via `lucide.IconName`.
+
+STYLE — Every page includes the Mirra design system with pre-configured Tailwind theme. Use semantic theme tokens for automatic dark/light support:
+- Backgrounds: bg-m-bg (page), bg-m-surface (cards), bg-m-surface-alt (nested elements)
+- Text: text-m-text (primary), text-m-text-secondary, text-m-text-muted
+- Borders: border-m-border
+- Accent: text-m-accent-text, bg-m-accent, bg-m-accent-soft
+- Brand purple scale: bg-mirra-50 through bg-mirra-950
+- Fonts: font-display (Syne — headings), font-body (Inter — content), font-mono (numbers/data)
+- Charts: use MIRRA_COLORS array for fills/strokes (8 brand-derived colors)
+
+Dark mode is the default. For light pages, add data-theme="light" to the root wrapper div.
+
+DO: Use generous padding (p-8 md:p-12), consistent gaps (gap-4 gap-6), subtle borders (border border-m-border) over heavy shadows, font-mono for numbers/stats, the m-* theme tokens for all colors.
+DO NOT: Use emoji as bullet points, add hover:scale on cards, use bg-slate/bg-gray (use m-* tokens), use multiple flashy gradients.
+     * @param args.path - URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
+     * @param args.title - Display title for the page
+     * @param args.code - JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
+     * @param args.description - Optional description of the page (optional)
+     * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
      */
-    call: async (args: TunnelCallArgs): Promise<any> => {
+    createPage: async (args: PagesCreatePageArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'tunnel',
-        method: 'call',
+        resourceId: 'pages',
+        method: 'createPage',
         params: args || {}
       });
     },
 
     /**
-     * Check if a specific tunnel is connected
-     * @param args.tunnel - Tunnel name to check (defaults to 'default') (optional)
+     * Edit a page using search-and-replace. Each edit replaces one exact match of oldCode with newCode in the current source. Much more efficient than updatePage for small changes — only send the parts that change. Use getPage first to read the current code. The old_code string must appear exactly once in the source.
+     * @param args.pageId - The page ID to edit
+     * @param args.edits - Array of search-and-replace edits. Each edit has oldCode (exact string to find) and newCode (replacement string). Applied sequentially.
      */
-    status: async (args: TunnelStatusArgs): Promise<any> => {
+    editPage: async (args: PagesEditPageArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'tunnel',
-        method: 'status',
+        resourceId: 'pages',
+        method: 'editPage',
         params: args || {}
       });
     },
 
     /**
-     * List all connected tunnels for the user
+     * Replace the entire page code. Use editPage instead for small changes — it is more efficient. Only use updatePage when rewriting most of the page.
+     * @param args.pageId - The page ID to update
+     * @param args.code - New JSX source code (optional)
+     * @param args.title - New title (optional)
+     * @param args.description - New description (optional)
      */
-    list: async (args?: {}): Promise<any> => {
+    updatePage: async (args: PagesUpdatePageArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'tunnel',
-        method: 'list',
+        resourceId: 'pages',
+        method: 'updatePage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Revert a page to a previous version. The current code becomes a new version entry.
+     * @param args.pageId - The page ID to revert
+     * @param args.versionIndex - Index of the version to restore (0 = most recent saved version)
+     */
+    revertPage: async (args: PagesRevertPageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'revertPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a page by its ID or by path within the current graph. Returns page metadata and current code.
+     * @param args.pageId - The page ID (optional)
+     * @param args.path - The page path (e.g. "/dashboard"). Used with the current graphId. (optional)
+     */
+    getPage: async (args: PagesGetPageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'getPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all pages for the current graph. Optionally filter by status.
+     * @param args.status - Filter by status: "active" (default) or "deleted" (optional)
+     */
+    listPages: async (args: PagesListPagesArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'listPages',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Soft-delete a page by setting its status to "deleted".
+     * @param args.pageId - The page ID to delete
+     */
+    deletePage: async (args: PagesDeletePageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'deletePage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Publish a page, making it publicly accessible. Generates an API key for the page.
+     * @param args.pageId - The page ID to publish
+     * @param args.publicCollections - Optional array of collection tags for public discovery (optional)
+     */
+    publishPage: async (args: PagesPublishPageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'publishPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Unpublish a page, making it private.
+     * @param args.pageId - The page ID to unpublish
+     */
+    unpublishPage: async (args: PagesUnpublishPageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'unpublishPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the public URL for a page.
+     * @param args.pageId - The page ID
+     */
+    getPageUrl: async (args: PagesGetPageUrlArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'getPageUrl',
         params: args || {}
       });
     }
@@ -9458,266 +8103,6 @@ function createPolymarketAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'polymarket',
         method: 'executeExtended',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Hypertrade Adapter
- * Category: crypto
- */
-function createHypertradeAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Place an order on Hyperliquid DEX. Returns a pending order for the user to sign in delegated mode, or submits directly in standard mode. FLAT response.
-     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
-     * @param args.isBuy - True for long/buy, false for short/sell
-     * @param args.size - Order size in asset units
-     * @param args.limitPrice - Limit price (required for limit orders) (optional)
-     * @param args.orderType - Order type: "limit" or "market" (default: "market") (optional)
-     * @param args.triggerPrice - Trigger price for stop/take-profit orders (optional)
-     * @param args.reduceOnly - Whether order can only reduce position (default: false) (optional)
-     * @param args.postOnly - Whether order should only be maker (default: false) (optional)
-     * @param args.clientOrderId - Custom client order ID for tracking (optional)
-     * @returns Promise<HypertradePlaceOrderResult> Typed response with IDE autocomplete
-     */
-    placeOrder: async (args: HypertradePlaceOrderArgs): Promise<HypertradePlaceOrderResult> => {
-      return sdk.resources.call({
-        resourceId: 'hypertrade',
-        method: 'placeOrder',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Cancel an open order on Hyperliquid DEX. Can cancel by orderId, clientOrderId, or cancel all orders for an asset.
-     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
-     * @param args.orderId - Order ID to cancel (optional)
-     * @param args.clientOrderId - Client order ID to cancel (optional)
-     * @param args.cancelAll - Cancel all orders for this asset (default: false) (optional)
-     * @returns Promise<HypertradeCancelOrderResult> Typed response with IDE autocomplete
-     */
-    cancelOrder: async (args: HypertradeCancelOrderArgs): Promise<HypertradeCancelOrderResult> => {
-      return sdk.resources.call({
-        resourceId: 'hypertrade',
-        method: 'cancelOrder',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get current perpetual positions for a wallet. Returns normalized FLAT array of positions with asset, size, entryPrice, markPrice, unrealizedPnl, leverage, liquidationPrice, marginUsed, positionValue, returnOnEquity, side.
-     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
-     * @returns Promise<HypertradeGetPositionsResult> Typed response with IDE autocomplete
-     */
-    getPositions: async (args: HypertradeGetPositionsArgs): Promise<HypertradeGetPositionsResult> => {
-      return sdk.resources.call({
-        resourceId: 'hypertrade',
-        method: 'getPositions',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get open orders for a wallet. Returns normalized FLAT array of orders.
-     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
-     * @param args.asset - Filter by asset/coin symbol (optional)
-     * @returns Promise<HypertradeGetOpenOrdersResult> Typed response with IDE autocomplete
-     */
-    getOpenOrders: async (args: HypertradeGetOpenOrdersArgs): Promise<HypertradeGetOpenOrdersResult> => {
-      return sdk.resources.call({
-        resourceId: 'hypertrade',
-        method: 'getOpenOrders',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get account balances including perp margin and spot balances. Returns normalized FLAT structure.
-     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
-     * @returns Promise<HypertradeGetBalancesResult> Typed response with IDE autocomplete
-     */
-    getBalances: async (args: HypertradeGetBalancesArgs): Promise<HypertradeGetBalancesResult> => {
-      return sdk.resources.call({
-        resourceId: 'hypertrade',
-        method: 'getBalances',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get market information for perpetual assets. Returns normalized FLAT array of market info. If asset is provided, returns only that asset.
-     * @param args.asset - Specific asset/coin symbol to get info for (returns all if omitted) (optional)
-     * @returns Promise<HypertradeGetMarketInfoResult> Typed response with IDE autocomplete
-     */
-    getMarketInfo: async (args: HypertradeGetMarketInfoArgs): Promise<HypertradeGetMarketInfoResult> => {
-      return sdk.resources.call({
-        resourceId: 'hypertrade',
-        method: 'getMarketInfo',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get the L2 orderbook for an asset. Returns normalized FLAT structure with bids and asks arrays.
-     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
-     * @param args.depth - Number of levels to return (default: all) (optional)
-     * @returns Promise<HypertradeGetOrderbookResult> Typed response with IDE autocomplete
-     */
-    getOrderbook: async (args: HypertradeGetOrderbookArgs): Promise<HypertradeGetOrderbookResult> => {
-      return sdk.resources.call({
-        resourceId: 'hypertrade',
-        method: 'getOrderbook',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get candlestick/OHLCV data for an asset. Returns normalized FLAT array of candles.
-     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
-     * @param args.interval - Candle interval (e.g. "1m", "5m", "1h", "1d"). Default: "1h" (optional)
-     * @param args.startTime - Start time in milliseconds (default: 24h ago) (optional)
-     * @param args.endTime - End time in milliseconds (default: now) (optional)
-     * @param args.limit - Max number of candles to return (optional)
-     * @returns Promise<HypertradeGetCandlesResult> Typed response with IDE autocomplete
-     */
-    getCandles: async (args: HypertradeGetCandlesArgs): Promise<HypertradeGetCandlesResult> => {
-      return sdk.resources.call({
-        resourceId: 'hypertrade',
-        method: 'getCandles',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Set leverage for an asset on Hyperliquid. Returns a pending action for the user to sign.
-     * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
-     * @param args.leverage - Leverage multiplier (e.g. 5 for 5x)
-     * @param args.isCrossMargin - Use cross margin (default: true). False for isolated margin. (optional)
-     * @returns Promise<HypertradeSetLeverageResult> Typed response with IDE autocomplete
-     */
-    setLeverage: async (args: HypertradeSetLeverageArgs): Promise<HypertradeSetLeverageResult> => {
-      return sdk.resources.call({
-        resourceId: 'hypertrade',
-        method: 'setLeverage',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get trade fill history for a wallet. Returns normalized FLAT array of trades.
-     * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
-     * @param args.asset - Filter by asset/coin symbol (optional)
-     * @param args.limit - Max number of trades to return (optional)
-     * @returns Promise<HypertradeGetTradeHistoryResult> Typed response with IDE autocomplete
-     */
-    getTradeHistory: async (args: HypertradeGetTradeHistoryArgs): Promise<HypertradeGetTradeHistoryResult> => {
-      return sdk.resources.call({
-        resourceId: 'hypertrade',
-        method: 'getTradeHistory',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Desktop Adapter
- * Category: internal
- */
-function createDesktopAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Run a shell command on the user's desktop and return stdout, stderr, and exit code. The command runs via /bin/sh -c. Output is truncated to 1 MB.
-     * @param args.command - Shell command to execute (e.g., "ls -la ~/Documents")
-     * @param args.cwd - Working directory for the command (defaults to user home) (optional)
-     * @param args.timeoutMs - Timeout in milliseconds (defaults to 120000) (optional)
-     */
-    executeCommand: async (args: DesktopExecuteCommandArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'desktop',
-        method: 'executeCommand',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Read the text contents of a file on the user's desktop. Maximum file size is 1 MB.
-     * @param args.path - Absolute path to the file to read
-     * @param args.maxBytes - Maximum bytes to read (defaults to 1048576 = 1 MB) (optional)
-     */
-    readFile: async (args: DesktopReadFileArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'desktop',
-        method: 'readFile',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Write or create a file on the user's desktop. Parent directories are created automatically. Requires user consent.
-     * @param args.path - Absolute path to the file to write
-     * @param args.content - Text content to write to the file
-     * @param args.append - If true, append to existing file instead of overwriting (defaults to false) (optional)
-     */
-    writeFile: async (args: DesktopWriteFileArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'desktop',
-        method: 'writeFile',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List files and directories at a given path on the user's desktop. Returns name, type, size, and modification time for each entry.
-     * @param args.path - Absolute path to the directory to list
-     * @param args.recursive - If true, list recursively (max depth 3). Defaults to false. (optional)
-     * @param args.includeHidden - If true, include hidden files (starting with .). Defaults to false. (optional)
-     */
-    listDirectory: async (args: DesktopListDirectoryArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'desktop',
-        method: 'listDirectory',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get system information from the user's desktop: hostname, OS, CPU, memory, home directory.
-     */
-    getSystemInfo: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'desktop',
-        method: 'getSystemInfo',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Spawn a long-running background process on the user's desktop. The process runs detached with no stdin/stdout (all communication via --sdk-url). Returns a process ID for later management. Requires user consent. A desktop:process_exited event is emitted when the process terminates.
-     * @param args.command - Path to the executable to run (e.g., "node", "python3", "/usr/local/bin/my-app")
-     * @param args.args - Command-line arguments to pass to the process (optional)
-     * @param args.env - Additional environment variables to set for the process (optional)
-     * @param args.cwd - Working directory for the process (defaults to system default) (optional)
-     */
-    spawnProcess: async (args: DesktopSpawnProcessArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'desktop',
-        method: 'spawnProcess',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Kill a previously spawned background process by its process ID.
-     * @param args.processId - The process ID returned by spawnProcess
-     */
-    killProcess: async (args: DesktopKillProcessArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'desktop',
-        method: 'killProcess',
         params: args || {}
       });
     }
@@ -10466,167 +8851,56 @@ function createShopifyAdapter(sdk: MirraSDK) {
 }
 
 /**
- * Data Adapter
+ * Socket Adapter
  * Category: internal
  */
-function createDataAdapter(sdk: MirraSDK) {
+function createSocketAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new data collection (schema). Define the fields and their types. A slug is auto-generated from the name if not provided.
-     * @param args.name - Human-readable name for the collection (e.g. "Contacts", "Sales Metrics")
-     * @param args.slug - URL-safe identifier (lowercase, underscores). Auto-generated from name if omitted. (optional)
-     * @param args.fields - Array of field definitions. Each field has: name (string), type ("string"|"number"|"boolean"|"date"|"array"|"object"), required (boolean), description (optional string).
-     * @param args.description - Optional description of what this collection stores (optional)
+     * Send a JSON message to a connected external client
+     * @param args.channelId - Channel ID to send to (defaults to 'default') (optional)
+     * @param args.message - JSON message to send to the client
      */
-    defineCollection: async (args: DataDefineCollectionArgs): Promise<any> => {
+    send: async (args: SocketSendArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'data',
-        method: 'defineCollection',
+        resourceId: 'socket',
+        method: 'send',
         params: args || {}
       });
     },
 
     /**
-     * List all data collections for the current context. Optionally filter by status.
-     * @param args.status - Filter by status: "active" (default) or "archived" (optional)
+     * Check if a specific socket channel is connected
+     * @param args.channelId - Channel ID to check (defaults to 'default') (optional)
      */
-    listCollections: async (args: DataListCollectionsArgs): Promise<any> => {
+    status: async (args: SocketStatusArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'data',
-        method: 'listCollections',
+        resourceId: 'socket',
+        method: 'status',
         params: args || {}
       });
     },
 
     /**
-     * Get a single collection schema by its slug.
-     * @param args.slug - The collection slug (e.g. "contacts")
+     * List all connected socket channels for the user
      */
-    getCollection: async (args: DataGetCollectionArgs): Promise<any> => {
+    list: async (args?: {}): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'data',
-        method: 'getCollection',
+        resourceId: 'socket',
+        method: 'list',
         params: args || {}
       });
     },
 
     /**
-     * Update a collection schema. Add new fields, remove existing fields, or update the description. Field changes are non-destructive -- existing records are not modified.
-     * @param args.slug - The collection slug to update
-     * @param args.addFields - New fields to add to the collection (optional)
-     * @param args.removeFields - Field names to remove from the collection (optional)
-     * @param args.description - New description for the collection (optional)
+     * Update connection metadata for a socket channel. Merges new fields into existing metadata. Useful for storing state across message handlers.
+     * @param args.channelId - Channel ID to update metadata for
+     * @param args.metadata - Metadata fields to merge into existing connection metadata
      */
-    updateCollection: async (args: DataUpdateCollectionArgs): Promise<any> => {
+    updateMetadata: async (args: SocketUpdateMetadataArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'data',
-        method: 'updateCollection',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Archive a collection and delete all its records. The schema is marked as archived and all associated records are permanently deleted. Quota is decremented.
-     * @param args.slug - The collection slug to drop
-     */
-    dropCollection: async (args: DataDropCollectionArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'data',
-        method: 'dropCollection',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Insert a single record into a collection. Data is validated against the collection schema. Quota is checked before writing.
-     * @param args.collection - The collection slug to insert into
-     * @param args.data - The record data -- keys must match the collection fields
-     */
-    insertRecord: async (args: DataInsertRecordArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'data',
-        method: 'insertRecord',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Batch insert multiple records into a collection. All records are validated against the schema. Quota is checked for the total size.
-     * @param args.collection - The collection slug to insert into
-     * @param args.records - Array of record data objects to insert
-     */
-    insertRecords: async (args: DataInsertRecordsArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'data',
-        method: 'insertRecords',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Query records from a collection with optional filtering, sorting, and pagination. Filters use MongoDB-style syntax (e.g. { revenue: { $gt: 10000 } }).
-     * @param args.collection - The collection slug to query
-     * @param args.filter - MongoDB-style filter object. Supports $eq, $ne, $gt, $gte, $lt, $lte, $in, $regex. Filter keys are automatically prefixed with "data." so use field names directly. (optional)
-     * @param args.sort - Sort object, e.g. { revenue: -1 } for descending. Keys are auto-prefixed with "data.". (optional)
-     * @param args.limit - Max records to return (default 50, max 200) (optional)
-     * @param args.offset - Number of records to skip (for pagination) (optional)
-     */
-    queryRecords: async (args: DataQueryRecordsArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'data',
-        method: 'queryRecords',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update a single record by its ID. Data is validated against the collection schema.
-     * @param args.collection - The collection slug
-     * @param args.recordId - The record _id to update
-     * @param args.data - Partial record data to merge/update
-     */
-    updateRecord: async (args: DataUpdateRecordArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'data',
-        method: 'updateRecord',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete a single record by its ID. Quota is decremented by the record size.
-     * @param args.collection - The collection slug
-     * @param args.recordId - The record _id to delete
-     */
-    deleteRecord: async (args: DataDeleteRecordArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'data',
-        method: 'deleteRecord',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Run aggregation on a collection. Supports sum, avg, count, min, max grouped by a field.
-     * @param args.collection - The collection slug
-     * @param args.groupBy - Field name to group by. Omit for overall aggregation. (optional)
-     * @param args.metrics - Array of { field, op } where op is one of "sum", "avg", "count", "min", "max". For "count", field can be omitted.
-     */
-    aggregate: async (args: DataAggregateArgs): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'data',
-        method: 'aggregate',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get the current storage quota usage for this context.
-     */
-    getQuotaUsage: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
-        resourceId: 'data',
-        method: 'getQuotaUsage',
+        resourceId: 'socket',
+        method: 'updateMetadata',
         params: args || {}
       });
     }
@@ -10634,152 +8908,1703 @@ function createDataAdapter(sdk: MirraSDK) {
 }
 
 /**
- * Pages Adapter
- * Category: internal
+ * Telegram Adapter
+ * Category: social
  */
-function createPagesAdapter(sdk: MirraSDK) {
+function createTelegramAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new page with JSX code. The code is compiled to HTML with React, Tailwind CSS, Recharts, and Lucide icons available as globals. Define a top-level `function App()` component as the entry point. Do NOT use import/require statements — all libraries are pre-loaded via CDN. Use Recharts components directly (e.g. `<BarChart>`, `<ResponsiveContainer>`) and Lucide icons via `lucide.IconName`.
-
-STYLE — Every page includes the Mirra design system with pre-configured Tailwind theme. Use semantic theme tokens for automatic dark/light support:
-- Backgrounds: bg-m-bg (page), bg-m-surface (cards), bg-m-surface-alt (nested elements)
-- Text: text-m-text (primary), text-m-text-secondary, text-m-text-muted
-- Borders: border-m-border
-- Accent: text-m-accent-text, bg-m-accent, bg-m-accent-soft
-- Brand purple scale: bg-mirra-50 through bg-mirra-950
-- Fonts: font-display (Syne — headings), font-body (Inter — content), font-mono (numbers/data)
-- Charts: use MIRRA_COLORS array for fills/strokes (8 brand-derived colors)
-
-Dark mode is the default. For light pages, add data-theme="light" to the root wrapper div.
-
-DO: Use generous padding (p-8 md:p-12), consistent gaps (gap-4 gap-6), subtle borders (border border-m-border) over heavy shadows, font-mono for numbers/stats, the m-* theme tokens for all colors.
-DO NOT: Use emoji as bullet points, add hover:scale on cards, use bg-slate/bg-gray (use m-* tokens), use multiple flashy gradients.
-     * @param args.path - URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
-     * @param args.title - Display title for the page
-     * @param args.code - JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
-     * @param args.description - Optional description of the page (optional)
-     * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
+     * Send a text message to a Telegram chat or user. Supports both chat IDs and usernames.
+     * @param args.chatId - Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from searchChats operation.
+     * @param args.text - The text content of the message to send
+     * @returns Promise<TelegramSendMessageResult> Typed response with IDE autocomplete
      */
-    createPage: async (args: PagesCreatePageArgs): Promise<any> => {
+    sendMessage: async (args: TelegramSendMessageArgs): Promise<TelegramSendMessageResult> => {
       return sdk.resources.call({
-        resourceId: 'pages',
-        method: 'createPage',
+        resourceId: 'telegram',
+        method: 'sendMessage',
         params: args || {}
       });
     },
 
     /**
-     * Edit a page using search-and-replace. Each edit replaces one exact match of oldCode with newCode in the current source. Much more efficient than updatePage for small changes — only send the parts that change. Use getPage first to read the current code. The old_code string must appear exactly once in the source.
-     * @param args.pageId - The page ID to edit
-     * @param args.edits - Array of search-and-replace edits. Each edit has oldCode (exact string to find) and newCode (replacement string). Applied sequentially.
+     * Powerful unified chat search with filtering, sorting, and activity tracking. Replaces getChats, findChatByName, and getRecentContacts. Use with no filters to list all chats.
+     * @param args.query - Text to search in chat names/usernames. Supports fuzzy matching with relevance scoring. (optional)
+     * @param args.type - Filter by chat type: "private", "group", "channel", or "all" (default: "all") (optional)
+     * @param args.inactiveSince - Find chats with no activity since date. Accepts ISO date or relative like "30 days ago", "1 week ago" (optional)
+     * @param args.activeSince - Find chats with activity since date. Accepts ISO date or relative like "7 days ago" (optional)
+     * @param args.hasUnread - Filter by unread status: true = only unread, false = only read (optional)
+     * @param args.archived - Filter by archived status (optional)
+     * @param args.pinned - Filter by pinned status (optional)
+     * @param args.sortBy - Sort results: "relevance" (default with query), "lastActivity" (default without query), "unreadCount", "name" (optional)
+     * @param args.limit - Max results (default: 50, max: 100) (optional)
+     * @param args.offset - Pagination offset (default: 0) (optional)
+     * @param args.forceRefresh - Bypass cache and fetch fresh data (optional)
+     * @returns Promise<TelegramSearchChatsResult> Typed response with IDE autocomplete
      */
-    editPage: async (args: PagesEditPageArgs): Promise<any> => {
+    searchChats: async (args: TelegramSearchChatsArgs): Promise<TelegramSearchChatsResult> => {
       return sdk.resources.call({
-        resourceId: 'pages',
-        method: 'editPage',
+        resourceId: 'telegram',
+        method: 'searchChats',
         params: args || {}
       });
     },
 
     /**
-     * Replace the entire page code. Use editPage instead for small changes — it is more efficient. Only use updatePage when rewriting most of the page.
-     * @param args.pageId - The page ID to update
-     * @param args.code - New JSX source code (optional)
+     * Search for messages across Telegram chats. When chatIds is omitted, performs global search across all chats (replaces globalSearch operation).
+     * @param args.query - Text query to search for in messages
+     * @param args.chatIds - Array of chat IDs to search within. Omit for global search across all chats. (optional)
+     * @param args.chatType - Filter by chat type (for global search): "private", "group", or "channel" (optional)
+     * @param args.fromDate - ISO date string for start of date range (optional)
+     * @param args.toDate - ISO date string for end of date range (optional)
+     * @param args.limit - Maximum number of messages to return (default: 100, max: 100) (optional)
+     * @param args.senderId - Filter messages by sender ID (optional)
+     * @returns Promise<TelegramSearchMessagesResult> Typed response with IDE autocomplete
+     */
+    searchMessages: async (args: TelegramSearchMessagesArgs): Promise<TelegramSearchMessagesResult> => {
+      return sdk.resources.call({
+        resourceId: 'telegram',
+        method: 'searchMessages',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get message history from a specific Telegram chat with pagination and date filtering.
+     * @param args.chatId - Chat ID to retrieve messages from
+     * @param args.limit - Maximum number of messages to return (default: 50, max: 100) (optional)
+     * @param args.offsetId - Message ID to use as pagination offset (optional)
+     * @param args.minDate - ISO date string for minimum message date (optional)
+     * @param args.maxDate - ISO date string for maximum message date (optional)
+     * @returns Promise<TelegramGetChatMessagesResult> Typed response with IDE autocomplete
+     */
+    getChatMessages: async (args: TelegramGetChatMessagesArgs): Promise<TelegramGetChatMessagesResult> => {
+      return sdk.resources.call({
+        resourceId: 'telegram',
+        method: 'getChatMessages',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get summary of unread messages across Telegram chats, including mentions and flattened last message info.
+     * @param args.chatIds - Array of chat IDs to filter by. If not provided, checks all chats. (optional)
+     * @param args.priorityOnly - If true, only return chats with unread messages (optional)
+     * @param args.groupBy - Group results by "chat" or "sender" (optional)
+     * @returns Promise<TelegramGetUnreadSummaryResult> Typed response with IDE autocomplete
+     */
+    getUnreadSummary: async (args: TelegramGetUnreadSummaryArgs): Promise<TelegramGetUnreadSummaryResult> => {
+      return sdk.resources.call({
+        resourceId: 'telegram',
+        method: 'getUnreadSummary',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Mark messages as read in a Telegram chat up to a specific message ID.
+     * @param args.chatId - Chat ID to mark messages as read in
+     * @param args.maxMessageId - Maximum message ID to mark as read. If not provided, marks all messages as read. (optional)
+     * @returns Promise<TelegramMarkAsReadResult> Typed response with IDE autocomplete
+     */
+    markAsRead: async (args: TelegramMarkAsReadArgs): Promise<TelegramMarkAsReadResult> => {
+      return sdk.resources.call({
+        resourceId: 'telegram',
+        method: 'markAsRead',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get messages where the user is mentioned in Telegram chats.
+     * @param args.chatIds - Array of chat IDs to filter mentions by (optional)
+     * @param args.sinceDate - ISO date string - only return mentions since this date (optional)
+     * @param args.onlyUnread - If true, only return unread mentions (optional)
+     * @returns Promise<TelegramGetMentionsResult> Typed response with IDE autocomplete
+     */
+    getMentions: async (args: TelegramGetMentionsArgs): Promise<TelegramGetMentionsResult> => {
+      return sdk.resources.call({
+        resourceId: 'telegram',
+        method: 'getMentions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Leave a Telegram group, supergroup, or channel. Removes the user from the group and clears it from the local cache.
+     * @param args.chatId - The ID of the group, supergroup, or channel to leave. Can be obtained from searchChats operation.
+     * @returns Promise<TelegramLeaveGroupResult> Typed response with IDE autocomplete
+     */
+    leaveGroup: async (args: TelegramLeaveGroupArgs): Promise<TelegramLeaveGroupResult> => {
+      return sdk.resources.call({
+        resourceId: 'telegram',
+        method: 'leaveGroup',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Trello Adapter
+ * Category: productivity
+ */
+function createTrelloAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Get all boards for the authenticated user
+     * @returns Promise<TrelloGetBoardsResult> Typed response with IDE autocomplete
+     */
+    getBoards: async (args?: {}): Promise<TrelloGetBoardsResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'getBoards',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific board by ID including its lists
+     * @param args.boardId - The ID of the board to retrieve
+     * @returns Promise<TrelloGetBoardResult> Typed response with IDE autocomplete
+     */
+    getBoard: async (args: TrelloGetBoardArgs): Promise<TrelloGetBoardResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'getBoard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new card in a Trello list
+     * @param args.name - Card name/title
+     * @param args.idList - ID of the list to add the card to
+     * @param args.desc - Card description (supports markdown) (optional)
+     * @param args.description - Card description (alias for "desc", supports markdown) (optional)
+     * @returns Promise<TrelloCreateCardResult> Typed response with IDE autocomplete
+     */
+    createCard: async (args: TrelloCreateCardArgs): Promise<TrelloCreateCardResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'createCard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific card by ID
+     * @param args.cardId - The ID of the card to retrieve
+     * @returns Promise<TrelloGetCardResult> Typed response with IDE autocomplete
+     */
+    getCard: async (args: TrelloGetCardArgs): Promise<TrelloGetCardResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'getCard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing card
+     * @param args.cardId - The ID of the card to update
+     * @param args.name - New card name (optional)
+     * @param args.desc - New card description (optional)
+     * @param args.description - New card description (alias for "desc", supports markdown) (optional)
+     * @param args.idList - Move card to a different list (optional)
+     * @param args.closed - Archive the card (optional)
+     * @returns Promise<TrelloUpdateCardResult> Typed response with IDE autocomplete
+     */
+    updateCard: async (args: TrelloUpdateCardArgs): Promise<TrelloUpdateCardResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'updateCard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a card permanently
+     * @param args.cardId - The ID of the card to delete
+     * @returns Promise<TrelloDeleteCardResult> Typed response with IDE autocomplete
+     */
+    deleteCard: async (args: TrelloDeleteCardArgs): Promise<TrelloDeleteCardResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'deleteCard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new checklist on a card
+     * @param args.cardId - The ID of the card to add the checklist to
+     * @param args.name - Checklist name
+     * @returns Promise<TrelloCreateChecklistResult> Typed response with IDE autocomplete
+     */
+    createChecklist: async (args: TrelloCreateChecklistArgs): Promise<TrelloCreateChecklistResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'createChecklist',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific checklist by ID
+     * @param args.checklistId - The ID of the checklist to retrieve
+     * @returns Promise<TrelloGetChecklistResult> Typed response with IDE autocomplete
+     */
+    getChecklist: async (args: TrelloGetChecklistArgs): Promise<TrelloGetChecklistResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'getChecklist',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a checklist name
+     * @param args.checklistId - The ID of the checklist to update
+     * @param args.name - New checklist name
+     * @returns Promise<TrelloUpdateChecklistResult> Typed response with IDE autocomplete
+     */
+    updateChecklist: async (args: TrelloUpdateChecklistArgs): Promise<TrelloUpdateChecklistResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'updateChecklist',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a checklist from a card
+     * @param args.checklistId - The ID of the checklist to delete
+     * @returns Promise<TrelloDeleteChecklistResult> Typed response with IDE autocomplete
+     */
+    deleteChecklist: async (args: TrelloDeleteChecklistArgs): Promise<TrelloDeleteChecklistResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'deleteChecklist',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Add a check item to a checklist
+     * @param args.checklistId - The ID of the checklist to add the item to
+     * @param args.name - Check item text
+     * @returns Promise<TrelloAddCheckItemResult> Typed response with IDE autocomplete
+     */
+    addCheckItem: async (args: TrelloAddCheckItemArgs): Promise<TrelloAddCheckItemResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'addCheckItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a check item (name or completion state)
+     * @param args.cardId - The ID of the card containing the check item
+     * @param args.checkItemId - The ID of the check item to update
+     * @param args.name - New check item text (optional)
+     * @param args.state - Check state: "complete" or "incomplete" (optional)
+     * @returns Promise<TrelloUpdateCheckItemResult> Typed response with IDE autocomplete
+     */
+    updateCheckItem: async (args: TrelloUpdateCheckItemArgs): Promise<TrelloUpdateCheckItemResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'updateCheckItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a check item from a checklist
+     * @param args.checklistId - The ID of the checklist containing the item
+     * @param args.checkItemId - The ID of the check item to delete
+     * @returns Promise<TrelloDeleteCheckItemResult> Typed response with IDE autocomplete
+     */
+    deleteCheckItem: async (args: TrelloDeleteCheckItemArgs): Promise<TrelloDeleteCheckItemResult> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'deleteCheckItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search Trello API for available operations beyond core tools
+     * @param args.query - Describe what you want to do (e.g., "add label to card")
+     * @param args.limit - Max results to return (default 5) (optional)
+     */
+    discoverExtended: async (args: TrelloDiscoverExtendedArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'discoverExtended',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Execute a Trello API operation by operationId
+     * @param args.operationId - The operationId from discoverExtended results
+     * @param args.pathParams - Path parameters, e.g., { id: "abc123" } (optional)
+     * @param args.queryParams - Query string parameters (optional)
+     * @param args.body - Request body for POST/PUT/PATCH operations (optional)
+     */
+    executeExtended: async (args: TrelloExecuteExtendedArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'trello',
+        method: 'executeExtended',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Tunnel Adapter
+ * Category: internal
+ */
+function createTunnelAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Make an HTTP request through a tunnel to a local service
+     * @param args.tunnel - Tunnel name to use (defaults to 'default') (optional)
+     * @param args.method - HTTP method (defaults to GET) (optional)
+     * @param args.path - Request path (e.g., /api/query)
+     * @param args.headers - Request headers (optional)
+     * @param args.body - Request body (for POST/PUT/PATCH) (optional)
+     */
+    call: async (args: TunnelCallArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'tunnel',
+        method: 'call',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Check if a specific tunnel is connected
+     * @param args.tunnel - Tunnel name to check (defaults to 'default') (optional)
+     */
+    status: async (args: TunnelStatusArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'tunnel',
+        method: 'status',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all connected tunnels for the user
+     */
+    list: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'tunnel',
+        method: 'list',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Twitter Adapter
+ * Category: social
+ */
+function createTwitterAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Post a tweet
+     * @param args.text - Tweet text (max 280 characters)
+     * @returns Promise<TwitterPostTweetResult> Typed response with IDE autocomplete
+     */
+    postTweet: async (args: TwitterPostTweetArgs): Promise<TwitterPostTweetResult> => {
+      return sdk.resources.call({
+        resourceId: 'twitter',
+        method: 'postTweet',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Retrieve tweets from a Twitter user. Must provide either userId OR userName (not both). NOTE: This operation ONLY accepts the 4 parameters listed below. There is NO maxResults, limit, count, or similar parameters - the API returns ~20 tweets per page, use cursor for pagination.
+     * @param args.userId - Twitter user ID (recommended for stability and speed). Provide userId OR userName, not both. (optional)
+     * @param args.userName - Twitter username/handle without @ symbol (e.g., "elonmusk"). Provide userName OR userId, not both. (optional)
+     * @param args.cursor - Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values. (optional)
+     * @param args.includeReplies - Whether to include replies in results. Defaults to false (only original tweets). (optional)
+     * @returns Promise<TwitterGetUserTweetsResult> Typed response with IDE autocomplete
+     */
+    getUserTweets: async (args: TwitterGetUserTweetsArgs): Promise<TwitterGetUserTweetsResult> => {
+      return sdk.resources.call({
+        resourceId: 'twitter',
+        method: 'getUserTweets',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search tweets using advanced Twitter search syntax. Supports operators like from:username, since:date, until:date, lang:en, and boolean operators (AND, OR). NOTE: This operation ONLY accepts the 3 parameters listed below (query, queryType, cursor). There is NO minFollowers, maxResults, limit, or other filtering parameters - filter results client-side after fetching.
+     * @param args.query - Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR \"machine learning\"". Supported operators: from:user, to:user, since:YYYY-MM-DD, until:YYYY-MM-DD, lang:xx, filter:media, filter:links, -filter:retweets, AND, OR, -keyword, "exact phrase".
+     * @param args.queryType - Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". Only these two values are valid. (optional)
+     * @param args.cursor - Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values. (optional)
+     * @returns Promise<TwitterAdvancedSearchResult> Typed response with IDE autocomplete
+     */
+    advancedSearch: async (args: TwitterAdvancedSearchArgs): Promise<TwitterAdvancedSearchResult> => {
+      return sdk.resources.call({
+        resourceId: 'twitter',
+        method: 'advancedSearch',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Flows Adapter
+ * Category: internal
+ */
+function createFlowsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a flow (event-triggered or time-scheduled). This is the unified, simplified interface for flow creation.
+
+TRIGGER TYPE (provide exactly one):
+- schedule: Cron expression for time-based flows (e.g., "0 9 * * *"). Times are automatically in the user's local timezone.
+- eventType: Event type shorthand for event flows (e.g., "telegram.message")
+- eventFilter: Full filter object for complex event conditions
+- trigger: Legacy nested structure (still supported)
+
+SCRIPT (provide exactly one):
+- code: Inline script code - will auto-create, deploy, and link the script
+- scriptId: ID of an existing deployed script
+
+EXAMPLES:
+
+Time flow with inline code:
+{
+  title: "Daily Report",
+  schedule: "0 9 * * *",
+  code: "export async function handler(event, context, mirra) { await mirra.telegram.sendMessage({...}); return { done: true }; }"
+}
+
+Event flow with eventType shorthand:
+{
+  title: "Handle Messages",
+  eventType: "telegram.message",
+  code: "export async function handler(event, context, mirra) { return { handled: true }; }"
+}
+
+Event flow with existing script:
+{
+  eventType: "gmail.email_received",
+  scriptId: "existing-script-id"
+}
+
+HANDLER RETURN VALUES:
+The handler's return object controls how the flow executor records the result:
+
+Success — work was done:
+  return { success: true, ...data }
+
+No-Op — nothing to do (not an error):
+  return { success: false, noOp: true, reason: "No transcript available" }
+  Use when the handler correctly determines no action is needed (e.g., no input data,
+  content already processed, empty trigger). No-ops are recorded as successful executions
+  and do NOT count toward the 3-consecutive-failure auto-pause threshold.
+
+Failure — something went wrong:
+  return { success: false, reason: "What went wrong" }
+  Use for actual errors. 3 consecutive failures will auto-pause the flow.
+     * @param args.title - Flow title. Required if providing inline code. (optional)
+     * @param args.description - Detailed description of what the flow does (optional)
+     * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId. (optional)
+     * @param args.scriptId - ID of existing deployed script. Cannot use with code. (optional)
+     * @param args.schedule - Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone. (optional)
+     * @param args.eventType - Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type. (optional)
+     * @param args.eventFilter - Full event filter with operator and conditions array for complex filtering. (optional)
+     * @param args.trigger - Legacy nested trigger structure. Prefer eventType or eventFilter instead. (optional)
+     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields. (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings. (optional)
+     * @param args.enabled - Whether the flow is enabled (default: true) (optional)
+     */
+    createFlow: async (args: FlowsCreateFlowArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'createFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new time-based flow with cron schedule. NOTE: Consider using createFlow instead for a simpler interface with inline code support.
+     * @param args.title - Flow title
+     * @param args.description - Detailed description of what the flow does
+     * @param args.schedule - Cron expression for scheduling (e.g., "0 9 * * *" for daily at 9am)
+     * @param args.scriptId - ID of the script to execute when triggered
+     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler). (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }. (optional)
+     */
+    createTimeFlow: async (args: FlowsCreateTimeFlowArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'createTimeFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create an event-based flow with pre-filtering conditions. NOTE: Consider using createFlow instead for a simpler interface with inline code support.
+
+EFFICIENCY RULE: Always filter in eventFilter, not the script.
+- eventFilter conditions: FREE (evaluated in-memory before script runs)
+- Script filtering: EXPENSIVE (invokes Lambda for every event)
+
+BAD: Trigger on "telegram.message" with no filter → script checks sender
+GOOD: Trigger on "telegram.message" with eventFilter for sender
+
+TRIGGER STRUCTURE:
+{
+  type: "event",
+  config: {
+    eventFilter: {
+      operator: "and" | "or",
+      conditions: [
+        { operator: "equals", field: "type", value: "call.ended" },
+        { operator: "contains", field: "content.text", value: "urgent" }
+      ]
+    }
+  }
+}
+
+IMPORTANT: Use field: "type" (not "eventType") to filter by event type. This is required for testFlow to auto-generate test events.
+
+VALID OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not
+
+COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.action, telegram.message, gmail.email_received
+     * @param args.title - Flow title
+     * @param args.description - Detailed description of what the flow does
+     * @param args.trigger - Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
+     * @param args.scriptId - ID of the script to execute when triggered
+     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler). (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }. (optional)
+     */
+    createEventFlow: async (args: FlowsCreateEventFlowArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'createEventFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific flow by ID. Returns normalized flat structure.
+     * @param args.id - Flow ID
+     */
+    getFlow: async (args: FlowsGetFlowArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'getFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing flow. Returns normalized flat structure.
+     * @param args.id - Flow ID to update
      * @param args.title - New title (optional)
      * @param args.description - New description (optional)
+     * @param args.trigger - New trigger configuration (optional)
+     * @param args.scriptId - New script ID (optional)
+     * @param args.scriptInput - New static input data for the script. Fields are spread into event.data in handler code. (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }. (optional)
+     * @param args.status - New status: active, paused, completed, failed (optional)
      */
-    updatePage: async (args: PagesUpdatePageArgs): Promise<any> => {
+    updateFlow: async (args: FlowsUpdateFlowArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'pages',
-        method: 'updatePage',
+        resourceId: 'flows',
+        method: 'updateFlow',
         params: args || {}
       });
     },
 
     /**
-     * Revert a page to a previous version. The current code becomes a new version entry.
-     * @param args.pageId - The page ID to revert
-     * @param args.versionIndex - Index of the version to restore (0 = most recent saved version)
+     * Delete a flow
+     * @param args.id - Flow ID to delete
      */
-    revertPage: async (args: PagesRevertPageArgs): Promise<any> => {
+    deleteFlow: async (args: FlowsDeleteFlowArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'pages',
-        method: 'revertPage',
+        resourceId: 'flows',
+        method: 'deleteFlow',
         params: args || {}
       });
     },
 
     /**
-     * Get a page by its ID or by path within the current graph. Returns page metadata and current code.
-     * @param args.pageId - The page ID (optional)
-     * @param args.path - The page path (e.g. "/dashboard"). Used with the current graphId. (optional)
+     * Pause an active flow. Returns normalized flat structure.
+     * @param args.id - Flow ID to pause
      */
-    getPage: async (args: PagesGetPageArgs): Promise<any> => {
+    pauseFlow: async (args: FlowsPauseFlowArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'pages',
-        method: 'getPage',
+        resourceId: 'flows',
+        method: 'pauseFlow',
         params: args || {}
       });
     },
 
     /**
-     * List all pages for the current graph. Optionally filter by status.
-     * @param args.status - Filter by status: "active" (default) or "deleted" (optional)
+     * Resume a paused flow. Returns normalized flat structure.
+     * @param args.id - Flow ID to resume
      */
-    listPages: async (args: PagesListPagesArgs): Promise<any> => {
+    resumeFlow: async (args: FlowsResumeFlowArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'pages',
-        method: 'listPages',
+        resourceId: 'flows',
+        method: 'resumeFlow',
         params: args || {}
       });
     },
 
     /**
-     * Soft-delete a page by setting its status to "deleted".
-     * @param args.pageId - The page ID to delete
+     * Search flows with filters. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. Use getFlow for full details on a specific flow.
+     * @param args.status - Filter by status (or array of statuses) (optional)
+     * @param args.triggerType - Filter by trigger type: time or event (optional)
+     * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
+     * @param args.limit - Maximum number of results (default: 20) (optional)
+     * @param args.offset - Pagination offset (default: 0) (optional)
      */
-    deletePage: async (args: PagesDeletePageArgs): Promise<any> => {
+    searchFlows: async (args: FlowsSearchFlowsArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'pages',
-        method: 'deletePage',
+        resourceId: 'flows',
+        method: 'searchFlows',
         params: args || {}
       });
     },
 
     /**
-     * Publish a page, making it publicly accessible. Generates an API key for the page.
-     * @param args.pageId - The page ID to publish
-     * @param args.publicCollections - Optional array of collection tags for public discovery (optional)
+     * Record execution result for a flow. Returns normalized flat structure.
+     * @param args.id - Flow ID
+     * @param args.success - Whether execution succeeded
+     * @param args.result - Execution result data (optional)
+     * @param args.error - Error message if execution failed (optional)
      */
-    publishPage: async (args: PagesPublishPageArgs): Promise<any> => {
+    recordExecution: async (args: FlowsRecordExecutionArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'pages',
-        method: 'publishPage',
+        resourceId: 'flows',
+        method: 'recordExecution',
         params: args || {}
       });
     },
 
     /**
-     * Unpublish a page, making it private.
-     * @param args.pageId - The page ID to unpublish
+     * List all available event types that can trigger automations. Returns normalized event types.
+
+IMPORTANT: Use includeSchema: true when writing scripts to see available fields and correct access patterns.
+
+Scripts receive an ExecutionRequest, NOT the raw IntegrationEvent. Correct access patterns:
+- event.data.text (normalized text content)
+- event.data.sender (normalized sender name)
+- event.data.event (full IntegrationEvent object)
+- event.trigger.event (also full IntegrationEvent)
+
+Common WRONG patterns that don't work:
+- event.summary (doesn't exist)
+- event.content.text (wrong path)
+- event.timestamp (wrong path)
+     * @param args.includeTemplates - Include condition templates for each event type (optional)
+     * @param args.includeSchema - Include field schema showing available paths for script access. RECOMMENDED when writing scripts to see correct field access patterns. (optional)
      */
-    unpublishPage: async (args: PagesUnpublishPageArgs): Promise<any> => {
+    listEventTypes: async (args: FlowsListEventTypesArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'pages',
-        method: 'unpublishPage',
+        resourceId: 'flows',
+        method: 'listEventTypes',
         params: args || {}
       });
     },
 
     /**
-     * Get the public URL for a page.
-     * @param args.pageId - The page ID
+     * Test a flow by generating an event that matches the trigger conditions.
+
+REQUIREMENT: The flow's trigger conditions MUST include a condition with field: "type" or field: "source" so the system knows what kind of test event to generate.
+
+CORRECT condition: { operator: "equals", field: "type", value: "telegram.message" }
+WRONG condition: { operator: "equals", field: "eventType", value: "telegram.message" }
+
+If your flow lacks a "type" or "source" condition, use validateTrigger instead with a manually constructed event.
+
+MODES:
+- dryRun=true (DEFAULT): Validates trigger matching only. Safe, no side effects, no token consumption.
+- dryRun=false: Executes the real script. WARNING: This causes real side effects (sends messages, makes API calls, consumes tokens).
+
+Use dryRun=true first to verify trigger conditions work, then dryRun=false only when ready to test full execution.
+
+WORKFLOW:
+1. Generates a test event from the flow's trigger conditions (requires "type" or "source" field)
+2. Validates the event matches the trigger (always)
+3. If dryRun=false, executes the script with the test event
+
+RESULT:
+Returns detailed information about trigger matching, including which conditions passed/failed, and optionally full execution results.
+     * @param args.flowId - ID of the flow to test
+     * @param args.dryRun - If true (default), only validate trigger matching without executing script. If false, execute the script (causes side effects). (optional)
+     * @param args.eventOverrides - Custom field values to merge into the generated test event (e.g., {"content.text": "custom message"}) (optional)
      */
-    getPageUrl: async (args: PagesGetPageUrlArgs): Promise<any> => {
+    testFlow: async (args: FlowsTestFlowArgs): Promise<any> => {
       return sdk.resources.call({
-        resourceId: 'pages',
-        method: 'getPageUrl',
+        resourceId: 'flows',
+        method: 'testFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Check if a custom event would match a flow trigger without any execution. Useful for debugging trigger conditions or testing with real event data.
+     * @param args.flowId - ID of the flow
+     * @param args.event - Event object to test against the trigger (must match IntegrationEvent structure)
+     */
+    validateTrigger: async (args: FlowsValidateTriggerArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'validateTrigger',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get all active flows triggered by a specific event type. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats.
+     * @param args.eventType - Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
+     * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
+     */
+    getFlowsByEventType: async (args: FlowsGetFlowsByEventTypeArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'getFlowsByEventType',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a self-managing flow that processes multiple adapter operations over time, respecting rate limits. The flow automatically cleans up when complete and notifies the user via feed item.
+     * @param args.title - Human-readable title for this batch operation (e.g., "Leave 100 Telegram groups")
+     * @param args.operations - Array of operations to execute. Each item must have adapter, operation, and args properties.
+     * @param args.batchSize - Number of operations to process per execution (default: 5) (optional)
+     * @param args.intervalSeconds - Seconds between batch executions (default: 60, minimum: 60) (optional)
+     */
+    createBatchOperation: async (args: FlowsCreateBatchOperationArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'createBatchOperation',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Publish a flow to the marketplace so other users can discover and install it. The flow must have a deployed script.
+     * @param args.flowId - ID of the flow to publish
+     * @param args.pricing - Pricing configuration. Defaults to { model: "free" }. Supported models: "free", "pay-per-execution". For paid models, include basePrice. (optional)
+     * @param args.tags - Tags for marketplace discovery (e.g., ["telegram", "automation"]) (optional)
+     * @param args.category - Marketplace category (e.g., "messaging", "productivity"). Defaults to "uncategorized". (optional)
+     */
+    publishFlow: async (args: FlowsPublishFlowArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'publishFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Remove a flow from the marketplace. Existing installations will continue to work.
+     * @param args.flowId - ID of the flow to unpublish
+     */
+    unpublishFlow: async (args: FlowsUnpublishFlowArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'unpublishFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create an autonomous goal flow that pursues an objective over multiple iterations.
+
+The goal flow will:
+1. Execute iterations autonomously, evaluating progress after each
+2. Detect loops and stagnation, pausing for user guidance when stuck
+3. Track token budget and pause when exhausted
+4. Compact history to manage context window size
+
+EXAMPLES:
+{
+  goal: "Research and compile a report on AI trends in 2026",
+  successCriteria: ["Report has at least 5 sections", "Each section cites sources", "Summary with actionable insights"],
+  constraints: ["Use only publicly available sources"],
+  tokenBudget: 500000,
+  code: "export async function handler(event, context, mirra) { return { success: true }; }"
+}
+     * @param args.goal - High-level goal description
+     * @param args.successCriteria - Array of criteria that define goal completion
+     * @param args.constraints - Array of constraints and guidelines (optional)
+     * @param args.tokenBudget - Token budget (default: 100000) (optional)
+     * @param args.title - Flow title (auto-generated from goal if not provided) (optional)
+     * @param args.code - Inline script code for the flow (optional)
+     * @param args.scriptId - ID of an existing deployed script (optional)
+     * @param args.executionMode - Execution mode: mirra_only (default), mirra_with_claude_code, or claude_code_only (optional)
+     * @param args.workspacePath - Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/<goalId>/workspace/ (optional)
+     * @param args.iterationTimeoutMs - Max time per CC iteration in ms (default: 600000 = 10 min) (optional)
+     */
+    createGoalFlow: async (args: FlowsCreateGoalFlowArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'createGoalFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the progress summary of a goal flow, including velocity, completion percentage, and recent iterations.
+     * @param args.flowId - ID of the goal flow
+     */
+    getGoalProgress: async (args: FlowsGetGoalProgressArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'getGoalProgress',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Provide guidance to a paused goal flow. The flow will resume execution incorporating the guidance.
+     * @param args.flowId - ID of the goal flow
+     * @param args.requestId - ID of the guidance request being responded to
+     * @param args.response - Guidance text to provide to the goal flow
+     */
+    provideGuidance: async (args: FlowsProvideGuidanceArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'provideGuidance',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Deprecated — history compaction is no longer needed in the orchestrator model. Learnings are stored in the memory graph.
+     * @param args.flowId - ID of the goal flow
+     * @param args.keepRecentCount - Unused (deprecated) (optional)
+     */
+    compactHistory: async (args: FlowsCompactHistoryArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'compactHistory',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delegate a sub-goal to a child goal flow. The parent flow spawns a child that pursues the sub-goal independently. Max 10 children per parent, max 3 delegation depth.
+
+EXAMPLES:
+{
+  parentFlowId: "abc123",
+  subGoal: "Research competitor pricing strategies",
+  successCriteria: ["At least 5 competitors analyzed", "Pricing models documented"],
+  constraints: ["Use public data only"],
+  tokenBudget: 20000
+}
+     * @param args.parentFlowId - ID of the parent goal flow
+     * @param args.subGoal - Description of the sub-goal to delegate
+     * @param args.successCriteria - Success criteria for the sub-goal
+     * @param args.constraints - Constraints for the child flow (optional)
+     * @param args.tokenBudget - Token budget for child (default: 20% of parent budget) (optional)
+     */
+    delegateSubGoal: async (args: FlowsDelegateSubGoalArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'flows',
+        method: 'delegateSubGoal',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * User Adapter
+ * Category: internal
+ */
+function createUserAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Get user profile information including username, email, timezone, phone, and usage stats
+     */
+    getProfile: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'user',
+        method: 'getProfile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update user profile fields (username, email, timezone, phone)
+     * @param args.username - New username (3-30 characters, alphanumeric with underscores/hyphens) (optional)
+     * @param args.email - New email address (optional)
+     * @param args.timezone - IANA timezone identifier (e.g., America/Los_Angeles) (optional)
+     * @param args.phoneNumber - Phone number (7-15 digits with optional formatting) (optional)
+     */
+    updateProfile: async (args: UserUpdateProfileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'user',
+        method: 'updateProfile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update user preferences (notification settings, etc)
+     * @param args.timezone - Preferred timezone for scheduling (optional)
+     * @param args.socials - Social media links (twitter, discord) (optional)
+     */
+    updatePreferences: async (args: UserUpdatePreferencesArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'user',
+        method: 'updatePreferences',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get token usage statistics, quota, and billing information
+     */
+    getUsageStats: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'user',
+        method: 'getUsageStats',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get active sessions/devices (based on push token registrations)
+     */
+    getSessions: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'user',
+        method: 'getSessions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Soft delete user account (set inactive flag) - CAUTION: This marks the account for deletion
+     * @param args.confirm - Must be true to confirm account deactivation
+     */
+    deactivateAccount: async (args: UserDeactivateAccountArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'user',
+        method: 'deactivateAccount',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Contacts Adapter
+ * Category: internal
+ */
+function createContactsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Get a list of all accepted contacts for the user with their profile information
+     * @param args.limit - Maximum number of contacts to return (default: 100) (optional)
+     * @param args.offset - Number of contacts to skip for pagination (default: 0) (optional)
+     */
+    listContacts: async (args: ContactsListContactsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'contacts',
+        method: 'listContacts',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get detailed information about a specific contact by their ID or username
+     * @param args.contactId - The contact user ID (MongoDB ObjectId) (optional)
+     * @param args.username - The contact username (optional)
+     */
+    getContact: async (args: ContactsGetContactArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'contacts',
+        method: 'getContact',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Send a contact request to another user by their username
+     * @param args.username - Username of the user to add as a contact
+     */
+    addContact: async (args: ContactsAddContactArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'contacts',
+        method: 'addContact',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Remove a user from your contacts list (unfriend)
+     * @param args.contactId - The contact user ID to remove (optional)
+     * @param args.username - The contact username to remove (optional)
+     */
+    removeContact: async (args: ContactsRemoveContactArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'contacts',
+        method: 'removeContact',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search your contacts by username, email, phone, or wallet address
+     * @param args.query - Search query - can be username, email, phone, or wallet address
+     * @param args.searchType - Type of search to perform: all, username, email, phone, or wallet (default: all) (optional)
+     * @param args.limit - Maximum number of results (default: 20) (optional)
+     */
+    searchContacts: async (args: ContactsSearchContactsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'contacts',
+        method: 'searchContacts',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Block a user (prevents them from contacting you)
+     * @param args.contactId - The user ID to block (optional)
+     * @param args.username - The username to block (optional)
+     */
+    blockContact: async (args: ContactsBlockContactArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'contacts',
+        method: 'blockContact',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Unblock a previously blocked user
+     * @param args.contactId - The user ID to unblock (optional)
+     * @param args.username - The username to unblock (optional)
+     */
+    unblockContact: async (args: ContactsUnblockContactArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'contacts',
+        method: 'unblockContact',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a list of all users you have blocked
+     * @param args.limit - Maximum number of results (default: 100) (optional)
+     * @param args.offset - Number of items to skip for pagination (default: 0) (optional)
+     */
+    getBlockedContacts: async (args: ContactsGetBlockedContactsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'contacts',
+        method: 'getBlockedContacts',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get pending contact requests (sent by you or received from others)
+     * @param args.type - Type of requests to retrieve: all, sent, or received (default: all) (optional)
+     * @param args.status - Filter by request status: pending, accepted, or rejected (default: pending) (optional)
+     */
+    getContactRequests: async (args: ContactsGetContactRequestsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'contacts',
+        method: 'getContactRequests',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Crypto Adapter
+ * Category: crypto
+ */
+function createCryptoAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Get the current price of a crypto asset. Returns normalized flat structure. IMPORTANT: Not all tokens are supported by the pricing service. Before using this operation in a Flow or automation, always make a test call first to verify the token is supported. If the call fails with "not supported", do NOT create the Flow — inform the user that price tracking is not available for that token.
+     * @param args.tokenAddress - Token contract address (EVM: 0x..., SVM: base58)
+     * @param args.chainName - Specific chain name (auto-detected if not provided) (optional)
+     */
+    getPrice: async (args: CryptoGetPriceArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'crypto',
+        method: 'getPrice',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Send cryptocurrency or tokens (creates pending transaction for signing). Returns normalized flat structure.
+     * @param args.recipient - Contact username, user ID, or Solana wallet address
+     * @param args.token - Token symbol (SOL, USDC), name, or mint address
+     * @param args.amount - Amount to send (in UI units)
+     */
+    sendToken: async (args: CryptoSendTokenArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'crypto',
+        method: 'sendToken',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Set up automated price monitoring with progressive alerts. Returns normalized flat structure.
+     * @param args.tokenAddress - Token contract address to monitor
+     * @param args.direction - Alert direction: "above" or "below"
+     * @param args.targetPrice - Target price in USD to trigger alert
+     * @param args.scriptId - ID of the script to execute when price target is reached
+     * @param args.chainName - Chain name (auto-detected if not provided) (optional)
+     * @param args.percentStep - Progressive alert step percentage (default: 0.1 = 10%) (optional)
+     */
+    monitorPrice: async (args: CryptoMonitorPriceArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'crypto',
+        method: 'monitorPrice',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all active crypto price monitoring assignments. Returns normalized flat structures.
+     */
+    listSubscriptions: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'crypto',
+        method: 'listSubscriptions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Stop monitoring a crypto asset. Returns normalized flat structure.
+     * @param args.tokenAddress - Token address to stop monitoring
+     */
+    unsubscribeAsset: async (args: CryptoUnsubscribeAssetArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'crypto',
+        method: 'unsubscribeAsset',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Refresh an expired transaction with new blockhash and updated details. Returns normalized flat structure.
+     * @param args.feedItemId - Feed item ID containing the transaction to refresh
+     * @param args.transferId - Original transfer ID
+     * @param args.recipient - Recipient address
+     * @param args.token - Token symbol or mint address
+     * @param args.amount - Amount to send
+     * @param args.tokenMint - Token mint address (optional, will resolve if not provided) (optional)
+     * @param args.tokenDecimals - Token decimals (optional) (optional)
+     */
+    refreshTransaction: async (args: CryptoRefreshTransactionArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'crypto',
+        method: 'refreshTransaction',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Google Docs Adapter
+ * Category: productivity
+ */
+function createGoogleDocsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new Google Doc
+     * @param args.title - Title of the document
+     * @returns Promise<GoogleDocsCreateDocumentResult> Typed response with IDE autocomplete
+     */
+    createDocument: async (args: GoogleDocsCreateDocumentArgs): Promise<GoogleDocsCreateDocumentResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'createDocument',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a Google Doc by ID. Returns normalized flat structure with extracted fields.
+     * @param args.documentId - ID of the document
+     * @returns Promise<GoogleDocsGetDocumentResult> Typed response with IDE autocomplete
+     */
+    getDocument: async (args: GoogleDocsGetDocumentArgs): Promise<GoogleDocsGetDocumentResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'getDocument',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Append text to the end of a document
+     * @param args.documentId - ID of the document
+     * @param args.text - Text to append
+     * @returns Promise<GoogleDocsAppendTextResult> Typed response with IDE autocomplete
+     */
+    appendText: async (args: GoogleDocsAppendTextArgs): Promise<GoogleDocsAppendTextResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'appendText',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Replace text in a document
+     * @param args.documentId - ID of the document
+     * @param args.searchText - Text to search for
+     * @param args.replaceText - Text to replace with
+     * @returns Promise<GoogleDocsReplaceTextResult> Typed response with IDE autocomplete
+     */
+    replaceText: async (args: GoogleDocsReplaceTextArgs): Promise<GoogleDocsReplaceTextResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'replaceText',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the text content of a Google Doc
+     * @param args.documentId - ID of the document
+     * @returns Promise<GoogleDocsGetDocumentContentResult> Typed response with IDE autocomplete
+     */
+    getDocumentContent: async (args: GoogleDocsGetDocumentContentArgs): Promise<GoogleDocsGetDocumentContentResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'getDocumentContent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert text at a specific position in the document
+     * @param args.documentId - ID of the document
+     * @param args.text - Text to insert
+     * @param args.position - Character position to insert at (1-indexed)
+     * @returns Promise<GoogleDocsInsertTextAtPositionResult> Typed response with IDE autocomplete
+     */
+    insertTextAtPosition: async (args: GoogleDocsInsertTextAtPositionArgs): Promise<GoogleDocsInsertTextAtPositionResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'insertTextAtPosition',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert text after a search string in the document
+     * @param args.documentId - ID of the document
+     * @param args.searchText - Text to search for
+     * @param args.textToInsert - Text to insert after the search text
+     * @param args.occurrence - Which occurrence to insert after (default: 1) (optional)
+     * @returns Promise<GoogleDocsInsertTextAfterResult> Typed response with IDE autocomplete
+     */
+    insertTextAfter: async (args: GoogleDocsInsertTextAfterArgs): Promise<GoogleDocsInsertTextAfterResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'insertTextAfter',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a heading into the document
+     * @param args.documentId - ID of the document
+     * @param args.text - Heading text
+     * @param args.level - Heading level (1-6)
+     * @param args.position - Character position to insert at (optional)
+     * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     * @returns Promise<GoogleDocsInsertHeadingResult> Typed response with IDE autocomplete
+     */
+    insertHeading: async (args: GoogleDocsInsertHeadingArgs): Promise<GoogleDocsInsertHeadingResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'insertHeading',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a bulleted or numbered list into the document
+     * @param args.documentId - ID of the document
+     * @param args.items - Array of list items
+     * @param args.listType - Type of list: "bulleted" or "numbered"
+     * @param args.position - Character position to insert at (optional)
+     * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     * @returns Promise<GoogleDocsInsertListResult> Typed response with IDE autocomplete
+     */
+    insertList: async (args: GoogleDocsInsertListArgs): Promise<GoogleDocsInsertListResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'insertList',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a table into the document
+     * @param args.documentId - ID of the document
+     * @param args.data - 2D array of table data (rows x columns)
+     * @param args.hasHeader - Whether the first row is a header (default: true) (optional)
+     * @param args.position - Character position to insert at (optional)
+     * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     * @returns Promise<GoogleDocsInsertTableResult> Typed response with IDE autocomplete
+     */
+    insertTable: async (args: GoogleDocsInsertTableArgs): Promise<GoogleDocsInsertTableResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'insertTable',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Replace the entire content of a document
+     * @param args.documentId - ID of the document
+     * @param args.newContent - New content to replace existing content
+     * @returns Promise<GoogleDocsUpdateDocumentContentResult> Typed response with IDE autocomplete
+     */
+    updateDocumentContent: async (args: GoogleDocsUpdateDocumentContentArgs): Promise<GoogleDocsUpdateDocumentContentResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'updateDocumentContent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new section with a heading and content. Returns normalized result with insertion details.
+     * @param args.documentId - ID of the document
+     * @param args.heading - Section heading text
+     * @param args.content - Section content text
+     * @returns Promise<GoogleDocsCreateSectionResult> Typed response with IDE autocomplete
+     */
+    createSection: async (args: GoogleDocsCreateSectionArgs): Promise<GoogleDocsCreateSectionResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'createSection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Find the character position for insertion based on position or search text. Returns normalized result with position and context.
+     * @param args.documentId - ID of the document
+     * @param args.position - Position to find (1 for start, -1 for end)
+     * @param args.searchText - Text to search for (returns position after this text) (optional)
+     * @returns Promise<GoogleDocsFindInsertionPointResult> Typed response with IDE autocomplete
+     */
+    findInsertionPoint: async (args: GoogleDocsFindInsertionPointArgs): Promise<GoogleDocsFindInsertionPointResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-docs',
+        method: 'findInsertionPoint',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Google Sheets Adapter
+ * Category: productivity
+ */
+function createGoogleSheetsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new Google Sheets spreadsheet
+     * @param args.title - Title of the spreadsheet
+     * @returns Promise<GoogleSheetsCreateSpreadsheetResult> Typed response with IDE autocomplete
+     */
+    createSpreadsheet: async (args: GoogleSheetsCreateSpreadsheetArgs): Promise<GoogleSheetsCreateSpreadsheetResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'createSpreadsheet',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read data from a range in a spreadsheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.range - Cell range (e.g., "Sheet1!A1:B10")
+     * @returns Promise<GoogleSheetsReadRangeResult> Typed response with IDE autocomplete
+     */
+    readRange: async (args: GoogleSheetsReadRangeArgs): Promise<GoogleSheetsReadRangeResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'readRange',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Write data to a range in a spreadsheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.range - Cell range (e.g., "Sheet1!A1:B10")
+     * @param args.values - Data to write (2D array)
+     * @returns Promise<GoogleSheetsWriteRangeResult> Typed response with IDE autocomplete
+     */
+    writeRange: async (args: GoogleSheetsWriteRangeArgs): Promise<GoogleSheetsWriteRangeResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'writeRange',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Append a row to a spreadsheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetName - Name of the sheet
+     * @param args.values - Row values to append
+     * @returns Promise<GoogleSheetsAppendRowResult> Typed response with IDE autocomplete
+     */
+    appendRow: async (args: GoogleSheetsAppendRowArgs): Promise<GoogleSheetsAppendRowResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'appendRow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get spreadsheet metadata and properties
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @returns Promise<GoogleSheetsGetSpreadsheetResult> Typed response with IDE autocomplete
+     */
+    getSpreadsheet: async (args: GoogleSheetsGetSpreadsheetArgs): Promise<GoogleSheetsGetSpreadsheetResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'getSpreadsheet',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a value at a specific cell with optional formatting
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.cell - Cell reference in format SheetName!A1
+     * @param args.value - Value to insert
+     * @param args.bold - Make text bold (optional)
+     * @param args.italic - Make text italic (optional)
+     * @param args.foregroundColor - Text color (hex or named color) (optional)
+     * @param args.backgroundColor - Cell background color (hex or named color) (optional)
+     * @returns Promise<GoogleSheetsInsertAtCellResult> Typed response with IDE autocomplete
+     */
+    insertAtCell: async (args: GoogleSheetsInsertAtCellArgs): Promise<GoogleSheetsInsertAtCellResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'insertAtCell',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a formula at a specific cell
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.cell - Cell reference in format SheetName!A1
+     * @param args.formula - Formula to insert (with or without leading =)
+     * @param args.note - Optional note to add to the cell (optional)
+     * @returns Promise<GoogleSheetsInsertFormulaResult> Typed response with IDE autocomplete
+     */
+    insertFormula: async (args: GoogleSheetsInsertFormulaArgs): Promise<GoogleSheetsInsertFormulaResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'insertFormula',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Apply formatting to a range of cells
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.range - Range in format SheetName!A1:B10
+     * @param args.bold - Make text bold (optional)
+     * @param args.italic - Make text italic (optional)
+     * @param args.foregroundColor - Text color (hex or named color) (optional)
+     * @param args.backgroundColor - Cell background color (hex or named color) (optional)
+     * @param args.borders - Add borders to cells (optional)
+     * @returns Promise<GoogleSheetsFormatRangeResult> Typed response with IDE autocomplete
+     */
+    formatRange: async (args: GoogleSheetsFormatRangeArgs): Promise<GoogleSheetsFormatRangeResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'formatRange',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a chart from spreadsheet data
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - ID of the sheet containing data
+     * @param args.dataRange - Data range for the chart (e.g., A1:B10)
+     * @param args.chartType - Chart type: BAR, LINE, AREA, PIE, or SCATTER
+     * @param args.title - Chart title
+     * @param args.position - Chart position with row, column, rowCount, columnCount
+     * @returns Promise<GoogleSheetsCreateChartResult> Typed response with IDE autocomplete
+     */
+    createChart: async (args: GoogleSheetsCreateChartArgs): Promise<GoogleSheetsCreateChartResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'createChart',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Find and replace text in a spreadsheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.findText - Text to find
+     * @param args.replaceText - Text to replace with
+     * @param args.sheetName - Limit search to specific sheet (optional)
+     * @param args.matchCase - Case-sensitive search (optional)
+     * @param args.matchEntireCell - Match entire cell content only (optional)
+     * @returns Promise<GoogleSheetsFindAndReplaceResult> Typed response with IDE autocomplete
+     */
+    findAndReplace: async (args: GoogleSheetsFindAndReplaceArgs): Promise<GoogleSheetsFindAndReplaceResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'findAndReplace',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert multiple rows of data at once
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetName - Name of the sheet
+     * @param args.rowsData - 2D array of row data to insert
+     * @param args.startingRow - Row number to start insertion (1-indexed). If not provided, appends to end (optional)
+     * @param args.formattingOptions - Optional formatting to apply (bold, italic, foregroundColor, backgroundColor, borders) (optional)
+     * @returns Promise<GoogleSheetsInsertMultipleRowsResult> Typed response with IDE autocomplete
+     */
+    insertMultipleRows: async (args: GoogleSheetsInsertMultipleRowsArgs): Promise<GoogleSheetsInsertMultipleRowsResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'insertMultipleRows',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Clear content from a range of cells
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetName - Name of the sheet
+     * @param args.range - Range to clear (e.g., A1:B10)
+     * @returns Promise<GoogleSheetsClearRangeResult> Typed response with IDE autocomplete
+     */
+    clearRange: async (args: GoogleSheetsClearRangeArgs): Promise<GoogleSheetsClearRangeResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'clearRange',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert empty rows at a specific position in a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Row indices are 0-indexed (row 1 in UI = index 0).
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startRowIndex - Row index to start inserting at (0-indexed). To insert before row 5 in the UI, use index 4.
+     * @param args.numRows - Number of rows to insert
+     * @returns Promise<GoogleSheetsInsertRowsResult> Typed response with IDE autocomplete
+     */
+    insertRows: async (args: GoogleSheetsInsertRowsArgs): Promise<GoogleSheetsInsertRowsResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'insertRows',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete rows from a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Row indices are 0-indexed (row 1 in UI = index 0).
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startRowIndex - Row index to start deleting from (0-indexed). To delete row 5 in the UI, use index 4.
+     * @param args.numRows - Number of rows to delete
+     * @returns Promise<GoogleSheetsDeleteRowsResult> Typed response with IDE autocomplete
+     */
+    deleteRows: async (args: GoogleSheetsDeleteRowsArgs): Promise<GoogleSheetsDeleteRowsResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'deleteRows',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert empty columns at a specific position in a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Column indices are 0-indexed (A=0, B=1, C=2, etc.).
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startColumnIndex - Column index to start inserting at (0-indexed: A=0, B=1, C=2, D=3, etc.). To insert before column D, use index 3.
+     * @param args.numColumns - Number of columns to insert
+     * @returns Promise<GoogleSheetsInsertColumnsResult> Typed response with IDE autocomplete
+     */
+    insertColumns: async (args: GoogleSheetsInsertColumnsArgs): Promise<GoogleSheetsInsertColumnsResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'insertColumns',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete columns from a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Column indices are 0-indexed (A=0, B=1, C=2, etc.).
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startColumnIndex - Column index to start deleting from (0-indexed: A=0, B=1, C=2, D=3, etc.). To delete column D, use index 3.
+     * @param args.numColumns - Number of columns to delete
+     * @returns Promise<GoogleSheetsDeleteColumnsResult> Typed response with IDE autocomplete
+     */
+    deleteColumns: async (args: GoogleSheetsDeleteColumnsArgs): Promise<GoogleSheetsDeleteColumnsResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'deleteColumns',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Copy data from one range to another location within the same spreadsheet. IMPORTANT: Requires numeric sheetIds (get from getSpreadsheet), not sheet names. Can copy within same sheet or across sheets.
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sourceSheetId - Numeric sheet ID of the source sheet (get from getSpreadsheet response: sheets[n].properties.sheetId)
+     * @param args.sourceRange - Source range in A1 notation WITHOUT sheet name (e.g., "A1:C5", not "Sheet1!A1:C5")
+     * @param args.targetSheetId - Numeric sheet ID of the target sheet (can be same as sourceSheetId to copy within same sheet)
+     * @param args.targetStartCell - Target start cell in A1 notation (e.g., "E1"). The copied data will fill cells starting from this position.
+     * @returns Promise<GoogleSheetsCopyRangeResult> Typed response with IDE autocomplete
+     */
+    copyRange: async (args: GoogleSheetsCopyRangeArgs): Promise<GoogleSheetsCopyRangeResult> => {
+      return sdk.resources.call({
+        resourceId: 'google-sheets',
+        method: 'copyRange',
         params: args || {}
       });
     }
@@ -10792,33 +10617,38 @@ DO NOT: Use emoji as bullet points, add hover:scale on cards, use bg-slate/bg-gr
 // ============================================================================
 
 export const generatedAdapters = {
+  ai: createAiAdapter,
+  jira: createJiraAdapter,
+  claudeCode: createClaudeCodeAdapter,
+  data: createDataAdapter,
+  desktop: createDesktopAdapter,
+  document: createDocumentAdapter,
+  feedItems: createFeedItemsAdapter,
+  feedback: createFeedbackAdapter,
+  googleCalendar: createGoogleCalendarAdapter,
+  googleDrive: createGoogleDriveAdapter,
+  googleGmail: createGoogleGmailAdapter,
+  hypertrade: createHypertradeAdapter,
+  skills: createSkillsAdapter,
+  jupiter: createJupiterAdapter,
+  marketplaceResources: createMarketplaceResourcesAdapter,
+  scripts: createScriptsAdapter,
+  marketplaceTemplates: createMarketplaceTemplatesAdapter,
+  memory: createMemoryAdapter,
+  mirraMessaging: createMirraMessagingAdapter,
+  moltbook: createMoltbookAdapter,
+  pages: createPagesAdapter,
+  polymarket: createPolymarketAdapter,
+  shopify: createShopifyAdapter,
+  socket: createSocketAdapter,
+  telegram: createTelegramAdapter,
+  trello: createTrelloAdapter,
+  tunnel: createTunnelAdapter,
+  twitter: createTwitterAdapter,
   flows: createFlowsAdapter,
   user: createUserAdapter,
   contacts: createContactsAdapter,
-  memory: createMemoryAdapter,
-  ai: createAiAdapter,
-  document: createDocumentAdapter,
-  feedItems: createFeedItemsAdapter,
-  telegram: createTelegramAdapter,
-  googleGmail: createGoogleGmailAdapter,
-  googleCalendar: createGoogleCalendarAdapter,
-  googleDrive: createGoogleDriveAdapter,
-  googleSheets: createGoogleSheetsAdapter,
-  googleDocs: createGoogleDocsAdapter,
-  jira: createJiraAdapter,
-  twitter: createTwitterAdapter,
-  trello: createTrelloAdapter,
-  jupiter: createJupiterAdapter,
   crypto: createCryptoAdapter,
-  scripts: createScriptsAdapter,
-  feedback: createFeedbackAdapter,
-  mirraMessaging: createMirraMessagingAdapter,
-  moltbook: createMoltbookAdapter,
-  tunnel: createTunnelAdapter,
-  polymarket: createPolymarketAdapter,
-  hypertrade: createHypertradeAdapter,
-  desktop: createDesktopAdapter,
-  shopify: createShopifyAdapter,
-  data: createDataAdapter,
-  pages: createPagesAdapter
+  googleDocs: createGoogleDocsAdapter,
+  googleSheets: createGoogleSheetsAdapter
 };
