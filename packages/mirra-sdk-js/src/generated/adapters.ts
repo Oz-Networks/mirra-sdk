@@ -1515,7 +1515,7 @@ export interface FlowsCreateGoalFlowArgs {
   code?: string; // Inline script code for the flow
   scriptId?: string; // ID of an existing deployed script
   executionMode?: string; // Execution mode: mirra_only (default), mirra_with_claude_code, or claude_code_only
-  workspacePath?: string; // Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/<goalId>/workspace/
+  workspacePath?: string; // Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/{goalId}/workspace/
   iterationTimeoutMs?: number; // Max time per CC iteration in ms (default: 600000 = 10 min)
 }
 export interface FlowsGetGoalProgressArgs {
@@ -9875,7 +9875,7 @@ EXAMPLES:
      * @param args.code - Inline script code for the flow (optional)
      * @param args.scriptId - ID of an existing deployed script (optional)
      * @param args.executionMode - Execution mode: mirra_only (default), mirra_with_claude_code, or claude_code_only (optional)
-     * @param args.workspacePath - Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/<goalId>/workspace/ (optional)
+     * @param args.workspacePath - Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/{goalId}/workspace/ (optional)
      * @param args.iterationTimeoutMs - Max time per CC iteration in ms (default: 600000 = 10 min) (optional)
      */
     createGoalFlow: async (args: FlowsCreateGoalFlowArgs): Promise<any> => {
