@@ -732,7 +732,7 @@ export interface MemorySearchArgs {
   limit?: number; // Maximum number of results (default: 50, max: 100)
 }
 export interface MemoryQueryArgs {
-  type?: string; // Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against meta_item_type, subType, or semantic_roles
+  type?: string; // Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against entityType, meta_item_type, subType, or semantic_roles
   filters?: any; // Additional filters (not yet implemented)
   limit?: number; // Maximum results (default: 50, max: 100)
   offset?: number; // Pagination offset for fetching more results (default: 0)
@@ -1413,8 +1413,8 @@ export interface FlowsCreateFlowArgs {
   code?: string; // Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId.
   scriptId?: string; // ID of existing deployed script. Cannot use with code.
   schedule?: string; // Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone.
-  eventType?: string; // Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type.
-  eventFilter?: any; // Full event filter with operator and conditions array for complex filtering.
+  eventType?: string; // Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead.
+  eventFilter?: any; // Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] }
   trigger?: any; // Legacy nested trigger structure. Prefer eventType or eventFilter instead.
   scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields.
   scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings.
@@ -7165,7 +7165,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
 
     /**
      * Query memory entities with filters. Returns lightweight summaries with TRUNCATED content (max 200 chars) to prevent large payloads. Use type="task" to list all tasks (including those created via createTask). To get full untruncated content for a specific entity, use `findOne` with the entity ID.
-     * @param args.type - Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against meta_item_type, subType, or semantic_roles (optional)
+     * @param args.type - Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against entityType, meta_item_type, subType, or semantic_roles (optional)
      * @param args.filters - Additional filters (not yet implemented) (optional)
      * @param args.limit - Maximum results (default: 50, max: 100) (optional)
      * @param args.offset - Pagination offset for fetching more results (default: 0) (optional)
@@ -9374,9 +9374,33 @@ function createFlowsAdapter(sdk: MirraSDK) {
 
 TRIGGER TYPE (provide exactly one):
 - schedule: Cron expression for time-based flows (e.g., "0 9 * * *"). Times are automatically in the user's local timezone.
-- eventType: Event type shorthand for event flows (e.g., "telegram.message")
-- eventFilter: Full filter object for complex event conditions
+- eventType: Event type shorthand for event flows that process ALL events of that type (e.g., "telegram.message")
+- eventFilter: Full filter object for event flows that need pre-filtering (RECOMMENDED for most event flows)
 - trigger: Legacy nested structure (still supported)
+
+EFFICIENCY RULE FOR EVENT FLOWS:
+Always filter in eventFilter conditions, NEVER in the script.
+- eventFilter conditions: FREE (evaluated in-memory before script runs)
+- Script filtering: EXPENSIVE (invokes Lambda for every single event, even ones you discard)
+
+BAD — triggers Lambda for every Telegram message, script checks if it's a command:
+{
+  eventType: "telegram.message",
+  code: "...if (!text.startsWith('/')) return { success: false, noOp: true, reason: 'Not a command' }..."
+}
+GOOD — only triggers Lambda when the message starts with "/":
+{
+  eventFilter: { operator: "and", conditions: [
+    { operator: "equals", field: "type", value: "telegram.message" },
+    { operator: "startsWith", field: "content.text", value: "/" }
+  ]},
+  code: "...handle the command..."
+}
+
+Use eventType ONLY when you want to process every single event of that type.
+Use eventFilter when you need to react to a subset of events (specific sender, content pattern, etc.).
+
+VALID FILTER OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not
 
 SCRIPT (provide exactly one):
 - code: Inline script code - will auto-create, deploy, and link the script
@@ -9391,11 +9415,21 @@ Time flow with inline code:
   code: "export async function handler(event, context, mirra) { await mirra.telegram.sendMessage({...}); return { done: true }; }"
 }
 
-Event flow with eventType shorthand:
+Event flow — process ALL messages (only if you truly need every message):
 {
-  title: "Handle Messages",
+  title: "Message Logger",
   eventType: "telegram.message",
-  code: "export async function handler(event, context, mirra) { return { handled: true }; }"
+  code: "export async function handler(event, context, mirra) { console.log(event.data.text); return { logged: true }; }"
+}
+
+Event flow — react to a SUBSET of events (preferred for most use cases):
+{
+  title: "Command Handler",
+  eventFilter: { operator: "and", conditions: [
+    { operator: "equals", field: "type", value: "telegram.message" },
+    { operator: "startsWith", field: "content.text", value: "/" }
+  ]},
+  code: "export async function handler(event, context, mirra) { const cmd = event.data.text.split(' ')[0]; return { command: cmd }; }"
 }
 
 Event flow with existing script:
@@ -9412,9 +9446,11 @@ Success — work was done:
 
 No-Op — nothing to do (not an error):
   return { success: false, noOp: true, reason: "No transcript available" }
-  Use when the handler correctly determines no action is needed (e.g., no input data,
-  content already processed, empty trigger). No-ops are recorded as successful executions
-  and do NOT count toward the 3-consecutive-failure auto-pause threshold.
+  Use for unavoidable cases where the handler has no work (e.g., time-based flow finds
+  no new data, external API returned empty results). No-ops are recorded as successful
+  executions and do NOT count toward the 3-consecutive-failure auto-pause threshold.
+  WARNING: If your event flow returns noOp frequently, your eventFilter is too broad.
+  Move the filtering logic into eventFilter conditions instead of checking inside the script.
 
 Failure — something went wrong:
   return { success: false, reason: "What went wrong" }
@@ -9424,8 +9460,8 @@ Failure — something went wrong:
      * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId. (optional)
      * @param args.scriptId - ID of existing deployed script. Cannot use with code. (optional)
      * @param args.schedule - Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone. (optional)
-     * @param args.eventType - Event type shorthand (e.g., "telegram.message", "gmail.email_received"). Creates an eventFilter matching this type. (optional)
-     * @param args.eventFilter - Full event filter with operator and conditions array for complex filtering. (optional)
+     * @param args.eventType - Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead. (optional)
+     * @param args.eventFilter - Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] } (optional)
      * @param args.trigger - Legacy nested trigger structure. Prefer eventType or eventFilter instead. (optional)
      * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields. (optional)
      * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings. (optional)
