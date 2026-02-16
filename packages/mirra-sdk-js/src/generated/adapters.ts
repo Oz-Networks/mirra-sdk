@@ -2829,6 +2829,81 @@ export interface JupiterLaunchTokenData {
 
 export type JupiterLaunchTokenResult = AdapterResultBase<JupiterLaunchTokenData>;
 
+// Marketplace Resources Response Types
+export interface ResourceCallData {
+  result: any; // Result data from the resource
+  cost: number; // Cost in USD for this call
+  duration: number; // Execution time in milliseconds
+  statusCode: number; // HTTP status code from resource
+}
+
+export type MarketplaceResourcesCallResult = AdapterResultBase<ResourceCallData>;
+
+export interface ResourceInstallData {
+  installationId: string; // Unique installation ID
+  userId: string; // User ID who installed the resource
+  resourceId: string; // ID of the installed resource
+  alias: string; // User-friendly alias for the resource
+  isAuthenticated: boolean; // Whether resource is authenticated
+  status: string; // Installation status (active, suspended)
+  installedAt: string; // Installation timestamp (ISO 8601)
+  totalCalls: number; // Total number of calls made
+  totalCost: number; // Total cost incurred in USD
+  lastUsedAt: string | null; // Last usage timestamp (ISO 8601) or null
+}
+
+export type MarketplaceResourcesInstallResult = AdapterResultBase<ResourceInstallData>;
+
+export interface ResourceUninstallData {
+  success: boolean; // Whether uninstall succeeded
+  resourceId: string; // ID of uninstalled resource
+  uninstalledAt: string; // Uninstall timestamp (ISO 8601)
+}
+
+export type MarketplaceResourcesUninstallResult = AdapterResultBase<ResourceUninstallData>;
+
+export interface ResourceAuthenticateData {
+  success: boolean; // Whether authentication succeeded
+  resourceId: string; // ID of authenticated resource
+  isAuthenticated: boolean; // Authentication status
+  authenticatedAt: string; // Authentication timestamp (ISO 8601)
+}
+
+export type MarketplaceResourcesAuthenticateResult = AdapterResultBase<ResourceAuthenticateData>;
+
+export interface ResourceInstallationSummary {
+  installationId: string; // Unique installation ID
+  resourceId: string; // ID of the installed resource
+  alias: string; // User-friendly alias for the resource
+  isAuthenticated: boolean; // Whether resource is authenticated
+  status: string; // Installation status (active, suspended)
+  installedAt: string; // Installation timestamp (ISO 8601)
+  totalCalls: number; // Total number of calls made
+  totalCost: number; // Total cost incurred in USD
+}
+
+export interface ResourceListInstalledData {
+  count: number; // Number of installed resources
+  installations: ResourceInstallationSummary[]; // List of installations
+}
+
+export type MarketplaceResourcesListInstalledResult = AdapterResultBase<ResourceListInstalledData>;
+
+export interface ResourceGetInstallationData {
+  installationId: string; // Unique installation ID
+  userId: string; // User ID who installed the resource
+  resourceId: string; // ID of the installed resource
+  alias: string; // User-friendly alias for the resource
+  isAuthenticated: boolean; // Whether resource is authenticated
+  status: string; // Installation status (active, suspended)
+  installedAt: string; // Installation timestamp (ISO 8601)
+  totalCalls: number; // Total number of calls made
+  totalCost: number; // Total cost incurred in USD
+  lastUsedAt: string | null; // Last usage timestamp (ISO 8601) or null
+}
+
+export type MarketplaceResourcesGetInstallationResult = AdapterResultBase<ResourceGetInstallationData>;
+
 // Memory Response Types
 export interface MemoryCreateData {
   id: string; // Entity ID
@@ -6597,8 +6672,9 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
      * @param args.resourceId - ID of the installed resource
      * @param args.method - Method name to call on the resource
      * @param args.parameters - Parameters to pass to the method
+     * @returns Promise<MarketplaceResourcesCallResult> Typed response with IDE autocomplete
      */
-    call: async (args: MarketplaceResourcesCallArgs): Promise<any> => {
+    call: async (args: MarketplaceResourcesCallArgs): Promise<MarketplaceResourcesCallResult> => {
       return sdk.resources.call({
         resourceId: 'marketplace-resources',
         method: 'call',
@@ -6609,8 +6685,9 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
     /**
      * Install a marketplace resource for the user. Returns flat installation details.
      * @param args.resourceId - ID of the resource to install
+     * @returns Promise<MarketplaceResourcesInstallResult> Typed response with IDE autocomplete
      */
-    install: async (args: MarketplaceResourcesInstallArgs): Promise<any> => {
+    install: async (args: MarketplaceResourcesInstallArgs): Promise<MarketplaceResourcesInstallResult> => {
       return sdk.resources.call({
         resourceId: 'marketplace-resources',
         method: 'install',
@@ -6621,8 +6698,9 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
     /**
      * Uninstall a marketplace resource. Returns confirmation.
      * @param args.resourceId - ID of the resource to uninstall
+     * @returns Promise<MarketplaceResourcesUninstallResult> Typed response with IDE autocomplete
      */
-    uninstall: async (args: MarketplaceResourcesUninstallArgs): Promise<any> => {
+    uninstall: async (args: MarketplaceResourcesUninstallArgs): Promise<MarketplaceResourcesUninstallResult> => {
       return sdk.resources.call({
         resourceId: 'marketplace-resources',
         method: 'uninstall',
@@ -6635,8 +6713,9 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
      * @param args.resourceId - ID of the resource to authenticate with
      * @param args.type - Authentication type: api_key, oauth2, basic, or bearer
      * @param args.credentials - Credentials object (structure depends on auth type)
+     * @returns Promise<MarketplaceResourcesAuthenticateResult> Typed response with IDE autocomplete
      */
-    authenticate: async (args: MarketplaceResourcesAuthenticateArgs): Promise<any> => {
+    authenticate: async (args: MarketplaceResourcesAuthenticateArgs): Promise<MarketplaceResourcesAuthenticateResult> => {
       return sdk.resources.call({
         resourceId: 'marketplace-resources',
         method: 'authenticate',
@@ -6646,8 +6725,9 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
 
     /**
      * List all installed marketplace resources for the user.
+     * @returns Promise<MarketplaceResourcesListInstalledResult> Typed response with IDE autocomplete
      */
-    listInstalled: async (args?: {}): Promise<any> => {
+    listInstalled: async (args?: {}): Promise<MarketplaceResourcesListInstalledResult> => {
       return sdk.resources.call({
         resourceId: 'marketplace-resources',
         method: 'listInstalled',
@@ -6658,8 +6738,9 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
     /**
      * Get details of a specific resource installation.
      * @param args.resourceId - ID of the resource to get installation details for
+     * @returns Promise<MarketplaceResourcesGetInstallationResult> Typed response with IDE autocomplete
      */
-    getInstallation: async (args: MarketplaceResourcesGetInstallationArgs): Promise<any> => {
+    getInstallation: async (args: MarketplaceResourcesGetInstallationArgs): Promise<MarketplaceResourcesGetInstallationResult> => {
       return sdk.resources.call({
         resourceId: 'marketplace-resources',
         method: 'getInstallation',
