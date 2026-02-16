@@ -711,13 +711,15 @@ export interface ScriptsLintScriptArgs {
 // Memory Adapter Types
 export interface MemoryCreateArgs {
   type: string; // Memory subtype: "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), "event" (calendar items). For tasks with assignment, use createTask instead.
-  content: string; // Main content/description of the memory
+  name?: string; // Short display title/name for the memory (max ~80 chars). Should be a concise summary distinct from the full content. If omitted, a title is auto-extracted from content.
+  content: string; // Main content/description of the memory. Can be longer markdown text with full details.
   metadata?: any; // Additional metadata (e.g., priority, deadline, tags, etc.)
   tags?: any[]; // Tags for organizing the memory. Shorthand for metadata.tags.
   groupId?: string; // Group ID to scope the memory to a specific group. If omitted, memory is created in the user's personal graph.
 }
 export interface MemoryCreateTaskArgs {
-  content: string; // Task description/title - what needs to be done. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
+  name?: string; // Short task title for display (max ~80 chars). Concise summary of what needs to be done. If omitted, a title is auto-extracted from content.
+  content: string; // Full task description with details. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
   assignedTo?: string; // Username of the person to assign this task to (group contexts only). System resolves username to user ID.
   dueAt?: string; // Due date/time in ISO 8601 format (e.g., "2024-01-15T10:00:00Z") or natural language that will be parsed
   priority?: string; // Task priority: "high", "medium", or "low"
@@ -743,6 +745,7 @@ export interface MemoryFindOneArgs {
 export interface MemoryUpdateArgs {
   id: string; // Entity ID to update
   type?: string; // Entity type
+  name?: string; // Updated display title/name
   content?: string; // Updated content
   metadata?: any; // Updated metadata
 }
@@ -7114,7 +7117,8 @@ function createMemoryAdapter(sdk: MirraSDK) {
     /**
      * Create a new memory entity in the knowledge graph. Use the type field to specify what kind of memory (note, idea, shopping_item, etc.). For tasks with assignment or timing features, use `createTask` instead. All memory types can be queried, updated, and deleted using the standard operations.
      * @param args.type - Memory subtype: "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), "event" (calendar items). For tasks with assignment, use createTask instead.
-     * @param args.content - Main content/description of the memory
+     * @param args.name - Short display title/name for the memory (max ~80 chars). Should be a concise summary distinct from the full content. If omitted, a title is auto-extracted from content. (optional)
+     * @param args.content - Main content/description of the memory. Can be longer markdown text with full details.
      * @param args.metadata - Additional metadata (e.g., priority, deadline, tags, etc.) (optional)
      * @param args.tags - Tags for organizing the memory. Shorthand for metadata.tags. (optional)
      * @param args.groupId - Group ID to scope the memory to a specific group. If omitted, memory is created in the user's personal graph. (optional)
@@ -7130,7 +7134,8 @@ function createMemoryAdapter(sdk: MirraSDK) {
 
     /**
      * Create a task in the knowledge graph. Tasks are a specialized memory type with assignment, timing, priority, and status lifecycle. Use this instead of `create` when you need task-specific features like assigning to users. Tasks can be queried, updated, and deleted using the standard memory operations (`query`, `update`, `delete`) with type="task". For group contexts, the task is stored in the group's shared graph.
-     * @param args.content - Task description/title - what needs to be done. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
+     * @param args.name - Short task title for display (max ~80 chars). Concise summary of what needs to be done. If omitted, a title is auto-extracted from content. (optional)
+     * @param args.content - Full task description with details. IMPORTANT: Write task content from a neutral perspective without possessive pronouns (his/her/their). The assignee will see this exact text, so "fold dresses" is correct, NOT "fold her dresses". Avoid phrases like "remind him to", "help her with", etc.
      * @param args.assignedTo - Username of the person to assign this task to (group contexts only). System resolves username to user ID. (optional)
      * @param args.dueAt - Due date/time in ISO 8601 format (e.g., "2024-01-15T10:00:00Z") or natural language that will be parsed (optional)
      * @param args.priority - Task priority: "high", "medium", or "low" (optional)
@@ -7196,6 +7201,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * Update an existing memory entity. Works with all memory types including tasks created via createTask. Use this to mark tasks complete, update content, or modify metadata.
      * @param args.id - Entity ID to update
      * @param args.type - Entity type (optional)
+     * @param args.name - Updated display title/name (optional)
      * @param args.content - Updated content (optional)
      * @param args.metadata - Updated metadata (optional)
      * @returns Promise<MemoryUpdateResult> Typed response with IDE autocomplete
