@@ -1318,6 +1318,42 @@ export interface TelegramLeaveGroupArgs {
   chatId: string; // The ID of the group, supergroup, or channel to leave. Can be obtained from searchChats operation.
 }
 
+// Telegram Bot Adapter Types
+export interface TelegramBotSendMessageArgs {
+  botUsername: string; // Username of the bot to send from (without @)
+  chatId: string; // Telegram chat ID to send the message to
+  text: string; // Message text to send (supports Markdown)
+  parseMode?: string; // Parse mode: Markdown, MarkdownV2, or HTML
+  disableNotification?: boolean; // Send silently without notification sound
+}
+export interface TelegramBotReplyToMessageArgs {
+  botUsername: string; // Username of the bot to reply from (without @)
+  chatId: string; // Telegram chat ID
+  text: string; // Reply text (supports Markdown)
+  replyToMessageId: number; // Message ID to reply to
+  parseMode?: string; // Parse mode: Markdown, MarkdownV2, or HTML
+}
+export interface TelegramBotAnswerCallbackQueryArgs {
+  botUsername: string; // Username of the bot
+  callbackQueryId: string; // Callback query ID from the button press event
+  text?: string; // Optional text to show as a notification to the user
+  showAlert?: boolean; // If true, show an alert instead of a toast notification
+}
+export interface TelegramBotSendMessageWithButtonsArgs {
+  botUsername: string; // Username of the bot to send from (without @)
+  chatId: string; // Telegram chat ID
+  text: string; // Message text (supports Markdown)
+  buttons: any[]; // Array of button rows. Each row is an array of { text, callbackData } objects
+  parseMode?: string; // Parse mode: Markdown, MarkdownV2, or HTML
+}
+export interface TelegramBotSetBotCommandsArgs {
+  botUsername: string; // Username of the bot
+  commands: any[]; // Array of { command, description } objects
+}
+export interface TelegramBotGetBotInfoArgs {
+  botUsername: string; // Username of the bot
+}
+
 // Trello Adapter Types
 export interface TrelloGetBoardArgs {
   boardId: string; // The ID of the board to retrieve
@@ -9133,6 +9169,113 @@ function createTelegramAdapter(sdk: MirraSDK) {
 }
 
 /**
+ * Telegram Bot Adapter
+ * Category: communication
+ */
+function createTelegramBotAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Send a text message to a Telegram chat via bot
+     * @param args.botUsername - Username of the bot to send from (without @)
+     * @param args.chatId - Telegram chat ID to send the message to
+     * @param args.text - Message text to send (supports Markdown)
+     * @param args.parseMode - Parse mode: Markdown, MarkdownV2, or HTML (optional)
+     * @param args.disableNotification - Send silently without notification sound (optional)
+     */
+    sendMessage: async (args: TelegramBotSendMessageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'sendMessage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Reply to a specific message in a Telegram chat
+     * @param args.botUsername - Username of the bot to reply from (without @)
+     * @param args.chatId - Telegram chat ID
+     * @param args.text - Reply text (supports Markdown)
+     * @param args.replyToMessageId - Message ID to reply to
+     * @param args.parseMode - Parse mode: Markdown, MarkdownV2, or HTML (optional)
+     */
+    replyToMessage: async (args: TelegramBotReplyToMessageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'replyToMessage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Respond to an inline keyboard button press (callback query)
+     * @param args.botUsername - Username of the bot
+     * @param args.callbackQueryId - Callback query ID from the button press event
+     * @param args.text - Optional text to show as a notification to the user (optional)
+     * @param args.showAlert - If true, show an alert instead of a toast notification (optional)
+     */
+    answerCallbackQuery: async (args: TelegramBotAnswerCallbackQueryArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'answerCallbackQuery',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Send a message with inline keyboard buttons for user interaction
+     * @param args.botUsername - Username of the bot to send from (without @)
+     * @param args.chatId - Telegram chat ID
+     * @param args.text - Message text (supports Markdown)
+     * @param args.buttons - Array of button rows. Each row is an array of { text, callbackData } objects
+     * @param args.parseMode - Parse mode: Markdown, MarkdownV2, or HTML (optional)
+     */
+    sendMessageWithButtons: async (args: TelegramBotSendMessageWithButtonsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'sendMessageWithButtons',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Set the list of commands shown in the bot menu
+     * @param args.botUsername - Username of the bot
+     * @param args.commands - Array of { command, description } objects
+     */
+    setBotCommands: async (args: TelegramBotSetBotCommandsArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'setBotCommands',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get information about the bot (username, name, can_join_groups, etc.)
+     * @param args.botUsername - Username of the bot
+     */
+    getBotInfo: async (args: TelegramBotGetBotInfoArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'getBotInfo',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all Telegram bots registered by the user
+     */
+    listBots: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'listBots',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
  * Trello Adapter
  * Category: productivity
  */
@@ -9607,7 +9750,7 @@ IMPORTANT: Use field: "type" (not "eventType") to filter by event type. This is 
 
 VALID OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not
 
-COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.action, telegram.message, gmail.email_received
+COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.action, telegram.message, telegram.bot_message, telegram.bot_command, telegram.bot_callback_query, gmail.email_received
      * @param args.title - Flow title
      * @param args.description - Detailed description of what the flow does
      * @param args.trigger - Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
@@ -10765,6 +10908,7 @@ export const generatedAdapters = {
   shopify: createShopifyAdapter,
   socket: createSocketAdapter,
   telegram: createTelegramAdapter,
+  telegramBot: createTelegramBotAdapter,
   trello: createTrelloAdapter,
   tunnel: createTunnelAdapter,
   twitter: createTwitterAdapter,
