@@ -533,7 +533,7 @@ export interface SkillsDeleteSkillArgs {
   skillId: string; // ID of the skill to delete
 }
 export interface SkillsSelectSkillsArgs {
-  goalDescription: string; // The goal being pursued
+  agentObjective: string; // The objective being pursued
   currentPhase?: string; // Current execution phase
   isLooping?: boolean; // Whether loop detection is active
   budgetPercentage?: number; // Token budget used (0-100)
@@ -542,7 +542,7 @@ export interface SkillsSelectSkillsArgs {
 }
 export interface SkillsRecordSkillUsageArgs {
   skillId: string; // ID of the skill used
-  flowId: string; // ID of the goal flow
+  flowId: string; // ID of the agent flow
   iteration: number; // Iteration number
   outcome: string; // success or failure
   notes?: string; // Optional notes
@@ -1506,35 +1506,35 @@ export interface FlowsPublishFlowArgs {
 export interface FlowsUnpublishFlowArgs {
   flowId: string; // ID of the flow to unpublish
 }
-export interface FlowsCreateGoalFlowArgs {
-  goal: string; // High-level goal description
-  successCriteria: any[]; // Array of criteria that define goal completion
+export interface FlowsCreateAgentArgs {
+  objective: string; // High-level objective description
+  successCriteria: any[]; // Array of criteria that define agent completion
   constraints?: any[]; // Array of constraints and guidelines
   tokenBudget?: number; // Token budget (default: 100000)
-  title?: string; // Flow title (auto-generated from goal if not provided)
+  title?: string; // Flow title (auto-generated from objective if not provided)
   code?: string; // Inline script code for the flow
   scriptId?: string; // ID of an existing deployed script
   executionMode?: string; // Execution mode: mirra_only (default), mirra_with_claude_code, or claude_code_only
-  workspacePath?: string; // Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/{goalId}/workspace/
+  workspacePath?: string; // Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-agents/{agentId}/workspace/
   iterationTimeoutMs?: number; // Max time per CC iteration in ms (default: 600000 = 10 min)
 }
-export interface FlowsGetGoalProgressArgs {
-  flowId: string; // ID of the goal flow
+export interface FlowsGetAgentProgressArgs {
+  flowId: string; // ID of the agent flow
 }
 export interface FlowsProvideGuidanceArgs {
-  flowId: string; // ID of the goal flow
+  flowId: string; // ID of the agent flow
   requestId: string; // ID of the guidance request being responded to
-  response: string; // Guidance text to provide to the goal flow
+  response: string; // Guidance text to provide to the agent
 }
 export interface FlowsCompactHistoryArgs {
-  flowId: string; // ID of the goal flow
+  flowId: string; // ID of the agent flow
   keepRecentCount?: number; // Unused (deprecated)
 }
-export interface FlowsDelegateSubGoalArgs {
-  parentFlowId: string; // ID of the parent goal flow
-  subGoal: string; // Description of the sub-goal to delegate
-  successCriteria: any[]; // Success criteria for the sub-goal
-  constraints?: any[]; // Constraints for the child flow
+export interface FlowsDelegateSubAgentArgs {
+  parentFlowId: string; // ID of the parent agent flow
+  subObjective: string; // Description of the sub-objective to delegate
+  successCriteria: any[]; // Success criteria for the sub-agent
+  constraints?: any[]; // Constraints for the child agent
   tokenBudget?: number; // Token budget for child (default: 20% of parent budget)
 }
 
@@ -6505,8 +6505,8 @@ function createSkillsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Select relevant skills for a goal flow iteration. Returns ranked skills with full procedure text.
-     * @param args.goalDescription - The goal being pursued
+     * Select relevant skills for an agent iteration. Returns ranked skills with full procedure text.
+     * @param args.agentObjective - The objective being pursued
      * @param args.currentPhase - Current execution phase (optional)
      * @param args.isLooping - Whether loop detection is active (optional)
      * @param args.budgetPercentage - Token budget used (0-100) (optional)
@@ -6522,9 +6522,9 @@ function createSkillsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Record that a skill was used during goal flow execution.
+     * Record that a skill was used during agent execution.
      * @param args.skillId - ID of the skill used
-     * @param args.flowId - ID of the goal flow
+     * @param args.flowId - ID of the agent flow
      * @param args.iteration - Iteration number
      * @param args.outcome - success or failure
      * @param args.notes - Optional notes (optional)
@@ -9851,9 +9851,9 @@ Returns detailed information about trigger matching, including which conditions 
     },
 
     /**
-     * Create an autonomous goal flow that pursues an objective over multiple iterations.
+     * Create an autonomous agent that pursues an objective over multiple iterations.
 
-The goal flow will:
+The agent will:
 1. Execute iterations autonomously, evaluating progress after each
 2. Detect loops and stagnation, pausing for user guidance when stuck
 3. Track token budget and pause when exhausted
@@ -9861,48 +9861,48 @@ The goal flow will:
 
 EXAMPLES:
 {
-  goal: "Research and compile a report on AI trends in 2026",
+  objective: "Research and compile a report on AI trends in 2026",
   successCriteria: ["Report has at least 5 sections", "Each section cites sources", "Summary with actionable insights"],
   constraints: ["Use only publicly available sources"],
   tokenBudget: 500000,
   code: "export async function handler(event, context, mirra) { return { success: true }; }"
 }
-     * @param args.goal - High-level goal description
-     * @param args.successCriteria - Array of criteria that define goal completion
+     * @param args.objective - High-level objective description
+     * @param args.successCriteria - Array of criteria that define agent completion
      * @param args.constraints - Array of constraints and guidelines (optional)
      * @param args.tokenBudget - Token budget (default: 100000) (optional)
-     * @param args.title - Flow title (auto-generated from goal if not provided) (optional)
+     * @param args.title - Flow title (auto-generated from objective if not provided) (optional)
      * @param args.code - Inline script code for the flow (optional)
      * @param args.scriptId - ID of an existing deployed script (optional)
      * @param args.executionMode - Execution mode: mirra_only (default), mirra_with_claude_code, or claude_code_only (optional)
-     * @param args.workspacePath - Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-goals/{goalId}/workspace/ (optional)
+     * @param args.workspacePath - Workspace directory for Claude Code to work in (e.g., ~/projects/my-app). Defaults to ~/mirra-agents/{agentId}/workspace/ (optional)
      * @param args.iterationTimeoutMs - Max time per CC iteration in ms (default: 600000 = 10 min) (optional)
      */
-    createGoalFlow: async (args: FlowsCreateGoalFlowArgs): Promise<any> => {
+    createAgent: async (args: FlowsCreateAgentArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'flows',
-        method: 'createGoalFlow',
+        method: 'createAgent',
         params: args || {}
       });
     },
 
     /**
-     * Get the progress summary of a goal flow, including velocity, completion percentage, and recent iterations.
-     * @param args.flowId - ID of the goal flow
+     * Get the progress summary of an agent, including velocity, completion percentage, and recent iterations.
+     * @param args.flowId - ID of the agent flow
      */
-    getGoalProgress: async (args: FlowsGetGoalProgressArgs): Promise<any> => {
+    getAgentProgress: async (args: FlowsGetAgentProgressArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'flows',
-        method: 'getGoalProgress',
+        method: 'getAgentProgress',
         params: args || {}
       });
     },
 
     /**
-     * Provide guidance to a paused goal flow. The flow will resume execution incorporating the guidance.
-     * @param args.flowId - ID of the goal flow
+     * Provide guidance to a paused agent. The agent will resume execution incorporating the guidance.
+     * @param args.flowId - ID of the agent flow
      * @param args.requestId - ID of the guidance request being responded to
-     * @param args.response - Guidance text to provide to the goal flow
+     * @param args.response - Guidance text to provide to the agent
      */
     provideGuidance: async (args: FlowsProvideGuidanceArgs): Promise<any> => {
       return sdk.resources.call({
@@ -9914,7 +9914,7 @@ EXAMPLES:
 
     /**
      * Deprecated — history compaction is no longer needed in the orchestrator model. Learnings are stored in the memory graph.
-     * @param args.flowId - ID of the goal flow
+     * @param args.flowId - ID of the agent flow
      * @param args.keepRecentCount - Unused (deprecated) (optional)
      */
     compactHistory: async (args: FlowsCompactHistoryArgs): Promise<any> => {
@@ -9926,26 +9926,26 @@ EXAMPLES:
     },
 
     /**
-     * Delegate a sub-goal to a child goal flow. The parent flow spawns a child that pursues the sub-goal independently. Max 10 children per parent, max 3 delegation depth.
+     * Delegate a sub-objective to a child agent. The parent agent spawns a child that pursues the sub-objective independently. Max 10 children per parent, max 3 delegation depth.
 
 EXAMPLES:
 {
   parentFlowId: "abc123",
-  subGoal: "Research competitor pricing strategies",
+  subObjective: "Research competitor pricing strategies",
   successCriteria: ["At least 5 competitors analyzed", "Pricing models documented"],
   constraints: ["Use public data only"],
   tokenBudget: 20000
 }
-     * @param args.parentFlowId - ID of the parent goal flow
-     * @param args.subGoal - Description of the sub-goal to delegate
-     * @param args.successCriteria - Success criteria for the sub-goal
-     * @param args.constraints - Constraints for the child flow (optional)
+     * @param args.parentFlowId - ID of the parent agent flow
+     * @param args.subObjective - Description of the sub-objective to delegate
+     * @param args.successCriteria - Success criteria for the sub-agent
+     * @param args.constraints - Constraints for the child agent (optional)
      * @param args.tokenBudget - Token budget for child (default: 20% of parent budget) (optional)
      */
-    delegateSubGoal: async (args: FlowsDelegateSubGoalArgs): Promise<any> => {
+    delegateSubAgent: async (args: FlowsDelegateSubAgentArgs): Promise<any> => {
       return sdk.resources.call({
         resourceId: 'flows',
-        method: 'delegateSubGoal',
+        method: 'delegateSubAgent',
         params: args || {}
       });
     }
