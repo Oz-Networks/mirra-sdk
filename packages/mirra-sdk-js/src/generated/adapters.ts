@@ -123,14 +123,14 @@ export interface JiraExecuteExtendedArgs {
 // Claude Code Adapter Types
 export interface ClaudeCodeStartSessionArgs {
   prompt: string; // The initial prompt/task for Claude Code
-  groupId?: string; // The Mirra group ID to post messages to. If omitted, the desktop user will be prompted to select a group.
+  groupId?: string; // The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group.
   cwd?: string; // Working directory for Claude Code (defaults to system default)
   model?: string; // Claude model to use (e.g., "claude-sonnet-4-5-20250929")
 }
 export interface ClaudeCodeResumeSessionArgs {
   claudeSessionId: string; // The Claude Code session ID to resume (from a previous session)
   prompt: string; // The follow-up prompt/task
-  groupId?: string; // The Mirra group ID to post messages to. If omitted, the desktop user will be prompted to select a group.
+  groupId?: string; // The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group.
   cwd?: string; // Working directory for Claude Code
 }
 export interface ClaudeCodeKillSessionArgs {
@@ -5253,7 +5253,7 @@ function createClaudeCodeAdapter(sdk: MirraSDK) {
     /**
      * Start a new Claude Code session on the user's desktop. Spawns Claude Code with the given prompt and creates Flows to process protocol messages and route replies.
      * @param args.prompt - The initial prompt/task for Claude Code
-     * @param args.groupId - The Mirra group ID to post messages to. If omitted, the desktop user will be prompted to select a group. (optional)
+     * @param args.groupId - The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group. (optional)
      * @param args.cwd - Working directory for Claude Code (defaults to system default) (optional)
      * @param args.model - Claude model to use (e.g., "claude-sonnet-4-5-20250929") (optional)
      */
@@ -5269,7 +5269,7 @@ function createClaudeCodeAdapter(sdk: MirraSDK) {
      * Resume an existing Claude Code session with a new prompt. The session continues from where it left off.
      * @param args.claudeSessionId - The Claude Code session ID to resume (from a previous session)
      * @param args.prompt - The follow-up prompt/task
-     * @param args.groupId - The Mirra group ID to post messages to. If omitted, the desktop user will be prompted to select a group. (optional)
+     * @param args.groupId - The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group. (optional)
      * @param args.cwd - Working directory for Claude Code (optional)
      */
     resumeSession: async (args: ClaudeCodeResumeSessionArgs): Promise<any> => {
@@ -9803,7 +9803,7 @@ COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.acti
     },
 
     /**
-     * Search flows with filters. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. Use getFlow for full details on a specific flow.
+     * Search flows with filters. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. Use getFlow for full details on a specific flow. IMPORTANT: Returns an object with { count, flows }, NOT an array. Access the array via result.flows.
      * @param args.status - Filter by status (or array of statuses) (optional)
      * @param args.triggerType - Filter by trigger type: time or event (optional)
      * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
