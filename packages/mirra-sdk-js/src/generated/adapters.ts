@@ -795,7 +795,7 @@ export interface MirraMessagingGetGroupsArgs {
 export interface MirraMessagingCreateGroupArgs {
   name: string; // Group name (max 100 characters)
   description?: string; // Group description (max 500 characters)
-  category?: string; // Category for organization: "family", "friends", "work", or "other" (default: "other")
+  category?: string; // Category for organization: "hobby", "career", "family", "health", "finance", "learning", or "social" (default: "career")
   memberIds?: any[]; // Array of user IDs to add as initial members
 }
 export interface MirraMessagingSearchMessagesArgs {
@@ -1500,6 +1500,7 @@ export interface FlowsResumeFlowArgs {
 export interface FlowsSearchFlowsArgs {
   status?: string; // Filter by status (or array of statuses)
   triggerType?: string; // Filter by trigger type: time or event
+  parentSpaceId?: string; // Filter flows by space/group ID. Only returns flows assigned to this space.
   detail?: string; // Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt.
   limit?: number; // Maximum number of results (default: 20)
   offset?: number; // Pagination offset (default: 0)
@@ -7453,7 +7454,7 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
      * Create a new group. The authenticated user becomes the group owner. Returns normalized flat structure.
      * @param args.name - Group name (max 100 characters)
      * @param args.description - Group description (max 500 characters) (optional)
-     * @param args.category - Category for organization: "family", "friends", "work", or "other" (default: "other") (optional)
+     * @param args.category - Category for organization: "hobby", "career", "family", "health", "finance", "learning", or "social" (default: "career") (optional)
      * @param args.memberIds - Array of user IDs to add as initial members (optional)
      * @returns Promise<MirraMessagingCreateGroupResult> Typed response with IDE autocomplete
      */
@@ -9806,6 +9807,7 @@ COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.acti
      * Search flows with filters. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. Use getFlow for full details on a specific flow. IMPORTANT: Returns an object with { count, flows }, NOT an array. Access the array via result.flows.
      * @param args.status - Filter by status (or array of statuses) (optional)
      * @param args.triggerType - Filter by trigger type: time or event (optional)
+     * @param args.parentSpaceId - Filter flows by space/group ID. Only returns flows assigned to this space. (optional)
      * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
      * @param args.limit - Maximum number of results (default: 20) (optional)
      * @param args.offset - Pagination offset (default: 0) (optional)
