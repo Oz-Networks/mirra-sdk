@@ -1353,6 +1353,36 @@ export interface TelegramBotSetBotCommandsArgs {
 export interface TelegramBotGetBotInfoArgs {
   botUsername: string; // Username of the bot
 }
+export interface TelegramBotBanChatMemberArgs {
+  botUsername: string; // Username of the bot (without @)
+  chatId: string; // Group chat ID
+  userId: number; // Telegram user ID to ban
+  untilDate?: number; // Unix timestamp for temporary ban. Set to ~30s in the future for a "kick" (remove without permanent ban). Omit for permanent ban.
+  revokeMessages?: boolean; // If true, delete all messages from this user in the group
+}
+export interface TelegramBotUnbanChatMemberArgs {
+  botUsername: string; // Username of the bot (without @)
+  chatId: string; // Group chat ID
+  userId: number; // Telegram user ID to unban
+  onlyIfBanned?: boolean; // If true, only unban if the user is actually banned (will not re-add a user who left voluntarily)
+}
+export interface TelegramBotRestrictChatMemberArgs {
+  botUsername: string; // Username of the bot (without @)
+  chatId: string; // Group chat ID
+  userId: number; // Telegram user ID to restrict
+  permissions: any; // ChatPermissions object with boolean fields: canSendMessages, canSendPhotos, canSendVideos, canSendAudios, canSendDocuments, canSendVoiceNotes, canSendVideoNotes, canSendPolls, canSendOtherMessages, canAddWebPagePreviews, canChangeInfo, canInviteUsers, canPinMessages, canManageTopics. Set to false to restrict.
+  untilDate?: number; // Unix timestamp for temporary restriction. Omit for permanent restriction.
+}
+export interface TelegramBotGetChatMemberArgs {
+  botUsername: string; // Username of the bot (without @)
+  chatId: string; // Group chat ID
+  userId: number; // Telegram user ID to look up
+}
+export interface TelegramBotDeleteMessageArgs {
+  botUsername: string; // Username of the bot (without @)
+  chatId: string; // Group chat ID
+  messageId: number; // ID of the message to delete
+}
 
 // Trello Adapter Types
 export interface TrelloGetBoardArgs {
@@ -9239,6 +9269,81 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'telegramBot',
         method: 'listBots',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Ban or kick a user from a group chat. The bot must be an admin with "Ban Users" permission. To kick (remove without permanent ban), set untilDate to ~30 seconds in the future — e.g. Math.floor(Date.now()/1000) + 30.
+     * @param args.botUsername - Username of the bot (without @)
+     * @param args.chatId - Group chat ID
+     * @param args.userId - Telegram user ID to ban
+     * @param args.untilDate - Unix timestamp for temporary ban. Set to ~30s in the future for a "kick" (remove without permanent ban). Omit for permanent ban. (optional)
+     * @param args.revokeMessages - If true, delete all messages from this user in the group (optional)
+     */
+    banChatMember: async (args: TelegramBotBanChatMemberArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'banChatMember',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Unban a previously banned user in a group chat. The bot must be an admin with "Ban Users" permission.
+     * @param args.botUsername - Username of the bot (without @)
+     * @param args.chatId - Group chat ID
+     * @param args.userId - Telegram user ID to unban
+     * @param args.onlyIfBanned - If true, only unban if the user is actually banned (will not re-add a user who left voluntarily) (optional)
+     */
+    unbanChatMember: async (args: TelegramBotUnbanChatMemberArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'unbanChatMember',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Restrict a user's permissions in a group chat (mute, block media, etc.). The bot must be an admin with "Ban Users" permission. Pass a permissions object to control what the user can do.
+     * @param args.botUsername - Username of the bot (without @)
+     * @param args.chatId - Group chat ID
+     * @param args.userId - Telegram user ID to restrict
+     * @param args.permissions - ChatPermissions object with boolean fields: canSendMessages, canSendPhotos, canSendVideos, canSendAudios, canSendDocuments, canSendVoiceNotes, canSendVideoNotes, canSendPolls, canSendOtherMessages, canAddWebPagePreviews, canChangeInfo, canInviteUsers, canPinMessages, canManageTopics. Set to false to restrict.
+     * @param args.untilDate - Unix timestamp for temporary restriction. Omit for permanent restriction. (optional)
+     */
+    restrictChatMember: async (args: TelegramBotRestrictChatMemberArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'restrictChatMember',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Look up a user in a group chat by their userId. Returns their membership status (creator, administrator, member, restricted, left, kicked) and permissions.
+     * @param args.botUsername - Username of the bot (without @)
+     * @param args.chatId - Group chat ID
+     * @param args.userId - Telegram user ID to look up
+     */
+    getChatMember: async (args: TelegramBotGetChatMemberArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'getChatMember',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a message in a group chat. The bot must be an admin with "Delete Messages" permission, or the message must have been sent by the bot itself.
+     * @param args.botUsername - Username of the bot (without @)
+     * @param args.chatId - Group chat ID
+     * @param args.messageId - ID of the message to delete
+     */
+    deleteMessage: async (args: TelegramBotDeleteMessageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'telegramBot',
+        method: 'deleteMessage',
         params: args || {}
       });
     }
