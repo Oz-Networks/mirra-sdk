@@ -9770,12 +9770,15 @@ Scripts access data via event.data.*. Normalized fields (all event types):
 - event.data.event (IntegrationEvent) — full event for platform-specific fields
 
 Platform-specific fields (access via event.data.event):
-- Telegram: event.data.event.telegram.chatId, .messageId, .isGroupChat, .hasMedia
+- Telegram: event.data.event.telegram.chatId, .messageId, .isGroupChat, .isOutgoing, .hasMedia
 - Telegram Bot: event.data.event.bot.chatId, .botUsername, .from.userId, .from.username, .text, .chatType
 - Gmail: event.data.event.email.subject, .from, .to, .threadId
 - Calls: event.data.event.call.participants, .recentTranscripts
 
 DO NOT access platform fields at top level — event.data.chat, event.data.botUsername DO NOT exist.
+
+OUTGOING MESSAGE FILTERING:
+By default, flows SKIP events sent by the user themselves (outgoing messages). This prevents feedback loops where a flow's own actions re-trigger itself. To include the user's own outgoing messages, set includeOwnMessages: true in the trigger config. Use with caution — this can cause infinite loops if the flow sends messages that match its own trigger.
      * @param args.title - Flow title. Required if providing inline code. (optional)
      * @param args.description - Detailed description of what the flow does (optional)
      * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId. (optional)
