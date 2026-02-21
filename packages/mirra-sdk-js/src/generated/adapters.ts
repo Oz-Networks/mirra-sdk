@@ -125,7 +125,7 @@ export interface ClaudeCodeStartSessionArgs {
   prompt: string; // The initial prompt/task for Claude Code
   groupId?: string; // The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group.
   cwd?: string; // Working directory for Claude Code (defaults to system default)
-  model?: string; // Claude model to use (e.g., "claude-sonnet-4-5-20250929")
+  model?: string; // Claude model to use (e.g., "claude-sonnet-4-6")
 }
 export interface ClaudeCodeResumeSessionArgs {
   claudeSessionId: string; // The Claude Code session ID to resume (from a previous session)
@@ -197,12 +197,20 @@ export interface DesktopExecuteCommandArgs {
 }
 export interface DesktopReadFileArgs {
   path: string; // Absolute path to the file to read
-  maxBytes?: number; // Maximum bytes to read (defaults to 1048576 = 1 MB)
+  offset?: number; // Line number to start reading from (1-indexed, defaults to 1)
+  limit?: number; // Maximum number of lines to return (defaults to 200)
+  maxBytes?: number; // Maximum file size in bytes before rejecting (defaults to 10485760 = 10 MB)
 }
 export interface DesktopWriteFileArgs {
   path: string; // Absolute path to the file to write
   content: string; // Text content to write to the file
   append?: boolean; // If true, append to existing file instead of overwriting (defaults to false)
+}
+export interface DesktopEditFileArgs {
+  path: string; // Absolute path to the file to edit
+  oldString: string; // The exact text to find and replace (must match verbatim)
+  newString: string; // The replacement text (use empty string to delete the matched text)
+  replaceAll?: boolean; // If true, replace every occurrence of oldString. Defaults to false (single match required).
 }
 export interface DesktopListDirectoryArgs {
   path: string; // Absolute path to the directory to list
@@ -5286,7 +5294,7 @@ function createClaudeCodeAdapter(sdk: MirraSDK) {
      * @param args.prompt - The initial prompt/task for Claude Code
      * @param args.groupId - The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group. (optional)
      * @param args.cwd - Working directory for Claude Code (defaults to system default) (optional)
-     * @param args.model - Claude model to use (e.g., "claude-sonnet-4-5-20250929") (optional)
+     * @param args.model - Claude model to use (e.g., "claude-sonnet-4-6") (optional)
      */
     startSession: async (args: ClaudeCodeStartSessionArgs): Promise<any> => {
       return sdk.resources.call({
@@ -5525,9 +5533,11 @@ function createDesktopAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Read the text contents of a file on the user's desktop. Maximum file size is 1 MB.
+     * Read the text contents of a file on the user's desktop with line-based pagination. Returns 200 lines by default starting from line 1, with line numbers in "cat -n" format. Use offset/limit to paginate through large files. Check hasMore to know if more content follows.
      * @param args.path - Absolute path to the file to read
-     * @param args.maxBytes - Maximum bytes to read (defaults to 1048576 = 1 MB) (optional)
+     * @param args.offset - Line number to start reading from (1-indexed, defaults to 1) (optional)
+     * @param args.limit - Maximum number of lines to return (defaults to 200) (optional)
+     * @param args.maxBytes - Maximum file size in bytes before rejecting (defaults to 10485760 = 10 MB) (optional)
      */
     readFile: async (args: DesktopReadFileArgs): Promise<any> => {
       return sdk.resources.call({
@@ -5547,6 +5557,21 @@ function createDesktopAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'desktop',
         method: 'writeFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Make a targeted text replacement in a file on the user's desktop. Read the file first with readFile to find the exact text, then use editFile to surgically replace it. old_string must appear verbatim in the file. If it matches multiple locations the edit fails unless replaceAll is true. Requires user consent.
+     * @param args.path - Absolute path to the file to edit
+     * @param args.oldString - The exact text to find and replace (must match verbatim)
+     * @param args.newString - The replacement text (use empty string to delete the matched text)
+     * @param args.replaceAll - If true, replace every occurrence of oldString. Defaults to false (single match required). (optional)
+     */
+    editFile: async (args: DesktopEditFileArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'editFile',
         params: args || {}
       });
     },
