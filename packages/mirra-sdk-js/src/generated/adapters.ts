@@ -9760,6 +9760,22 @@ No-Op — nothing to do (not an error):
 Failure — something went wrong:
   return { success: false, reason: "What went wrong" }
   Use for actual errors. 3 consecutive failures will auto-pause the flow.
+
+HANDLER EVENT DATA ACCESS:
+Scripts access data via event.data.*. Normalized fields (all event types):
+- event.data.text (string) — message/content text
+- event.data.sender (string) — sender name
+- event.data.senderId (string) — sender ID
+- event.data.timestamp (Date) — event timestamp
+- event.data.event (IntegrationEvent) — full event for platform-specific fields
+
+Platform-specific fields (access via event.data.event):
+- Telegram: event.data.event.telegram.chatId, .messageId, .isGroupChat, .hasMedia
+- Telegram Bot: event.data.event.bot.chatId, .botUsername, .from.userId, .from.username, .text, .chatType
+- Gmail: event.data.event.email.subject, .from, .to, .threadId
+- Calls: event.data.event.call.participants, .recentTranscripts
+
+DO NOT access platform fields at top level — event.data.chat, event.data.botUsername DO NOT exist.
      * @param args.title - Flow title. Required if providing inline code. (optional)
      * @param args.description - Detailed description of what the flow does (optional)
      * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId. (optional)
