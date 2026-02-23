@@ -226,6 +226,9 @@ export interface DesktopSpawnProcessArgs {
 export interface DesktopKillProcessArgs {
   processId: string; // The process ID returned by spawnProcess
 }
+export interface DesktopSelectMachineArgs {
+  deviceId: string; // The deviceId of the machine to select (from listMachines output)
+}
 
 // Documents Adapter Types
 export interface DocumentUploadArgs {
@@ -927,6 +930,16 @@ Transform types:
 - raw: { sort?: { field, direction }, limit? }
 - groupBy: { field, metric: { field, op: "sum"|"avg"|"count"|"min"|"max" }, sort?, limit? }
 - timeSeries: { timeField, granularity?: "day"|"week"|"month" }
+}
+export interface PagesUpsertReportPageArgs {
+  path: string; // URL path for the page (e.g. "/agent-report-my-space"). Must start with /, lowercase alphanumeric and hyphens only.
+  title: string; // Display title for the report page
+  description?: string; // Optional subtitle displayed below the title
+  theme?: string; // Color theme: "dark" (default) or "light"
+  layout?: string; // Layout: "dashboard" (2-col grid, default), "report" (single-col max-w-4xl), "single-column" (full-width single-col)
+  visibility?: string; // Page visibility: "private" (default) or "public"
+  widgets: any[]; // Array of widget specs. Same format as createReportPage widgets.
+  updateReason?: string; // Why the page is being updated (used as version description for rollback)
 }
 export interface PagesEditPageArgs {
   pageId: string; // The page ID to edit
@@ -5658,6 +5671,29 @@ function createDesktopAdapter(sdk: MirraSDK) {
         method: 'killProcess',
         params: args || {}
       });
+    },
+
+    /**
+     * List all desktop machines currently connected for the user. Shows hostname, platform, capabilities, and which machine is actively selected for operations.
+     */
+    listMachines: async (args?: {}): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'listMachines',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Select a specific desktop machine to receive all subsequent operations. Required when multiple desktops are connected. Use listMachines first to see available devices.
+     * @param args.deviceId - The deviceId of the machine to select (from listMachines output)
+     */
+    selectMachine: async (args: DesktopSelectMachineArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'desktop',
+        method: 'selectMachine',
+        params: args || {}
+      });
     }
   };
 }
@@ -7961,6 +7997,25 @@ Transform types:
       return sdk.resources.call({
         resourceId: 'pages',
         method: 'createReportPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create or update a report page using the widget factory. If a page exists at the given path, it is updated with the new widget spec (previous version saved for rollback). If no page exists, it is created. Use this instead of createReportPage when evolving an existing report.
+     * @param args.path - URL path for the page (e.g. "/agent-report-my-space"). Must start with /, lowercase alphanumeric and hyphens only.
+     * @param args.title - Display title for the report page
+     * @param args.description - Optional subtitle displayed below the title (optional)
+     * @param args.theme - Color theme: "dark" (default) or "light" (optional)
+     * @param args.layout - Layout: "dashboard" (2-col grid, default), "report" (single-col max-w-4xl), "single-column" (full-width single-col) (optional)
+     * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
+     * @param args.widgets - Array of widget specs. Same format as createReportPage widgets.
+     * @param args.updateReason - Why the page is being updated (used as version description for rollback) (optional)
+     */
+    upsertReportPage: async (args: PagesUpsertReportPageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'upsertReportPage',
         params: args || {}
       });
     },
