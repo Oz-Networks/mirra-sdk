@@ -901,6 +901,33 @@ export interface PagesCreatePageArgs {
   description?: string; // Optional description of the page
   visibility?: string; // Page visibility: "private" (default) or "public"
 }
+export interface PagesCreateReportPageArgs {
+  path: string; // URL path for the page (e.g. "/sales-report"). Must start with /, lowercase alphanumeric and hyphens only.
+  title: string; // Display title for the report page
+  description?: string; // Optional subtitle displayed below the title
+  theme?: string; // Color theme: "dark" (default) or "light"
+  layout?: string; // Layout: "dashboard" (2-col grid, default), "report" (single-col max-w-4xl), "single-column" (full-width single-col)
+  visibility?: string; // Page visibility: "private" (default) or "public"
+  widgets: any[]; // Array of widget specs. Each widget has: type (string), collection (Data collection slug), transform (optional: { type: "raw"|"groupBy"|"timeSeries", ... }), display ({ title?, height?, colorIndex? }), config (type-specific fields).
+
+Widget types and config:
+- stat-grid: { columns, items: [{ label, valueField, format?, aggregate? }] }
+- bar-chart: { xField, yField, orientation?, stacked? }
+- line-chart: { xField, yFields[], smooth? }
+- area-chart: { xField, yFields[], stacked? }
+- pie-chart: { labelField, valueField, donut? }
+- table: { columns: [{ field, label, format?, align? }], limit? }
+- list: { titleField, subtitleField?, metaField?, metaFormat?, limit? }
+- metric-card: { valueField, label, format? }
+- text-block: { content }
+- treemap: { nameField, valueField }
+- radar-chart: { axisField, valueFields[] }
+
+Transform types:
+- raw: { sort?: { field, direction }, limit? }
+- groupBy: { field, metric: { field, op: "sum"|"avg"|"count"|"min"|"max" }, sort?, limit? }
+- timeSeries: { timeField, granularity?: "day"|"week"|"month" }
+}
 export interface PagesEditPageArgs {
   pageId: string; // The page ID to edit
   edits: any[]; // Array of search-and-replace edits. Each edit has oldCode (exact string to find) and newCode (replacement string). Applied sequentially.
@@ -1272,6 +1299,11 @@ export interface SocketStatusArgs {
 export interface SocketUpdateMetadataArgs {
   channelId: string; // Channel ID to update metadata for
   metadata: any; // Metadata fields to merge into existing connection metadata
+}
+export interface SocketNotifySubscriberArgs {
+  channelId: string; // Channel ID of the task session
+  messageType: string; // Message type: assistant, result, or error
+  text?: string; // Text content for assistant/error messages
 }
 
 // Telegram Adapter Types
@@ -7898,6 +7930,42 @@ DO NOT: Use emoji as bullet points, add hover:scale on cards, use bg-slate/bg-gr
     },
 
     /**
+     * Create a report page using the widget factory. Instead of writing JSX code, specify a structured widget spec and the system generates optimized JSX deterministically. Supports 11 widget types: stat-grid, bar-chart, line-chart, area-chart, pie-chart, table, list, metric-card, text-block, treemap, radar-chart. Each widget fetches data from a Data collection at runtime.
+     * @param args.path - URL path for the page (e.g. "/sales-report"). Must start with /, lowercase alphanumeric and hyphens only.
+     * @param args.title - Display title for the report page
+     * @param args.description - Optional subtitle displayed below the title (optional)
+     * @param args.theme - Color theme: "dark" (default) or "light" (optional)
+     * @param args.layout - Layout: "dashboard" (2-col grid, default), "report" (single-col max-w-4xl), "single-column" (full-width single-col) (optional)
+     * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
+     * @param args.widgets - Array of widget specs. Each widget has: type (string), collection (Data collection slug), transform (optional: { type: "raw"|"groupBy"|"timeSeries", ... }), display ({ title?, height?, colorIndex? }), config (type-specific fields).
+
+Widget types and config:
+- stat-grid: { columns, items: [{ label, valueField, format?, aggregate? }] }
+- bar-chart: { xField, yField, orientation?, stacked? }
+- line-chart: { xField, yFields[], smooth? }
+- area-chart: { xField, yFields[], stacked? }
+- pie-chart: { labelField, valueField, donut? }
+- table: { columns: [{ field, label, format?, align? }], limit? }
+- list: { titleField, subtitleField?, metaField?, metaFormat?, limit? }
+- metric-card: { valueField, label, format? }
+- text-block: { content }
+- treemap: { nameField, valueField }
+- radar-chart: { axisField, valueFields[] }
+
+Transform types:
+- raw: { sort?: { field, direction }, limit? }
+- groupBy: { field, metric: { field, op: "sum"|"avg"|"count"|"min"|"max" }, sort?, limit? }
+- timeSeries: { timeField, granularity?: "day"|"week"|"month" }
+     */
+    createReportPage: async (args: PagesCreateReportPageArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'pages',
+        method: 'createReportPage',
+        params: args || {}
+      });
+    },
+
+    /**
      * Edit a page using search-and-replace. Each edit replaces one exact match of oldCode with newCode in the current source. Much more efficient than updatePage for small changes — only send the parts that change. Use getPage first to read the current code. The old_code string must appear exactly once in the source.
      * @param args.pageId - The page ID to edit
      * @param args.edits - Array of search-and-replace edits. Each edit has oldCode (exact string to find) and newCode (replacement string). Applied sequentially.
@@ -9049,6 +9117,20 @@ function createSocketAdapter(sdk: MirraSDK) {
       return sdk.resources.call({
         resourceId: 'socket',
         method: 'updateMetadata',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Notify a task session subscriber about a channel message. Used by system scripts to bridge CC task worker events back to the server.
+     * @param args.channelId - Channel ID of the task session
+     * @param args.messageType - Message type: assistant, result, or error
+     * @param args.text - Text content for assistant/error messages (optional)
+     */
+    notifySubscriber: async (args: SocketNotifySubscriberArgs): Promise<any> => {
+      return sdk.resources.call({
+        resourceId: 'socket',
+        method: 'notifySubscriber',
         params: args || {}
       });
     }
