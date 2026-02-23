@@ -247,6 +247,39 @@ class MirraSDK {
                 const response = await this.client.get(`/resources/${id}`);
                 return response.data.data;
             },
+            /**
+             * Create a new resource
+             */
+            create: async (params) => {
+                const response = await this.client.post('/resources', params);
+                return response.data.data;
+            },
+            /**
+             * Update an existing resource
+             */
+            update: async (params) => {
+                const { id, ...updateData } = params;
+                const response = await this.client.patch(`/resources/${id}`, updateData);
+                return response.data.data;
+            },
+            /**
+             * Install a resource for the current user
+             */
+            install: async (id) => {
+                const response = await this.client.post(`/resources/${id}/install`);
+                return response.data.data;
+            },
+            /**
+             * Authenticate a resource installation
+             * Stores credentials for accessing the resource on behalf of the user
+             */
+            authenticate: async (resourceId, auth) => {
+                const response = await this.client.post(`/resources/${resourceId}/authenticate`, auth);
+                return {
+                    success: true,
+                    isAuthenticated: response.data.data.isAuthenticated,
+                };
+            },
         };
         // ============================================================================
         // Template Operations

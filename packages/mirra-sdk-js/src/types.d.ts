@@ -52,12 +52,18 @@ export interface MemoryFindOneParams {
         [key: string]: any;
     };
 }
-export interface ChatMessage {
+/**
+ * Simple LLM conversation message format
+ * For AI chat completions - NOT to be confused with messaging ChatMessage
+ */
+export interface AIConversationMessage {
     role: 'user' | 'assistant' | 'system';
     content: string;
 }
+/** @deprecated Use AIConversationMessage instead to avoid confusion with messaging ChatMessage */
+export type ChatMessage = AIConversationMessage;
 export interface ChatRequest {
-    messages: ChatMessage[];
+    messages: AIConversationMessage[];
     model?: string;
     temperature?: number;
     maxTokens?: number;
@@ -185,23 +191,32 @@ export interface CallResourceParams {
     method: string;
     params?: Record<string, any>;
 }
+export interface ResourceMethodExample {
+    description: string;
+    input: Record<string, any>;
+    output: Record<string, any>;
+    note?: string;
+}
 export interface ResourceEndpointMethod {
     name: string;
-    httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    httpMethod: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     path: string;
     description?: string;
-    parameters?: Record<string, any>;
-    response?: Record<string, any>;
-    examples?: Array<{
-        description: string;
-        input: Record<string, any>;
-        output: Record<string, any>;
-        note?: string;
+    parameters?: Record<string, {
+        type: string;
+        required?: boolean;
+        description?: string;
     }>;
+    response?: {
+        type: string;
+        schema?: any;
+        description?: string;
+    };
+    examples?: ResourceMethodExample[];
 }
 export interface ResourceEndpoint {
     baseUrl: string;
-    authentication: 'none' | 'bearer' | 'api_key' | 'oauth2' | 'basic';
+    authentication: 'none' | 'api_key' | 'oauth2' | 'bearer';
     methods: ResourceEndpointMethod[];
 }
 export interface CreateResourceParams {
@@ -211,16 +226,18 @@ export interface CreateResourceParams {
     category?: string;
     isPrivate?: boolean;
     endpoint: ResourceEndpoint;
-    pricing?: { model: 'free' | 'pay-per-call' | 'subscription' };
+    pricing?: {
+        model: 'free' | 'paid';
+        price?: number;
+    };
     openApiSpec?: object;
 }
 export interface UpdateResourceParams {
     id: string;
     name?: string;
     description?: string;
-    endpoint?: Partial<ResourceEndpoint>;
-    pricing?: { model: 'free' | 'pay-per-call' | 'subscription' };
-    openApiSpec?: object;
+    endpoint?: ResourceEndpoint;
+    isPrivate?: boolean;
 }
 export interface Template {
     id: string;
@@ -490,6 +507,10 @@ export interface CreateEventFlowParams {
     description: string;
     trigger: {
         type: 'event';
+        /** Event type for UI grouping (e.g., 'mirra.message', 'telegram.message') */
+        eventType?: string;
+        /** Event source for UI grouping (e.g., 'mirra', 'telegram') */
+        source?: string;
         config: FlowTriggerConfig;
     };
     scriptId: string;

@@ -1,7 +1,7 @@
 /**
  * Mirra SDK Client
  */
-import { MirraSDKConfig, MemoryEntity, MemoryEntityWithId, MemorySearchQuery, MemorySearchResult, MemoryQueryParams, MemoryUpdateParams, MemoryFindOneParams, ChatRequest, ChatResponse, ChatStreamChunk, DecideRequest, DecideResponse, BatchChatRequest, Agent, CreateAgentParams, UpdateAgentParams, Script, CreateScriptParams, UpdateScriptParams, InvokeScriptParams, ScriptInvocationResult, Resource, CallResourceParams, Template, TemplateInstallation, MarketplaceItem, MarketplaceFilters, UploadDocumentParams, UploadDocumentResult, DocumentGetResult, DocumentStatusResult, DocumentChunksResult, DocumentDeleteResult, ShareDocumentParams, ShareDocumentResult, UnshareDocumentResult, ListDocumentGraphsResult, SearchDocumentsParams, SearchDocumentsResult, ListDocumentsParams, ListDocumentsResult, Flow, CreateEventFlowParams, CreateTimeFlowParams, UpdateFlowParams, ListFlowsParams, EventTypeInfo } from './types';
+import { MirraSDKConfig, MemoryEntity, MemoryEntityWithId, MemorySearchQuery, MemorySearchResult, MemoryQueryParams, MemoryUpdateParams, MemoryFindOneParams, ChatRequest, ChatResponse, ChatStreamChunk, DecideRequest, DecideResponse, BatchChatRequest, Agent, CreateAgentParams, UpdateAgentParams, Script, CreateScriptParams, UpdateScriptParams, InvokeScriptParams, ScriptInvocationResult, Resource, CallResourceParams, CreateResourceParams, UpdateResourceParams, Template, TemplateInstallation, MarketplaceItem, MarketplaceFilters, UploadDocumentParams, UploadDocumentResult, DocumentGetResult, DocumentStatusResult, DocumentChunksResult, DocumentDeleteResult, ShareDocumentParams, ShareDocumentResult, UnshareDocumentResult, ListDocumentGraphsResult, SearchDocumentsParams, SearchDocumentsResult, ListDocumentsParams, ListDocumentsResult, Flow, CreateEventFlowParams, CreateTimeFlowParams, UpdateFlowParams, ListFlowsParams, EventTypeInfo } from './types';
 export declare class MirraSDK {
     private client;
     private apiKey;
@@ -192,7 +192,7 @@ export declare class MirraSDK {
          * Stores credentials for accessing the resource on behalf of the user
          */
         authenticate: (resourceId: string, auth: {
-            type: 'api_key' | 'oauth2' | 'basic' | 'bearer';
+            type: "api_key" | "oauth2" | "basic" | "bearer";
             credentials: Record<string, any>;
         }) => Promise<{
             success: boolean;

@@ -911,25 +911,7 @@ export interface PagesCreateReportPageArgs {
   theme?: string; // Color theme: "dark" (default) or "light"
   layout?: string; // Layout: "dashboard" (2-col grid, default), "report" (single-col max-w-4xl), "single-column" (full-width single-col)
   visibility?: string; // Page visibility: "private" (default) or "public"
-  widgets: any[]; // Array of widget specs. Each widget has: type (string), collection (Data collection slug), transform (optional: { type: "raw"|"groupBy"|"timeSeries", ... }), display ({ title?, height?, colorIndex? }), config (type-specific fields).
-
-Widget types and config:
-- stat-grid: { columns, items: [{ label, valueField, format?, aggregate? }] }
-- bar-chart: { xField, yField, orientation?, stacked? }
-- line-chart: { xField, yFields[], smooth? }
-- area-chart: { xField, yFields[], stacked? }
-- pie-chart: { labelField, valueField, donut? }
-- table: { columns: [{ field, label, format?, align? }], limit? }
-- list: { titleField, subtitleField?, metaField?, metaFormat?, limit? }
-- metric-card: { valueField, label, format? }
-- text-block: { content }
-- treemap: { nameField, valueField }
-- radar-chart: { axisField, valueFields[] }
-
-Transform types:
-- raw: { sort?: { field, direction }, limit? }
-- groupBy: { field, metric: { field, op: "sum"|"avg"|"count"|"min"|"max" }, sort?, limit? }
-- timeSeries: { timeField, granularity?: "day"|"week"|"month" }
+  widgets: any[]; // Array of widget specs. Each widget has: type (string), collection (Data collection slug), transform (optional: { type: "raw"|"groupBy"|"timeSeries", ... }), display ({ title?, height?, colorIndex? }), config (type-specific fields). Widget types and config: - stat-grid: { columns, items: [{ label, valueField, format?, aggregate? }] } - bar-chart: { xField, yField, orientation?, stacked? } - line-chart: { xField, yFields[], smooth? } - area-chart: { xField, yFields[], stacked? } - pie-chart: { labelField, valueField, donut? } - table: { columns: [{ field, label, format?, align? }], limit? } - list: { titleField, subtitleField?, metaField?, metaFormat?, limit? } - metric-card: { valueField, label, format? } - text-block: { content } - treemap: { nameField, valueField } - radar-chart: { axisField, valueFields[] } Transform types: - raw: { sort?: { field, direction }, limit? } - groupBy: { field, metric: { field, op: "sum"|"avg"|"count"|"min"|"max" }, sort?, limit? } - timeSeries: { timeField, granularity?: "day"|"week"|"month" }
 }
 export interface PagesUpsertReportPageArgs {
   path: string; // URL path for the page (e.g. "/agent-report-my-space"). Must start with /, lowercase alphanumeric and hyphens only.
@@ -5034,23 +5016,7 @@ export type GoogleSheetsCopyRangeResult = AdapterResultBase<GoogleSheetsCopyRang
 function createAiAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Have a conversation with an AI assistant. Supports multi-turn conversations with system prompts, user messages, and assistant responses.
-
-PROVIDER: Uses Anthropic (Claude) as the AI provider.
-
-BEST PRACTICES:
-- Use system messages to set AI behavior and constraints
-- Keep conversations focused - avoid unnecessary context
-
-MESSAGE STRUCTURE:
-Each message has:
-- role: "system" | "user" | "assistant"
-- content: string (the message text)
-
-TYPICAL PATTERNS:
-1. Simple query: [{ role: "user", content: "question" }]
-2. With system prompt: [{ role: "system", content: "instructions" }, { role: "user", content: "question" }]
-3. Multi-turn: [system, user, assistant, user, assistant, ...]
+     * Have a conversation with an AI assistant. Supports multi-turn conversations with system prompts, user messages, and assistant responses. PROVIDER: Uses Anthropic (Claude) as the AI provider. BEST PRACTICES: - Use system messages to set AI behavior and constraints - Keep conversations focused - avoid unnecessary context MESSAGE STRUCTURE: Each message has: - role: "system" | "user" | "assistant" - content: string (the message text) TYPICAL PATTERNS: 1. Simple query: [{ role: "user", content: "question" }] 2. With system prompt: [{ role: "system", content: "instructions" }, { role: "user", content: "question" }] 3. Multi-turn: [system, user, assistant, user, assistant, ...]
      * @param args.message - Simple string shorthand for single-turn queries. Auto-wrapped into messages array. Use "messages" for multi-turn conversations. (optional)
      * @param args.messages - Array of message objects with role ("system" | "user" | "assistant") and content (string). System messages set AI behavior, user messages are queries, assistant messages are previous AI responses. (optional)
      * @param args.model - Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names. (optional)
@@ -5066,28 +5032,7 @@ TYPICAL PATTERNS:
     },
 
     /**
-     * Use AI to make a decision from a list of options. The AI analyzes your prompt, considers the context, and selects the most appropriate option with reasoning.
-
-USE CASES:
-- Route messages to correct handlers
-- Classify user intents
-- Select appropriate tools or actions
-- Prioritize tasks
-- Choose templates or responses
-- Determine sentiment or category
-
-HOW IT WORKS:
-1. Provide a prompt (the decision context)
-2. List available options (each with id and label)
-3. Optionally add extra context
-4. AI returns selected option ID and reasoning
-
-BEST PRACTICES:
-- Make option labels clear and descriptive
-- Use unique IDs for options
-- Add context when decision needs background info
-- Keep prompt focused on the decision criteria
-- Use metadata field for additional option data
+     * Use AI to make a decision from a list of options. The AI analyzes your prompt, considers the context, and selects the most appropriate option with reasoning. USE CASES: - Route messages to correct handlers - Classify user intents - Select appropriate tools or actions - Prioritize tasks - Choose templates or responses - Determine sentiment or category HOW IT WORKS: 1. Provide a prompt (the decision context) 2. List available options (each with id and label) 3. Optionally add extra context 4. AI returns selected option ID and reasoning BEST PRACTICES: - Make option labels clear and descriptive - Use unique IDs for options - Add context when decision needs background info - Keep prompt focused on the decision criteria - Use metadata field for additional option data
      * @param args.prompt - The decision prompt - what needs to be decided and why
      * @param args.options - Array of options to choose from. Each option must have: id (unique identifier), label (descriptive name), and optional metadata (additional data)
      * @param args.context - Additional context to help the AI make a better decision (optional)
@@ -6886,15 +6831,7 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
 function createScriptsAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new script with initial version and API key. Returns flat structure with id field for subsequent operations.
-
-HANDLER RETURN VALUES (when script is used in a flow):
-The handler's return object controls how the flow executor records the result:
-- Success: return { success: true, ...data }
-- No-Op (nothing to do, not an error): return { success: false, noOp: true, reason: "No input data" }
-  No-ops are recorded as successful executions and do NOT count toward the auto-pause threshold.
-- Failure: return { success: false, reason: "What went wrong" }
-  3 consecutive failures will auto-pause the flow.
+     * Create a new script with initial version and API key. Returns flat structure with id field for subsequent operations. HANDLER RETURN VALUES (when script is used in a flow): The handler's return object controls how the flow executor records the result: - Success: return { success: true, ...data } - No-Op (nothing to do, not an error): return { success: false, noOp: true, reason: "No input data" } No-ops are recorded as successful executions and do NOT count toward the auto-pause threshold. - Failure: return { success: false, reason: "What went wrong" } 3 consecutive failures will auto-pause the flow.
      * @param args.name - Name of the script
      * @param args.description - Description of what the script does (optional)
      * @param args.runtime - Lambda runtime (default: nodejs18) (optional)
@@ -7936,21 +7873,7 @@ function createMoltbookAdapter(sdk: MirraSDK) {
 function createPagesAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new page with JSX code. The code is compiled to HTML with React, Tailwind CSS, Recharts, and Lucide icons available as globals. Define a top-level `function App()` component as the entry point. Do NOT use import/require statements — all libraries are pre-loaded via CDN. Use Recharts components directly (e.g. `<BarChart>`, `<ResponsiveContainer>`) and Lucide icons via `lucide.IconName`.
-
-STYLE — Every page includes the Mirra design system with pre-configured Tailwind theme. Use semantic theme tokens for automatic dark/light support:
-- Backgrounds: bg-m-bg (page), bg-m-surface (cards), bg-m-surface-alt (nested elements)
-- Text: text-m-text (primary), text-m-text-secondary, text-m-text-muted
-- Borders: border-m-border
-- Accent: text-m-accent-text, bg-m-accent, bg-m-accent-soft
-- Brand purple scale: bg-mirra-50 through bg-mirra-950
-- Fonts: font-display (Syne — headings), font-body (Inter — content), font-mono (numbers/data)
-- Charts: use MIRRA_COLORS array for fills/strokes (8 brand-derived colors)
-
-Dark mode is the default. For light pages, add data-theme="light" to the root wrapper div.
-
-DO: Use generous padding (p-8 md:p-12), consistent gaps (gap-4 gap-6), subtle borders (border border-m-border) over heavy shadows, font-mono for numbers/stats, the m-* theme tokens for all colors.
-DO NOT: Use emoji as bullet points, add hover:scale on cards, use bg-slate/bg-gray (use m-* tokens), use multiple flashy gradients.
+     * Create a new page with JSX code. The code is compiled to HTML with React, Tailwind CSS, Recharts, and Lucide icons available as globals. Define a top-level `function App()` component as the entry point. Do NOT use import/require statements — all libraries are pre-loaded via CDN. Use Recharts components directly (e.g. `<BarChart>`, `<ResponsiveContainer>`) and Lucide icons via `lucide.IconName`. STYLE — Every page includes the Mirra design system with pre-configured Tailwind theme. Use semantic theme tokens for automatic dark/light support: - Backgrounds: bg-m-bg (page), bg-m-surface (cards), bg-m-surface-alt (nested elements) - Text: text-m-text (primary), text-m-text-secondary, text-m-text-muted - Borders: border-m-border - Accent: text-m-accent-text, bg-m-accent, bg-m-accent-soft - Brand purple scale: bg-mirra-50 through bg-mirra-950 - Fonts: font-display (Syne — headings), font-body (Inter — content), font-mono (numbers/data) - Charts: use MIRRA_COLORS array for fills/strokes (8 brand-derived colors) Dark mode is the default. For light pages, add data-theme="light" to the root wrapper div. DO: Use generous padding (p-8 md:p-12), consistent gaps (gap-4 gap-6), subtle borders (border border-m-border) over heavy shadows, font-mono for numbers/stats, the m-* theme tokens for all colors. DO NOT: Use emoji as bullet points, add hover:scale on cards, use bg-slate/bg-gray (use m-* tokens), use multiple flashy gradients.
      * @param args.path - URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
      * @param args.title - Display title for the page
      * @param args.code - JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
@@ -7973,25 +7896,7 @@ DO NOT: Use emoji as bullet points, add hover:scale on cards, use bg-slate/bg-gr
      * @param args.theme - Color theme: "dark" (default) or "light" (optional)
      * @param args.layout - Layout: "dashboard" (2-col grid, default), "report" (single-col max-w-4xl), "single-column" (full-width single-col) (optional)
      * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
-     * @param args.widgets - Array of widget specs. Each widget has: type (string), collection (Data collection slug), transform (optional: { type: "raw"|"groupBy"|"timeSeries", ... }), display ({ title?, height?, colorIndex? }), config (type-specific fields).
-
-Widget types and config:
-- stat-grid: { columns, items: [{ label, valueField, format?, aggregate? }] }
-- bar-chart: { xField, yField, orientation?, stacked? }
-- line-chart: { xField, yFields[], smooth? }
-- area-chart: { xField, yFields[], stacked? }
-- pie-chart: { labelField, valueField, donut? }
-- table: { columns: [{ field, label, format?, align? }], limit? }
-- list: { titleField, subtitleField?, metaField?, metaFormat?, limit? }
-- metric-card: { valueField, label, format? }
-- text-block: { content }
-- treemap: { nameField, valueField }
-- radar-chart: { axisField, valueFields[] }
-
-Transform types:
-- raw: { sort?: { field, direction }, limit? }
-- groupBy: { field, metric: { field, op: "sum"|"avg"|"count"|"min"|"max" }, sort?, limit? }
-- timeSeries: { timeField, granularity?: "day"|"week"|"month" }
+     * @param args.widgets - Array of widget specs. Each widget has: type (string), collection (Data collection slug), transform (optional: { type: "raw"|"groupBy"|"timeSeries", ... }), display ({ title?, height?, colorIndex? }), config (type-specific fields). Widget types and config: - stat-grid: { columns, items: [{ label, valueField, format?, aggregate? }] } - bar-chart: { xField, yField, orientation?, stacked? } - line-chart: { xField, yFields[], smooth? } - area-chart: { xField, yFields[], stacked? } - pie-chart: { labelField, valueField, donut? } - table: { columns: [{ field, label, format?, align? }], limit? } - list: { titleField, subtitleField?, metaField?, metaFormat?, limit? } - metric-card: { valueField, label, format? } - text-block: { content } - treemap: { nameField, valueField } - radar-chart: { axisField, valueFields[] } Transform types: - raw: { sort?: { field, direction }, limit? } - groupBy: { field, metric: { field, op: "sum"|"avg"|"count"|"min"|"max" }, sort?, limit? } - timeSeries: { timeField, granularity?: "day"|"week"|"month" }
      */
     createReportPage: async (args: PagesCreateReportPageArgs): Promise<any> => {
       return sdk.resources.call({
@@ -9837,110 +9742,7 @@ function createTwitterAdapter(sdk: MirraSDK) {
 function createFlowsAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a flow (event-triggered or time-scheduled). This is the unified, simplified interface for flow creation.
-
-TRIGGER TYPE (provide exactly one):
-- schedule: Cron expression for time-based flows (e.g., "0 9 * * *"). Times are automatically in the user's local timezone.
-- eventType: Event type shorthand for event flows that process ALL events of that type (e.g., "telegram.message")
-- eventFilter: Full filter object for event flows that need pre-filtering (RECOMMENDED for most event flows)
-- trigger: Legacy nested structure (still supported)
-
-EFFICIENCY RULE FOR EVENT FLOWS:
-Always filter in eventFilter conditions, NEVER in the script.
-- eventFilter conditions: FREE (evaluated in-memory before script runs)
-- Script filtering: EXPENSIVE (invokes Lambda for every single event, even ones you discard)
-
-BAD — triggers Lambda for every Telegram message, script checks if it's a command:
-{
-  eventType: "telegram.message",
-  code: "...if (!text.startsWith('/')) return { success: false, noOp: true, reason: 'Not a command' }..."
-}
-GOOD — only triggers Lambda when the message starts with "/":
-{
-  eventFilter: { operator: "and", conditions: [
-    { operator: "equals", field: "type", value: "telegram.message" },
-    { operator: "startsWith", field: "content.text", value: "/" }
-  ]},
-  code: "...handle the command..."
-}
-
-Use eventType ONLY when you want to process every single event of that type.
-Use eventFilter when you need to react to a subset of events (specific sender, content pattern, etc.).
-
-VALID FILTER OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not
-
-SCRIPT (provide exactly one):
-- code: Inline script code - will auto-create, deploy, and link the script
-- scriptId: ID of an existing deployed script
-
-EXAMPLES:
-
-Time flow with inline code:
-{
-  title: "Daily Report",
-  schedule: "0 9 * * *",
-  code: "export async function handler(event, context, mirra) { await mirra.telegram.sendMessage({...}); return { done: true }; }"
-}
-
-Event flow — process ALL messages (only if you truly need every message):
-{
-  title: "Message Logger",
-  eventType: "telegram.message",
-  code: "export async function handler(event, context, mirra) { console.log(event.data.text); return { logged: true }; }"
-}
-
-Event flow — react to a SUBSET of events (preferred for most use cases):
-{
-  title: "Command Handler",
-  eventFilter: { operator: "and", conditions: [
-    { operator: "equals", field: "type", value: "telegram.message" },
-    { operator: "startsWith", field: "content.text", value: "/" }
-  ]},
-  code: "export async function handler(event, context, mirra) { const cmd = event.data.text.split(' ')[0]; return { command: cmd }; }"
-}
-
-Event flow with existing script:
-{
-  eventType: "gmail.email_received",
-  scriptId: "existing-script-id"
-}
-
-HANDLER RETURN VALUES:
-The handler's return object controls how the flow executor records the result:
-
-Success — work was done:
-  return { success: true, ...data }
-
-No-Op — nothing to do (not an error):
-  return { success: false, noOp: true, reason: "No transcript available" }
-  Use for unavoidable cases where the handler has no work (e.g., time-based flow finds
-  no new data, external API returned empty results). No-ops are recorded as successful
-  executions and do NOT count toward the 3-consecutive-failure auto-pause threshold.
-  WARNING: If your event flow returns noOp frequently, your eventFilter is too broad.
-  Move the filtering logic into eventFilter conditions instead of checking inside the script.
-
-Failure — something went wrong:
-  return { success: false, reason: "What went wrong" }
-  Use for actual errors. 3 consecutive failures will auto-pause the flow.
-
-HANDLER EVENT DATA ACCESS:
-Scripts access data via event.data.*. Normalized fields (all event types):
-- event.data.text (string) — message/content text
-- event.data.sender (string) — sender name
-- event.data.senderId (string) — sender ID
-- event.data.timestamp (Date) — event timestamp
-- event.data.event (IntegrationEvent) — full event for platform-specific fields
-
-Platform-specific fields (access via event.data.event):
-- Telegram: event.data.event.telegram.chatId, .messageId, .isGroupChat, .isOutgoing, .hasMedia
-- Telegram Bot: event.data.event.bot.chatId, .botUsername, .from.userId, .from.username, .text, .chatType
-- Gmail: event.data.event.email.subject, .from, .to, .threadId
-- Calls: event.data.event.call.participants, .recentTranscripts
-
-DO NOT access platform fields at top level — event.data.chat, event.data.botUsername DO NOT exist.
-
-OUTGOING MESSAGE FILTERING:
-By default, flows SKIP events sent by the user themselves (outgoing messages). This prevents feedback loops where a flow's own actions re-trigger itself. To include the user's own outgoing messages, set includeOwnMessages: true in the trigger config. Use with caution — this can cause infinite loops if the flow sends messages that match its own trigger.
+     * Create a flow (event-triggered or time-scheduled). This is the unified, simplified interface for flow creation. TRIGGER TYPE (provide exactly one): - schedule: Cron expression for time-based flows (e.g., "0 9 * * *"). Times are automatically in the user's local timezone. - eventType: Event type shorthand for event flows that process ALL events of that type (e.g., "telegram.message") - eventFilter: Full filter object for event flows that need pre-filtering (RECOMMENDED for most event flows) - trigger: Legacy nested structure (still supported) EFFICIENCY RULE FOR EVENT FLOWS: Always filter in eventFilter conditions, NEVER in the script. - eventFilter conditions: FREE (evaluated in-memory before script runs) - Script filtering: EXPENSIVE (invokes Lambda for every single event, even ones you discard) BAD — triggers Lambda for every Telegram message, script checks if it's a command: { eventType: "telegram.message", code: "...if (!text.startsWith('/')) return { success: false, noOp: true, reason: 'Not a command' }..." } GOOD — only triggers Lambda when the message starts with "/": { eventFilter: { operator: "and", conditions: [ { operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" } ]}, code: "...handle the command..." } Use eventType ONLY when you want to process every single event of that type. Use eventFilter when you need to react to a subset of events (specific sender, content pattern, etc.). VALID FILTER OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not SCRIPT (provide exactly one): - code: Inline script code - will auto-create, deploy, and link the script - scriptId: ID of an existing deployed script EXAMPLES: Time flow with inline code: { title: "Daily Report", schedule: "0 9 * * *", code: "export async function handler(event, context, mirra) { await mirra.telegram.sendMessage({...}); return { done: true }; }" } Event flow — process ALL messages (only if you truly need every message): { title: "Message Logger", eventType: "telegram.message", code: "export async function handler(event, context, mirra) { console.log(event.data.text); return { logged: true }; }" } Event flow — react to a SUBSET of events (preferred for most use cases): { title: "Command Handler", eventFilter: { operator: "and", conditions: [ { operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" } ]}, code: "export async function handler(event, context, mirra) { const cmd = event.data.text.split(' ')[0]; return { command: cmd }; }" } Event flow with existing script: { eventType: "gmail.email_received", scriptId: "existing-script-id" } HANDLER RETURN VALUES: The handler's return object controls how the flow executor records the result: Success — work was done: return { success: true, ...data } No-Op — nothing to do (not an error): return { success: false, noOp: true, reason: "No transcript available" } Use for unavoidable cases where the handler has no work (e.g., time-based flow finds no new data, external API returned empty results). No-ops are recorded as successful executions and do NOT count toward the 3-consecutive-failure auto-pause threshold. WARNING: If your event flow returns noOp frequently, your eventFilter is too broad. Move the filtering logic into eventFilter conditions instead of checking inside the script. Failure — something went wrong: return { success: false, reason: "What went wrong" } Use for actual errors. 3 consecutive failures will auto-pause the flow. HANDLER EVENT DATA ACCESS: Scripts access data via event.data.*. Normalized fields (all event types): - event.data.text (string) — message/content text - event.data.sender (string) — sender name - event.data.senderId (string) — sender ID - event.data.timestamp (Date) — event timestamp - event.data.event (IntegrationEvent) — full event for platform-specific fields Platform-specific fields (access via event.data.event): - Telegram: event.data.event.telegram.chatId, .messageId, .isGroupChat, .isOutgoing, .hasMedia - Telegram Bot: event.data.event.bot.chatId, .botUsername, .from.userId, .from.username, .text, .chatType - Gmail: event.data.event.email.subject, .from, .to, .threadId - Calls: event.data.event.call.participants, .recentTranscripts DO NOT access platform fields at top level — event.data.chat, event.data.botUsername DO NOT exist. OUTGOING MESSAGE FILTERING: By default, flows SKIP events sent by the user themselves (outgoing messages). This prevents feedback loops where a flow's own actions re-trigger itself. To include the user's own outgoing messages, set includeOwnMessages: true in the trigger config. Use with caution — this can cause infinite loops if the flow sends messages that match its own trigger.
      * @param args.title - Flow title. Required if providing inline code. (optional)
      * @param args.description - Detailed description of what the flow does (optional)
      * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId. (optional)
@@ -9979,34 +9781,7 @@ By default, flows SKIP events sent by the user themselves (outgoing messages). T
     },
 
     /**
-     * Create an event-based flow with pre-filtering conditions. NOTE: Consider using createFlow instead for a simpler interface with inline code support.
-
-EFFICIENCY RULE: Always filter in eventFilter, not the script.
-- eventFilter conditions: FREE (evaluated in-memory before script runs)
-- Script filtering: EXPENSIVE (invokes Lambda for every event)
-
-BAD: Trigger on "telegram.message" with no filter → script checks sender
-GOOD: Trigger on "telegram.message" with eventFilter for sender
-
-TRIGGER STRUCTURE:
-{
-  type: "event",
-  config: {
-    eventFilter: {
-      operator: "and" | "or",
-      conditions: [
-        { operator: "equals", field: "type", value: "call.ended" },
-        { operator: "contains", field: "content.text", value: "urgent" }
-      ]
-    }
-  }
-}
-
-IMPORTANT: Use field: "type" (not "eventType") to filter by event type. This is required for testFlow to auto-generate test events.
-
-VALID OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not
-
-COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.action, telegram.message, telegram.bot_message, telegram.bot_command, telegram.bot_callback_query, gmail.email_received
+     * Create an event-based flow with pre-filtering conditions. NOTE: Consider using createFlow instead for a simpler interface with inline code support. EFFICIENCY RULE: Always filter in eventFilter, not the script. - eventFilter conditions: FREE (evaluated in-memory before script runs) - Script filtering: EXPENSIVE (invokes Lambda for every event) BAD: Trigger on "telegram.message" with no filter → script checks sender GOOD: Trigger on "telegram.message" with eventFilter for sender TRIGGER STRUCTURE: { type: "event", config: { eventFilter: { operator: "and" | "or", conditions: [ { operator: "equals", field: "type", value: "call.ended" }, { operator: "contains", field: "content.text", value: "urgent" } ] } } } IMPORTANT: Use field: "type" (not "eventType") to filter by event type. This is required for testFlow to auto-generate test events. VALID OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.action, telegram.message, telegram.bot_message, telegram.bot_command, telegram.bot_callback_query, gmail.email_received
      * @param args.title - Flow title
      * @param args.description - Detailed description of what the flow does
      * @param args.trigger - Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
@@ -10122,20 +9897,7 @@ COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.acti
     },
 
     /**
-     * List all available event types that can trigger automations. Returns normalized event types.
-
-IMPORTANT: Use includeSchema: true when writing scripts to see available fields and correct access patterns.
-
-Scripts receive an ExecutionRequest, NOT the raw IntegrationEvent. Correct access patterns:
-- event.data.text (normalized text content)
-- event.data.sender (normalized sender name)
-- event.data.event (full IntegrationEvent object)
-- event.trigger.event (also full IntegrationEvent)
-
-Common WRONG patterns that don't work:
-- event.summary (doesn't exist)
-- event.content.text (wrong path)
-- event.timestamp (wrong path)
+     * List all available event types that can trigger automations. Returns normalized event types. IMPORTANT: Use includeSchema: true when writing scripts to see available fields and correct access patterns. Scripts receive an ExecutionRequest, NOT the raw IntegrationEvent. Correct access patterns: - event.data.text (normalized text content) - event.data.sender (normalized sender name) - event.data.event (full IntegrationEvent object) - event.trigger.event (also full IntegrationEvent) Common WRONG patterns that don't work: - event.summary (doesn't exist) - event.content.text (wrong path) - event.timestamp (wrong path)
      * @param args.includeTemplates - Include condition templates for each event type (optional)
      * @param args.includeSchema - Include field schema showing available paths for script access. RECOMMENDED when writing scripts to see correct field access patterns. (optional)
      */
@@ -10148,28 +9910,7 @@ Common WRONG patterns that don't work:
     },
 
     /**
-     * Test a flow by generating an event that matches the trigger conditions.
-
-REQUIREMENT: The flow's trigger conditions MUST include a condition with field: "type" or field: "source" so the system knows what kind of test event to generate.
-
-CORRECT condition: { operator: "equals", field: "type", value: "telegram.message" }
-WRONG condition: { operator: "equals", field: "eventType", value: "telegram.message" }
-
-If your flow lacks a "type" or "source" condition, use validateTrigger instead with a manually constructed event.
-
-MODES:
-- dryRun=true (DEFAULT): Validates trigger matching only. Safe, no side effects, no token consumption.
-- dryRun=false: Executes the real script. WARNING: This causes real side effects (sends messages, makes API calls, consumes tokens).
-
-Use dryRun=true first to verify trigger conditions work, then dryRun=false only when ready to test full execution.
-
-WORKFLOW:
-1. Generates a test event from the flow's trigger conditions (requires "type" or "source" field)
-2. Validates the event matches the trigger (always)
-3. If dryRun=false, executes the script with the test event
-
-RESULT:
-Returns detailed information about trigger matching, including which conditions passed/failed, and optionally full execution results.
+     * Test a flow by generating an event that matches the trigger conditions. REQUIREMENT: The flow's trigger conditions MUST include a condition with field: "type" or field: "source" so the system knows what kind of test event to generate. CORRECT condition: { operator: "equals", field: "type", value: "telegram.message" } WRONG condition: { operator: "equals", field: "eventType", value: "telegram.message" } If your flow lacks a "type" or "source" condition, use validateTrigger instead with a manually constructed event. MODES: - dryRun=true (DEFAULT): Validates trigger matching only. Safe, no side effects, no token consumption. - dryRun=false: Executes the real script. WARNING: This causes real side effects (sends messages, makes API calls, consumes tokens). Use dryRun=true first to verify trigger conditions work, then dryRun=false only when ready to test full execution. WORKFLOW: 1. Generates a test event from the flow's trigger conditions (requires "type" or "source" field) 2. Validates the event matches the trigger (always) 3. If dryRun=false, executes the script with the test event RESULT: Returns detailed information about trigger matching, including which conditions passed/failed, and optionally full execution results.
      * @param args.flowId - ID of the flow to test
      * @param args.dryRun - If true (default), only validate trigger matching without executing script. If false, execute the script (causes side effects). (optional)
      * @param args.eventOverrides - Custom field values to merge into the generated test event (e.g., {"content.text": "custom message"}) (optional)
