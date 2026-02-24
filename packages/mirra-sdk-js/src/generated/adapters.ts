@@ -1552,6 +1552,9 @@ export interface FlowsUpdateFlowArgs {
   scriptInput?: any; // New static input data for the script. Fields are spread into event.data in handler code.
   scriptInputSchema?: any; // Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }.
   status?: string; // New status: active, paused, completed, failed
+  schedule?: string; // Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone.
+  eventType?: string; // Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead.
+  eventFilter?: any; // Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] }
 }
 export interface FlowsDeleteFlowArgs {
   id: string; // Flow ID to delete
@@ -9819,6 +9822,9 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.scriptInput - New static input data for the script. Fields are spread into event.data in handler code. (optional)
      * @param args.scriptInputSchema - Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }. (optional)
      * @param args.status - New status: active, paused, completed, failed (optional)
+     * @param args.schedule - Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone. (optional)
+     * @param args.eventType - Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead. (optional)
+     * @param args.eventFilter - Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] } (optional)
      */
     updateFlow: async (args: FlowsUpdateFlowArgs): Promise<any> => {
       return sdk.resources.call({
