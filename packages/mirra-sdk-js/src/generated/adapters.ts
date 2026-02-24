@@ -9871,7 +9871,7 @@ function createFlowsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Search flows with filters. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. Use getFlow for full details on a specific flow. IMPORTANT: Returns an object with { count, flows }, NOT an array. Access the array via result.flows.
+     * Search flows with filters. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. Use getFlow for full details on a specific flow. ⚠️ RESPONSE FORMAT: Returns { count: number, flows: Array }. You MUST access the array via `result.flows`. Do NOT use `result.length` or treat `result` as an array — it is an object. Example: ``` const result = await mirra.flows.searchFlows({}); const flows = result.flows; // ← REQUIRED — the array is here console.log(`Found ${flows.length} flows`); ```
      * @param args.status - Filter by status (or array of statuses) (optional)
      * @param args.triggerType - Filter by trigger type: time or event (optional)
      * @param args.parentSpaceId - Filter flows by space/group ID. Only returns flows assigned to this space. (optional)
@@ -9943,7 +9943,7 @@ function createFlowsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get all active flows triggered by a specific event type. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats.
+     * Get all active flows triggered by a specific event type. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. ⚠️ RESPONSE FORMAT: Returns { eventType, count, flows: Array }. Access the array via `result.flows`.
      * @param args.eventType - Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
      * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
      */
