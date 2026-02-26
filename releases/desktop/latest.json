@@ -1,11 +1,19 @@
 {
-  "version": "0.2.11",
-  "notes": "Mirra Desktop v0.2.11",
-  "pub_date": "2026-02-25T16:49:58.455Z",
+  "version": "0.2.12",
+  "notes": "Mirra Desktop v0.2.12",
+  "pub_date": "2026-02-26T13:40:59.343Z",
   "platforms": {
     "darwin-aarch64": {
-      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.11/Mirra.app.tar.gz",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFd4UXk3c1l5UkdBbDQ2Tlg0REREK1lyVlFwMFhWbnpRdnVDT3BnZ0ZaeVlMb0QxK2MveFRBYjBXMHllbDJpS3ZJUHdTYzdMaFhRak8yekRjZkJiZHdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcyMDM3NjEyCWZpbGU6TWlycmEuYXBwLnRhci5negpyS2tHR3E2dkJ3bDRHbkpRb05qUFpuVmpYRnlzanFnRXNMaWhtcmE1REtjcTNuWUU3ZWNCMWlRUUkvSjlmMWg1M2NvZVdpWlhSZjY4SFM3ck84dzBBZz09Cg=="
+      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.12/Mirra.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMForQXRldS8wSjMybVljb1FPZWhuYzAwWDZXNkpXak1oTjAwSkhZYzFZL1pGT0RVUFhDQW85cWQwQndWV2J4Z2JvOE9ZRTFVQ0ZaT2RTbFZ5UFp4UmdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcyMTExNDEyCWZpbGU6TWlycmEuYXBwLnRhci5negpFUFFoYmJ1TlY3UUFwbDZobGdha3J1eldxaytQcnU0QVZWV2p1MFZnNUdKTzhjZ2JaY3ovVGppMG9hWDJEQ0FpZ3QvZXVHaTVXVkRuS0JlMDJDYnZEUT09Cg=="
+    },
+    "windows-x86_64": {
+      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.12/Mirra_0.2.12_x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFp6S2xYMkhDeWFvVGNMclFjZEdUVFZUUG1QR3I1ZTVrQWhQVlRUTFhCbHJCTDRPekt2Z05sZlFPZFNuQ2dkY3JYNjlGQlBkQlRrcFp2YzF6OGZ6N0FVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcyMTEyNjU2CWZpbGU6TWlycmFfMC4yLjEyX3g2NC1zZXR1cC5leGUKRTNTTVF5ZnREdTY1Z05NMFVQSzBLWlBHSHVTRmpRZDhkYWpRRkxReDBuRnpGWEYwUlkwd21Ic0VUaTJCeUp6SU8xSDhHamN5elRoQVZPZXBsMXdxRFE9PQo="
+    },
+    "linux-x86_64": {
+      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.12/Mirra_0.2.12_amd64.AppImage",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFpiQVQ2SDFmTVdyMWlLUGY3aWFwTDhENnNZeFVCeEtOdnRET0g0dHlXS01KdFNaSEVESlpCYWFjQjlkVnpTWXJHbmUySjBrNG5kMWk3UTZ5ZitBeUEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcyMTEwOTA3CWZpbGU6TWlycmFfMC4yLjEyX2FtZDY0LkFwcEltYWdlCjdpQWF0d3FuYUxKZVlFQUNnSHFheVlzaFprVEZYV2psTFlCYWNFdEJvVmFadzFKMmptaUNpMHNUS1dKaGlicldMWUhuZ053RVkxdEFnSHBJTTEyd0JnPT0K"
     }
   }
 }
