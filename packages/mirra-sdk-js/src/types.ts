@@ -126,6 +126,34 @@ export interface DecideResponse {
   reasoning: string;
 }
 
+export interface AgentRequest {
+  messages: AIConversationMessage[];
+  tools?: string[];
+  systemPrompt?: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  maxRounds?: number;
+}
+
+export interface AgentToolCall {
+  name: string;
+  arguments: Record<string, any>;
+  result: any;
+  error?: string;
+}
+
+export interface AgentResponse {
+  content: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  rounds: number;
+  toolCalls: AgentToolCall[];
+  stopReason: 'end_turn' | 'max_rounds' | 'error' | 'abort';
+}
+
 export interface BatchChatRequest {
   requests: Array<{
     message: string;

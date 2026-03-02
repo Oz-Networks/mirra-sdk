@@ -62,6 +62,15 @@ export interface AiDecideArgs {
   context?: string; // Additional context to help the AI make a better decision
   model?: string; // Specific model to use. Defaults to system default.
 }
+export interface AiAgentArgs {
+  messages: any[]; // Conversation messages array with role and content
+  tools?: any[]; // Adapter names to give the agent access to. Omit for all adapters.
+  systemPrompt?: string; // System prompt to guide agent behavior
+  model?: string; // Model to use. Default: claude-sonnet-4-20250514
+  temperature?: number; // Temperature 0.0-1.0. Default: 0.5
+  maxTokens?: number; // Max tokens per LLM call. Default: 4096
+  maxRounds?: number; // Max tool-calling rounds. Default: 10, max: 25
+}
 
 // Jira Adapter Types
 export interface JiraCreateIssueArgs {
@@ -126,6 +135,7 @@ export interface ClaudeCodeStartSessionArgs {
   groupId?: string; // The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group.
   cwd?: string; // Working directory for Claude Code (defaults to system default)
   model?: string; // Claude model to use (e.g., "claude-sonnet-4-6")
+  allowUnsupervisedMode?: boolean; // Run Claude Code in unsupervised mode, skipping all permission prompts. Only use for autonomous agent-driven sessions where no human is monitoring. Sessions still run in worktree isolation.
 }
 export interface ClaudeCodeResumeSessionArgs {
   claudeSessionId: string; // The Claude Code session ID to resume (from a previous session)
@@ -277,13 +287,12 @@ export interface DocumentListArgs {
 
 // Feed Items Adapter Types
 export interface FeedItemsCreateFeedItemArgs {
-  title: string; // Main title of the feed item (shown prominently)
-  subtitle?: string; // Optional subtitle (shown below title in muted color)
-  blocks: any[]; // Array of content blocks to display (text, key_value, list, timestamp, user_mention, divider, image, progress)
-  itemType: string; // Type: informative (FYI), actionable (needs response), or error
-  actions?: any[]; // Optional action buttons for the feed item
-  avatar?: any; // Optional avatar to show (user profile, icon, or custom image)
-  metadata?: any; // Additional metadata (searchable, not displayed)
+  title: string; // What happened - the main notification text
+  subtitle?: string; // Secondary context shown below the title
+  category: string; // Activity type - determines icon and styling (e.g. email, calendar, task, document, reminder, message, crypto, shopping, note, memory, flow, call, error, update)
+  details?: any; // Key-value pairs of relevant info to display (e.g. { "recipients": "3 people", "status": "sent" })
+  preview?: string; // Longer text content shown below details (e.g. email body preview, note content)
+  notify?: boolean; // Send push notification (default: true, set false for background updates)
 }
 
 // Feedback Adapter Types
@@ -566,9 +575,10 @@ export interface SkillsGetSkillUsageArgs {
 
 // Jupiter Adapter Types
 export interface JupiterSwapArgs {
-  inputMint: string; // Input token mint address
-  outputMint: string; // Output token mint address
-  amount: number; // Amount to swap (in UI units, e.g. 0.05 for SOL — decimals are auto-resolved)
+  inputMint: string; // Mint address of the token you are SPENDING (e.g. SOL: So11111111111111111111111111111111111111112)
+  outputMint: string; // Mint address of the token you are BUYING
+  amount?: number; // Amount of INPUT token to spend (in UI units, e.g. 0.5 SOL). Use this when user says "spend X SOL on tokens". Provide this OR outputAmount, not both.
+  outputAmount?: number; // Amount of OUTPUT token to receive (UI units). Adapter auto-calculates input from live prices. Use this when user says "buy X tokens". Provide this OR amount, not both.
   inputDecimals?: number; // Number of decimals for input token. Auto-resolved from Jupiter token registry if not provided.
   slippageBps?: number; // Slippage tolerance in basis points (default: 50)
 }
@@ -584,11 +594,11 @@ export interface JupiterSearchTokensArgs {
 export interface JupiterRefreshSwapArgs {
   feedItemId: string; // Feed item ID containing the swap to refresh
   swapId: string; // Original swap ID
-  inputMint: string; // Input token mint address
-  outputMint: string; // Output token mint address
-  amount: number; // Amount to swap (in UI units)
-  inputDecimals: number; // Input token decimals
-  slippageBps?: number; // Slippage tolerance in basis points
+  inputMint?: string; // Optional override. If omitted, uses value from original swap.
+  outputMint?: string; // Optional override. If omitted, uses value from original swap.
+  amount?: number; // Optional override (in UI units). If omitted, uses value from original swap.
+  inputDecimals?: number; // Optional override. If omitted, auto-resolved from original swap or token registry.
+  slippageBps?: number; // Slippage tolerance in basis points (default from original swap or 50)
 }
 export interface JupiterLaunchTokenArgs {
   tokenName: string; // Name of the token
@@ -596,8 +606,9 @@ export interface JupiterLaunchTokenArgs {
   tokenDescription?: string; // Description for the token metadata
   tokenImageUrl: string; // URL of the uploaded token image (from user message)
   quoteMint?: string; // Quote token mint address. Defaults to USDC (EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v). Can also use SOL or JUP mint.
-  initialMarketCap?: number; // Initial market cap in quote token units (default: 16000 for meme preset)
-  migrationMarketCap?: number; // Market cap threshold for graduation/migration (default: 69000 for meme preset)
+  preset?: string; // Market cap preset: "meme" (16k→69k, default), "mid" (69k→420k), "premium" (420k→1M). Sets initialMarketCap and migrationMarketCap. Explicit values override preset.
+  initialMarketCap?: number; // Initial market cap in quote token units. Overrides preset value if provided.
+  migrationMarketCap?: number; // Market cap threshold for graduation/migration. Overrides preset value if provided.
   antiSniping?: boolean; // Enable anti-sniping protection (default: false)
   feeBps?: number; // Creator trading fee in basis points: 100 (1%) or 200 (2%). Default: 100
   isLpLocked?: boolean; // Lock LP tokens (default: true)
@@ -778,7 +789,7 @@ export interface MemoryListGraphsArgs {
 
 // Mirra Messaging Adapter Types
 export interface MirraMessagingSendMessageArgs {
-  groupId: string; // Group ID to send the message to (use getContacts or getGroups to get the groupId)
+  groupId: string; // Group ID to send the message to (use getGroups to get the groupId)
   content: string; // Message text content
   replyToMessageId?: string; // ID of the message to reply to (creates a threaded reply)
   automation?: any; // Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing.
@@ -789,19 +800,13 @@ export interface MirraMessagingUpdateMessageArgs {
   content: string; // New message text content
   structuredData?: any[]; // Updated structured data for rich UI rendering
 }
-export interface MirraMessagingGetContactsArgs {
-  limit?: number; // Maximum number of contacts to return (default 50)
-  offset?: number; // Offset for pagination (default 0)
-}
-export interface MirraMessagingFindContactArgs {
-  query: string; // Username or name to search for
-}
 export interface MirraMessagingGetChatsArgs {
   scope?: string; // Filter by scope: direct, user, group, or all (default all)
   limit?: number; // Maximum number of chats to return (default 50)
 }
 export interface MirraMessagingGetGroupsArgs {
   limit?: number; // Maximum number of groups to return (default 50)
+  offset?: number; // Offset for pagination (default 0)
 }
 export interface MirraMessagingCreateGroupArgs {
   name: string; // Group name (max 100 characters)
@@ -811,7 +816,7 @@ export interface MirraMessagingCreateGroupArgs {
 }
 export interface MirraMessagingSearchMessagesArgs {
   query: string; // Keywords to search for
-  contactName?: string; // Contact name to filter by sender (resolved to userId)
+  senderUsername?: string; // Username to filter by sender (partial match supported)
   groupName?: string; // Group name to limit search (resolved to groupId)
   groupId?: string; // Group ID to limit search (use groupName for name-based lookup)
   scope?: string; // "direct", "group", or "all" (default)
@@ -819,6 +824,15 @@ export interface MirraMessagingSearchMessagesArgs {
   endDate?: string; // ISO date for time range end
   includeFullText?: boolean; // Include full message text (default: false, returns snippets)
   snippetLength?: number; // Max chars for snippet (default: 200)
+  limit?: number; // Max results (default 20, max 50)
+  offset?: number; // Pagination offset
+}
+export interface MirraMessagingGetRecentMessagesArgs {
+  groupId?: string; // Group ID to filter messages (use getGroups to get groupId)
+  groupName?: string; // Group name to filter messages (resolved to groupId)
+  scope?: string; // "direct", "group", or "all" (default)
+  startDate?: string; // ISO date for time range start
+  endDate?: string; // ISO date for time range end
   limit?: number; // Max results (default 20, max 50)
   offset?: number; // Pagination offset
 }
@@ -1301,6 +1315,15 @@ export interface SocketNotifySubscriberArgs {
   text?: string; // Text content for assistant/error messages
 }
 
+// Space Agent Adapter Types
+export interface SpaceAgentGetRecentEpisodesArgs {
+  limit?: number; // Number of episodes to return (default 5, max 20)
+}
+export interface SpaceAgentSendDirectiveArgs {
+  directive: string; // The instruction text for the agent (max 2000 characters)
+  urgent?: boolean; // If true, forces an immediate cycle by resetting lastCycleAt so the scheduler picks it up right away
+}
+
 // Telegram Adapter Types
 export interface TelegramSendMessageArgs {
   chatId: string; // Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from searchChats operation.
@@ -1391,27 +1414,27 @@ export interface TelegramBotGetBotInfoArgs {
 export interface TelegramBotBanChatMemberArgs {
   botUsername: string; // Username of the bot (without @)
   chatId: string; // Group chat ID
-  userId: number; // Telegram user ID to ban
+  userId: string; // Telegram user ID or @username to ban. Examples: "123456", "@johndoe"
   untilDate?: number; // Unix timestamp for temporary ban. Set to ~30s in the future for a "kick" (remove without permanent ban). Omit for permanent ban.
   revokeMessages?: boolean; // If true, delete all messages from this user in the group
 }
 export interface TelegramBotUnbanChatMemberArgs {
   botUsername: string; // Username of the bot (without @)
   chatId: string; // Group chat ID
-  userId: number; // Telegram user ID to unban
+  userId: string; // Telegram user ID or @username to unban. Examples: "123456", "@johndoe"
   onlyIfBanned?: boolean; // If true, only unban if the user is actually banned (will not re-add a user who left voluntarily)
 }
 export interface TelegramBotRestrictChatMemberArgs {
   botUsername: string; // Username of the bot (without @)
   chatId: string; // Group chat ID
-  userId: number; // Telegram user ID to restrict
+  userId: string; // Telegram user ID or @username to restrict. Examples: "123456", "@johndoe"
   permissions: any; // ChatPermissions object with boolean fields: canSendMessages, canSendPhotos, canSendVideos, canSendAudios, canSendDocuments, canSendVoiceNotes, canSendVideoNotes, canSendPolls, canSendOtherMessages, canAddWebPagePreviews, canChangeInfo, canInviteUsers, canPinMessages, canManageTopics. Set to false to restrict.
   untilDate?: number; // Unix timestamp for temporary restriction. Omit for permanent restriction.
 }
 export interface TelegramBotGetChatMemberArgs {
   botUsername: string; // Username of the bot (without @)
   chatId: string; // Group chat ID
-  userId: number; // Telegram user ID to look up
+  userId: string; // Telegram user ID or @username to look up. Examples: "123456", "@johndoe"
 }
 export interface TelegramBotDeleteMessageArgs {
   botUsername: string; // Username of the bot (without @)
@@ -1509,6 +1532,9 @@ export interface TwitterAdvancedSearchArgs {
   queryType?: string; // Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". Only these two values are valid.
   cursor?: string; // Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values.
 }
+export interface TwitterGetTweetByIdArgs {
+  tweetIds: string; // One or more tweet IDs, comma-separated. Example: "1846987139428634858" or "1846987139428634858,1866332309399781537"
+}
 
 // Flows Adapter Types
 export interface FlowsCreateFlowArgs {
@@ -1518,11 +1544,12 @@ export interface FlowsCreateFlowArgs {
   scriptId?: string; // ID of existing deployed script. Cannot use with code.
   schedule?: string; // Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone.
   eventType?: string; // Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead.
-  eventFilter?: any; // Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] }
+  eventFilter?: any; // Event filter for pre-filtering events before the script runs (evaluated in-memory, free). SIMPLE FORMAT (recommended): Pass a flat object with "when" set to the event type, then field aliases as keys. { "when": "telegram.bot_message", "chat_id": "-1001234567890", "message_text_contains": "urgent" } Add _contains, _gt, _lt, _not, _starts_with, _ends_with, _matches, _in suffixes for non-equals operators. Default operator is equals when no suffix is given. Arrays auto-detect as "in" operator. VALID FIELD ALIASES per event type (use these — do NOT use event.data.* paths here): telegram.bot_message: chat_id, chat_type, sender_username, sender_user_id, message_text, bot_username, has_media, media_type telegram.bot_command: command, chat_id, chat_type, sender_username, sender_user_id, bot_username telegram.bot_callback_query: chat_id, callback_data, sender_username, bot_username telegram.message: chat_id, is_group_chat, has_media, message_text gmail.email_received: from_email, from_name, subject, has_attachments, is_unread, body_text call.ended: duration_seconds, was_recorded, scope crypto_price_update: price_usd, token_address, chain recording.transcribed: duration_seconds, speaker_count, transcript_text flow.complete: flow_title, flow_success, flow_type All event types: event_type, sender_name, sender_id, content_text, channel_id, channel_name ADVANCED FORMAT (full condition tree — for OR logic, regex, or nested conditions): { "operator": "or", "conditions": [ { "operator": "equals", "field": "bot.chatId", "value": "123" }, { "operator": "equals", "field": "bot.chatId", "value": "456" } ]} Valid operators: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, in, notIn, exists, notExists, matchesRegex, and, or, not
   trigger?: any; // Legacy nested trigger structure. Prefer eventType or eventFilter instead.
   scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields.
   scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings.
   enabled?: boolean; // Whether the flow is enabled (default: true)
+  webhook?: boolean; // Set to true to create a webhook-triggered flow. Returns a webhookUrl in the response. External services POST to this URL to trigger the flow. The request body is available as event.data.body in the handler.
 }
 export interface FlowsCreateTimeFlowArgs {
   title: string; // Flow title
@@ -1541,10 +1568,11 @@ export interface FlowsCreateEventFlowArgs {
   scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }.
 }
 export interface FlowsGetFlowArgs {
-  id: string; // Flow ID
+  id: string; // Flow ID (24-character hex string returned by createFlow/createEventFlow). Get IDs from the flow creation response or by searching flows.
+  includeScript?: boolean; // Include the flow's script code in the response. Default: false.
 }
 export interface FlowsUpdateFlowArgs {
-  id: string; // Flow ID to update
+  id: string; // Flow ID to update (24-character hex string returned by createFlow/createEventFlow)
   title?: string; // New title
   description?: string; // New description
   trigger?: any; // New trigger configuration
@@ -1556,14 +1584,19 @@ export interface FlowsUpdateFlowArgs {
   eventType?: string; // Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead.
   eventFilter?: any; // Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] }
 }
+export interface FlowsModifyFlowScriptArgs {
+  flowId: string; // Flow ID to modify (24-character hex string)
+  newCode: string; // New handler code. Must include export async function handler(event, context, mirra) wrapper.
+  commitMessage?: string; // Description of changes (optional)
+}
 export interface FlowsDeleteFlowArgs {
-  id: string; // Flow ID to delete
+  id: string; // Flow ID to delete (24-character hex string returned by createFlow/createEventFlow)
 }
 export interface FlowsPauseFlowArgs {
-  id: string; // Flow ID to pause
+  id: string; // Flow ID to pause (24-character hex string)
 }
 export interface FlowsResumeFlowArgs {
-  id: string; // Flow ID to resume
+  id: string; // Flow ID to resume (24-character hex string)
 }
 export interface FlowsSearchFlowsArgs {
   status?: string; // Filter by status (or array of statuses)
@@ -1580,6 +1613,8 @@ export interface FlowsRecordExecutionArgs {
   error?: string; // Error message if execution failed
 }
 export interface FlowsListEventTypesArgs {
+  source?: string; // Filter by source/category (e.g., "telegram", "gmail", "calendar"). Returns only event types from this source.
+  sources?: any[]; // Array of sources to filter by (e.g., ["telegram", "gmail"]). More efficient than separate calls.
   includeTemplates?: boolean; // Include condition templates for each event type
   includeSchema?: boolean; // Include field schema showing available paths for script access. RECOMMENDED when writing scripts to see correct field access patterns.
 }
@@ -1872,6 +1907,37 @@ export interface GoogleSheetsCopyRangeArgs {
 // Response Type Definitions
 // ============================================================================
 
+// AI Services Response Types
+export interface AIChatData {
+  content: string; // AI response text content
+  model: string; // Model used for generation
+  inputTokens: number; // Number of input tokens consumed
+  outputTokens: number; // Number of output tokens generated
+  totalTokens: number; // Total tokens (input + output)
+}
+
+export type AiChatResult = AdapterResultBase<AIChatData>;
+
+export interface AIDecideData {
+  selectedOption: string; // ID of the selected option
+  reasoning: string; // Explanation of why this option was chosen
+}
+
+export type AiDecideResult = AdapterResultBase<AIDecideData>;
+
+export interface AIAgentData {
+  content: string; // Final text from the agent
+  model: string; // Model used for generation
+  inputTokens: number; // Total input tokens across all rounds
+  outputTokens: number; // Total output tokens across all rounds
+  totalTokens: number; // Total tokens (input + output)
+  rounds: number; // Number of tool-calling rounds executed
+  toolCalls: any[]; // Full history of tool calls made
+  stopReason: string; // Why the agent stopped: end_turn, max_rounds, error, or abort
+}
+
+export type AiAgentResult = AdapterResultBase<AIAgentData>;
+
 // Jira Response Types
 export interface JiraGetIssueData {
   id: string; // Unique issue ID
@@ -1891,7 +1957,7 @@ export interface JiraGetIssueData {
   projectKey: string; // Project key
   projectName: string; // Project name
   projectId: string; // Project ID
-  labels: string[]; // Issue labels
+  labels: any; // Issue labels
   created: string; // Created timestamp (ISO 8601)
   updated: string; // Updated timestamp (ISO 8601)
   isAssigned: boolean; // Whether issue has an assignee
@@ -1914,7 +1980,7 @@ export interface JiraIssueSummary {
   assigneeAccountId: string; // Assignee account ID
   projectKey: string; // Project key
   projectName: string; // Project name
-  labels: string[]; // Issue labels
+  labels: any; // Issue labels
   created: string; // Created timestamp (ISO 8601)
   updated: string; // Updated timestamp (ISO 8601)
   isAssigned: boolean; // Whether issue has an assignee
@@ -1923,7 +1989,7 @@ export interface JiraIssueSummary {
 export interface JiraSearchIssuesData {
   jql: string; // JQL query used
   count: number; // Number of results
-  issues: JiraIssueSummary[]; // List of matching issues
+  issues: any; // List of matching issues
 }
 
 export type JiraSearchIssuesResult = AdapterResultBase<JiraSearchIssuesData>;
@@ -1985,14 +2051,14 @@ export interface JiraProject {
 
 export interface JiraGetProjectsData {
   count: number; // Number of projects
-  projects: JiraProject[]; // List of projects
+  projects: any; // List of projects
 }
 
 export type JiraGetProjectsResult = AdapterResultBase<JiraGetProjectsData>;
 
 export interface JiraListProjectsData {
   count: number; // Number of projects
-  projects: JiraProject[]; // List of projects
+  projects: any; // List of projects
 }
 
 export type JiraListProjectsResult = AdapterResultBase<JiraListProjectsData>;
@@ -2014,9 +2080,9 @@ export interface JiraGetProjectMetadataData {
   projectKey: string; // Project key
   projectName: string; // Project name
   issueTypeCount: number; // Number of issue types
-  issueTypes: JiraIssueType[]; // Available issue types
+  issueTypes: any; // Available issue types
   priorityCount: number; // Number of priorities
-  priorities: JiraPriority[]; // Available priorities
+  priorities: any; // Available priorities
 }
 
 export type JiraGetProjectMetadataResult = AdapterResultBase<JiraGetProjectMetadataData>;
@@ -2031,7 +2097,7 @@ export interface JiraTransition {
 export interface JiraGetTransitionsData {
   issueKey: string; // Issue key
   count: number; // Number of transitions
-  transitions: JiraTransition[]; // Available transitions
+  transitions: any; // Available transitions
 }
 
 export type JiraGetTransitionsResult = AdapterResultBase<JiraGetTransitionsData>;
@@ -2046,7 +2112,7 @@ export interface JiraUser {
 export interface JiraListAssignableUsersData {
   projectKey: string; // Project key
   count: number; // Number of users
-  users: JiraUser[]; // Assignable users
+  users: any; // Assignable users
 }
 
 export type JiraListAssignableUsersResult = AdapterResultBase<JiraListAssignableUsersData>;
@@ -2054,16 +2120,287 @@ export type JiraListAssignableUsersResult = AdapterResultBase<JiraListAssignable
 export interface JiraGetIssueTypesData {
   projectKey: string; // Project key
   count: number; // Number of issue types
-  issueTypes: JiraIssueType[]; // Available issue types
+  issueTypes: any; // Available issue types
 }
 
 export type JiraGetIssueTypesResult = AdapterResultBase<JiraGetIssueTypesData>;
+
+// Claude Code Response Types
+export interface ClaudeCodeStartSessionData {
+  sessionId: string; // Unique session identifier (prefixed with cc_)
+  channelId: string; // WebSocket channel ID for the session
+  processId?: string; // Desktop process identifier
+  pid?: number; // OS process ID of the Claude Code process
+}
+
+export type ClaudeCodeStartSessionResult = AdapterResultBase<ClaudeCodeStartSessionData>;
+
+export interface ClaudeCodeResumeSessionData {
+  sessionId: string; // Unique session identifier for the resumed session (prefixed with cc_)
+  channelId: string; // WebSocket channel ID for the session
+  processId?: string; // Desktop process identifier
+  pid?: number; // OS process ID of the Claude Code process
+}
+
+export type ClaudeCodeResumeSessionResult = AdapterResultBase<ClaudeCodeResumeSessionData>;
+
+export interface ClaudeCodeSessionInfo {
+  sessionId: string; // Session identifier
+  channelId: string; // WebSocket channel ID
+  groupId: string; // Mirra group ID where output is posted
+  status: string; // Connection status (e.g., "connected")
+  startedAt?: string; // ISO 8601 timestamp when session started
+  initialPrompt?: string; // The initial prompt given to the session
+  cwd?: string; // Working directory for the session
+  model?: string; // Claude model being used
+  processId?: string; // Desktop process identifier
+  pid?: number; // OS process ID
+}
+
+export interface ClaudeCodeListSessionsData {
+  sessions: any; // Array of active Claude Code sessions
+  count: number; // Number of active sessions
+}
+
+export type ClaudeCodeListSessionsResult = AdapterResultBase<ClaudeCodeListSessionsData>;
+
+export interface ClaudeCodeKillSessionData {
+  killed: boolean; // Whether the session was successfully killed
+  sessionId: string; // Session ID that was killed
+}
+
+export type ClaudeCodeKillSessionResult = AdapterResultBase<ClaudeCodeKillSessionData>;
+
+// Data Response Types
+export interface DataCollectionInfo {
+  id: string; // Collection ID
+  name: string; // Human-readable collection name
+  slug: string; // URL-safe collection identifier
+  description?: string; // Collection description
+  fields: any; // Array of field definitions
+  recordCount: number; // Number of records in the collection
+  status: string; // Collection status (active or archived)
+  createdAt: string; // ISO timestamp of creation
+}
+
+export interface DataDefineCollectionData {
+  collection: any; // The created collection schema
+}
+
+export type DataDefineCollectionResult = AdapterResultBase<DataDefineCollectionData>;
+
+export interface DataListCollectionsData {
+  collections: any; // Array of collection schemas
+  count: number; // Total number of collections returned
+}
+
+export type DataListCollectionsResult = AdapterResultBase<DataListCollectionsData>;
+
+export interface DataGetCollectionData {
+  collection: any; // The collection schema with field definitions
+}
+
+export type DataGetCollectionResult = AdapterResultBase<DataGetCollectionData>;
+
+export interface DataUpdateCollectionData {
+  collection: any; // The updated collection schema
+}
+
+export type DataUpdateCollectionResult = AdapterResultBase<DataUpdateCollectionData>;
+
+export interface DataDropCollectionData {
+  dropped: boolean; // Whether the collection was dropped
+  slug: string; // Slug of the dropped collection
+  deletedRecords: number; // Number of records deleted
+  freedBytes: number; // Number of bytes freed from quota
+}
+
+export type DataDropCollectionResult = AdapterResultBase<DataDropCollectionData>;
+
+export interface DataRecordInfo {
+  id: string; // Record ID
+  collection: string; // Collection slug
+  data: any; // Record data matching the collection schema
+  sizeBytes: number; // Size of the record in bytes
+  createdAt: string; // ISO timestamp of creation
+}
+
+export interface DataInsertRecordData {
+  record: any; // The created record
+}
+
+export type DataInsertRecordResult = AdapterResultBase<DataInsertRecordData>;
+
+export interface DataInsertRecordsData {
+  records: any; // Array of created records
+  count: number; // Number of records inserted
+  totalSizeBytes: number; // Total size of all inserted records in bytes
+}
+
+export type DataInsertRecordsResult = AdapterResultBase<DataInsertRecordsData>;
+
+export interface DataQueryRecordItem {
+  id: string; // Record ID
+  data: any; // Record data
+  createdAt: string; // ISO timestamp of creation
+  updatedAt?: string; // ISO timestamp of last update
+}
+
+export interface DataPaginationInfo {
+  totalCount: number; // Total number of matching records
+  limit: number; // Max records per page
+  offset: number; // Number of records skipped
+  hasMore: boolean; // Whether more records exist beyond this page
+}
+
+export interface DataQueryRecordsData {
+  records: any; // Array of matching records
+  pagination: any; // Pagination metadata
+}
+
+export type DataQueryRecordsResult = AdapterResultBase<DataQueryRecordsData>;
+
+export interface DataUpdateRecordData {
+  record: any; // The updated record
+}
+
+export type DataUpdateRecordResult = AdapterResultBase<DataUpdateRecordData>;
+
+export interface DataDeleteRecordData {
+  deleted: boolean; // Whether the record was deleted
+  recordId: string; // ID of the deleted record
+  collection: string; // Collection slug
+  freedBytes: number; // Number of bytes freed from quota
+}
+
+export type DataDeleteRecordResult = AdapterResultBase<DataDeleteRecordData>;
+
+export interface DataAggregateData {
+  results: any; // Aggregation result rows, each containing groupBy key (if grouped) and metric values
+  groupBy: any; // Field name used for grouping, or null if ungrouped
+  metrics: any; // Array of metric definitions ({ field, op }) that were computed
+  count: number; // Number of result rows
+}
+
+export type DataAggregateResult = AdapterResultBase<DataAggregateData>;
+
+export interface DataGetQuotaUsageData {
+  currentBytes: number; // Current storage usage in bytes
+  maxBytes: number; // Maximum storage quota in bytes
+  percentage: number; // Percentage of quota used (0-100)
+  formattedUsage: string; // Human-readable usage string (e.g. "12.5 KB / 500.0 KB")
+}
+
+export type DataGetQuotaUsageResult = AdapterResultBase<DataGetQuotaUsageData>;
+
+// Desktop Response Types
+export interface DesktopExecuteCommandData {
+  stdout: string; // Standard output from the command
+  stderr: string; // Standard error from the command
+  exitCode: number; // Process exit code (0 = success)
+  executionTimeMs: number; // Command execution time in milliseconds
+}
+
+export type DesktopExecuteCommandResult = AdapterResultBase<DesktopExecuteCommandData>;
+
+export interface DesktopReadFileData {
+  content: string; // File contents with line numbers in cat -n format
+  path: string; // Absolute path of the file that was read
+  sizeBytes: number; // File size in bytes
+  totalLines: number; // Total number of lines in the file
+  startLine: number; // First line number returned (1-indexed)
+  endLine: number; // Last line number returned
+  hasMore: boolean; // Whether more lines follow after endLine
+}
+
+export type DesktopReadFileResult = AdapterResultBase<DesktopReadFileData>;
+
+export interface DesktopWriteFileData {
+  path: string; // Absolute path of the file that was written
+  bytesWritten: number; // Number of bytes written to the file
+}
+
+export type DesktopWriteFileResult = AdapterResultBase<DesktopWriteFileData>;
+
+export interface DesktopEditFileData {
+  path: string; // Absolute path of the file that was edited
+  bytesWritten: number; // New file size in bytes after the edit
+  matchCount: number; // Number of replacements made
+}
+
+export type DesktopEditFileResult = AdapterResultBase<DesktopEditFileData>;
+
+export interface DesktopDirectoryEntry {
+  name: string; // File or directory name
+  entryType: string; // Entry type (file or directory)
+  size: number; // Size in bytes
+  modified: any; // Last modified timestamp (Unix seconds) or null
+}
+
+export interface DesktopListDirectoryData {
+  path: string; // Absolute path of the listed directory
+  entries: any; // Array of directory entries
+  count: number; // Total number of entries returned
+}
+
+export type DesktopListDirectoryResult = AdapterResultBase<DesktopListDirectoryData>;
+
+export interface DesktopGetSystemInfoData {
+  hostname: string; // Machine hostname
+  os: string; // Operating system name (e.g. macOS, Linux, Windows)
+  osVersion: string; // Operating system version
+  arch: string; // CPU architecture (e.g. aarch64, x86_64)
+  cpuCount: number; // Number of CPU cores
+  totalMemoryMb: number; // Total system memory in megabytes
+  homeDir: string; // Path to the user home directory
+}
+
+export type DesktopGetSystemInfoResult = AdapterResultBase<DesktopGetSystemInfoData>;
+
+export interface DesktopSpawnProcessData {
+  processId: string; // Unique process identifier for later management
+  pid: number; // Operating system process ID
+}
+
+export type DesktopSpawnProcessResult = AdapterResultBase<DesktopSpawnProcessData>;
+
+export interface DesktopKillProcessData {
+  killed: boolean; // Whether the process was found and killed
+}
+
+export type DesktopKillProcessResult = AdapterResultBase<DesktopKillProcessData>;
+
+export interface DesktopMachineInfo {
+  deviceId: string; // Unique device identifier
+  hostname: string; // Machine hostname
+  platform: string; // Platform string (e.g. MacIntel)
+  arch: string; // CPU architecture
+  appVersion: string; // Desktop app version
+  isActive: boolean; // Whether this machine is the active target
+  connectedAt: number; // Connection timestamp in milliseconds
+  capabilities: any; // Supported operation names
+}
+
+export interface DesktopListMachinesData {
+  machines: any; // Array of connected desktop machines
+  activeDeviceId: any; // Device ID of the currently active machine, or null if none selected
+}
+
+export type DesktopListMachinesResult = AdapterResultBase<DesktopListMachinesData>;
+
+export interface DesktopSelectMachineData {
+  deviceId: string; // Device ID of the newly selected machine
+  hostname: string; // Hostname of the newly selected machine
+  previousDeviceId: any; // Device ID of the previously selected machine, or null
+}
+
+export type DesktopSelectMachineResult = AdapterResultBase<DesktopSelectMachineData>;
 
 // Documents Response Types
 export interface DocumentUploadData {
   documentId: string; // Created document ID
   chunkCount: number; // Number of chunks created
-  graphIds: string[]; // Array of graph IDs
+  graphIds: any; // Array of graph IDs
   primaryGraphId: string; // Primary/owner graph ID
   processingTimeMs: number; // Processing time in milliseconds
 }
@@ -2085,12 +2422,12 @@ export interface DocumentGetData {
   fileSize: number; // File size in bytes
   processingStatus: string; // Processing status
   chunkCount: number; // Number of chunks
-  graphIds: string[]; // Graph IDs document is in
+  graphIds: any; // Graph IDs document is in
   primaryGraphId: string; // Primary graph ID
   createdAt: number; // Creation timestamp
   createdByUserId: string; // Creator user ID
   hasMultipleGraphs: boolean; // Whether shared to multiple graphs
-  chunks: DocumentChunk[]; // Document chunks
+  chunks: any; // Document chunks
 }
 
 export type DocumentGetResult = AdapterResultBase<DocumentGetData>;
@@ -2098,10 +2435,10 @@ export type DocumentGetResult = AdapterResultBase<DocumentGetData>;
 export interface DocumentGetStatusData {
   documentId: string; // Document ID
   processingStatus: string; // Status: processing, completed, failed
-  processingError: string | null; // Error message if failed
+  processingError: any; // Error message if failed
   chunkCount: number; // Number of chunks
-  extractedAt: number | null; // Text extraction timestamp
-  processingCompletedAt: number | null; // Processing completion timestamp
+  extractedAt: any; // Text extraction timestamp
+  processingCompletedAt: any; // Processing completion timestamp
 }
 
 export type DocumentGetStatusResult = AdapterResultBase<DocumentGetStatusData>;
@@ -2109,7 +2446,7 @@ export type DocumentGetStatusResult = AdapterResultBase<DocumentGetStatusData>;
 export interface DocumentGetChunksData {
   documentId: string; // Document ID
   count: number; // Number of chunks
-  chunks: DocumentChunk[]; // Document chunks
+  chunks: any; // Document chunks
 }
 
 export type DocumentGetChunksResult = AdapterResultBase<DocumentGetChunksData>;
@@ -2124,7 +2461,7 @@ export type DocumentDeleteResult = AdapterResultBase<DocumentDeleteData>;
 
 export interface DocumentShareData {
   documentId: string; // Document ID
-  graphIds: string[]; // Updated graph IDs
+  graphIds: any; // Updated graph IDs
   sharedToGraphId: string; // Target graph ID
   sharedByUserId: string; // User who shared
   sharedAt: number; // Share timestamp
@@ -2134,7 +2471,7 @@ export type DocumentShareResult = AdapterResultBase<DocumentShareData>;
 
 export interface DocumentUnshareData {
   documentId: string; // Document ID
-  graphIds: string[]; // Updated graph IDs
+  graphIds: any; // Updated graph IDs
   removedGraphId: string; // Removed graph ID
 }
 
@@ -2144,14 +2481,14 @@ export interface DocumentGraphInfo {
   graphId: string; // Graph ID
   isPrimary: boolean; // Whether this is the primary/original graph
   sharedAt: number; // Unix timestamp when shared
-  sharedByUserId: string | null; // User ID who shared (null for primary)
-  shareReason: string | null; // Reason for sharing (if provided)
+  sharedByUserId: any; // User ID who shared (null for primary)
+  shareReason: any; // Reason for sharing (if provided)
 }
 
 export interface DocumentListGraphsData {
   documentId: string; // Document ID
   count: number; // Number of graphs
-  graphs: DocumentGraphInfo[]; // Graph information
+  graphs: any; // Graph information
 }
 
 export type DocumentListGraphsResult = AdapterResultBase<DocumentListGraphsData>;
@@ -2167,7 +2504,7 @@ export interface DocumentSearchResultItem {
 export interface DocumentSearchData {
   graphId: string; // Searched graph ID
   count: number; // Number of results
-  results: DocumentSearchResultItem[]; // Search results
+  results: any; // Search results
 }
 
 export type DocumentSearchResult = AdapterResultBase<DocumentSearchData>;
@@ -2180,7 +2517,7 @@ export interface DocumentSummary {
   fileSize: number; // File size in bytes
   processingStatus: string; // Processing status: processing, completed, failed
   chunkCount: number; // Number of chunks document was split into
-  graphIds: string[]; // Array of graph IDs document is shared in
+  graphIds: any; // Array of graph IDs document is shared in
   createdAt: number; // Unix timestamp of creation
   createdByUserId: string; // User ID who created document
 }
@@ -2188,7 +2525,7 @@ export interface DocumentSummary {
 export interface DocumentListData {
   graphId: string; // Listed graph ID
   count: number; // Number of documents
-  documents: DocumentSummary[]; // Document summaries
+  documents: any; // Document summaries
 }
 
 export type DocumentListResult = AdapterResultBase<DocumentListData>;
@@ -2197,7 +2534,7 @@ export type DocumentListResult = AdapterResultBase<DocumentListData>;
 export interface FeedItemCreateData {
   feedItemId: string; // Unique ID of the created feed item
   title: string; // Title of the feed item
-  itemType: 'informative' | 'actionable' | 'error'; // Type of feed item
+  itemType: any; // Type of feed item
   subType: string; // Subtype of the feed item
   status: string; // Status of the feed item (pending, completed)
   graphId: string; // Graph ID where feed item was created
@@ -2213,7 +2550,7 @@ export interface FeedbackReportBugData {
   id: string; // Unique identifier for the feedback report
   createdAt: string; // ISO 8601 timestamp when created
   source: string; // Source of the report: user_submitted or llm_auto_report
-  type: 'bug'; // Report type indicator
+  type: any; // Report type indicator
   title: string; // Brief bug description
   severity: string; // Bug severity: critical, high, medium, or low
 }
@@ -2224,7 +2561,7 @@ export interface FeedbackReportToolFailureData {
   id: string; // Unique identifier for the feedback report
   createdAt: string; // ISO 8601 timestamp when created
   source: string; // Source of the report: user_submitted or llm_auto_report
-  type: 'tool_failure'; // Report type indicator
+  type: any; // Report type indicator
   adapterType: string; // Adapter type that failed
   operation: string; // Operation that failed
   errorMessage: string; // Error message from the failure
@@ -2236,7 +2573,7 @@ export interface FeedbackReportMissingCapabilityData {
   id: string; // Unique identifier for the feedback report
   createdAt: string; // ISO 8601 timestamp when created
   source: string; // Source of the report: user_submitted or llm_auto_report
-  type: 'missing_capability'; // Report type indicator
+  type: any; // Report type indicator
   userRequest: string; // What the user asked for
   reason: string; // Why it could not be fulfilled
 }
@@ -2247,9 +2584,9 @@ export interface FeedbackSubmitFeedbackData {
   id: string; // Unique identifier for the feedback report
   createdAt: string; // ISO 8601 timestamp when created
   source: string; // Source of the report: user_submitted or llm_auto_report
-  type: 'feedback'; // Report type indicator
+  type: any; // Report type indicator
   sentiment: string; // Feedback sentiment: positive, negative, or neutral
-  category: string | null; // Feedback category: ux, performance, feature, or general
+  category: any; // Feedback category: ux, performance, feature, or general
 }
 
 export type FeedbackSubmitFeedbackResult = AdapterResultBase<FeedbackSubmitFeedbackData>;
@@ -2258,9 +2595,9 @@ export interface FeedbackSubmitFeatureRequestData {
   id: string; // Unique identifier for the feedback report
   createdAt: string; // ISO 8601 timestamp when created
   source: string; // Source of the report: user_submitted or llm_auto_report
-  type: 'feature_request'; // Report type indicator
+  type: any; // Report type indicator
   title: string; // Feature title
-  priority: string | null; // Priority: high, medium, or low
+  priority: any; // Priority: high, medium, or low
 }
 
 export type FeedbackSubmitFeatureRequestResult = AdapterResultBase<FeedbackSubmitFeatureRequestData>;
@@ -2283,9 +2620,9 @@ export interface GoogleCalendarGetEventData {
   endTime: string; // End time (ISO 8601)
   isAllDay: boolean; // Whether this is an all-day event
   timeZone: string; // Event timezone
-  creator: GoogleCalendarAttendee; // Event creator
-  organizer: GoogleCalendarAttendee; // Event organizer
-  attendees: GoogleCalendarAttendee[]; // List of attendees
+  creator: any; // Event creator
+  organizer: any; // Event organizer
+  attendees: any; // List of attendees
   attendeeCount: number; // Number of attendees
   status: string; // Event status: confirmed, tentative, cancelled
   htmlLink: string; // Link to view event in Google Calendar
@@ -2315,7 +2652,7 @@ export interface GoogleCalendarListEventsData {
   query?: string; // Search query used
   timeMin?: string; // Start of time range
   timeMax?: string; // End of time range
-  events: GoogleCalendarEventSummary[]; // List of calendar events
+  events: any; // List of calendar events
 }
 
 export type GoogleCalendarListEventsResult = AdapterResultBase<GoogleCalendarListEventsData>;
@@ -2325,7 +2662,7 @@ export interface GoogleCalendarListEventsData {
   query?: string; // Search query used
   timeMin?: string; // Start of time range
   timeMax?: string; // End of time range
-  events: GoogleCalendarEventSummary[]; // List of calendar events
+  events: any; // List of calendar events
 }
 
 export type GoogleCalendarGetEventsResult = AdapterResultBase<GoogleCalendarListEventsData>;
@@ -2335,7 +2672,7 @@ export interface GoogleCalendarSearchEventsData {
   query: string; // Search query used
   timeMin?: string; // Start of time range
   timeMax?: string; // End of time range
-  events: GoogleCalendarEventSummary[]; // List of matching calendar events
+  events: any; // List of matching calendar events
 }
 
 export type GoogleCalendarSearchEventsResult = AdapterResultBase<GoogleCalendarSearchEventsData>;
@@ -2343,8 +2680,8 @@ export type GoogleCalendarSearchEventsResult = AdapterResultBase<GoogleCalendarS
 export interface GoogleCalendarCreateEventData {
   eventId: string; // Created event ID
   summary: string; // Event title
-  start: object; // Event start time
-  end: object; // Event end time
+  start: any; // Event start time
+  end: any; // Event end time
   htmlLink: string; // Link to view event in Google Calendar
 }
 
@@ -2379,7 +2716,7 @@ export interface GoogleDriveFileSummary {
 export interface GoogleDriveListFilesData {
   count: number; // Number of files returned
   query?: string; // Search query used
-  files: GoogleDriveFileSummary[]; // Array of file summaries
+  files: any; // Array of file summaries
 }
 
 export type GoogleDriveListFilesResult = AdapterResultBase<GoogleDriveListFilesData>;
@@ -2387,7 +2724,7 @@ export type GoogleDriveListFilesResult = AdapterResultBase<GoogleDriveListFilesD
 export interface GoogleDriveSearchFilesData {
   count: number; // Number of files returned
   query: string; // Search query used
-  files: GoogleDriveFileSummary[]; // Array of matching file summaries
+  files: any; // Array of matching file summaries
 }
 
 export type GoogleDriveSearchFilesResult = AdapterResultBase<GoogleDriveSearchFilesData>;
@@ -2405,9 +2742,9 @@ export interface GoogleDriveGetFileInfoData {
   size: number; // File size in bytes
   createdAt: string; // ISO 8601 creation date
   modifiedAt: string; // ISO 8601 modification date
-  webViewLink: string | null; // Web view URL
-  parents: string[]; // Parent folder IDs
-  owner: GoogleDriveOwner | null; // File owner
+  webViewLink: any; // Web view URL
+  parents: any; // Parent folder IDs
+  owner: any; // File owner
   isFolder: boolean; // Whether this is a folder
   isTrashed: boolean; // Whether file is in trash
 }
@@ -2499,10 +2836,10 @@ export interface GoogleGmailGetEmailData {
   body: string; // Plain text body content
   bodyHtml?: string; // HTML body content
   snippet: string; // Email preview snippet
-  labelIds: string[]; // Gmail label IDs
+  labelIds: any; // Gmail label IDs
   isUnread: boolean; // Whether email is unread
   hasAttachments: boolean; // Whether email has attachments
-  attachments?: GoogleGmailAttachment[]; // Attachment metadata
+  attachments?: any; // Attachment metadata
 }
 
 export type GoogleGmailGetEmailResult = AdapterResultBase<GoogleGmailGetEmailData>;
@@ -2515,7 +2852,7 @@ export interface GoogleGmailEmailSummary {
   to: string; // Recipient email address
   date: string; // ISO timestamp
   snippet: string; // Preview snippet
-  labelIds: string[]; // Gmail label IDs
+  labelIds: any; // Gmail label IDs
   isUnread: boolean; // Whether email is unread
   hasAttachments: boolean; // Whether email has attachments
 }
@@ -2523,7 +2860,7 @@ export interface GoogleGmailEmailSummary {
 export interface GoogleGmailSearchEmailsData {
   query: string; // Search query used
   count: number; // Number of results
-  emails: GoogleGmailEmailSummary[]; // List of matching emails
+  emails: any; // List of matching emails
 }
 
 export type GoogleGmailSearchEmailsResult = AdapterResultBase<GoogleGmailSearchEmailsData>;
@@ -2531,7 +2868,7 @@ export type GoogleGmailSearchEmailsResult = AdapterResultBase<GoogleGmailSearchE
 export interface GoogleGmailListEmailsData {
   query: string; // Search query used
   count: number; // Number of results
-  emails: GoogleGmailEmailSummary[]; // List of emails
+  emails: any; // List of emails
 }
 
 export type GoogleGmailListEmailsResult = AdapterResultBase<GoogleGmailListEmailsData>;
@@ -2568,29 +2905,29 @@ export interface GoogleGmailDraftSummary {
 
 export interface GoogleGmailListDraftsData {
   count: number; // Number of drafts
-  drafts: GoogleGmailDraftSummary[]; // List of drafts
+  drafts: any; // List of drafts
 }
 
 export type GoogleGmailListDraftsResult = AdapterResultBase<GoogleGmailListDraftsData>;
 
 export interface GoogleGmailDeleteEmailData {
   messageId: string; // ID of deleted email
-  deleted: 'permanent' | 'trash'; // Type of deletion
+  deleted: any; // Type of deletion
 }
 
 export type GoogleGmailDeleteEmailResult = AdapterResultBase<GoogleGmailDeleteEmailData>;
 
 export interface GoogleGmailBulkDeleteEmailsData {
   deletedCount: number; // Number of emails deleted
-  messageIds: string[]; // IDs of deleted emails
-  deleted: 'permanent' | 'trash'; // Type of deletion
+  messageIds: any; // IDs of deleted emails
+  deleted: any; // Type of deletion
 }
 
 export type GoogleGmailBulkDeleteEmailsResult = AdapterResultBase<GoogleGmailBulkDeleteEmailsData>;
 
 // Hypertrade Response Types
 export interface HypertradePlaceOrderData {
-  type: 'pending_order'; // Response type
+  type: any; // Response type
   asset: string; // Asset/coin symbol
   isBuy: boolean; // Whether buying/longing
   size: number; // Order size
@@ -2607,7 +2944,7 @@ export interface HypertradePlaceOrderData {
 export type HypertradePlaceOrderResult = AdapterResultBase<HypertradePlaceOrderData>;
 
 export interface HypertradeCancelOrderData {
-  type: 'pending_cancel'; // Response type
+  type: any; // Response type
   asset: string; // Asset/coin symbol
   orderId: number; // Order ID to cancel (0 if using clientOrderId)
   clientOrderId: string; // Client order ID to cancel (empty if using orderId)
@@ -2633,7 +2970,7 @@ export interface HypertradePosition {
 }
 
 export interface HypertradeGetPositionsData {
-  positions: HypertradePosition[]; // List of open positions
+  positions: any; // List of open positions
 }
 
 export type HypertradeGetPositionsResult = AdapterResultBase<HypertradeGetPositionsData>;
@@ -2654,7 +2991,7 @@ export interface HypertradeOpenOrder {
 }
 
 export interface HypertradeGetOpenOrdersData {
-  orders: HypertradeOpenOrder[]; // List of open orders
+  orders: any; // List of open orders
 }
 
 export type HypertradeGetOpenOrdersResult = AdapterResultBase<HypertradeGetOpenOrdersData>;
@@ -2671,7 +3008,7 @@ export interface HypertradeGetBalancesData {
   totalMarginUsed: number; // Total margin used
   withdrawable: number; // Withdrawable amount
   perpEquity: number; // Perpetual equity
-  spotBalances: HypertradeSpotBalance[]; // List of spot token balances
+  spotBalances: any; // List of spot token balances
 }
 
 export type HypertradeGetBalancesResult = AdapterResultBase<HypertradeGetBalancesData>;
@@ -2690,7 +3027,7 @@ export interface HypertradeMarketInfo {
 }
 
 export interface HypertradeGetMarketInfoData {
-  markets: HypertradeMarketInfo[]; // List of market info entries
+  markets: any; // List of market info entries
 }
 
 export type HypertradeGetMarketInfoResult = AdapterResultBase<HypertradeGetMarketInfoData>;
@@ -2703,8 +3040,8 @@ export interface HypertradeOrderbookLevel {
 
 export interface HypertradeGetOrderbookData {
   asset: string; // Asset/coin symbol
-  bids: HypertradeOrderbookLevel[]; // Bid levels (best first)
-  asks: HypertradeOrderbookLevel[]; // Ask levels (best first)
+  bids: any; // Bid levels (best first)
+  asks: any; // Ask levels (best first)
   spread: number; // Best ask - best bid
   midPrice: number; // Mid price ((best ask + best bid) / 2)
   timestamp: number; // Snapshot timestamp
@@ -2725,13 +3062,13 @@ export interface HypertradeCandle {
 export interface HypertradeGetCandlesData {
   asset: string; // Asset/coin symbol
   interval: string; // Candle interval
-  candles: HypertradeCandle[]; // List of candles
+  candles: any; // List of candles
 }
 
 export type HypertradeGetCandlesResult = AdapterResultBase<HypertradeGetCandlesData>;
 
 export interface HypertradeSetLeverageData {
-  type: 'pending_leverage'; // Response type
+  type: any; // Response type
   asset: string; // Asset/coin symbol
   leverage: number; // Leverage multiplier
   leverageMode: string; // Leverage mode (cross/isolated)
@@ -2759,14 +3096,147 @@ export interface HypertradeTradeFill {
 }
 
 export interface HypertradeGetTradeHistoryData {
-  trades: HypertradeTradeFill[]; // List of trade fills
+  trades: any; // List of trade fills
 }
 
 export type HypertradeGetTradeHistoryResult = AdapterResultBase<HypertradeGetTradeHistoryData>;
 
+// Skills Response Types
+export interface SkillSummary {
+  skillId: string; // Unique skill ID
+  name: string; // Kebab-case name
+  title: string; // Human-readable title
+  description: string; // What the skill does
+  category: string; // Skill category
+  builtIn: boolean; // Whether this is a built-in skill
+  usageCount: number; // Times this skill has been used
+}
+
+export interface SkillListData {
+  count: number; // Number of skills returned
+  skills: any; // List of skills
+}
+
+export type SkillsListSkillsResult = AdapterResultBase<SkillListData>;
+
+export interface SkillDetailData {
+  skillId: string; // Unique skill ID
+  name: string; // Kebab-case name
+  title: string; // Human-readable title
+  description: string; // What the skill does
+  category: string; // Skill category
+  builtIn: boolean; // Whether this is a built-in skill
+  usageCount: number; // Times this skill has been used
+  whenToUse: string; // When to use this skill
+  whenNotToUse: string; // When not to use this skill
+  procedure: any; // Step-by-step procedure
+  requiredAdapters: any; // Adapters required by this skill
+  version: string; // Skill version
+  tags: any; // Tags for discovery
+  createdAt: string; // Creation timestamp (ISO 8601)
+}
+
+export type SkillsGetSkillResult = AdapterResultBase<SkillDetailData>;
+
+export interface SkillCreateData {
+  skillId: string; // Unique skill ID
+  name: string; // Kebab-case name
+  title: string; // Human-readable title
+  description: string; // What the skill does
+  category: string; // Skill category
+  builtIn: boolean; // Whether this is a built-in skill
+  usageCount: number; // Times this skill has been used
+  whenToUse: string; // When to use this skill
+  whenNotToUse: string; // When not to use this skill
+  procedure: any; // Step-by-step procedure
+  requiredAdapters: any; // Adapters required by this skill
+  version: string; // Skill version
+  tags: any; // Tags for discovery
+  createdAt: string; // Creation timestamp (ISO 8601)
+}
+
+export type SkillsCreateSkillResult = AdapterResultBase<SkillCreateData>;
+
+export interface SkillUpdateData {
+  skillId: string; // Unique skill ID
+  name: string; // Kebab-case name
+  title: string; // Human-readable title
+  description: string; // What the skill does
+  category: string; // Skill category
+  builtIn: boolean; // Whether this is a built-in skill
+  usageCount: number; // Times this skill has been used
+  whenToUse: string; // When to use this skill
+  whenNotToUse: string; // When not to use this skill
+  procedure: any; // Step-by-step procedure
+  requiredAdapters: any; // Adapters required by this skill
+  version: string; // Skill version
+  tags: any; // Tags for discovery
+  createdAt: string; // Creation timestamp (ISO 8601)
+}
+
+export type SkillsUpdateSkillResult = AdapterResultBase<SkillUpdateData>;
+
+export interface SkillDeleteData {
+  success: boolean; // Whether deletion succeeded
+  deletedAt: string; // Deletion timestamp (ISO 8601)
+}
+
+export type SkillsDeleteSkillResult = AdapterResultBase<SkillDeleteData>;
+
+export interface SkillDetail {
+  skillId: string; // Unique skill ID
+  name: string; // Kebab-case name
+  title: string; // Human-readable title
+  description: string; // What the skill does
+  category: string; // Skill category
+  builtIn: boolean; // Whether this is a built-in skill
+  usageCount: number; // Times this skill has been used
+  whenToUse: string; // When to use this skill
+  whenNotToUse: string; // When not to use this skill
+  procedure: any; // Step-by-step procedure
+  requiredAdapters: any; // Adapters required by this skill
+  version: string; // Skill version
+  tags: any; // Tags for discovery
+  createdAt: string; // Creation timestamp (ISO 8601)
+}
+
+export interface SkillSelectData {
+  count: number; // Number of skills selected
+  skills: any; // Selected skills with full procedure
+}
+
+export type SkillsSelectSkillsResult = AdapterResultBase<SkillSelectData>;
+
+export interface SkillRecordUsageData {
+  usageId: string; // Unique usage record ID
+  skillId: string; // Skill that was used
+  flowId: string; // Flow that used the skill
+  iteration: number; // Iteration number
+  outcome: string; // success or failure
+  timestamp: string; // Usage timestamp (ISO 8601)
+}
+
+export type SkillsRecordSkillUsageResult = AdapterResultBase<SkillRecordUsageData>;
+
+export interface SkillUsageRecord {
+  usageId: string; // Unique usage record ID
+  skillId: string; // Skill that was used
+  flowId: string; // Flow that used the skill
+  iteration: number; // Iteration number
+  outcome: string; // success or failure
+  timestamp: string; // Usage timestamp (ISO 8601)
+}
+
+export interface SkillUsageListData {
+  count: number; // Number of usage records
+  usageRecords: any; // List of usage records
+}
+
+export type SkillsGetSkillUsageResult = AdapterResultBase<SkillUsageListData>;
+
 // Jupiter Response Types
 export interface JupiterSwapData {
-  type: 'pending_transaction'; // Response type
+  type: any; // Response type
   transaction: string; // Base64 encoded serialized transaction
   requestId: string; // Jupiter request ID (for execute endpoint)
   signerWallet: string; // Wallet address that needs to sign
@@ -2775,7 +3245,9 @@ export interface JupiterSwapData {
   outputMint: string; // Output token mint address
   inputAmount: string; // Input amount as string
   inputDecimals: number; // Input token decimals
-  expectedOutputAmount: string; // Expected output amount
+  outputDecimals?: number; // Output token decimals (for converting expectedOutputAmount to UI units)
+  expectedOutputAmount: string; // Expected output amount in raw units
+  expectedOutputAmountUi: number; // Expected output amount in human-readable token units (use this when reporting to users)
   priceImpact: string; // Price impact percentage
   slippageBps: number; // Slippage tolerance in basis points
   hasRoutePlan: boolean; // Whether swap has a route plan
@@ -2800,9 +3272,10 @@ export interface JupiterTokenBalance {
 export interface JupiterGetHoldingsData {
   owner: string; // Wallet owner address
   solBalance: number; // Native SOL balance
-  totalValueUsd: number; // Total portfolio value in USD
+  solValueUsd: number; // SOL balance value in USD
+  totalValueUsd: number; // Total portfolio value in USD (SOL + all tokens)
   tokenCount: number; // Number of tokens held
-  tokens: JupiterTokenBalance[]; // List of token balances
+  tokens: any; // List of token balances
 }
 
 export type JupiterGetHoldingsResult = AdapterResultBase<JupiterGetHoldingsData>;
@@ -2810,68 +3283,46 @@ export type JupiterGetHoldingsResult = AdapterResultBase<JupiterGetHoldingsData>
 export interface JupiterSecurityWarning {
   type: string; // Warning type
   message: string; // Warning message
-  severity: 'info' | 'warning' | 'critical'; // Warning severity
+  severity: any; // Warning severity
   source: string; // Warning source (empty if not available)
 }
 
 export interface JupiterTokenSecurityData {
   mint: string; // Token mint address
-  riskLevel: 'safe' | 'low' | 'medium' | 'high' | 'critical'; // Overall risk level
+  riskLevel: any; // Overall risk level
   warningCount: number; // Number of warnings
   hasCriticalWarning: boolean; // Whether there are critical warnings
   hasFreezableWarning: boolean; // Whether token can be frozen
   hasMintableWarning: boolean; // Whether token can be minted
-  warnings: JupiterSecurityWarning[]; // List of security warnings
+  warnings: any; // List of security warnings
 }
 
 export type JupiterGetTokenSecurityResult = AdapterResultBase<JupiterTokenSecurityData>;
 
 export interface JupiterTokenSearchResult {
-  mint: string; // Token mint address
+  mint: string; // Token mint address (contract address)
   symbol: string; // Token symbol
   name: string; // Token name
-  decimals: number; // Token decimals
-  iconUrl: string; // Token icon URL (empty if not available)
-  twitter: string; // Twitter handle (empty if not available)
-  telegram: string; // Telegram link (empty if not available)
-  website: string; // Website URL (empty if not available)
-  holderCount: number; // Number of token holders
-  circSupply: number; // Circulating supply
-  totalSupply: number; // Total supply
-  tokenProgram: string; // Token program ID
-  launchpad: string; // Launchpad name (empty if not available)
-  mintAuthorityDisabled: boolean; // Whether mint authority is disabled
-  freezeAuthorityDisabled: boolean; // Whether freeze authority is disabled
-  topHoldersPercentage: number; // Percentage held by top holders
-  devBalancePercentage: number; // Percentage held by dev
-  isSuspicious: boolean; // Whether token is flagged as suspicious
-  highSingleOwnership: boolean; // Whether there is high single ownership
-  organicScore: number; // Organic activity score
-  organicScoreLabel: string; // Organic score label
-  isVerified: boolean; // Whether token is verified
-  fdv: number; // Fully diluted valuation (0 if not available)
-  marketCap: number; // Market cap (0 if not available)
   priceUsd: number; // Price in USD (0 if not available)
+  marketCap: number; // Market cap (0 if not available)
   liquidity: number; // Liquidity (0 if not available)
-  dailyPriceChange: number; // 24h price change (0 if not available)
-  dailyHolderChange: number; // 24h holder change (0 if not available)
-  dailyLiquidityChange: number; // 24h liquidity change (0 if not available)
-  dailyVolumeChange: number; // 24h volume change (0 if not available)
-  dailyBuyVolume: number; // 24h buy volume (0 if not available)
-  dailySellVolume: number; // 24h sell volume (0 if not available)
-  tags: string[]; // Token tags
+  isVerified: boolean; // Whether token is verified
+  isSuspicious: boolean; // Whether token is flagged as suspicious
+  holderCount: number; // Number of token holders
+  tags: any; // Token tags
 }
 
 export interface JupiterSearchTokensData {
   query: string; // Search query used
-  count: number; // Number of results
-  results: JupiterTokenSearchResult[]; // List of matching tokens
+  count: number; // Number of results returned (max 10)
+  totalFound: number; // Total matching tokens found
+  results: any; // List of matching tokens (slim fields)
 }
 
 export type JupiterSearchTokensResult = AdapterResultBase<JupiterSearchTokensData>;
 
 export interface JupiterRefreshSwapData {
-  type: 'pending_transaction'; // Response type
+  type: any; // Response type
   transaction: string; // Base64 encoded serialized transaction
   requestId: string; // Jupiter request ID (for execute endpoint)
   signerWallet: string; // Wallet address that needs to sign
@@ -2881,7 +3332,9 @@ export interface JupiterRefreshSwapData {
   outputMint: string; // Output token mint address
   inputAmount: string; // Input amount as string
   inputDecimals: number; // Input token decimals
-  expectedOutputAmount: string; // Expected output amount
+  outputDecimals?: number; // Output token decimals
+  expectedOutputAmount: string; // Expected output amount in raw units
+  expectedOutputAmountUi: number; // Expected output amount in human-readable token units (use this when reporting to users)
   priceImpact: string; // Price impact percentage
   slippageBps: number; // Slippage tolerance in basis points
   hasRoutePlan: boolean; // Whether swap has a route plan
@@ -2891,7 +3344,7 @@ export interface JupiterRefreshSwapData {
 export type JupiterRefreshSwapResult = AdapterResultBase<JupiterRefreshSwapData>;
 
 export interface JupiterLaunchTokenData {
-  type: 'pending_transaction'; // Response type
+  type: any; // Response type
   transaction: string; // Base64 encoded unsigned transaction
   mint: string; // New token mint address
   signerWallet: string; // Wallet that needs to sign
@@ -2923,7 +3376,7 @@ export interface ResourceInstallData {
   installedAt: string; // Installation timestamp (ISO 8601)
   totalCalls: number; // Total number of calls made
   totalCost: number; // Total cost incurred in USD
-  lastUsedAt: string | null; // Last usage timestamp (ISO 8601) or null
+  lastUsedAt: any; // Last usage timestamp (ISO 8601) or null
 }
 
 export type MarketplaceResourcesInstallResult = AdapterResultBase<ResourceInstallData>;
@@ -2958,7 +3411,7 @@ export interface ResourceInstallationSummary {
 
 export interface ResourceListInstalledData {
   count: number; // Number of installed resources
-  installations: ResourceInstallationSummary[]; // List of installations
+  installations: any; // List of installations
 }
 
 export type MarketplaceResourcesListInstalledResult = AdapterResultBase<ResourceListInstalledData>;
@@ -2973,10 +3426,498 @@ export interface ResourceGetInstallationData {
   installedAt: string; // Installation timestamp (ISO 8601)
   totalCalls: number; // Total number of calls made
   totalCost: number; // Total cost incurred in USD
-  lastUsedAt: string | null; // Last usage timestamp (ISO 8601) or null
+  lastUsedAt: any; // Last usage timestamp (ISO 8601) or null
 }
 
 export type MarketplaceResourcesGetInstallationResult = AdapterResultBase<ResourceGetInstallationData>;
+
+// Scripts Response Types
+export interface ScriptCreateData {
+  id: string; // Created script ID
+  name: string; // Script name
+  description: string; // Script description
+  runtime: string; // Lambda runtime (e.g., nodejs18)
+  timeout: number; // Timeout in seconds
+  memory: number; // Memory in MB
+  activeVersion: number; // Active version number
+  isPublished: boolean; // Whether published
+  isPrivate: boolean; // Whether private
+  status: string; // Script status
+  deploymentStatus: string; // Deployment status
+  lambdaFunctionName: string; // Lambda function name (empty on creation)
+  lambdaArn: string; // Lambda ARN (empty on creation)
+  totalExecutions: number; // Total executions (0 on creation)
+  totalCost: number; // Total cost in USD (0 on creation)
+  avgDuration: number; // Average duration in ms (0 on creation)
+  errorRate: number; // Error rate 0-1 (0 on creation)
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+  publishedAt: string; // Published timestamp (ISO 8601) or empty
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
+  apiKey: string; // API key for script execution (only returned on creation)
+  installationId: string; // Auto-created installation ID
+}
+
+export type ScriptsCreateScriptResult = AdapterResultBase<ScriptCreateData>;
+
+export interface ScriptDeleteData {
+  deleted: boolean; // Whether deletion succeeded
+  scriptId: string; // Deleted script ID
+  hardDeleted: boolean; // Whether script was permanently deleted
+  installationsRemoved: number; // Number of installations removed
+  preservedInstallations: number; // Number of installations preserved (soft delete)
+}
+
+export type ScriptsDeleteScriptResult = AdapterResultBase<ScriptDeleteData>;
+
+export interface ScriptVersionCreateData {
+  id: string; // Version document ID
+  scriptId: string; // Parent script ID
+  version: number; // Version number
+  isActive: boolean; // Whether this version is active
+  commitMessage: string; // Commit message for this version
+  codeHash: string; // Hash of the code
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+}
+
+export type ScriptsCreateVersionResult = AdapterResultBase<ScriptVersionCreateData>;
+
+export interface ScriptVersion {
+  id: string; // Version document ID
+  scriptId: string; // Parent script ID
+  version: number; // Version number
+  isActive: boolean; // Whether this version is active
+  commitMessage: string; // Commit message for this version
+  codeHash: string; // Hash of the code
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+}
+
+export interface ScriptVersionListData {
+  count: number; // Number of versions
+  versions: any; // List of script versions
+}
+
+export type ScriptsListVersionsResult = AdapterResultBase<ScriptVersionListData>;
+
+export interface ScriptDeployData {
+  scriptId: string; // Deployed script ID
+  version: number; // Deployed version number
+  lambdaFunctionName: string; // AWS Lambda function name
+  lambdaArn: string; // AWS Lambda ARN
+  deployedAt: string; // Deployment timestamp (ISO 8601)
+}
+
+export type ScriptsDeployScriptResult = AdapterResultBase<ScriptDeployData>;
+
+export interface ScriptExecuteData {
+  executionId: string; // Unique execution ID
+  scriptId: string; // Executed script ID
+  status: string; // Execution status
+  output: any; // Script output data
+  duration: number; // Execution duration in milliseconds
+  logs: any; // Execution logs
+  error: string; // Error message (empty if no error)
+  createdAt: string; // Execution timestamp (ISO 8601)
+}
+
+export type ScriptsExecuteScriptResult = AdapterResultBase<ScriptExecuteData>;
+
+export interface ScriptGetData {
+  id: string; // Script ID
+  name: string; // Script name
+  description: string; // Script description
+  runtime: string; // Lambda runtime
+  timeout: number; // Timeout in seconds
+  memory: number; // Memory in MB
+  activeVersion: number; // Active version number
+  isPublished: boolean; // Whether published
+  isPrivate: boolean; // Whether private
+  status: string; // Script status
+  deploymentStatus: string; // Deployment status
+  lambdaFunctionName: string; // Lambda function name
+  lambdaArn: string; // Lambda ARN
+  totalExecutions: number; // Total executions
+  totalCost: number; // Total cost in USD
+  avgDuration: number; // Average duration in ms
+  errorRate: number; // Error rate (0-1)
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+  publishedAt: string; // Published timestamp (ISO 8601) or empty
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
+}
+
+export type ScriptsGetScriptResult = AdapterResultBase<ScriptGetData>;
+
+export interface ScriptSummary {
+  id: string; // Unique script ID
+  name: string; // Script name
+  description: string; // Script description
+  activeVersion: number; // Currently active version number
+  isPublished: boolean; // Whether script is published to marketplace
+  status: string; // Script status (draft, published, archived)
+  deploymentStatus: string; // Deployment status (pending, deploying, deployed, failed)
+  totalExecutions: number; // Total number of executions
+  createdAt: string; // Created timestamp (ISO 8601)
+}
+
+export interface ScriptListData {
+  count: number; // Number of scripts
+  scripts: any; // List of scripts
+}
+
+export type ScriptsListScriptsResult = AdapterResultBase<ScriptListData>;
+
+export interface ScriptExecutionSummary {
+  executionId: string; // Unique execution ID
+  scriptId: string; // Script that was executed
+  status: string; // Execution status (running, completed, failed)
+  duration: number; // Execution duration in milliseconds
+  createdAt: string; // Execution timestamp (ISO 8601)
+  hasError: boolean; // Whether execution had an error
+}
+
+export interface ScriptExecutionsData {
+  scriptId: string; // Script ID
+  count: number; // Number of executions
+  executions: any; // List of executions
+}
+
+export type ScriptsGetExecutionsResult = AdapterResultBase<ScriptExecutionsData>;
+
+export interface ScriptExecutionData {
+  executionId: string; // Execution ID
+  scriptId: string; // Script ID
+  status: string; // Execution status
+  output: any; // Script output
+  duration: number; // Duration in milliseconds
+  logs: any; // Execution logs
+  error: string; // Error message (empty if no error)
+  createdAt: string; // Execution timestamp (ISO 8601)
+}
+
+export type ScriptsGetExecutionResult = AdapterResultBase<ScriptExecutionData>;
+
+export interface ScriptPublishData {
+  scriptId: string; // Published script ID
+  isPublished: boolean; // Publication status (true)
+  status: string; // Script status
+  publishedAt: string; // Publish timestamp (ISO 8601)
+}
+
+export type ScriptsPublishScriptResult = AdapterResultBase<ScriptPublishData>;
+
+export interface ScriptUnpublishData {
+  scriptId: string; // Unpublished script ID
+  unpublished: boolean; // Whether unpublish succeeded
+}
+
+export type ScriptsUnpublishScriptResult = AdapterResultBase<ScriptUnpublishData>;
+
+export interface ScriptMarketplaceListData {
+  total: number; // Total number of matching scripts
+  limit: number; // Page size limit
+  offset: number; // Current offset
+  scripts: any; // List of marketplace scripts
+}
+
+export type ScriptsListMarketplaceScriptsResult = AdapterResultBase<ScriptMarketplaceListData>;
+
+export interface ScriptMetricsData {
+  scriptId: string; // Script ID
+  totalExecutions: number; // Total number of executions
+  totalCost: number; // Total cost in USD
+  avgDuration: number; // Average duration in ms
+  successRate: number; // Success rate (0-1)
+  errorRate: number; // Error rate (0-1)
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
+}
+
+export type ScriptsGetMetricsResult = AdapterResultBase<ScriptMetricsData>;
+
+export interface ScriptWebhookData {
+  scriptId: string; // Script ID
+  webhookUrl: string; // Webhook URL endpoint
+  webhookSecret: string; // Webhook secret for verification
+  name: string; // Webhook name
+  enabled: boolean; // Whether webhook is enabled
+}
+
+export type ScriptsCreateWebhookResult = AdapterResultBase<ScriptWebhookData>;
+
+export interface ScriptScheduleData {
+  scheduleId: string; // Schedule ID
+  scriptId: string; // Script ID
+  name: string; // Schedule name
+  cronExpression: string; // Cron expression
+  enabled: boolean; // Whether schedule is enabled
+}
+
+export type ScriptsCreateScheduleResult = AdapterResultBase<ScriptScheduleData>;
+
+export interface ScriptFlowGetData {
+  code: string; // Script source code
+  version: number; // Active version number
+  scriptId: string; // Script ID
+  scriptName: string; // Script name
+  description: string; // Script description
+  isOwned: boolean; // Whether user owns the script
+}
+
+export type ScriptsGetFlowScriptResult = AdapterResultBase<ScriptFlowGetData>;
+
+export interface ScriptFlowModifyData {
+  copied: boolean; // Whether a copy was created (user did not own original)
+  scriptId: string; // Script ID (new if copied, original if owned)
+  versionId: string; // New version ID
+  version: number; // New version number
+}
+
+export type ScriptsModifyFlowScriptResult = AdapterResultBase<ScriptFlowModifyData>;
+
+export interface LintIssue {
+  severity: string; // Issue severity (error, warning)
+  message: string; // Issue description
+  line: number; // Line number where issue was found
+  suggestion: string; // Suggested fix
+}
+
+export interface ScriptLintData {
+  valid: boolean; // Whether script is valid
+  issueCount: number; // Number of issues found
+  issues: any; // List of lint issues
+  callAdapterCallsCount: number; // Number of callAdapter calls found
+  mirraSDKCallsCount: number; // Number of mirra SDK calls found
+}
+
+export type ScriptsLintScriptResult = AdapterResultBase<ScriptLintData>;
+
+// Marketplace Templates Response Types
+export interface TemplateCreateData {
+  id: string; // Template ID
+  _id: string; // Template ID (Mongo)
+  name: string; // Template name
+  description: string; // Template description
+  version: string; // Template version (semver)
+  category: string; // Template category
+  tags: any; // Template tags
+  repository: string; // GitHub repository URL
+  templatePath: string; // Path within the repository
+  gitHash: string; // Git commit hash
+  includes: any; // Template includes (page, scripts, resources)
+  pricing: any; // Pricing details (setupFee, monthlyFee, estimatedUsageCost)
+  status: string; // Template status (draft, published)
+  buildStatus: string; // Build status (pending, success, failed)
+  cdnUrl: string; // CDN URL for built template assets
+  installCount: number; // Total number of installations
+  activeInstalls: number; // Number of active installations
+  rating: number; // Average rating
+  createdAt: string; // Created timestamp (ISO 8601)
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  lastSyncedAt?: string; // Last synced timestamp (ISO 8601)
+}
+
+export type MarketplaceTemplatesCreateResult = AdapterResultBase<TemplateCreateData>;
+
+export interface TemplateSyncData {
+  id: string; // Template ID
+  _id: string; // Template ID (Mongo)
+  name: string; // Template name
+  description: string; // Template description
+  version: string; // Template version (semver)
+  category: string; // Template category
+  tags: any; // Template tags
+  repository: string; // GitHub repository URL
+  templatePath: string; // Path within the repository
+  gitHash: string; // Git commit hash
+  includes: any; // Template includes (page, scripts, resources)
+  pricing: any; // Pricing details (setupFee, monthlyFee, estimatedUsageCost)
+  status: string; // Template status (draft, published)
+  buildStatus: string; // Build status (pending, success, failed)
+  cdnUrl: string; // CDN URL for built template assets
+  installCount: number; // Total number of installations
+  activeInstalls: number; // Number of active installations
+  rating: number; // Average rating
+  createdAt: string; // Created timestamp (ISO 8601)
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  lastSyncedAt?: string; // Last synced timestamp (ISO 8601)
+}
+
+export type MarketplaceTemplatesSyncResult = AdapterResultBase<TemplateSyncData>;
+
+export interface TemplateBuildData {
+  buildStatus: string; // Build status (pending, building, success, failed)
+  buildOutput?: string; // Build output path or CDN URL
+  cdnUrl?: string; // CDN URL for built assets
+  logs?: any; // Build log entries
+  error?: string; // Build error message if failed
+}
+
+export type MarketplaceTemplatesBuildResult = AdapterResultBase<TemplateBuildData>;
+
+export interface TemplatePublishData {
+  id: string; // Template ID
+  _id: string; // Template ID (Mongo)
+  name: string; // Template name
+  description: string; // Template description
+  version: string; // Template version (semver)
+  category: string; // Template category
+  tags: any; // Template tags
+  repository: string; // GitHub repository URL
+  templatePath: string; // Path within the repository
+  gitHash: string; // Git commit hash
+  includes: any; // Template includes (page, scripts, resources)
+  pricing: any; // Pricing details (setupFee, monthlyFee, estimatedUsageCost)
+  status: string; // Template status (draft, published)
+  buildStatus: string; // Build status (pending, success, failed)
+  cdnUrl: string; // CDN URL for built template assets
+  installCount: number; // Total number of installations
+  activeInstalls: number; // Number of active installations
+  rating: number; // Average rating
+  createdAt: string; // Created timestamp (ISO 8601)
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  lastSyncedAt?: string; // Last synced timestamp (ISO 8601)
+}
+
+export type MarketplaceTemplatesPublishResult = AdapterResultBase<TemplatePublishData>;
+
+export interface TemplateInstallData {
+  installationId: string; // Created installation ID
+  templateId: string; // Installed template ID
+  pagePath: string; // Base path for the template
+  scriptsInstalled: any; // IDs of scripts installed
+  resourcesInstalled: any; // IDs of resources installed
+  version: string; // Template version installed
+  installedAt: string; // Installation timestamp (ISO 8601)
+  config: any; // User customization values
+  setupFeeCharged?: boolean; // Whether a setup fee was charged
+  buildStatus: string; // Build status (pending, building, success, failed)
+}
+
+export type MarketplaceTemplatesInstallResult = AdapterResultBase<TemplateInstallData>;
+
+export interface TemplateUninstallData {
+  success: boolean; // Whether uninstall succeeded
+}
+
+export type MarketplaceTemplatesUninstallResult = AdapterResultBase<TemplateUninstallData>;
+
+export interface TemplateListInstallationsInstallationsItem {
+  _id: string; // Installation ID
+  templateId: string; // Installed template ID
+  pagePath: string; // Base path for the template (e.g., /home)
+  version: string; // Template version at installation
+  installedAt: string; // Installed timestamp (ISO 8601)
+  config: any; // User customization values
+  scriptsInstalled: any; // IDs of scripts installed from template
+  resourcesInstalled: any; // IDs of resources installed from template
+}
+
+export interface TemplateListInstallationsData {
+  installations: any; // Array of installation summaries
+}
+
+export type MarketplaceTemplatesListInstallationsResult = AdapterResultBase<TemplateListInstallationsData>;
+
+export interface TemplateGetInstallationData {
+  _id: string; // Installation ID
+  userId: string; // Owner user ID
+  templateId: string; // Installed template ID
+  pagePath: string; // Base path for the template
+  scriptsInstalled: any; // IDs of scripts installed
+  resourcesInstalled: any; // IDs of resources installed
+  version: string; // Template version at installation
+  config: any; // User customization values
+  configuration: any; // Template-specific settings
+  configurationStatus: string; // Configuration status (draft, configured, live)
+  status: string; // Installation status (active, paused, uninstalled)
+  installedAt: string; // Installed timestamp (ISO 8601)
+  updatedAt: string; // Updated timestamp (ISO 8601)
+}
+
+export type MarketplaceTemplatesGetInstallationResult = AdapterResultBase<TemplateGetInstallationData>;
+
+export interface TemplateUpdateInstallationData {
+  _id: string; // Installation ID
+  userId: string; // Owner user ID
+  templateId: string; // Installed template ID
+  pagePath: string; // Base path for the template
+  scriptsInstalled: any; // IDs of scripts installed
+  resourcesInstalled: any; // IDs of resources installed
+  version: string; // Updated template version
+  config: any; // User customization values
+  configuration: any; // Template-specific settings
+  configurationStatus: string; // Configuration status (draft, configured, live)
+  status: string; // Installation status (active, paused, uninstalled)
+  installedAt: string; // Installed timestamp (ISO 8601)
+  updatedAt: string; // Updated timestamp (ISO 8601)
+}
+
+export type MarketplaceTemplatesUpdateInstallationResult = AdapterResultBase<TemplateUpdateInstallationData>;
+
+export interface TemplateCheckRequirementsData {
+  requiredResources: any; // Resource IDs required by the template
+  requiredScripts: any; // Script IDs required by the template
+  missingResources: any; // Resource IDs that are not yet installed
+  canInstall: boolean; // Whether all requirements are met for installation
+}
+
+export type MarketplaceTemplatesCheckRequirementsResult = AdapterResultBase<TemplateCheckRequirementsData>;
+
+export interface TemplateEstimateCostData {
+  setupCost: number; // One-time setup cost
+  estimatedMonthlyCost: number; // Estimated monthly usage cost
+}
+
+export type MarketplaceTemplatesEstimateCostResult = AdapterResultBase<TemplateEstimateCostData>;
+
+export interface TemplateListVersionsVersionsItem {
+  _id: string; // Version document ID
+  templateId: string; // Parent template ID
+  version: string; // Semver version string
+  gitHash: string; // Git commit hash
+  buildStatus: string; // Build status (pending, queued, building, success, failed)
+  buildOutput?: string; // Build output path
+  buildError?: string; // Build error message if failed
+  cdnUrl?: string; // CDN URL for this version
+  changelog?: string; // Version changelog
+  isActive: boolean; // Whether this version is currently active
+  createdAt: string; // Created timestamp (ISO 8601)
+  builtAt?: string; // Built timestamp (ISO 8601)
+}
+
+export interface TemplateListVersionsData {
+  versions: any; // Array of template versions
+}
+
+export type MarketplaceTemplatesListVersionsResult = AdapterResultBase<TemplateListVersionsData>;
+
+export interface TemplateCreateVersionData {
+  _id: string; // Version document ID
+  templateId: string; // Parent template ID
+  version: string; // Semver version string
+  gitHash: string; // Git commit hash
+  buildStatus: string; // Build status (pending, queued, building, success, failed)
+  buildOutput?: string; // Build output path
+  buildError?: string; // Build error message if failed
+  cdnUrl?: string; // CDN URL for this version
+  changelog?: string; // Version changelog
+  isActive: boolean; // Whether this version is currently active
+  createdAt: string; // Created timestamp (ISO 8601)
+  builtAt?: string; // Built timestamp (ISO 8601)
+}
+
+export type MarketplaceTemplatesCreateVersionResult = AdapterResultBase<TemplateCreateVersionData>;
+
+export interface TemplateGetBuildStatusData {
+  buildStatus: string; // Build status (pending, queued, building, success, failed)
+  lastBuildAt?: string; // Last build timestamp (ISO 8601)
+  buildError?: string; // Build error message if failed
+  buildLogs?: any; // Build log entries
+}
+
+export type MarketplaceTemplatesGetBuildStatusResult = AdapterResultBase<TemplateGetBuildStatusData>;
 
 // Memory Response Types
 export interface MemoryCreateData {
@@ -2994,7 +3935,7 @@ export interface MemoryCreateData {
   assignedToUserId: string; // Assigned user ID
   assignedToName: string; // Assigned username
   dueAt: string; // Due date (ISO 8601)
-  tags: string[]; // Tags array
+  tags: any; // Tags array
 }
 
 export type MemoryCreateResult = AdapterResultBase<MemoryCreateData>;
@@ -3013,7 +3954,7 @@ export interface MemoryCreateTaskData {
   assignedToName: string; // Assigned username
   assignmentWarning: string; // Warning if assignment had issues
   dueAt: string; // Due date (ISO 8601)
-  tags: string[]; // Tags array
+  tags: any; // Tags array
 }
 
 export type MemoryCreateTaskResult = AdapterResultBase<MemoryCreateTaskData>;
@@ -3033,7 +3974,7 @@ export interface MemoryEntitySummary {
 export interface MemorySearchData {
   query: string; // Search query used
   count: number; // Number of results
-  results: MemoryEntitySummary[]; // Search results
+  results: any; // Search results
 }
 
 export type MemorySearchResult = AdapterResultBase<MemorySearchData>;
@@ -3043,7 +3984,7 @@ export interface MemoryQueryData {
   count: number; // Number of results
   offset: number; // Pagination offset
   limit: number; // Pagination limit
-  entities: MemoryEntitySummary[]; // Query results
+  entities: any; // Query results
 }
 
 export type MemoryQueryResult = AdapterResultBase<MemoryQueryData>;
@@ -3063,7 +4004,7 @@ export interface MemoryFindOneData {
   assignedToUserId: string; // Assigned user ID
   assignedToName: string; // Assigned username
   dueAt: string; // Due date (ISO 8601)
-  tags: string[]; // Tags array
+  tags: any; // Tags array
 }
 
 export type MemoryFindOneResult = AdapterResultBase<MemoryFindOneData>;
@@ -3088,7 +4029,7 @@ export interface MemoryShareData {
   entityId: string; // Shared entity ID
   success: boolean; // Whether share succeeded
   message: string; // Status message
-  graphIds: string[]; // All graphs entity is shared with
+  graphIds: any; // All graphs entity is shared with
   targetGraphId: string; // Target graph ID
   sharedAt: string; // Share timestamp (ISO 8601)
 }
@@ -3099,7 +4040,7 @@ export interface MemoryUnshareData {
   entityId: string; // Unshared entity ID
   success: boolean; // Whether unshare succeeded
   message: string; // Status message
-  graphIds: string[]; // Remaining graphs
+  graphIds: any; // Remaining graphs
   removedGraphId: string; // Removed graph ID
 }
 
@@ -3118,7 +4059,7 @@ export interface MemoryListGraphsData {
   entityId: string; // Entity ID
   primaryGraphId: string; // Primary graph ID
   totalGraphs: number; // Total graph count
-  graphs: MemoryGraphInfo[]; // Graph information
+  graphs: any; // Graph information
 }
 
 export type MemoryListGraphsResult = AdapterResultBase<MemoryListGraphsData>;
@@ -3143,7 +4084,7 @@ export interface MemoryReminder {
 export interface MemoryUpcomingRemindersData {
   days: number; // Days lookahead
   count: number; // Reminder count
-  reminders: MemoryReminder[]; // Upcoming reminders
+  reminders: any; // Upcoming reminders
 }
 
 export type MemoryGetUpcomingRemindersResult = AdapterResultBase<MemoryUpcomingRemindersData>;
@@ -3167,9 +4108,9 @@ export interface MirraMessagingSendMessageData {
   groupId: string; // Group ID
   content: string; // Message content
   timestamp: string; // Sent timestamp (ISO 8601)
-  automationSource: string | null; // Automation source identifier
-  automationSessionId: string | null; // Automation session ID
-  automationFlowId: string | null; // Automation flow ID
+  automationSource: any; // Automation source identifier
+  automationSessionId: any; // Automation session ID
+  automationFlowId: any; // Automation flow ID
   linkUrl: string; // Deep link URL to chat
   linkLabel: string; // Display label for link
 }
@@ -3187,52 +4128,23 @@ export interface MirraMessagingUpdateMessageData {
 
 export type MirraMessagingUpdateMessageResult = AdapterResultBase<MirraMessagingUpdateMessageData>;
 
-export interface MirraMessagingContact {
-  contactId: string; // Contact record ID
-  userId: string; // User ID
-  username: string; // Username
-  profilePhoto: string | null; // Profile photo URL
-  groupId: string | null; // Direct chat group ID
-  isContact: boolean; // Whether user is a contact
-}
-
-export interface MirraMessagingGetContactsData {
-  contacts: MirraMessagingContact[]; // List of contacts
-  totalCount: number; // Total available contacts
-  limit: number; // Items per page
-  offset: number; // Current offset
-  hasMore: boolean; // Whether more items exist
-}
-
-export type MirraMessagingGetContactsResult = AdapterResultBase<MirraMessagingGetContactsData>;
-
-export interface MirraMessagingFindContactData {
-  contacts: MirraMessagingContact[]; // Matching contacts
-  users: MirraMessagingContact[]; // Matching non-contact users
-  query: string; // Search query used
-  contactCount: number; // Number of matching contacts
-  userCount: number; // Number of matching users
-}
-
-export type MirraMessagingFindContactResult = AdapterResultBase<MirraMessagingFindContactData>;
-
 export interface MirraMessagingChat {
   chatInstanceId: string; // Chat instance ID
   title: string; // Chat title
-  scope: 'direct' | 'user' | 'group'; // Chat scope type
-  lastMessageAt: string | null; // Last message timestamp (ISO 8601)
-  lastMessagePreview: string | null; // Last message preview text
+  scope: any; // Chat scope type
+  lastMessageAt: any; // Last message timestamp (ISO 8601)
+  lastMessagePreview: any; // Last message preview text
   messageCount: number; // Total message count
-  peerUserId: string | null; // Peer user ID (for direct chats)
-  peerUsername: string | null; // Peer username
-  peerProfilePhoto: string | null; // Peer profile photo URL
-  groupId: string | null; // Group ID (for group chats)
-  groupName: string | null; // Group name
-  groupProfileImage: string | null; // Group profile image URL
+  peerUserId: any; // Peer user ID (for direct chats)
+  peerUsername: any; // Peer username
+  peerProfilePhoto: any; // Peer profile photo URL
+  groupId: any; // Group ID (for group chats)
+  groupName: any; // Group name
+  groupProfileImage: any; // Group profile image URL
 }
 
 export interface MirraMessagingGetChatsData {
-  chats: MirraMessagingChat[]; // List of chat instances
+  chats: any; // List of chat instances
   count: number; // Number of chats returned
 }
 
@@ -3240,16 +4152,19 @@ export type MirraMessagingGetChatsResult = AdapterResultBase<MirraMessagingGetCh
 
 export interface MirraMessagingGroup {
   groupId: string; // Group ID
-  name: string; // Group name
-  description: string | null; // Group description
-  profileImage: string | null; // Group profile image URL
+  name: string; // Group name (direct chats: "You & {peerUsername}")
+  type: any; // Conversation type
+  memberCount: number; // Number of active members
   role: string; // User role in group
   joinedAt: string; // Join timestamp (ISO 8601)
 }
 
 export interface MirraMessagingGetGroupsData {
-  groups: MirraMessagingGroup[]; // List of groups
-  count: number; // Number of groups returned
+  groups: any; // List of conversations (direct chats and group chats)
+  totalCount: number; // Total available conversations
+  limit: number; // Items per page
+  offset: number; // Current offset
+  hasMore: boolean; // Whether more conversations exist
 }
 
 export type MirraMessagingGetGroupsResult = AdapterResultBase<MirraMessagingGetGroupsData>;
@@ -3258,7 +4173,7 @@ export interface MirraMessagingCreateGroupData {
   groupId: string; // Created group ID
   chatInstanceId: string; // Chat instance ID
   name: string; // Group name
-  description: string | null; // Group description
+  description: any; // Group description
   category: string; // Group category
   createdBy: string; // Creator user ID
   memberCount: number; // Initial member count
@@ -3272,22 +4187,22 @@ export type MirraMessagingCreateGroupResult = AdapterResultBase<MirraMessagingCr
 export interface MirraMessagingSearchMessage {
   messageId: string; // Message ID
   chatInstanceId: string; // Chat instance ID
-  groupId: string | null; // Group ID
-  groupName: string | null; // Group name
+  groupId: any; // Group ID
+  groupName: any; // Group name
   senderId: string; // Sender user ID
   senderUsername: string; // Sender username
   snippet: string; // Message snippet around matched keywords
-  text: string | null; // Full message text (if includeFullText=true)
+  text: any; // Full message text (if includeFullText=true)
   timestamp: string; // Message timestamp (ISO 8601)
-  scope: 'direct' | 'group'; // Message scope
+  scope: any; // Message scope
   relevanceScore: number; // Search relevance score
   isFromMe: boolean; // Whether message is from authenticated user
-  chatType: 'direct' | 'group'; // Chat type
+  chatType: any; // Chat type
   messageLength: number; // Full message length in characters
 }
 
 export interface MirraMessagingSearchMessagesData {
-  messages: MirraMessagingSearchMessage[]; // Matching messages
+  messages: any; // Matching messages
   totalCount: number; // Total matching messages
   limit: number; // Items per page
   offset: number; // Current offset
@@ -3297,6 +4212,31 @@ export interface MirraMessagingSearchMessagesData {
 }
 
 export type MirraMessagingSearchMessagesResult = AdapterResultBase<MirraMessagingSearchMessagesData>;
+
+export interface MirraMessagingRecentMessage {
+  messageId: string; // Message ID
+  chatInstanceId: string; // Chat instance ID
+  groupId: any; // Group ID
+  groupName: any; // Group name
+  senderId: string; // Sender user ID
+  senderUsername: string; // Sender username
+  text: string; // Full message text
+  timestamp: string; // Message timestamp (ISO 8601)
+  scope: any; // Message scope
+  isFromMe: boolean; // Whether message is from authenticated user
+  chatType: any; // Chat type
+  messageLength: number; // Full message length in characters
+}
+
+export interface MirraMessagingGetRecentMessagesData {
+  messages: any; // Recent messages sorted newest first
+  totalCount: number; // Total available messages
+  limit: number; // Items per page
+  offset: number; // Current offset
+  hasMore: boolean; // Whether more messages exist
+}
+
+export type MirraMessagingGetRecentMessagesResult = AdapterResultBase<MirraMessagingGetRecentMessagesData>;
 
 // Moltbook Response Types
 export interface MoltbookRegisterAgentData {
@@ -3343,7 +4283,7 @@ export interface MoltbookPostSummary {
 
 export interface MoltbookGetPostsData {
   count: number; // Number of posts returned
-  posts: MoltbookPostSummary[]; // List of posts
+  posts: any; // List of posts
 }
 
 export type MoltbookGetPostsResult = AdapterResultBase<MoltbookGetPostsData>;
@@ -3401,7 +4341,7 @@ export interface MoltbookComment {
 export interface MoltbookGetCommentsData {
   postId: string; // Post ID
   count: number; // Number of comments
-  comments: MoltbookComment[]; // List of comments
+  comments: any; // List of comments
 }
 
 export type MoltbookGetCommentsResult = AdapterResultBase<MoltbookGetCommentsData>;
@@ -3449,7 +4389,7 @@ export interface MoltbookSubmolt {
 
 export interface MoltbookGetSubmoltsData {
   count: number; // Number of communities
-  submolts: MoltbookSubmolt[]; // List of communities
+  submolts: any; // List of communities
 }
 
 export type MoltbookGetSubmoltsResult = AdapterResultBase<MoltbookGetSubmoltsData>;
@@ -3537,7 +4477,7 @@ export type MoltbookUpdateProfileResult = AdapterResultBase<MoltbookUpdateProfil
 
 export interface MoltbookGetFeedData {
   count: number; // Number of posts
-  posts: MoltbookPostSummary[]; // List of posts
+  posts: any; // List of posts
 }
 
 export type MoltbookGetFeedResult = AdapterResultBase<MoltbookGetFeedData>;
@@ -3559,9 +4499,9 @@ export interface MoltbookSearchData {
   postCount: number; // Number of matching posts
   agentCount: number; // Number of matching agents
   submoltCount: number; // Number of matching communities
-  posts: MoltbookPostSummary[]; // Matching posts
-  agents: MoltbookAgent[]; // Matching agents
-  submolts: MoltbookSubmolt[]; // Matching communities
+  posts: any; // Matching posts
+  agents: any; // Matching agents
+  submolts: any; // Matching communities
 }
 
 export type MoltbookSearchResult = AdapterResultBase<MoltbookSearchData>;
@@ -3575,35 +4515,431 @@ export interface MoltbookGetStatusData {
 
 export type MoltbookGetStatusResult = AdapterResultBase<MoltbookGetStatusData>;
 
-// Shopify Response Types
-export interface ShopifyNormalizedProduct {
-  id: string; // Product ID
-  title: string; // Product title
-  bodyHtml: string; // HTML description
-  vendor: string; // Vendor name
-  productType: string; // Product type
-  status: string; // Status (active, archived, draft)
-  handle: string; // URL handle
-  tags: string; // Comma-separated tags
+// Pages Response Types
+export interface PagesCreatePageData {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  description?: string; // Page description
+  codeHash: string; // Hash of the compiled code
+  visibility: string; // Page visibility: "private" or "public"
+  url: string; // Public URL for the page
+  lintWarnings?: string; // Lint warnings from code validation
+  apiKey?: string; // API key for public pages (only shown once)
+}
+
+export type PagesCreatePageResult = AdapterResultBase<PagesCreatePageData>;
+
+export interface PagesCreateReportPageData {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  widgetCount: number; // Number of widgets on the page
+  codeHash: string; // Hash of the compiled code
+  visibility: string; // Page visibility: "private" or "public"
+  url: string; // Public URL for the page
+  lintWarnings?: string; // Lint warnings from code validation
+  apiKey?: string; // API key for public pages (only shown once)
+}
+
+export type PagesCreateReportPageResult = AdapterResultBase<PagesCreateReportPageData>;
+
+export interface PagesUpsertReportPageData {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  widgetCount: number; // Number of widgets on the page
+  codeHash: string; // Hash of the compiled code
+  action: any; // Whether the page was created or updated
+  url: string; // Public URL for the page
+  visibility?: string; // Page visibility (present on create)
+  lintWarnings?: string; // Lint warnings from code validation
+  apiKey?: string; // API key for public pages (only shown once)
+}
+
+export type PagesUpsertReportPageResult = AdapterResultBase<PagesUpsertReportPageData>;
+
+export interface PagesEditPageData {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  codeHash: string; // Hash of the compiled code
+  versionsCount: number; // Number of saved versions
+  appliedEdits: number; // Number of edits applied
+  url: string; // Public URL for the page
+  lintWarnings?: string; // Lint warnings from code validation
+}
+
+export type PagesEditPageResult = AdapterResultBase<PagesEditPageData>;
+
+export interface PagesUpdatePageData {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  description?: string; // Page description
+  codeHash: string; // Hash of the compiled code
+  versionsCount: number; // Number of saved versions
+  url: string; // Public URL for the page
+  lintWarnings?: string; // Lint warnings from code validation
+}
+
+export type PagesUpdatePageResult = AdapterResultBase<PagesUpdatePageData>;
+
+export interface PagesRevertPageData {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  codeHash: string; // Hash of the compiled code
+  versionsCount: number; // Number of saved versions
+  revertedFrom: number; // Version index that was restored
+}
+
+export type PagesRevertPageResult = AdapterResultBase<PagesRevertPageData>;
+
+export interface PagesGetPageData {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  description?: string; // Page description
+  currentCode: string; // Current JSX source code
+  codeHash: string; // Hash of the compiled code
+  visibility: string; // Page visibility: "private" or "public"
+  widgetSpec?: any; // Widget specification if created via report page
+  versions: any; // Array of version history entries
+  createdByUserId: string; // User ID of the page creator
+  lastEditedByUserId: string; // User ID of the last editor
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  url: string; // Public URL for the page
+}
+
+export type PagesGetPageResult = AdapterResultBase<PagesGetPageData>;
+
+export interface PagesListPagesPagesItem {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  description?: string; // Page description
+  visibility: string; // Page visibility: "private" or "public"
+  status: string; // Page status
+  createdAt: string; // Creation timestamp
+  updatedAt: string; // Last update timestamp
+  url: string; // Public URL for the page
+}
+
+export interface PagesListPagesData {
+  pages: any; // Array of page summary objects
+  count: number; // Total number of pages returned
+}
+
+export type PagesListPagesResult = AdapterResultBase<PagesListPagesData>;
+
+export interface PagesDeletePageData {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  status: string; // Page status (deleted)
+}
+
+export type PagesDeletePageResult = AdapterResultBase<PagesDeletePageData>;
+
+export interface PagesPublishPageData {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  visibility: string; // Page visibility (public)
+  url: string; // Public URL for the page
+  apiKey?: string; // API key (only shown once, only when newly generated)
+}
+
+export type PagesPublishPageResult = AdapterResultBase<PagesPublishPageData>;
+
+export interface PagesUnpublishPageData {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  visibility: string; // Page visibility (private)
+}
+
+export type PagesUnpublishPageResult = AdapterResultBase<PagesUnpublishPageData>;
+
+export interface PagesGetPageUrlData {
+  id: string; // Page identifier
+  path: string; // URL path of the page
+  url: string; // Public URL for the page
+}
+
+export type PagesGetPageUrlResult = AdapterResultBase<PagesGetPageUrlData>;
+
+// Polymarket Response Types
+export interface PolymarketMarket {
+  id: string; // Market ID
+  conditionId: string; // Condition ID used for CLOB lookups
+  slug: string; // URL slug for the market
+  question: string; // Market question text
+  description: string; // Full market description
+  category: string; // Market category/tag
+  endDate: string; // Market end date (ISO 8601)
+  active: boolean; // Whether the market is active
+  closed: boolean; // Whether the market is closed
+  volume: number; // Total volume traded
+  volumeFormatted: string; // Formatted volume string
+  liquidity: number; // Current liquidity
+  outcomes: any; // Outcome labels (e.g., ["Yes", "No"])
+  outcomePrices: any; // Outcome prices as strings
+  bestBid: number; // Best bid price
+  bestAsk: number; // Best ask price
+  lastTradePrice: number; // Last trade price
+  clobTokenIds: any; // CLOB token IDs for each outcome
+  imageUrl?: string; // Market image URL
+  eventSlug?: string; // Parent event slug
+  eventTitle?: string; // Parent event title
+}
+
+export interface PolymarketGetMarketsData {
+  markets: any; // List of matching markets
+  count: number; // Number of markets returned
+}
+
+export type PolymarketGetMarketsResult = AdapterResultBase<PolymarketGetMarketsData>;
+
+export interface PolymarketGetMarketData {
+  id: string; // Market ID
+  conditionId: string; // Condition ID used for CLOB lookups
+  slug: string; // URL slug for the market
+  question: string; // Market question text
+  description: string; // Full market description
+  category: string; // Market category/tag
+  endDate: string; // Market end date (ISO 8601)
+  active: boolean; // Whether the market is active
+  closed: boolean; // Whether the market is closed
+  volume: number; // Total volume traded
+  volumeFormatted: string; // Formatted volume string
+  liquidity: number; // Current liquidity
+  outcomes: any; // Outcome labels (e.g., ["Yes", "No"])
+  outcomePrices: any; // Outcome prices as strings
+  bestBid: number; // Best bid price
+  bestAsk: number; // Best ask price
+  lastTradePrice: number; // Last trade price
+  clobTokenIds: any; // CLOB token IDs for each outcome
+  imageUrl?: string; // Market image URL
+  eventSlug?: string; // Parent event slug
+  eventTitle?: string; // Parent event title
+}
+
+export type PolymarketGetMarketResult = AdapterResultBase<PolymarketGetMarketData>;
+
+export interface PolymarketEventMarketSummary {
+  id: string; // Market ID
+  question: string; // Market question
+  outcomes: any; // Outcome labels
+  outcomePrices: any; // Outcome prices
+  active: boolean; // Whether the market is active
+}
+
+export interface PolymarketEvent {
+  id: string; // Event ID
+  slug: string; // Event slug
+  title: string; // Event title
+  description: string; // Event description
+  category: string; // Event category/tag
+  startDate: string; // Event start date
+  endDate: string; // Event end date
+  active: boolean; // Whether the event is active
+  closed: boolean; // Whether the event is closed
+  marketCount: number; // Number of markets in the event
+  markets: any; // Markets within this event
+  volume: number; // Total event volume
+  liquidity: number; // Total event liquidity
+}
+
+export interface PolymarketGetEventsData {
+  events: any; // List of matching events
+  count: number; // Number of events returned
+}
+
+export type PolymarketGetEventsResult = AdapterResultBase<PolymarketGetEventsData>;
+
+export interface PolymarketGetPriceData {
+  tokenId: string; // Token ID queried
+  price: number; // Current price (0.00-1.00)
+  timestamp: string; // Price timestamp (ISO 8601)
+}
+
+export type PolymarketGetPriceResult = AdapterResultBase<PolymarketGetPriceData>;
+
+export interface PolymarketOrderbookLevel {
+  price: number; // Price level
+  size: number; // Size at this level
+}
+
+export interface PolymarketGetOrderbookData {
+  tokenId: string; // Token ID for the orderbook
+  bids: any; // Bid levels sorted by price descending
+  asks: any; // Ask levels sorted by price ascending
+  midpoint: number; // Midpoint price between best bid and ask
+  spread: number; // Spread between best bid and ask
+  bestBid: number; // Best (highest) bid price
+  bestAsk: number; // Best (lowest) ask price
+}
+
+export type PolymarketGetOrderbookResult = AdapterResultBase<PolymarketGetOrderbookData>;
+
+export interface PolymarketOrderPayload {
+  tokenId: string; // Token ID
+  price: number; // Order price (0.01-0.99)
+  size: number; // Order size in USDC
+  side: string; // Order side (BUY or SELL)
+  type: string; // Order type (GTC, GTD, FOK, FAK)
+  expiration?: number; // Unix timestamp for GTD orders
+}
+
+export interface PolymarketPlaceOrderData {
+  type: string; // Always "pending_order"
+  orderPayload: any; // Order parameters submitted for approval
+  expiresAt: string; // Proposal expiry (ISO 8601)
+  currentPrice?: number; // Current market price at time of proposal
+  currentSpread?: number; // Current bid-ask spread
+  marketQuestion?: string; // Market question for confirmation context
+}
+
+export type PolymarketPlaceOrderResult = AdapterResultBase<PolymarketPlaceOrderData>;
+
+export interface PolymarketExecuteOrderData {
+  id: string; // Order ID
+  market: string; // Market/condition ID
+  tokenId: string; // Token ID for the outcome
+  side: string; // Order side (BUY or SELL)
+  price: number; // Order price
+  size: number; // Order size in shares
+  sizeMatched: number; // Size already matched/filled
+  status: string; // Order status (e.g., live, matched, cancelled)
+  type: string; // Order type (GTC, GTD, FOK, FAK)
   createdAt: string; // Creation timestamp (ISO 8601)
-  updatedAt: string; // Last update timestamp (ISO 8601)
-  publishedAt?: string; // Published timestamp (ISO 8601)
-  variants: ShopifyVariant[]; // Product variants
-  images: ShopifyImage[]; // Product images
-  templateSuffix?: string; // Template suffix for custom templates
-  publishedScope: string; // Published scope (e.g., web)
-  options: object[]; // Product options (e.g., Size, Color) with id, name, values[]
+  expiresAt?: string; // Expiration timestamp for GTD orders
 }
 
-export interface ShopifyListProductsData {
-  products: ShopifyNormalizedProduct[]; // List of products
-  nextPageInfo?: string; // Cursor for next page
-  previousPageInfo?: string; // Cursor for previous page
-  totalRetrieved: number; // Number of products retrieved
+export type PolymarketExecuteOrderResult = AdapterResultBase<PolymarketExecuteOrderData>;
+
+export interface PolymarketCancelOrderData {
+  type: string; // Always "pending_cancel"
+  orderId: string; // ID of the order to cancel
+  expiresAt: string; // Proposal expiry (ISO 8601)
 }
 
-export type ShopifyListProductsResult = AdapterResultBase<ShopifyListProductsData>;
+export type PolymarketCancelOrderResult = AdapterResultBase<PolymarketCancelOrderData>;
 
+export interface PolymarketExecuteCancelOrderData {
+  success: boolean; // Whether cancellation succeeded
+  cancelledOrderId: string; // ID of the cancelled order
+}
+
+export type PolymarketExecuteCancelOrderResult = AdapterResultBase<PolymarketExecuteCancelOrderData>;
+
+export interface PolymarketRefreshOrderData {
+  type: string; // Always "pending_order"
+  orderPayload: any; // Refreshed order parameters submitted for approval
+  expiresAt: string; // Proposal expiry (ISO 8601)
+  currentPrice?: number; // Current market price at time of proposal
+  currentSpread?: number; // Current bid-ask spread
+  marketQuestion?: string; // Market question for confirmation context
+}
+
+export type PolymarketRefreshOrderResult = AdapterResultBase<PolymarketRefreshOrderData>;
+
+export interface PolymarketOrder {
+  id: string; // Order ID
+  market: string; // Market/condition ID
+  tokenId: string; // Token ID for the outcome
+  side: string; // Order side (BUY or SELL)
+  price: number; // Order price
+  size: number; // Order size in shares
+  sizeMatched: number; // Size already matched/filled
+  status: string; // Order status (e.g., live, matched, cancelled)
+  type: string; // Order type (GTC, GTD, FOK, FAK)
+  createdAt: string; // Creation timestamp (ISO 8601)
+  expiresAt?: string; // Expiration timestamp for GTD orders
+}
+
+export interface PolymarketGetOrdersData {
+  orders: any; // List of user orders
+  count: number; // Number of orders returned
+}
+
+export type PolymarketGetOrdersResult = AdapterResultBase<PolymarketGetOrdersData>;
+
+export interface PolymarketPosition {
+  marketId: string; // Market ID
+  conditionId: string; // Condition ID
+  question: string; // Market question
+  outcome: string; // Outcome label (e.g., Yes, No)
+  tokenId: string; // Token ID for the outcome
+  size: number; // Position size in shares
+  avgPrice: number; // Average entry price
+  currentPrice: number; // Current market price
+  pnl: number; // Profit/loss in USDC
+  pnlPercent: number; // Profit/loss percentage
+  value: number; // Current position value in USDC
+}
+
+export interface PolymarketGetPositionsData {
+  positions: any; // List of user positions
+  count: number; // Number of positions returned
+}
+
+export type PolymarketGetPositionsResult = AdapterResultBase<PolymarketGetPositionsData>;
+
+export interface PolymarketTrade {
+  id: string; // Trade ID
+  market: string; // Market/condition ID
+  tokenId: string; // Token ID for the outcome
+  side: string; // Trade side (BUY or SELL)
+  price: number; // Trade price
+  size: number; // Trade size in shares
+  fee: number; // Trading fee
+  timestamp: string; // Trade timestamp
+  outcome: string; // Outcome label
+  status: string; // Trade status (e.g., matched)
+  transactionHash?: string; // On-chain transaction hash
+}
+
+export interface PolymarketGetTradesData {
+  trades: any; // List of user trades
+  count: number; // Number of trades returned
+}
+
+export type PolymarketGetTradesResult = AdapterResultBase<PolymarketGetTradesData>;
+
+export interface PolymarketBuilderStats {
+  builderId: string; // Builder program ID
+  rank: number; // Leaderboard rank
+  volume: number; // Total volume
+  tradeCount: number; // Number of trades
+  period: string; // Leaderboard period
+}
+
+export interface PolymarketGetBuilderLeaderboardData {
+  leaderboard: any; // Leaderboard entries
+  count: number; // Number of leaderboard entries
+}
+
+export type PolymarketGetBuilderLeaderboardResult = AdapterResultBase<PolymarketGetBuilderLeaderboardData>;
+
+export interface PolymarketBuilderVolume {
+  builderId: string; // Builder program ID
+  date: string; // Date for the volume entry
+  volume: number; // Volume for this date
+  tradeCount: number; // Number of trades for this date
+}
+
+export interface PolymarketGetBuilderVolumeData {
+  volumes: any; // Volume entries by date
+  count: number; // Number of volume entries
+}
+
+export type PolymarketGetBuilderVolumeResult = AdapterResultBase<PolymarketGetBuilderVolumeData>;
+
+// Shopify Response Types
 export interface ShopifyVariant {
   id: string; // Variant ID
   title: string; // Variant title
@@ -3628,6 +4964,34 @@ export interface ShopifyImage {
   position: number; // Display position
 }
 
+export interface ShopifyNormalizedProduct {
+  id: string; // Product ID
+  title: string; // Product title
+  bodyHtml: string; // HTML description
+  vendor: string; // Vendor name
+  productType: string; // Product type
+  status: string; // Status (active, archived, draft)
+  handle: string; // URL handle
+  tags: string; // Comma-separated tags
+  createdAt: string; // Creation timestamp (ISO 8601)
+  updatedAt: string; // Last update timestamp (ISO 8601)
+  publishedAt?: string; // Published timestamp (ISO 8601)
+  variants: any; // Product variants
+  images: any; // Product images
+  templateSuffix?: string; // Template suffix for custom templates
+  publishedScope: string; // Published scope (e.g., web)
+  options: any; // Product options (e.g., Size, Color) with id, name, values[]
+}
+
+export interface ShopifyListProductsData {
+  products: any; // List of products
+  nextPageInfo?: string; // Cursor for next page
+  previousPageInfo?: string; // Cursor for previous page
+  totalRetrieved: number; // Number of products retrieved
+}
+
+export type ShopifyListProductsResult = AdapterResultBase<ShopifyListProductsData>;
+
 export interface ShopifyProductData {
   id: string; // Product ID
   title: string; // Product title
@@ -3640,11 +5004,11 @@ export interface ShopifyProductData {
   createdAt: string; // Creation timestamp (ISO 8601)
   updatedAt: string; // Last update timestamp (ISO 8601)
   publishedAt?: string; // Published timestamp (ISO 8601)
-  variants: ShopifyVariant[]; // Product variants
-  images: ShopifyImage[]; // Product images
+  variants: any; // Product variants
+  images: any; // Product images
   templateSuffix?: string; // Template suffix for custom templates
   publishedScope: string; // Published scope (e.g., web)
-  options: object[]; // Product options (e.g., Size, Color) with id, name, values[]
+  options: any; // Product options (e.g., Size, Color) with id, name, values[]
 }
 
 export type ShopifyGetProductResult = AdapterResultBase<ShopifyProductData>;
@@ -3661,11 +5025,11 @@ export interface ShopifyProductData {
   createdAt: string; // Creation timestamp (ISO 8601)
   updatedAt: string; // Last update timestamp (ISO 8601)
   publishedAt?: string; // Published timestamp (ISO 8601)
-  variants: ShopifyVariant[]; // Product variants
-  images: ShopifyImage[]; // Product images
+  variants: any; // Product variants
+  images: any; // Product images
   templateSuffix?: string; // Template suffix for custom templates
   publishedScope: string; // Published scope (e.g., web)
-  options: object[]; // Product options (e.g., Size, Color) with id, name, values[]
+  options: any; // Product options (e.g., Size, Color) with id, name, values[]
 }
 
 export type ShopifyCreateProductResult = AdapterResultBase<ShopifyProductData>;
@@ -3682,11 +5046,11 @@ export interface ShopifyProductData {
   createdAt: string; // Creation timestamp (ISO 8601)
   updatedAt: string; // Last update timestamp (ISO 8601)
   publishedAt?: string; // Published timestamp (ISO 8601)
-  variants: ShopifyVariant[]; // Product variants
-  images: ShopifyImage[]; // Product images
+  variants: any; // Product variants
+  images: any; // Product images
   templateSuffix?: string; // Template suffix for custom templates
   publishedScope: string; // Published scope (e.g., web)
-  options: object[]; // Product options (e.g., Size, Color) with id, name, values[]
+  options: any; // Product options (e.g., Size, Color) with id, name, values[]
 }
 
 export type ShopifyUpdateProductResult = AdapterResultBase<ShopifyProductData>;
@@ -3697,6 +5061,19 @@ export interface ShopifyDeleteProductData {
 }
 
 export type ShopifyDeleteProductResult = AdapterResultBase<ShopifyDeleteProductData>;
+
+export interface ShopifyLineItem {
+  id: string; // Line item ID
+  title: string; // Product title
+  quantity: number; // Quantity ordered
+  price: string; // Unit price
+  sku: string; // SKU
+  variantTitle?: string; // Variant title
+  vendor?: string; // Vendor
+  productId?: string; // Product ID
+  variantId?: string; // Variant ID
+  fulfillmentStatus?: string; // Fulfillment status
+}
 
 export interface ShopifyNormalizedOrder {
   id: string; // Order ID
@@ -3720,33 +5097,20 @@ export interface ShopifyNormalizedOrder {
   customerFirstName: string; // Customer first name
   customerLastName: string; // Customer last name
   customerEmail: string; // Customer email
-  lineItems: ShopifyLineItem[]; // Order line items
+  lineItems: any; // Order line items
   totalLineItemsQuantity: number; // Total quantity of all line items
   shippingAddressCity?: string; // Shipping city
   shippingAddressCountry?: string; // Shipping country
 }
 
 export interface ShopifyListOrdersData {
-  orders: ShopifyNormalizedOrder[]; // List of orders
+  orders: any; // List of orders
   nextPageInfo?: string; // Cursor for next page
   previousPageInfo?: string; // Cursor for previous page
   totalRetrieved: number; // Number of orders retrieved
 }
 
 export type ShopifyListOrdersResult = AdapterResultBase<ShopifyListOrdersData>;
-
-export interface ShopifyLineItem {
-  id: string; // Line item ID
-  title: string; // Product title
-  quantity: number; // Quantity ordered
-  price: string; // Unit price
-  sku: string; // SKU
-  variantTitle?: string; // Variant title
-  vendor?: string; // Vendor
-  productId?: string; // Product ID
-  variantId?: string; // Variant ID
-  fulfillmentStatus?: string; // Fulfillment status
-}
 
 export interface ShopifyOrderData {
   id: string; // Order ID
@@ -3770,7 +5134,7 @@ export interface ShopifyOrderData {
   customerFirstName: string; // Customer first name
   customerLastName: string; // Customer last name
   customerEmail: string; // Customer email
-  lineItems: ShopifyLineItem[]; // Order line items
+  lineItems: any; // Order line items
   totalLineItemsQuantity: number; // Total quantity of all line items
   shippingAddressCity?: string; // Shipping city
   shippingAddressCountry?: string; // Shipping country
@@ -3800,7 +5164,7 @@ export interface ShopifyOrderData {
   customerFirstName: string; // Customer first name
   customerLastName: string; // Customer last name
   customerEmail: string; // Customer email
-  lineItems: ShopifyLineItem[]; // Order line items
+  lineItems: any; // Order line items
   totalLineItemsQuantity: number; // Total quantity of all line items
   shippingAddressCity?: string; // Shipping city
   shippingAddressCountry?: string; // Shipping country
@@ -3830,7 +5194,7 @@ export interface ShopifyOrderData {
   customerFirstName: string; // Customer first name
   customerLastName: string; // Customer last name
   customerEmail: string; // Customer email
-  lineItems: ShopifyLineItem[]; // Order line items
+  lineItems: any; // Order line items
   totalLineItemsQuantity: number; // Total quantity of all line items
   shippingAddressCity?: string; // Shipping city
   shippingAddressCountry?: string; // Shipping country
@@ -3860,7 +5224,7 @@ export interface ShopifyOrderData {
   customerFirstName: string; // Customer first name
   customerLastName: string; // Customer last name
   customerEmail: string; // Customer email
-  lineItems: ShopifyLineItem[]; // Order line items
+  lineItems: any; // Order line items
   totalLineItemsQuantity: number; // Total quantity of all line items
   shippingAddressCity?: string; // Shipping city
   shippingAddressCountry?: string; // Shipping country
@@ -3885,11 +5249,11 @@ export interface ShopifyNormalizedCustomer {
   defaultAddressCity?: string; // Default address city
   defaultAddressCountry?: string; // Default address country
   taxExempt: boolean; // Whether customer is tax exempt
-  addresses: object[]; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
+  addresses: any; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
 }
 
 export interface ShopifyListCustomersData {
-  customers: ShopifyNormalizedCustomer[]; // List of customers
+  customers: any; // List of customers
   nextPageInfo?: string; // Cursor for next page
   previousPageInfo?: string; // Cursor for previous page
   totalRetrieved: number; // Number of customers retrieved
@@ -3914,7 +5278,7 @@ export interface ShopifyCustomerData {
   defaultAddressCity?: string; // Default address city
   defaultAddressCountry?: string; // Default address country
   taxExempt: boolean; // Whether customer is tax exempt
-  addresses: object[]; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
+  addresses: any; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
 }
 
 export type ShopifyGetCustomerResult = AdapterResultBase<ShopifyCustomerData>;
@@ -3936,7 +5300,7 @@ export interface ShopifyCustomerData {
   defaultAddressCity?: string; // Default address city
   defaultAddressCountry?: string; // Default address country
   taxExempt: boolean; // Whether customer is tax exempt
-  addresses: object[]; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
+  addresses: any; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
 }
 
 export type ShopifyCreateCustomerResult = AdapterResultBase<ShopifyCustomerData>;
@@ -3958,13 +5322,13 @@ export interface ShopifyCustomerData {
   defaultAddressCity?: string; // Default address city
   defaultAddressCountry?: string; // Default address country
   taxExempt: boolean; // Whether customer is tax exempt
-  addresses: object[]; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
+  addresses: any; // Customer addresses with id, firstName, lastName, address1, address2, city, province, country, zip, phone
 }
 
 export type ShopifyUpdateCustomerResult = AdapterResultBase<ShopifyCustomerData>;
 
 export interface ShopifySearchCustomersData {
-  customers: ShopifyNormalizedCustomer[]; // Search results
+  customers: any; // Search results
   totalRetrieved: number; // Number of customers found
 }
 
@@ -3978,7 +5342,7 @@ export interface ShopifyNormalizedInventoryLevel {
 }
 
 export interface ShopifyInventoryLevelsData {
-  inventoryLevels: ShopifyNormalizedInventoryLevel[]; // Inventory levels
+  inventoryLevels: any; // Inventory levels
   totalRetrieved: number; // Number of levels retrieved
 }
 
@@ -4008,7 +5372,7 @@ export interface ShopifyNormalizedCollection {
 }
 
 export interface ShopifyListCollectionsData {
-  collections: ShopifyNormalizedCollection[]; // List of collections
+  collections: any; // List of collections
   totalRetrieved: number; // Number of collections retrieved
 }
 
@@ -4026,7 +5390,7 @@ export interface ShopifyNormalizedPage {
 }
 
 export interface ShopifyListPagesData {
-  pages: ShopifyNormalizedPage[]; // List of pages
+  pages: any; // List of pages
   nextPageInfo?: string; // Cursor for next page
   previousPageInfo?: string; // Cursor for previous page
   totalRetrieved: number; // Number of pages retrieved
@@ -4091,7 +5455,7 @@ export interface ShopifyNormalizedBlog {
 }
 
 export interface ShopifyListBlogsData {
-  blogs: ShopifyNormalizedBlog[]; // List of blogs
+  blogs: any; // List of blogs
   nextPageInfo?: string; // Cursor for next page
   previousPageInfo?: string; // Cursor for previous page
   totalRetrieved: number; // Number of blogs retrieved
@@ -4159,7 +5523,7 @@ export interface ShopifyNormalizedArticle {
 }
 
 export interface ShopifyListArticlesData {
-  articles: ShopifyNormalizedArticle[]; // List of articles
+  articles: any; // List of articles
   nextPageInfo?: string; // Cursor for next page
   previousPageInfo?: string; // Cursor for previous page
   totalRetrieved: number; // Number of articles retrieved
@@ -4238,7 +5602,7 @@ export interface ShopifyNormalizedTheme {
 }
 
 export interface ShopifyListThemesData {
-  themes: ShopifyNormalizedTheme[]; // List of themes
+  themes: any; // List of themes
   totalRetrieved: number; // Number of themes retrieved
 }
 
@@ -4275,7 +5639,7 @@ export interface ShopifyNormalizedThemeFile {
 }
 
 export interface ShopifyListThemeFilesData {
-  files: ShopifyNormalizedThemeFile[]; // List of theme files
+  files: any; // List of theme files
   totalRetrieved: number; // Number of files retrieved
 }
 
@@ -4292,14 +5656,14 @@ export interface ShopifyThemeFileData {
 export type ShopifyGetThemeFileResult = AdapterResultBase<ShopifyThemeFileData>;
 
 export interface ShopifyUpsertThemeFilesData {
-  upsertedFiles: string[]; // List of upserted file paths
+  upsertedFiles: any; // List of upserted file paths
   totalUpserted: number; // Number of files upserted
 }
 
 export type ShopifyUpsertThemeFilesResult = AdapterResultBase<ShopifyUpsertThemeFilesData>;
 
 export interface ShopifyDeleteThemeFilesData {
-  deletedFiles: string[]; // List of deleted file paths
+  deletedFiles: any; // List of deleted file paths
   totalDeleted: number; // Number of files deleted
 }
 
@@ -4309,11 +5673,11 @@ export interface ShopifyNormalizedMenu {
   id: string; // Menu ID
   title: string; // Menu title
   handle: string; // URL handle
-  items: object[]; // Menu items, each with id, title, type, url, resourceId, and nested items[]
+  items: any; // Menu items, each with id, title, type, url, resourceId, and nested items[]
 }
 
 export interface ShopifyListMenusData {
-  menus: ShopifyNormalizedMenu[]; // List of menus
+  menus: any; // List of menus
   nextPageInfo?: string; // Cursor for next page
   previousPageInfo?: string; // Cursor for previous page
   totalRetrieved: number; // Number of menus retrieved
@@ -4325,7 +5689,7 @@ export interface ShopifyMenuData {
   id: string; // Menu ID
   title: string; // Menu title
   handle: string; // URL handle
-  items: object[]; // Menu items, each with id, title, type, url, resourceId, and nested items[]
+  items: any; // Menu items, each with id, title, type, url, resourceId, and nested items[]
 }
 
 export type ShopifyGetMenuResult = AdapterResultBase<ShopifyMenuData>;
@@ -4334,7 +5698,7 @@ export interface ShopifyMenuData {
   id: string; // Menu ID
   title: string; // Menu title
   handle: string; // URL handle
-  items: object[]; // Menu items, each with id, title, type, url, resourceId, and nested items[]
+  items: any; // Menu items, each with id, title, type, url, resourceId, and nested items[]
 }
 
 export type ShopifyCreateMenuResult = AdapterResultBase<ShopifyMenuData>;
@@ -4343,7 +5707,7 @@ export interface ShopifyMenuData {
   id: string; // Menu ID
   title: string; // Menu title
   handle: string; // URL handle
-  items: object[]; // Menu items, each with id, title, type, url, resourceId, and nested items[]
+  items: any; // Menu items, each with id, title, type, url, resourceId, and nested items[]
 }
 
 export type ShopifyUpdateMenuResult = AdapterResultBase<ShopifyMenuData>;
@@ -4362,7 +5726,7 @@ export interface ShopifyNormalizedRedirect {
 }
 
 export interface ShopifyListRedirectsData {
-  redirects: ShopifyNormalizedRedirect[]; // List of redirects
+  redirects: any; // List of redirects
   nextPageInfo?: string; // Cursor for next page
   previousPageInfo?: string; // Cursor for previous page
   totalRetrieved: number; // Number of redirects retrieved
@@ -4393,6 +5757,49 @@ export interface ShopifyDeleteRedirectData {
 
 export type ShopifyDeleteRedirectResult = AdapterResultBase<ShopifyDeleteRedirectData>;
 
+// Socket Response Types
+export interface SocketSendData {
+  channelId: string; // Channel ID the message was sent to
+  sent: boolean; // Whether the message was delivered
+}
+
+export type SocketSendResult = AdapterResultBase<SocketSendData>;
+
+export interface SocketStatusData {
+  channelId: string; // Channel ID that was checked
+  connected: boolean; // Whether the channel is connected
+  metadata?: any; // Connection metadata key-value pairs
+  connectedAt?: string; // ISO 8601 timestamp of when the channel connected
+}
+
+export type SocketStatusResult = AdapterResultBase<SocketStatusData>;
+
+export interface SocketChannelInfo {
+  channelId: string; // Channel ID
+  connectedAt: string; // ISO 8601 timestamp of when the channel connected
+  metadata?: any; // Connection metadata key-value pairs
+}
+
+export interface SocketListData {
+  channels: any; // Array of connected channel objects
+  count: number; // Total number of connected channels
+}
+
+export type SocketListResult = AdapterResultBase<SocketListData>;
+
+export interface SocketUpdateMetadataData {
+  channelId: string; // Channel ID that was updated
+  updated: boolean; // Whether the metadata was successfully updated
+}
+
+export type SocketUpdateMetadataResult = AdapterResultBase<SocketUpdateMetadataData>;
+
+export interface SocketNotifySubscriberData {
+  notified: boolean; // Whether the subscriber was notified
+}
+
+export type SocketNotifySubscriberResult = AdapterResultBase<SocketNotifySubscriberData>;
+
 // Telegram Response Types
 export interface TelegramSendMessageData {
   messageId: number; // ID of the sent message
@@ -4406,9 +5813,9 @@ export type TelegramSendMessageResult = AdapterResultBase<TelegramSendMessageDat
 export interface TelegramChat {
   id: string; // Chat ID
   title: string; // Chat title/name
-  type: 'private' | 'group' | 'channel'; // Chat type
-  username: string | null; // Chat username (if available)
-  lastMessageDate: string | null; // ISO 8601 date of last message
+  type: any; // Chat type
+  username: any; // Chat username (if available)
+  lastMessageDate: any; // ISO 8601 date of last message
   unreadCount: number; // Number of unread messages
   unreadMentionsCount: number; // Number of unread mentions
   pinned: boolean; // Whether chat is pinned
@@ -4425,8 +5832,8 @@ export interface TelegramPaginationInfo {
 }
 
 export interface TelegramSearchChatsData {
-  items: TelegramChat[]; // List of matching chats
-  pagination: TelegramPaginationInfo; // Pagination metadata
+  items: any; // List of matching chats
+  pagination: any; // Pagination metadata
 }
 
 export type TelegramSearchChatsResult = AdapterResultBase<TelegramSearchChatsData>;
@@ -4434,26 +5841,26 @@ export type TelegramSearchChatsResult = AdapterResultBase<TelegramSearchChatsDat
 export interface TelegramMessage {
   id: string; // Message ID
   text: string; // Message text content
-  caption: string | null; // Caption for media messages
+  caption: any; // Caption for media messages
   date: string; // ISO 8601 timestamp
   chatId: string; // Chat ID where message was sent
   senderId: string; // Sender user ID
   senderName: string; // Sender display name
   hasMedia: boolean; // Whether message has media attachment
-  mediaType: string | null; // Media type: photo, video, document, etc.
+  mediaType: any; // Media type: photo, video, document, etc.
   isOutgoing: boolean; // Whether message was sent by the user
-  replyToMessageId: string | null; // ID of message being replied to
+  replyToMessageId: any; // ID of message being replied to
 }
 
 export interface TelegramSearchMessagesData {
-  messages: TelegramMessage[]; // List of matching messages
+  messages: any; // List of matching messages
   count: number; // Number of messages returned
 }
 
 export type TelegramSearchMessagesResult = AdapterResultBase<TelegramSearchMessagesData>;
 
 export interface TelegramGetChatMessagesData {
-  messages: TelegramMessage[]; // List of messages from the chat
+  messages: any; // List of messages from the chat
   count: number; // Number of messages returned
   chatId?: string; // Chat ID the messages are from
 }
@@ -4463,16 +5870,16 @@ export type TelegramGetChatMessagesResult = AdapterResultBase<TelegramGetChatMes
 export interface TelegramUnreadSummaryEntry {
   chatId: string; // Chat ID
   chatName: string; // Chat display name
-  chatType: 'private' | 'group' | 'channel'; // Chat type
+  chatType: any; // Chat type
   unreadCount: number; // Number of unread messages
   hasMention: boolean; // Whether there are unread mentions
-  lastMessageText: string | null; // Text of last message
-  lastMessageSender: string | null; // Sender of last message
-  lastMessageDate: string | null; // ISO 8601 date of last message
+  lastMessageText: any; // Text of last message
+  lastMessageSender: any; // Sender of last message
+  lastMessageDate: any; // ISO 8601 date of last message
 }
 
 export interface TelegramUnreadSummaryData {
-  chats: TelegramUnreadSummaryEntry[]; // List of chats with unread information
+  chats: any; // List of chats with unread information
   totalUnread: number; // Total unread messages across all chats
   chatsWithUnread: number; // Number of chats with unread messages
 }
@@ -4488,7 +5895,7 @@ export interface TelegramMarkAsReadData {
 export type TelegramMarkAsReadResult = AdapterResultBase<TelegramMarkAsReadData>;
 
 export interface TelegramMentionsData {
-  mentions: TelegramMessage[]; // List of messages with mentions
+  mentions: any; // List of messages with mentions
   count: number; // Number of mentions returned
 }
 
@@ -4502,6 +5909,128 @@ export interface TelegramLeaveGroupData {
 
 export type TelegramLeaveGroupResult = AdapterResultBase<TelegramLeaveGroupData>;
 
+// Telegram Bot Response Types
+export interface TelegramBotSendMessageData {
+  messageId: number; // ID of the sent message
+  chatId: string; // Chat ID where message was sent
+  text: string; // Message text that was sent
+  date: number; // Unix timestamp when sent
+}
+
+export type TelegramBotSendMessageResult = AdapterResultBase<TelegramBotSendMessageData>;
+
+export interface TelegramBotReplyToMessageData {
+  messageId: number; // ID of the reply message
+  chatId: string; // Chat ID where reply was sent
+  text: string; // Reply text that was sent
+  replyToMessageId: number; // ID of the original message replied to
+  date: number; // Unix timestamp when sent
+}
+
+export type TelegramBotReplyToMessageResult = AdapterResultBase<TelegramBotReplyToMessageData>;
+
+export interface TelegramBotAnswerCallbackQueryData {
+  callbackQueryId: string; // Callback query ID that was answered
+  answered: boolean; // Whether the query was answered
+  text: any; // Notification text shown to the user
+  showAlert: boolean; // Whether an alert was shown
+}
+
+export type TelegramBotAnswerCallbackQueryResult = AdapterResultBase<TelegramBotAnswerCallbackQueryData>;
+
+export interface TelegramBotSendMessageWithButtonsData {
+  messageId: number; // ID of the sent message
+  chatId: string; // Chat ID where message was sent
+  text: string; // Message text that was sent
+  hasButtons: boolean; // Whether the message has inline buttons
+  date: number; // Unix timestamp when sent
+}
+
+export type TelegramBotSendMessageWithButtonsResult = AdapterResultBase<TelegramBotSendMessageWithButtonsData>;
+
+export interface TelegramBotSetBotCommandsData {
+  botUsername: string; // Username of the bot
+  commandsSet: number; // Number of commands set
+  commands: any; // Array of command objects that were set
+}
+
+export type TelegramBotSetBotCommandsResult = AdapterResultBase<TelegramBotSetBotCommandsData>;
+
+export interface TelegramBotGetBotInfoData {
+  id: number; // Bot user ID
+  isBot: boolean; // Whether this is a bot
+  firstName: string; // Bot first name
+  username: string; // Bot username
+  canJoinGroups: boolean; // Whether bot can join groups
+  canReadAllGroupMessages: boolean; // Whether bot can read all group messages
+  supportsInlineQueries: boolean; // Whether bot supports inline queries
+}
+
+export type TelegramBotGetBotInfoResult = AdapterResultBase<TelegramBotGetBotInfoData>;
+
+export interface TelegramBotInfo {
+  username: string; // Bot username
+  botId: any; // Bot ID
+  firstName: any; // Bot first name
+  registeredAt: any; // Registration date
+  connectionStatus: string; // Connection status
+}
+
+export interface TelegramBotListBotsData {
+  bots: any; // Array of registered bots
+  count: number; // Number of registered bots
+}
+
+export type TelegramBotListBotsResult = AdapterResultBase<TelegramBotListBotsData>;
+
+export interface TelegramBotBanChatMemberData {
+  userId: number; // Telegram user ID of the banned user
+  chatId: string; // Chat ID where user was banned
+  banned: boolean; // Whether the user was banned
+  untilDate: any; // Unix timestamp when ban expires, or null for permanent
+  revokeMessages: boolean; // Whether messages were revoked
+}
+
+export type TelegramBotBanChatMemberResult = AdapterResultBase<TelegramBotBanChatMemberData>;
+
+export interface TelegramBotUnbanChatMemberData {
+  userId: number; // Telegram user ID of the unbanned user
+  chatId: string; // Chat ID where user was unbanned
+  unbanned: boolean; // Whether the user was unbanned
+}
+
+export type TelegramBotUnbanChatMemberResult = AdapterResultBase<TelegramBotUnbanChatMemberData>;
+
+export interface TelegramBotRestrictChatMemberData {
+  userId: number; // Telegram user ID of the restricted user
+  chatId: string; // Chat ID where user was restricted
+  restricted: boolean; // Whether the user was restricted
+  permissions: any; // Applied permission restrictions
+  untilDate: any; // Unix timestamp when restriction expires, or null for permanent
+}
+
+export type TelegramBotRestrictChatMemberResult = AdapterResultBase<TelegramBotRestrictChatMemberData>;
+
+export interface TelegramBotGetChatMemberData {
+  userId: number; // Telegram user ID
+  status: string; // Membership status: creator, administrator, member, restricted, left, or kicked
+  firstName: any; // User first name
+  lastName: any; // User last name
+  username: any; // Telegram @username (without @)
+  customTitle: any; // Custom admin title
+  isAnonymous: boolean; // Whether user is anonymous
+}
+
+export type TelegramBotGetChatMemberResult = AdapterResultBase<TelegramBotGetChatMemberData>;
+
+export interface TelegramBotDeleteMessageData {
+  messageId: number; // ID of the deleted message
+  chatId: string; // Chat ID where message was deleted
+  deleted: boolean; // Whether the message was deleted
+}
+
+export type TelegramBotDeleteMessageResult = AdapterResultBase<TelegramBotDeleteMessageData>;
+
 // Trello Response Types
 export interface TrelloBoard {
   id: string; // Board ID
@@ -4514,7 +6043,7 @@ export interface TrelloBoard {
 }
 
 export interface TrelloGetBoardsData {
-  boards: TrelloBoard[]; // List of boards
+  boards: any; // List of boards
   count: number; // Number of boards returned
 }
 
@@ -4535,7 +6064,7 @@ export interface TrelloGetBoardData {
   url: string; // Board URL
   closed: boolean; // Whether board is closed
   starred: boolean; // Whether board is starred
-  lists: TrelloList[]; // Lists in the board
+  lists: any; // Lists in the board
   listCount: number; // Number of lists
 }
 
@@ -4551,28 +6080,28 @@ export interface TrelloCard {
   position: number; // Card position in list
   listId: string; // ID of the parent list
   boardId: string; // ID of the parent board
-  dueDate: string | null; // Due date in ISO 8601 format
+  dueDate: any; // Due date in ISO 8601 format
   dueComplete: boolean; // Whether due date is marked complete
-  labels: string[]; // Array of label names
+  labels: any; // Array of label names
   checklistCount: number; // Number of checklists on the card
   attachmentCount: number; // Number of attachments
   commentCount: number; // Number of comments
 }
 
 export interface TrelloCreateCardData {
-  card: TrelloCard; // Created card
+  card: any; // Created card
 }
 
 export type TrelloCreateCardResult = AdapterResultBase<TrelloCreateCardData>;
 
 export interface TrelloGetCardData {
-  card: TrelloCard; // Card details
+  card: any; // Card details
 }
 
 export type TrelloGetCardResult = AdapterResultBase<TrelloGetCardData>;
 
 export interface TrelloUpdateCardData {
-  card: TrelloCard; // Updated card
+  card: any; // Updated card
 }
 
 export type TrelloUpdateCardResult = AdapterResultBase<TrelloUpdateCardData>;
@@ -4599,27 +6128,27 @@ export interface TrelloCheckItem {
   id: string; // Check item ID
   name: string; // Check item text
   checklistId: string; // ID of the parent checklist
-  state: 'complete' | 'incomplete'; // Completion state
+  state: any; // Completion state
   position: number; // Check item position
 }
 
 export interface TrelloCreateChecklistData {
-  checklist: TrelloChecklist; // Created checklist
-  checkItems: TrelloCheckItem[]; // Check items in the checklist
+  checklist: any; // Created checklist
+  checkItems: any; // Check items in the checklist
 }
 
 export type TrelloCreateChecklistResult = AdapterResultBase<TrelloCreateChecklistData>;
 
 export interface TrelloGetChecklistData {
-  checklist: TrelloChecklist; // Checklist details
-  checkItems: TrelloCheckItem[]; // Check items in the checklist
+  checklist: any; // Checklist details
+  checkItems: any; // Check items in the checklist
 }
 
 export type TrelloGetChecklistResult = AdapterResultBase<TrelloGetChecklistData>;
 
 export interface TrelloUpdateChecklistData {
-  checklist: TrelloChecklist; // Updated checklist
-  checkItems: TrelloCheckItem[]; // Check items in the checklist
+  checklist: any; // Updated checklist
+  checkItems: any; // Check items in the checklist
 }
 
 export type TrelloUpdateChecklistResult = AdapterResultBase<TrelloUpdateChecklistData>;
@@ -4633,13 +6162,13 @@ export interface TrelloDeleteChecklistData {
 export type TrelloDeleteChecklistResult = AdapterResultBase<TrelloDeleteChecklistData>;
 
 export interface TrelloAddCheckItemData {
-  checkItem: TrelloCheckItem; // Created check item
+  checkItem: any; // Created check item
 }
 
 export type TrelloAddCheckItemResult = AdapterResultBase<TrelloAddCheckItemData>;
 
 export interface TrelloUpdateCheckItemData {
-  checkItem: TrelloCheckItem; // Updated check item
+  checkItem: any; // Updated check item
 }
 
 export type TrelloUpdateCheckItemResult = AdapterResultBase<TrelloUpdateCheckItemData>;
@@ -4651,6 +6180,41 @@ export interface TrelloDeleteCheckItemData {
 }
 
 export type TrelloDeleteCheckItemResult = AdapterResultBase<TrelloDeleteCheckItemData>;
+
+// Tunnel Response Types
+export interface TunnelCallData {
+  statusCode: number; // HTTP response status code
+  headers: any; // HTTP response headers
+  body: any; // Response body (parsed as JSON if possible, otherwise string)
+  tunnelName: string; // Name of the tunnel used for the request
+  duration: number; // Request duration in milliseconds
+}
+
+export type TunnelCallResult = AdapterResultBase<TunnelCallData>;
+
+export interface TunnelStatusData {
+  tunnelName: string; // Name of the tunnel
+  connected: boolean; // Whether the tunnel is currently connected
+  tunnelUrl?: string; // URL of the tunnel endpoint
+  metadata?: any; // Tunnel client metadata (hostname, clientVersion, etc.)
+  connectedAt?: string; // ISO 8601 timestamp when the tunnel connected
+}
+
+export type TunnelStatusResult = AdapterResultBase<TunnelStatusData>;
+
+export interface TunnelListEntry {
+  tunnelName: string; // Name of the tunnel
+  tunnelUrl: string; // URL of the tunnel endpoint
+  connectedAt: string; // ISO 8601 timestamp when the tunnel connected
+  metadata?: any; // Tunnel client metadata
+}
+
+export interface TunnelListData {
+  tunnels: any; // List of connected tunnels
+  count: number; // Total number of connected tunnels
+}
+
+export type TunnelListResult = AdapterResultBase<TunnelListData>;
 
 // Twitter Response Types
 export interface TwitterPostTweetData {
@@ -4674,6 +6238,8 @@ export interface TwitterNormalizedTweet {
   bookmarkCount: number; // Number of bookmarks
   isReply: boolean; // Whether this is a reply to another tweet
   isRetweet: boolean; // Whether this is a retweet
+  inReplyToTweetId?: string; // ID of the tweet this is replying to (only present for replies)
+  conversationId?: string; // Conversation thread ID (same as root tweet ID)
   source?: string; // Source application of the tweet
   authorId: string; // Author user ID
   authorName: string; // Author display name
@@ -4686,7 +6252,7 @@ export interface TwitterNormalizedTweet {
 }
 
 export interface TwitterGetUserTweetsData {
-  tweets: TwitterNormalizedTweet[]; // List of normalized tweets
+  tweets: any; // List of normalized tweets
   hasNextPage: boolean; // Whether more tweets are available
   nextCursor: string; // Cursor for fetching the next page
   totalRetrieved: number; // Number of tweets retrieved in this response
@@ -4697,13 +6263,750 @@ export type TwitterGetUserTweetsResult = AdapterResultBase<TwitterGetUserTweetsD
 export interface TwitterAdvancedSearchData {
   query: string; // Search query used
   queryType: string; // Type of search: Latest or Top
-  tweets: TwitterNormalizedTweet[]; // List of matching tweets
+  tweets: any; // List of matching tweets
   hasNextPage: boolean; // Whether more results are available
   nextCursor: string; // Cursor for fetching the next page
   totalRetrieved: number; // Number of tweets retrieved in this response
 }
 
 export type TwitterAdvancedSearchResult = AdapterResultBase<TwitterAdvancedSearchData>;
+
+export interface TwitterGetTweetByIdData {
+  tweets: any; // List of retrieved tweets
+  totalRetrieved: number; // Number of tweets retrieved
+}
+
+export type TwitterGetTweetByIdResult = AdapterResultBase<TwitterGetTweetByIdData>;
+
+// Flows Response Types
+export interface FlowsCreateFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsCreateFlowResult = AdapterResultBase<FlowsCreateFlowData>;
+
+export interface FlowsCreateTimeFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsCreateTimeFlowResult = AdapterResultBase<FlowsCreateTimeFlowData>;
+
+export interface FlowsCreateEventFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsCreateEventFlowResult = AdapterResultBase<FlowsCreateEventFlowData>;
+
+export interface FlowsGetFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsGetFlowResult = AdapterResultBase<FlowsGetFlowData>;
+
+export interface FlowsUpdateFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsUpdateFlowResult = AdapterResultBase<FlowsUpdateFlowData>;
+
+export interface FlowsDeleteFlowData {
+  flowId: string; // Deleted flow ID
+  deleted: boolean; // Whether deletion succeeded
+}
+
+export type FlowsDeleteFlowResult = AdapterResultBase<FlowsDeleteFlowData>;
+
+export interface FlowsPauseFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsPauseFlowResult = AdapterResultBase<FlowsPauseFlowData>;
+
+export interface FlowsResumeFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsResumeFlowResult = AdapterResultBase<FlowsResumeFlowData>;
+
+export interface FlowsRecordExecutionData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsRecordExecutionResult = AdapterResultBase<FlowsRecordExecutionData>;
+
+export interface FlowListItem {
+  id: string; // Flow ID
+  title: string; // Flow title
+  status: string; // Flow status (active, paused, completed, failed)
+  triggerType: string; // Trigger type (time or event)
+  isActive: boolean; // Whether flow is active
+  description: string; // Truncated description
+  userId: string; // Owner user ID
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+}
+
+export interface FlowsSearchFlowsData {
+  count: number; // Number of matching flows
+  flows: any; // List of matching flows (minimal by default, summary with detail: "summary")
+}
+
+export type FlowsSearchFlowsResult = AdapterResultBase<FlowsSearchFlowsData>;
+
+export interface FlowsGetFlowsByEventTypeData {
+  eventType: string; // Queried event type
+  count: number; // Number of flows
+  flows: any; // List of flows for event type (minimal by default, summary with detail: "summary")
+}
+
+export type FlowsGetFlowsByEventTypeResult = AdapterResultBase<FlowsGetFlowsByEventTypeData>;
+
+export interface EventType {
+  constant: string; // Event type constant name
+  eventType: string; // Full event type string
+  source: string; // Event source/category
+  description: string; // Event description
+  hasTemplates: boolean; // Whether templates are available
+}
+
+export interface FlowsListEventTypesData {
+  count: number; // Number of event types
+  eventTypes: any; // List of event types
+}
+
+export type FlowsListEventTypesResult = AdapterResultBase<FlowsListEventTypesData>;
+
+export interface ConditionResult {
+  field: string; // Field name
+  operator: string; // Operator used
+  expected: string; // Expected value (stringified)
+  actual: string; // Actual value (stringified)
+  passed: boolean; // Whether condition passed
+}
+
+export interface TestEvent {
+  id: string; // Test event ID
+  type: string; // Event type
+  source: string; // Event source
+  summary: string; // Human-readable summary
+}
+
+export interface FlowsTestFlowData {
+  success: boolean; // Overall test success
+  flowId: string; // Tested flow ID
+  mode: string; // Test mode (dryRun or fullExecution)
+  triggerMatched: boolean; // Whether trigger conditions matched
+  conditionResults: any; // Individual condition results
+  testEvent: any; // Generated test event info
+  executionId: string; // Execution ID (if executed)
+  executionStatus: string; // Execution status (success, error, timeout)
+  executionDuration: number; // Execution duration in ms
+  executionError: string; // Error message if failed
+  tokensConsumed: number; // Tokens consumed
+  recommendations: any; // Actionable recommendations
+}
+
+export type FlowsTestFlowResult = AdapterResultBase<FlowsTestFlowData>;
+
+export interface FlowsValidateTriggerData {
+  flowId: string; // Flow ID
+  matched: boolean; // Whether trigger matched
+  conditionResults: any; // Individual condition results
+}
+
+export type FlowsValidateTriggerResult = AdapterResultBase<FlowsValidateTriggerData>;
+
+export interface FlowsCreateBatchOperationData {
+  flowId: string; // Created batch flow ID
+  title: string; // Batch operation title
+  operationCount: number; // Total operations to process
+  batchSize: number; // Operations per execution
+  intervalSeconds: number; // Seconds between batches
+  estimatedCompletionMinutes: number; // Estimated completion time
+  message: string; // Confirmation message
+  createdAt: string; // Created timestamp (ISO 8601)
+}
+
+export type FlowsCreateBatchOperationResult = AdapterResultBase<FlowsCreateBatchOperationData>;
+
+export interface FlowsPublishFlowData {
+  flowId: string; // Published flow ID
+  isPublished: boolean; // Whether flow is published
+  status: string; // Published status
+  publishedAt: string; // Published timestamp (ISO 8601)
+  pricing: any; // Pricing configuration
+  category: string; // Marketplace category
+  tags: any; // Marketplace tags
+}
+
+export type FlowsPublishFlowResult = AdapterResultBase<FlowsPublishFlowData>;
+
+export interface FlowsUnpublishFlowData {
+  flowId: string; // Unpublished flow ID
+  isPublished: boolean; // Whether flow is published (false)
+  status: string; // Published status (archived)
+}
+
+export type FlowsUnpublishFlowResult = AdapterResultBase<FlowsUnpublishFlowData>;
+
+// User Response Types
+export interface UserGetProfileProfilePhotoItem {
+  thumbnail?: string; // Thumbnail photo URL
+  large?: string; // Large photo URL
+  original?: string; // Original photo URL
+}
+
+export interface UserGetProfileWalletsItem {
+  svm: any; // Solana wallet addresses
+  evm: any; // Ethereum wallet addresses
+}
+
+export interface UserGetProfileDeveloperItemReputationItem {
+  totalResources: number; // Total published resources
+  averageRating: number; // Average resource rating
+  totalCalls: number; // Total API calls across resources
+}
+
+export interface UserGetProfileDeveloperItem {
+  verified: boolean; // Whether developer is verified
+  bio?: string; // Developer bio
+  reputation: any; // Developer reputation stats
+}
+
+export interface UserGetProfileData {
+  userId: string; // User ID
+  username: string; // Username
+  email?: string; // Email address
+  timezone: string; // IANA timezone identifier
+  phoneNumber?: string; // Phone number
+  createdAt: string; // Account creation timestamp
+  updatedAt: string; // Last update timestamp
+  hasCompletedOnboarding: boolean; // Whether user has completed onboarding
+  profilePhoto?: any; // Profile photo URLs (thumbnail, large, original)
+  socials: any; // Social media links
+  subscriptionPlan: string; // Subscription plan (e.g., free)
+  wallets: any; // Wallet addresses by chain type
+  developer?: any; // Developer profile information
+}
+
+export type UserGetProfileResult = AdapterResultBase<UserGetProfileData>;
+
+export interface UserUpdateProfileProfilePhotoItem {
+  thumbnail?: string; // Thumbnail photo URL
+  large?: string; // Large photo URL
+  original?: string; // Original photo URL
+}
+
+export interface UserUpdateProfileWalletsItem {
+  svm: any; // Solana wallet addresses
+  evm: any; // Ethereum wallet addresses
+}
+
+export interface UserUpdateProfileDeveloperItemReputationItem {
+  totalResources: number; // Total published resources
+  averageRating: number; // Average resource rating
+  totalCalls: number; // Total API calls across resources
+}
+
+export interface UserUpdateProfileDeveloperItem {
+  verified: boolean; // Whether developer is verified
+  bio?: string; // Developer bio
+  reputation: any; // Developer reputation stats
+}
+
+export interface UserUpdateProfileData {
+  userId: string; // User ID
+  username: string; // Username
+  email?: string; // Email address
+  timezone: string; // IANA timezone identifier
+  phoneNumber?: string; // Phone number
+  createdAt: string; // Account creation timestamp
+  updatedAt: string; // Last update timestamp
+  hasCompletedOnboarding: boolean; // Whether user has completed onboarding
+  profilePhoto?: any; // Profile photo URLs (thumbnail, large, original)
+  socials: any; // Social media links
+  subscriptionPlan: string; // Subscription plan (e.g., free)
+  wallets: any; // Wallet addresses by chain type
+  developer?: any; // Developer profile information
+}
+
+export type UserUpdateProfileResult = AdapterResultBase<UserUpdateProfileData>;
+
+export interface UserUpdatePreferencesData {
+  timezone: string; // User timezone (IANA identifier)
+  socials: any; // Social media links
+}
+
+export type UserUpdatePreferencesResult = AdapterResultBase<UserUpdatePreferencesData>;
+
+export interface UserGetUsageStatsData {
+  monthlyTokenUsage: number; // Tokens used this month
+  tokenQuota: number; // Monthly token quota
+  monthlyRemaining: number; // Remaining monthly tokens
+  usagePercentage: number; // Percentage of quota used
+  paidTokenBalance: number; // Paid token balance
+  totalAvailable: number; // Total tokens available (monthly remaining + paid)
+  lastQuotaReset: string; // Last quota reset timestamp
+  subscriptionPlan: string; // Subscription plan (e.g., free)
+  subscriptionStatus?: string; // Stripe subscription status
+  subscriptionCancelAt?: string; // Subscription cancellation date
+}
+
+export type UserGetUsageStatsResult = AdapterResultBase<UserGetUsageStatsData>;
+
+export interface UserSession {
+  type: string; // Session type (e.g., mobile)
+  platform: string; // Platform (ios, android)
+  tokenType: string; // Push token type (regular, voip)
+  lastActive: string; // Last active timestamp
+  active: boolean; // Whether session is active
+}
+
+export interface UserGetSessionsData {
+  sessions: any; // Array of active sessions/devices
+  totalSessions?: number; // Total number of sessions
+  note?: string; // Note when no sessions found
+}
+
+export type UserGetSessionsResult = AdapterResultBase<UserGetSessionsData>;
+
+export interface UserDeactivateAccountData {
+}
+
+export type UserDeactivateAccountResult = AdapterResultBase<UserDeactivateAccountData>;
+
+// Contacts Response Types
+export interface ContactsListContactsContactsItem {
+  id: string; // Direct group ID
+  contactId: string; // Contact user ID
+  username: string; // Contact username
+  profilePhoto?: string; // Profile photo URL
+  email?: string; // Contact email address
+  phoneNumber?: string; // Contact phone number
+  wallets: any; // Wallet addresses array
+  createdAt: string; // Contact added timestamp (ISO 8601)
+  updatedAt: string; // Contact updated timestamp (ISO 8601)
+}
+
+export interface ContactsListContactsPaginationItem {
+  total: number; // Total number of items
+  limit: number; // Maximum items per page
+  offset: number; // Number of items skipped
+  hasMore: boolean; // Whether more items exist
+}
+
+export interface ContactsListContactsData {
+  success: boolean; // Whether the operation succeeded
+  contacts: any; // Array of contacts
+  pagination: any; // Pagination info
+}
+
+export type ContactsListContactsResult = AdapterResultBase<ContactsListContactsData>;
+
+export interface ContactsGetContactContactItem {
+  id: string; // Direct group ID
+  contactId: string; // Contact user ID
+  username: string; // Contact username
+  profilePhoto?: string; // Profile photo URL
+  email?: string; // Contact email address
+  phoneNumber?: string; // Contact phone number
+  wallets: any; // Wallet addresses array
+  createdAt: string; // Contact added timestamp (ISO 8601)
+  updatedAt: string; // Contact updated timestamp (ISO 8601)
+}
+
+export interface ContactsGetContactData {
+  success: boolean; // Whether the operation succeeded
+  contact: any; // Contact details
+}
+
+export type ContactsGetContactResult = AdapterResultBase<ContactsGetContactData>;
+
+export interface ContactsAddContactData {
+  success: boolean; // Whether the operation succeeded
+  requestId: string; // Contact request ID
+  targetUsername: string; // Username of the target user
+  status: string; // Request status (pending)
+  createdAt: string; // Request creation timestamp (ISO 8601)
+  message: string; // Confirmation message
+}
+
+export type ContactsAddContactResult = AdapterResultBase<ContactsAddContactData>;
+
+export interface ContactsRemoveContactData {
+  success: boolean; // Whether the operation succeeded
+  removedContactId: string; // ID of the removed contact
+  message: string; // Confirmation message
+}
+
+export type ContactsRemoveContactResult = AdapterResultBase<ContactsRemoveContactData>;
+
+export interface ContactsSearchContactsResultsItem {
+  contactId: string; // Contact user ID
+  username: string; // Contact username
+  profilePhoto?: string; // Profile photo URL
+  email?: string; // Contact email address
+  phoneNumber?: string; // Contact phone number
+  wallets: any; // Wallet addresses array
+}
+
+export interface ContactsSearchContactsData {
+  success: boolean; // Whether the operation succeeded
+  results: any; // Array of matching contacts
+  count: number; // Number of results returned
+  query: string; // The search query used
+  searchType: string; // The search type used (all, username, email, phone, wallet)
+}
+
+export type ContactsSearchContactsResult = AdapterResultBase<ContactsSearchContactsData>;
+
+export interface ContactsBlockContactData {
+  success: boolean; // Whether the operation succeeded
+  blockedUserId: string; // ID of the blocked user
+  message: string; // Confirmation message
+}
+
+export type ContactsBlockContactResult = AdapterResultBase<ContactsBlockContactData>;
+
+export interface ContactsUnblockContactData {
+  success: boolean; // Whether the operation succeeded
+  unblockedUserId: string; // ID of the unblocked user
+  message: string; // Confirmation message
+}
+
+export type ContactsUnblockContactResult = AdapterResultBase<ContactsUnblockContactData>;
+
+export interface ContactsGetBlockedContactsBlockedUsersItem {
+  id: string; // Blocked record ID
+  blockedUserId: string; // Blocked user ID
+  username?: string; // Blocked user username
+  profilePhoto?: string; // Blocked user profile photo URL
+  blockedAt: string; // When the user was blocked (ISO 8601)
+}
+
+export interface ContactsGetBlockedContactsPaginationItem {
+  total: number; // Total number of items
+  limit: number; // Maximum items per page
+  offset: number; // Number of items skipped
+  hasMore: boolean; // Whether more items exist
+}
+
+export interface ContactsGetBlockedContactsData {
+  success: boolean; // Whether the operation succeeded
+  blockedUsers: any; // Array of blocked users
+  pagination: any; // Pagination info
+}
+
+export type ContactsGetBlockedContactsResult = AdapterResultBase<ContactsGetBlockedContactsData>;
+
+export interface ContactsGetContactRequestsRequestsItemFromItem {
+  userId: string; // User ID
+  username: string; // Username
+  profilePhoto?: string; // Profile photo URL
+}
+
+export interface ContactsGetContactRequestsRequestsItemToItem {
+  userId: string; // User ID
+  username: string; // Username
+  profilePhoto?: string; // Profile photo URL
+}
+
+export interface ContactsGetContactRequestsRequestsItem {
+  requestId: string; // Contact request ID
+  from: any; // Sender info
+  to: any; // Recipient info
+  status: string; // Request status (pending, accepted, rejected)
+  createdAt: string; // Request creation timestamp (ISO 8601)
+  updatedAt: string; // Request update timestamp (ISO 8601)
+  direction: string; // Request direction relative to user (sent or received)
+}
+
+export interface ContactsGetContactRequestsFilterItem {
+  type: string; // Request type filter (all, sent, received)
+  status: string; // Status filter (pending, accepted, rejected)
+}
+
+export interface ContactsGetContactRequestsData {
+  success: boolean; // Whether the operation succeeded
+  requests: any; // Array of contact requests
+  count: number; // Number of requests returned
+  filter: any; // Applied filter criteria
+}
+
+export type ContactsGetContactRequestsResult = AdapterResultBase<ContactsGetContactRequestsData>;
+
+// Crypto Response Types
+export interface CryptoGetPriceData {
+  tokenAddress: string; // Token contract address
+  chain: any; // Chain type
+  chainName: string; // Chain name (e.g., solana, ethereum)
+  priceUsd: number; // Current price in USD
+  timestamp: string; // Price timestamp (ISO 8601)
+  block: any; // Block number of price (if available)
+  source: any; // Price data source
+}
+
+export type CryptoGetPriceResult = AdapterResultBase<CryptoGetPriceData>;
+
+export interface CryptoSendTokenData {
+  type: string; // Always "pending_transaction"
+  transferId: string; // Unique transfer identifier
+  transaction: string; // Base64 encoded serialized transaction
+  signerWallet: string; // Wallet address that will sign
+  tokenMint: string; // Token mint address
+  tokenSymbol: string; // Token symbol (e.g., SOL, USDC)
+  tokenName: string; // Token display name
+  tokenDecimals: number; // Token decimal places
+  amount: string; // Amount to send (string for precision)
+  recipientAddress: string; // Recipient wallet address
+  recipientDisplayName: string; // Recipient display name
+  isContact: boolean; // Whether recipient is a contact
+  estimatedFee: string; // Estimated transaction fee
+  senderAddress: string; // Sender wallet address
+  expiresAt: string; // Transaction expiry (ISO 8601)
+}
+
+export type CryptoSendTokenResult = AdapterResultBase<CryptoSendTokenData>;
+
+export interface CryptoMonitorPriceData {
+  flowId: string; // Created flow ID
+  tokenAddress: string; // Token contract address
+  chain: any; // Chain type
+  chainName: string; // Chain name
+  currentPrice: number; // Current price when monitor was created
+  targetPrice: number; // Target price for alert
+  direction: any; // Alert direction
+  percentStep: number; // Progressive alert step percentage
+  status: string; // Monitor status (always "active")
+}
+
+export type CryptoMonitorPriceResult = AdapterResultBase<CryptoMonitorPriceData>;
+
+export interface CryptoMonitorEntry {
+  assignmentId: string; // Flow assignment ID
+  title: string; // Monitor title
+  tokenAddress: string; // Token contract address
+  chain: string; // Chain type (evm or svm)
+  chainName: string; // Chain name
+  direction: string; // Alert direction (above or below)
+  targetPrice?: number; // Target price in USD
+  currentStep?: number; // Current step in progressive alerts
+  maxSteps?: number; // Maximum steps
+  nextThreshold?: number; // Next threshold price
+  stepValue?: number; // Step percentage value
+  status: string; // Monitor status
+  createdAt?: string; // Creation timestamp (ISO 8601)
+}
+
+export interface CryptoListSubscriptionsData {
+  monitors: any; // List of active price monitors
+  count: number; // Number of active monitors
+}
+
+export type CryptoListSubscriptionsResult = AdapterResultBase<CryptoListSubscriptionsData>;
+
+export interface CryptoUnsubscribeAssetData {
+  tokenAddress: string; // Token contract address
+  chain: any; // Chain type
+  deletedAssignments: any; // IDs of deleted assignments
+  count: number; // Number of deleted monitors
+  status: string; // Operation status
+  message?: string; // Optional message
+}
+
+export type CryptoUnsubscribeAssetResult = AdapterResultBase<CryptoUnsubscribeAssetData>;
+
+export interface CryptoRefreshTransactionData {
+  type: string; // Always "pending_transaction"
+  transferId: string; // Unique transfer identifier
+  transaction: string; // Base64 encoded serialized transaction
+  signerWallet: string; // Wallet address that will sign
+  tokenMint: string; // Token mint address
+  tokenSymbol: string; // Token symbol (e.g., SOL, USDC)
+  tokenName: string; // Token display name
+  tokenDecimals: number; // Token decimal places
+  amount: string; // Amount to send (string for precision)
+  recipientAddress: string; // Recipient wallet address
+  recipientDisplayName: string; // Recipient display name
+  isContact: boolean; // Whether recipient is a contact
+  estimatedFee: string; // Estimated transaction fee
+  senderAddress: string; // Sender wallet address
+  expiresAt: string; // Transaction expiry (ISO 8601)
+  refreshedAt: string; // Refresh timestamp (ISO 8601)
+}
+
+export type CryptoRefreshTransactionResult = AdapterResultBase<CryptoRefreshTransactionData>;
 
 // Google Docs Response Types
 export interface GoogleDocsCreateDocumentData {
@@ -4849,8 +7152,8 @@ export interface GoogleSheetsGetSpreadsheetData {
   url: string; // URL to open spreadsheet
   locale: string; // Spreadsheet locale (e.g., en_US)
   timeZone: string; // Spreadsheet timezone
-  sheets: GoogleSheetsSheetInfo[]; // List of sheets in the spreadsheet
-  namedRanges: GoogleSheetsNamedRange[]; // List of named ranges
+  sheets: any; // List of sheets in the spreadsheet
+  namedRanges: any; // List of named ranges
 }
 
 export type GoogleSheetsGetSpreadsheetResult = AdapterResultBase<GoogleSheetsGetSpreadsheetData>;
@@ -4858,7 +7161,7 @@ export type GoogleSheetsGetSpreadsheetResult = AdapterResultBase<GoogleSheetsGet
 export interface GoogleSheetsReadRangeData {
   spreadsheetId: string; // Spreadsheet ID
   range: string; // Range that was read
-  values: any[][]; // 2D array of cell values
+  values: any; // 2D array of cell values
   rowCount: number; // Number of rows returned
   columnCount: number; // Number of columns in widest row
   isEmpty: boolean; // Whether the range is empty
@@ -4882,7 +7185,7 @@ export interface GoogleSheetsAppendRowData {
   appendedRange: string; // Range where data was appended
   appendedRows: number; // Number of rows appended
   appendedCells: number; // Total cells appended
-  values: any[]; // Values that were appended
+  values: any; // Values that were appended
 }
 
 export type GoogleSheetsAppendRowResult = AdapterResultBase<GoogleSheetsAppendRowData>;
@@ -4908,7 +7211,7 @@ export type GoogleSheetsInsertFormulaResult = AdapterResultBase<GoogleSheetsInse
 export interface GoogleSheetsFormatRangeData {
   spreadsheetId: string; // Spreadsheet ID
   range: string; // Range that was formatted
-  formattingApplied: string[]; // List of formatting options applied
+  formattingApplied: any; // List of formatting options applied
 }
 
 export type GoogleSheetsFormatRangeResult = AdapterResultBase<GoogleSheetsFormatRangeData>;
@@ -5025,9 +7328,10 @@ function createAiAdapter(sdk: MirraSDK) {
      * @param args.model - Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names. (optional)
      * @param args.temperature - Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7 (optional)
      * @param args.maxTokens - Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens). (optional)
+     * @returns Promise<AIChatData> Typed flat response with IDE autocomplete
      */
-    chat: async (args: AiChatArgs): Promise<any> => {
-      return sdk.resources.call({
+    chat: async (args: AiChatArgs): Promise<AIChatData> => {
+      return sdk.resources.callDirect({
         resourceId: 'ai',
         method: 'chat',
         params: args || {}
@@ -5040,11 +7344,31 @@ function createAiAdapter(sdk: MirraSDK) {
      * @param args.options - Array of options to choose from. Each option must have: id (unique identifier), label (descriptive name), and optional metadata (additional data)
      * @param args.context - Additional context to help the AI make a better decision (optional)
      * @param args.model - Specific model to use. Defaults to system default. (optional)
+     * @returns Promise<AIDecideData> Typed flat response with IDE autocomplete
      */
-    decide: async (args: AiDecideArgs): Promise<any> => {
-      return sdk.resources.call({
+    decide: async (args: AiDecideArgs): Promise<AIDecideData> => {
+      return sdk.resources.callDirect({
         resourceId: 'ai',
         method: 'decide',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Run an AI agent that can call tools across multiple rounds. The agent receives a conversation, decides which tools to use, executes them, and continues until the task is complete or max rounds are reached. TOOL ACCESS: - Specify adapter names in "tools" array to limit which adapters the agent can use - Omit "tools" to give the agent access to ALL connected adapters - Tools are referenced by camelCase SDK name (e.g., "memory", "googleCalendar", "telegram") USE CASES: - Multi-step research: agent searches memory, reads documents, synthesizes answer - Automated workflows: agent creates calendar events, sends messages, updates records - Data processing: agent queries data, analyzes results, stores findings
+     * @param args.messages - Conversation messages array with role and content
+     * @param args.tools - Adapter names to give the agent access to. Omit for all adapters. (optional)
+     * @param args.systemPrompt - System prompt to guide agent behavior (optional)
+     * @param args.model - Model to use. Default: claude-sonnet-4-20250514 (optional)
+     * @param args.temperature - Temperature 0.0-1.0. Default: 0.5 (optional)
+     * @param args.maxTokens - Max tokens per LLM call. Default: 4096 (optional)
+     * @param args.maxRounds - Max tool-calling rounds. Default: 10, max: 25 (optional)
+     * @returns Promise<AIAgentData> Typed flat response with IDE autocomplete
+     */
+    agent: async (args: AiAgentArgs): Promise<AIAgentData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'ai',
+        method: 'agent',
         params: args || {}
       });
     }
@@ -5063,10 +7387,10 @@ function createJiraAdapter(sdk: MirraSDK) {
      * @param args.summary - Issue summary/title
      * @param args.description - Issue description (optional)
      * @param args.issueType - Issue type (Task, Bug, Story, etc.) (optional)
-     * @returns Promise<JiraCreateIssueResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraCreateIssueData> Typed flat response with IDE autocomplete
      */
-    createIssue: async (args: JiraCreateIssueArgs): Promise<JiraCreateIssueResult> => {
-      return sdk.resources.call({
+    createIssue: async (args: JiraCreateIssueArgs): Promise<JiraCreateIssueData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'createIssue',
         params: args || {}
@@ -5077,10 +7401,10 @@ function createJiraAdapter(sdk: MirraSDK) {
      * Search Jira issues using JQL. Returns normalized flat issue summaries.
      * @param args.jql - JQL query string
      * @param args.maxResults - Maximum number of results (default: 50, max: 100) (optional)
-     * @returns Promise<JiraSearchIssuesResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraSearchIssuesData> Typed flat response with IDE autocomplete
      */
-    searchIssues: async (args: JiraSearchIssuesArgs): Promise<JiraSearchIssuesResult> => {
-      return sdk.resources.call({
+    searchIssues: async (args: JiraSearchIssuesArgs): Promise<JiraSearchIssuesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'searchIssues',
         params: args || {}
@@ -5090,10 +7414,10 @@ function createJiraAdapter(sdk: MirraSDK) {
     /**
      * Get a specific Jira issue by key or ID. Returns normalized flat structure.
      * @param args.issueKey - Issue key (e.g., "PROJ-123") or ID
-     * @returns Promise<JiraGetIssueResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraGetIssueData> Typed flat response with IDE autocomplete
      */
-    getIssue: async (args: JiraGetIssueArgs): Promise<JiraGetIssueResult> => {
-      return sdk.resources.call({
+    getIssue: async (args: JiraGetIssueArgs): Promise<JiraGetIssueData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'getIssue',
         params: args || {}
@@ -5105,10 +7429,10 @@ function createJiraAdapter(sdk: MirraSDK) {
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
      * @param args.summary - New issue summary/title (optional)
      * @param args.description - New issue description (optional)
-     * @returns Promise<JiraUpdateIssueResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraUpdateIssueData> Typed flat response with IDE autocomplete
      */
-    updateIssue: async (args: JiraUpdateIssueArgs): Promise<JiraUpdateIssueResult> => {
-      return sdk.resources.call({
+    updateIssue: async (args: JiraUpdateIssueArgs): Promise<JiraUpdateIssueData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'updateIssue',
         params: args || {}
@@ -5118,10 +7442,10 @@ function createJiraAdapter(sdk: MirraSDK) {
     /**
      * Delete a Jira issue
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
-     * @returns Promise<JiraDeleteIssueResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraDeleteIssueData> Typed flat response with IDE autocomplete
      */
-    deleteIssue: async (args: JiraDeleteIssueArgs): Promise<JiraDeleteIssueResult> => {
-      return sdk.resources.call({
+    deleteIssue: async (args: JiraDeleteIssueArgs): Promise<JiraDeleteIssueData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'deleteIssue',
         params: args || {}
@@ -5132,10 +7456,10 @@ function createJiraAdapter(sdk: MirraSDK) {
      * Add a comment to a Jira issue
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
      * @param args.comment - Comment text
-     * @returns Promise<JiraAddCommentResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraAddCommentData> Typed flat response with IDE autocomplete
      */
-    addComment: async (args: JiraAddCommentArgs): Promise<JiraAddCommentResult> => {
-      return sdk.resources.call({
+    addComment: async (args: JiraAddCommentArgs): Promise<JiraAddCommentData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'addComment',
         params: args || {}
@@ -5146,10 +7470,10 @@ function createJiraAdapter(sdk: MirraSDK) {
      * Transition a Jira issue to a different status
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
      * @param args.transitionId - ID of the transition to perform
-     * @returns Promise<JiraTransitionIssueResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraTransitionIssueData> Typed flat response with IDE autocomplete
      */
-    transitionIssue: async (args: JiraTransitionIssueArgs): Promise<JiraTransitionIssueResult> => {
-      return sdk.resources.call({
+    transitionIssue: async (args: JiraTransitionIssueArgs): Promise<JiraTransitionIssueData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'transitionIssue',
         params: args || {}
@@ -5160,10 +7484,10 @@ function createJiraAdapter(sdk: MirraSDK) {
      * Assign a Jira issue to a user
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
      * @param args.accountId - Atlassian account ID of the assignee
-     * @returns Promise<JiraAssignIssueResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraAssignIssueData> Typed flat response with IDE autocomplete
      */
-    assignIssue: async (args: JiraAssignIssueArgs): Promise<JiraAssignIssueResult> => {
-      return sdk.resources.call({
+    assignIssue: async (args: JiraAssignIssueArgs): Promise<JiraAssignIssueData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'assignIssue',
         params: args || {}
@@ -5172,10 +7496,10 @@ function createJiraAdapter(sdk: MirraSDK) {
 
     /**
      * Get all accessible Jira projects. Returns normalized flat project structures.
-     * @returns Promise<JiraGetProjectsResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraGetProjectsData> Typed flat response with IDE autocomplete
      */
-    getProjects: async (args?: {}): Promise<JiraGetProjectsResult> => {
-      return sdk.resources.call({
+    getProjects: async (args?: {}): Promise<JiraGetProjectsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'getProjects',
         params: args || {}
@@ -5184,10 +7508,10 @@ function createJiraAdapter(sdk: MirraSDK) {
 
     /**
      * List all accessible Jira projects (alias for getProjects). Returns normalized flat structures.
-     * @returns Promise<JiraListProjectsResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraListProjectsData> Typed flat response with IDE autocomplete
      */
-    listProjects: async (args?: {}): Promise<JiraListProjectsResult> => {
-      return sdk.resources.call({
+    listProjects: async (args?: {}): Promise<JiraListProjectsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'listProjects',
         params: args || {}
@@ -5197,10 +7521,10 @@ function createJiraAdapter(sdk: MirraSDK) {
     /**
      * Get metadata for a specific Jira project. Returns normalized flat structures.
      * @param args.projectKey - Project key (e.g., "PROJ")
-     * @returns Promise<JiraGetProjectMetadataResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraGetProjectMetadataData> Typed flat response with IDE autocomplete
      */
-    getProjectMetadata: async (args: JiraGetProjectMetadataArgs): Promise<JiraGetProjectMetadataResult> => {
-      return sdk.resources.call({
+    getProjectMetadata: async (args: JiraGetProjectMetadataArgs): Promise<JiraGetProjectMetadataData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'getProjectMetadata',
         params: args || {}
@@ -5210,10 +7534,10 @@ function createJiraAdapter(sdk: MirraSDK) {
     /**
      * Get available transitions for a Jira issue. Returns normalized flat structures.
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
-     * @returns Promise<JiraGetTransitionsResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraGetTransitionsData> Typed flat response with IDE autocomplete
      */
-    getTransitions: async (args: JiraGetTransitionsArgs): Promise<JiraGetTransitionsResult> => {
-      return sdk.resources.call({
+    getTransitions: async (args: JiraGetTransitionsArgs): Promise<JiraGetTransitionsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'getTransitions',
         params: args || {}
@@ -5223,10 +7547,10 @@ function createJiraAdapter(sdk: MirraSDK) {
     /**
      * List users that can be assigned to issues in a project
      * @param args.projectKey - Project key (e.g., "PROJ")
-     * @returns Promise<JiraListAssignableUsersResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraListAssignableUsersData> Typed flat response with IDE autocomplete
      */
-    listAssignableUsers: async (args: JiraListAssignableUsersArgs): Promise<JiraListAssignableUsersResult> => {
-      return sdk.resources.call({
+    listAssignableUsers: async (args: JiraListAssignableUsersArgs): Promise<JiraListAssignableUsersData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'listAssignableUsers',
         params: args || {}
@@ -5236,10 +7560,10 @@ function createJiraAdapter(sdk: MirraSDK) {
     /**
      * Get available issue types for a project. Returns normalized flat structures.
      * @param args.projectKey - Project key (e.g., "PROJ")
-     * @returns Promise<JiraGetIssueTypesResult> Typed response with IDE autocomplete
+     * @returns Promise<JiraGetIssueTypesData> Typed flat response with IDE autocomplete
      */
-    getIssueTypes: async (args: JiraGetIssueTypesArgs): Promise<JiraGetIssueTypesResult> => {
-      return sdk.resources.call({
+    getIssueTypes: async (args: JiraGetIssueTypesArgs): Promise<JiraGetIssueTypesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'getIssueTypes',
         params: args || {}
@@ -5252,7 +7576,7 @@ function createJiraAdapter(sdk: MirraSDK) {
      * @param args.limit - Max results to return (default 5) (optional)
      */
     discoverExtended: async (args: JiraDiscoverExtendedArgs): Promise<any> => {
-      return sdk.resources.call({
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'discoverExtended',
         params: args || {}
@@ -5267,7 +7591,7 @@ function createJiraAdapter(sdk: MirraSDK) {
      * @param args.body - Request body for POST/PUT/PATCH operations (optional)
      */
     executeExtended: async (args: JiraExecuteExtendedArgs): Promise<any> => {
-      return sdk.resources.call({
+      return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'executeExtended',
         params: args || {}
@@ -5288,9 +7612,11 @@ function createClaudeCodeAdapter(sdk: MirraSDK) {
      * @param args.groupId - The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group. (optional)
      * @param args.cwd - Working directory for Claude Code (defaults to system default) (optional)
      * @param args.model - Claude model to use (e.g., "claude-sonnet-4-6") (optional)
+     * @param args.allowUnsupervisedMode - Run Claude Code in unsupervised mode, skipping all permission prompts. Only use for autonomous agent-driven sessions where no human is monitoring. Sessions still run in worktree isolation. (optional)
+     * @returns Promise<ClaudeCodeStartSessionData> Typed flat response with IDE autocomplete
      */
-    startSession: async (args: ClaudeCodeStartSessionArgs): Promise<any> => {
-      return sdk.resources.call({
+    startSession: async (args: ClaudeCodeStartSessionArgs): Promise<ClaudeCodeStartSessionData> => {
+      return sdk.resources.callDirect({
         resourceId: 'claudeCode',
         method: 'startSession',
         params: args || {}
@@ -5303,9 +7629,10 @@ function createClaudeCodeAdapter(sdk: MirraSDK) {
      * @param args.prompt - The follow-up prompt/task
      * @param args.groupId - The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group. (optional)
      * @param args.cwd - Working directory for Claude Code (optional)
+     * @returns Promise<ClaudeCodeResumeSessionData> Typed flat response with IDE autocomplete
      */
-    resumeSession: async (args: ClaudeCodeResumeSessionArgs): Promise<any> => {
-      return sdk.resources.call({
+    resumeSession: async (args: ClaudeCodeResumeSessionArgs): Promise<ClaudeCodeResumeSessionData> => {
+      return sdk.resources.callDirect({
         resourceId: 'claudeCode',
         method: 'resumeSession',
         params: args || {}
@@ -5314,9 +7641,10 @@ function createClaudeCodeAdapter(sdk: MirraSDK) {
 
     /**
      * List all active Claude Code sessions for the user
+     * @returns Promise<ClaudeCodeListSessionsData> Typed flat response with IDE autocomplete
      */
-    listSessions: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    listSessions: async (args?: {}): Promise<ClaudeCodeListSessionsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'claudeCode',
         method: 'listSessions',
         params: args || {}
@@ -5326,9 +7654,10 @@ function createClaudeCodeAdapter(sdk: MirraSDK) {
     /**
      * Kill a running Claude Code session and clean up associated Flows
      * @param args.sessionId - The session ID to kill
+     * @returns Promise<ClaudeCodeKillSessionData> Typed flat response with IDE autocomplete
      */
-    killSession: async (args: ClaudeCodeKillSessionArgs): Promise<any> => {
-      return sdk.resources.call({
+    killSession: async (args: ClaudeCodeKillSessionArgs): Promise<ClaudeCodeKillSessionData> => {
+      return sdk.resources.callDirect({
         resourceId: 'claudeCode',
         method: 'killSession',
         params: args || {}
@@ -5349,9 +7678,10 @@ function createDataAdapter(sdk: MirraSDK) {
      * @param args.slug - URL-safe identifier (lowercase, underscores). Auto-generated from name if omitted. (optional)
      * @param args.fields - Array of field definitions. Each field has: name (string), type ("string"|"number"|"boolean"|"date"|"array"|"object"), required (boolean), description (optional string).
      * @param args.description - Optional description of what this collection stores (optional)
+     * @returns Promise<DataDefineCollectionData> Typed flat response with IDE autocomplete
      */
-    defineCollection: async (args: DataDefineCollectionArgs): Promise<any> => {
-      return sdk.resources.call({
+    defineCollection: async (args: DataDefineCollectionArgs): Promise<DataDefineCollectionData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'defineCollection',
         params: args || {}
@@ -5361,9 +7691,10 @@ function createDataAdapter(sdk: MirraSDK) {
     /**
      * List all data collections for the current context. Optionally filter by status.
      * @param args.status - Filter by status: "active" (default) or "archived" (optional)
+     * @returns Promise<DataListCollectionsData> Typed flat response with IDE autocomplete
      */
-    listCollections: async (args: DataListCollectionsArgs): Promise<any> => {
-      return sdk.resources.call({
+    listCollections: async (args: DataListCollectionsArgs): Promise<DataListCollectionsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'listCollections',
         params: args || {}
@@ -5373,9 +7704,10 @@ function createDataAdapter(sdk: MirraSDK) {
     /**
      * Get a single collection schema by its slug.
      * @param args.slug - The collection slug (e.g. "contacts")
+     * @returns Promise<DataGetCollectionData> Typed flat response with IDE autocomplete
      */
-    getCollection: async (args: DataGetCollectionArgs): Promise<any> => {
-      return sdk.resources.call({
+    getCollection: async (args: DataGetCollectionArgs): Promise<DataGetCollectionData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'getCollection',
         params: args || {}
@@ -5388,9 +7720,10 @@ function createDataAdapter(sdk: MirraSDK) {
      * @param args.addFields - New fields to add to the collection (optional)
      * @param args.removeFields - Field names to remove from the collection (optional)
      * @param args.description - New description for the collection (optional)
+     * @returns Promise<DataUpdateCollectionData> Typed flat response with IDE autocomplete
      */
-    updateCollection: async (args: DataUpdateCollectionArgs): Promise<any> => {
-      return sdk.resources.call({
+    updateCollection: async (args: DataUpdateCollectionArgs): Promise<DataUpdateCollectionData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'updateCollection',
         params: args || {}
@@ -5400,9 +7733,10 @@ function createDataAdapter(sdk: MirraSDK) {
     /**
      * Archive a collection and delete all its records. The schema is marked as archived and all associated records are permanently deleted. Quota is decremented.
      * @param args.slug - The collection slug to drop
+     * @returns Promise<DataDropCollectionData> Typed flat response with IDE autocomplete
      */
-    dropCollection: async (args: DataDropCollectionArgs): Promise<any> => {
-      return sdk.resources.call({
+    dropCollection: async (args: DataDropCollectionArgs): Promise<DataDropCollectionData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'dropCollection',
         params: args || {}
@@ -5413,9 +7747,10 @@ function createDataAdapter(sdk: MirraSDK) {
      * Insert a single record into a collection. Data is validated against the collection schema. Quota is checked before writing.
      * @param args.collection - The collection slug to insert into
      * @param args.data - The record data -- keys must match the collection fields
+     * @returns Promise<DataInsertRecordData> Typed flat response with IDE autocomplete
      */
-    insertRecord: async (args: DataInsertRecordArgs): Promise<any> => {
-      return sdk.resources.call({
+    insertRecord: async (args: DataInsertRecordArgs): Promise<DataInsertRecordData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'insertRecord',
         params: args || {}
@@ -5426,9 +7761,10 @@ function createDataAdapter(sdk: MirraSDK) {
      * Batch insert multiple records into a collection. All records are validated against the schema. Quota is checked for the total size.
      * @param args.collection - The collection slug to insert into
      * @param args.records - Array of record data objects to insert
+     * @returns Promise<DataInsertRecordsData> Typed flat response with IDE autocomplete
      */
-    insertRecords: async (args: DataInsertRecordsArgs): Promise<any> => {
-      return sdk.resources.call({
+    insertRecords: async (args: DataInsertRecordsArgs): Promise<DataInsertRecordsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'insertRecords',
         params: args || {}
@@ -5442,9 +7778,10 @@ function createDataAdapter(sdk: MirraSDK) {
      * @param args.sort - Sort object, e.g. { revenue: -1 } for descending. Keys are auto-prefixed with "data.". (optional)
      * @param args.limit - Max records to return (default 50, max 200) (optional)
      * @param args.offset - Number of records to skip (for pagination) (optional)
+     * @returns Promise<DataQueryRecordsData> Typed flat response with IDE autocomplete
      */
-    queryRecords: async (args: DataQueryRecordsArgs): Promise<any> => {
-      return sdk.resources.call({
+    queryRecords: async (args: DataQueryRecordsArgs): Promise<DataQueryRecordsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'queryRecords',
         params: args || {}
@@ -5456,9 +7793,10 @@ function createDataAdapter(sdk: MirraSDK) {
      * @param args.collection - The collection slug
      * @param args.recordId - The record _id to update
      * @param args.data - Partial record data to merge/update
+     * @returns Promise<DataUpdateRecordData> Typed flat response with IDE autocomplete
      */
-    updateRecord: async (args: DataUpdateRecordArgs): Promise<any> => {
-      return sdk.resources.call({
+    updateRecord: async (args: DataUpdateRecordArgs): Promise<DataUpdateRecordData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'updateRecord',
         params: args || {}
@@ -5469,9 +7807,10 @@ function createDataAdapter(sdk: MirraSDK) {
      * Delete a single record by its ID. Quota is decremented by the record size.
      * @param args.collection - The collection slug
      * @param args.recordId - The record _id to delete
+     * @returns Promise<DataDeleteRecordData> Typed flat response with IDE autocomplete
      */
-    deleteRecord: async (args: DataDeleteRecordArgs): Promise<any> => {
-      return sdk.resources.call({
+    deleteRecord: async (args: DataDeleteRecordArgs): Promise<DataDeleteRecordData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'deleteRecord',
         params: args || {}
@@ -5483,9 +7822,10 @@ function createDataAdapter(sdk: MirraSDK) {
      * @param args.collection - The collection slug
      * @param args.groupBy - Field name to group by. Omit for overall aggregation. (optional)
      * @param args.metrics - Array of { field, op } where op is one of "sum", "avg", "count", "min", "max". For "count", field can be omitted.
+     * @returns Promise<DataAggregateData> Typed flat response with IDE autocomplete
      */
-    aggregate: async (args: DataAggregateArgs): Promise<any> => {
-      return sdk.resources.call({
+    aggregate: async (args: DataAggregateArgs): Promise<DataAggregateData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'aggregate',
         params: args || {}
@@ -5494,9 +7834,10 @@ function createDataAdapter(sdk: MirraSDK) {
 
     /**
      * Get the current storage quota usage for this context.
+     * @returns Promise<DataGetQuotaUsageData> Typed flat response with IDE autocomplete
      */
-    getQuotaUsage: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    getQuotaUsage: async (args?: {}): Promise<DataGetQuotaUsageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'getQuotaUsage',
         params: args || {}
@@ -5516,9 +7857,10 @@ function createDesktopAdapter(sdk: MirraSDK) {
      * @param args.command - Shell command to execute (e.g., "ls -la ~/Documents")
      * @param args.cwd - Working directory for the command (defaults to user home) (optional)
      * @param args.timeoutMs - Timeout in milliseconds (defaults to 120000) (optional)
+     * @returns Promise<DesktopExecuteCommandData> Typed flat response with IDE autocomplete
      */
-    executeCommand: async (args: DesktopExecuteCommandArgs): Promise<any> => {
-      return sdk.resources.call({
+    executeCommand: async (args: DesktopExecuteCommandArgs): Promise<DesktopExecuteCommandData> => {
+      return sdk.resources.callDirect({
         resourceId: 'desktop',
         method: 'executeCommand',
         params: args || {}
@@ -5531,9 +7873,10 @@ function createDesktopAdapter(sdk: MirraSDK) {
      * @param args.offset - Line number to start reading from (1-indexed, defaults to 1) (optional)
      * @param args.limit - Maximum number of lines to return (defaults to 200) (optional)
      * @param args.maxBytes - Maximum file size in bytes before rejecting (defaults to 10485760 = 10 MB) (optional)
+     * @returns Promise<DesktopReadFileData> Typed flat response with IDE autocomplete
      */
-    readFile: async (args: DesktopReadFileArgs): Promise<any> => {
-      return sdk.resources.call({
+    readFile: async (args: DesktopReadFileArgs): Promise<DesktopReadFileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'desktop',
         method: 'readFile',
         params: args || {}
@@ -5545,9 +7888,10 @@ function createDesktopAdapter(sdk: MirraSDK) {
      * @param args.path - Absolute path to the file to write
      * @param args.content - Text content to write to the file
      * @param args.append - If true, append to existing file instead of overwriting (defaults to false) (optional)
+     * @returns Promise<DesktopWriteFileData> Typed flat response with IDE autocomplete
      */
-    writeFile: async (args: DesktopWriteFileArgs): Promise<any> => {
-      return sdk.resources.call({
+    writeFile: async (args: DesktopWriteFileArgs): Promise<DesktopWriteFileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'desktop',
         method: 'writeFile',
         params: args || {}
@@ -5560,9 +7904,10 @@ function createDesktopAdapter(sdk: MirraSDK) {
      * @param args.oldString - The exact text to find and replace (must match verbatim)
      * @param args.newString - The replacement text (use empty string to delete the matched text)
      * @param args.replaceAll - If true, replace every occurrence of oldString. Defaults to false (single match required). (optional)
+     * @returns Promise<DesktopEditFileData> Typed flat response with IDE autocomplete
      */
-    editFile: async (args: DesktopEditFileArgs): Promise<any> => {
-      return sdk.resources.call({
+    editFile: async (args: DesktopEditFileArgs): Promise<DesktopEditFileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'desktop',
         method: 'editFile',
         params: args || {}
@@ -5574,9 +7919,10 @@ function createDesktopAdapter(sdk: MirraSDK) {
      * @param args.path - Absolute path to the directory to list
      * @param args.recursive - If true, list recursively (max depth 3). Defaults to false. (optional)
      * @param args.includeHidden - If true, include hidden files (starting with .). Defaults to false. (optional)
+     * @returns Promise<DesktopListDirectoryData> Typed flat response with IDE autocomplete
      */
-    listDirectory: async (args: DesktopListDirectoryArgs): Promise<any> => {
-      return sdk.resources.call({
+    listDirectory: async (args: DesktopListDirectoryArgs): Promise<DesktopListDirectoryData> => {
+      return sdk.resources.callDirect({
         resourceId: 'desktop',
         method: 'listDirectory',
         params: args || {}
@@ -5585,9 +7931,10 @@ function createDesktopAdapter(sdk: MirraSDK) {
 
     /**
      * Get system information from the user's desktop: hostname, OS, CPU, memory, home directory.
+     * @returns Promise<DesktopGetSystemInfoData> Typed flat response with IDE autocomplete
      */
-    getSystemInfo: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    getSystemInfo: async (args?: {}): Promise<DesktopGetSystemInfoData> => {
+      return sdk.resources.callDirect({
         resourceId: 'desktop',
         method: 'getSystemInfo',
         params: args || {}
@@ -5600,9 +7947,10 @@ function createDesktopAdapter(sdk: MirraSDK) {
      * @param args.args - Command-line arguments to pass to the process (optional)
      * @param args.env - Additional environment variables to set for the process (optional)
      * @param args.cwd - Working directory for the process (defaults to system default) (optional)
+     * @returns Promise<DesktopSpawnProcessData> Typed flat response with IDE autocomplete
      */
-    spawnProcess: async (args: DesktopSpawnProcessArgs): Promise<any> => {
-      return sdk.resources.call({
+    spawnProcess: async (args: DesktopSpawnProcessArgs): Promise<DesktopSpawnProcessData> => {
+      return sdk.resources.callDirect({
         resourceId: 'desktop',
         method: 'spawnProcess',
         params: args || {}
@@ -5612,9 +7960,10 @@ function createDesktopAdapter(sdk: MirraSDK) {
     /**
      * Kill a previously spawned background process by its process ID.
      * @param args.processId - The process ID returned by spawnProcess
+     * @returns Promise<DesktopKillProcessData> Typed flat response with IDE autocomplete
      */
-    killProcess: async (args: DesktopKillProcessArgs): Promise<any> => {
-      return sdk.resources.call({
+    killProcess: async (args: DesktopKillProcessArgs): Promise<DesktopKillProcessData> => {
+      return sdk.resources.callDirect({
         resourceId: 'desktop',
         method: 'killProcess',
         params: args || {}
@@ -5623,9 +7972,10 @@ function createDesktopAdapter(sdk: MirraSDK) {
 
     /**
      * List all desktop machines currently connected for the user. Shows hostname, platform, capabilities, and which machine is actively selected for operations.
+     * @returns Promise<DesktopListMachinesData> Typed flat response with IDE autocomplete
      */
-    listMachines: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    listMachines: async (args?: {}): Promise<DesktopListMachinesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'desktop',
         method: 'listMachines',
         params: args || {}
@@ -5635,9 +7985,10 @@ function createDesktopAdapter(sdk: MirraSDK) {
     /**
      * Select a specific desktop machine to receive all subsequent operations. Required when multiple desktops are connected. Use listMachines first to see available devices.
      * @param args.deviceId - The deviceId of the machine to select (from listMachines output)
+     * @returns Promise<DesktopSelectMachineData> Typed flat response with IDE autocomplete
      */
-    selectMachine: async (args: DesktopSelectMachineArgs): Promise<any> => {
-      return sdk.resources.call({
+    selectMachine: async (args: DesktopSelectMachineArgs): Promise<DesktopSelectMachineData> => {
+      return sdk.resources.callDirect({
         resourceId: 'desktop',
         method: 'selectMachine',
         params: args || {}
@@ -5660,10 +8011,10 @@ function createDocumentAdapter(sdk: MirraSDK) {
      * @param args.graphId - Target graph ID (defaults to user's personal graph) (optional)
      * @param args.title - Custom document title (optional)
      * @param args.productTags - Array of product tags for categorization (optional)
-     * @returns Promise<DocumentUploadResult> Typed response with IDE autocomplete
+     * @returns Promise<DocumentUploadData> Typed flat response with IDE autocomplete
      */
-    upload: async (args: DocumentUploadArgs): Promise<DocumentUploadResult> => {
-      return sdk.resources.call({
+    upload: async (args: DocumentUploadArgs): Promise<DocumentUploadData> => {
+      return sdk.resources.callDirect({
         resourceId: 'document',
         method: 'upload',
         params: args || {}
@@ -5673,10 +8024,10 @@ function createDocumentAdapter(sdk: MirraSDK) {
     /**
      * Get document metadata and content. Returns normalized flat structure.
      * @param args.documentId - Document ID to retrieve
-     * @returns Promise<DocumentGetResult> Typed response with IDE autocomplete
+     * @returns Promise<DocumentGetData> Typed flat response with IDE autocomplete
      */
-    get: async (args: DocumentGetArgs): Promise<DocumentGetResult> => {
-      return sdk.resources.call({
+    get: async (args: DocumentGetArgs): Promise<DocumentGetData> => {
+      return sdk.resources.callDirect({
         resourceId: 'document',
         method: 'get',
         params: args || {}
@@ -5686,10 +8037,10 @@ function createDocumentAdapter(sdk: MirraSDK) {
     /**
      * Get document processing status. Returns normalized flat structure.
      * @param args.documentId - Document ID to check
-     * @returns Promise<DocumentGetStatusResult> Typed response with IDE autocomplete
+     * @returns Promise<DocumentGetStatusData> Typed flat response with IDE autocomplete
      */
-    getStatus: async (args: DocumentGetStatusArgs): Promise<DocumentGetStatusResult> => {
-      return sdk.resources.call({
+    getStatus: async (args: DocumentGetStatusArgs): Promise<DocumentGetStatusData> => {
+      return sdk.resources.callDirect({
         resourceId: 'document',
         method: 'getStatus',
         params: args || {}
@@ -5699,10 +8050,10 @@ function createDocumentAdapter(sdk: MirraSDK) {
     /**
      * Get all chunks for a document. Returns normalized flat chunk structures.
      * @param args.documentId - Document ID
-     * @returns Promise<DocumentGetChunksResult> Typed response with IDE autocomplete
+     * @returns Promise<DocumentGetChunksData> Typed flat response with IDE autocomplete
      */
-    getChunks: async (args: DocumentGetChunksArgs): Promise<DocumentGetChunksResult> => {
-      return sdk.resources.call({
+    getChunks: async (args: DocumentGetChunksArgs): Promise<DocumentGetChunksData> => {
+      return sdk.resources.callDirect({
         resourceId: 'document',
         method: 'getChunks',
         params: args || {}
@@ -5712,10 +8063,10 @@ function createDocumentAdapter(sdk: MirraSDK) {
     /**
      * Delete a document and all its chunks. Returns normalized flat structure.
      * @param args.documentId - Document ID to delete
-     * @returns Promise<DocumentDeleteResult> Typed response with IDE autocomplete
+     * @returns Promise<DocumentDeleteData> Typed flat response with IDE autocomplete
      */
-    delete: async (args: DocumentDeleteArgs): Promise<DocumentDeleteResult> => {
-      return sdk.resources.call({
+    delete: async (args: DocumentDeleteArgs): Promise<DocumentDeleteData> => {
+      return sdk.resources.callDirect({
         resourceId: 'document',
         method: 'delete',
         params: args || {}
@@ -5727,10 +8078,10 @@ function createDocumentAdapter(sdk: MirraSDK) {
      * @param args.documentId - Document ID to share
      * @param args.targetGraphId - Target graph ID to share to
      * @param args.shareReason - Optional reason for sharing (optional)
-     * @returns Promise<DocumentShareResult> Typed response with IDE autocomplete
+     * @returns Promise<DocumentShareData> Typed flat response with IDE autocomplete
      */
-    share: async (args: DocumentShareArgs): Promise<DocumentShareResult> => {
-      return sdk.resources.call({
+    share: async (args: DocumentShareArgs): Promise<DocumentShareData> => {
+      return sdk.resources.callDirect({
         resourceId: 'document',
         method: 'share',
         params: args || {}
@@ -5741,10 +8092,10 @@ function createDocumentAdapter(sdk: MirraSDK) {
      * Remove document access from a graph. Returns normalized flat structure.
      * @param args.documentId - Document ID
      * @param args.graphId - Graph ID to remove access from
-     * @returns Promise<DocumentUnshareResult> Typed response with IDE autocomplete
+     * @returns Promise<DocumentUnshareData> Typed flat response with IDE autocomplete
      */
-    unshare: async (args: DocumentUnshareArgs): Promise<DocumentUnshareResult> => {
-      return sdk.resources.call({
+    unshare: async (args: DocumentUnshareArgs): Promise<DocumentUnshareData> => {
+      return sdk.resources.callDirect({
         resourceId: 'document',
         method: 'unshare',
         params: args || {}
@@ -5754,10 +8105,10 @@ function createDocumentAdapter(sdk: MirraSDK) {
     /**
      * List all graphs a document is shared in. Returns normalized flat graph structures.
      * @param args.documentId - Document ID
-     * @returns Promise<DocumentListGraphsResult> Typed response with IDE autocomplete
+     * @returns Promise<DocumentListGraphsData> Typed flat response with IDE autocomplete
      */
-    listGraphs: async (args: DocumentListGraphsArgs): Promise<DocumentListGraphsResult> => {
-      return sdk.resources.call({
+    listGraphs: async (args: DocumentListGraphsArgs): Promise<DocumentListGraphsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'document',
         method: 'listGraphs',
         params: args || {}
@@ -5770,10 +8121,10 @@ function createDocumentAdapter(sdk: MirraSDK) {
      * @param args.graphId - Graph ID to search in (defaults to user's graph) (optional)
      * @param args.limit - Maximum results (default: 10) (optional)
      * @param args.threshold - Similarity threshold 0-1 (default: 0.7) (optional)
-     * @returns Promise<DocumentSearchResult> Typed response with IDE autocomplete
+     * @returns Promise<DocumentSearchData> Typed flat response with IDE autocomplete
      */
-    search: async (args: DocumentSearchArgs): Promise<DocumentSearchResult> => {
-      return sdk.resources.call({
+    search: async (args: DocumentSearchArgs): Promise<DocumentSearchData> => {
+      return sdk.resources.callDirect({
         resourceId: 'document',
         method: 'search',
         params: args || {}
@@ -5785,10 +8136,10 @@ function createDocumentAdapter(sdk: MirraSDK) {
      * @param args.graphId - Graph ID to list documents from (defaults to user's graph) (optional)
      * @param args.limit - Maximum results (default: 50) (optional)
      * @param args.offset - Pagination offset (default: 0) (optional)
-     * @returns Promise<DocumentListResult> Typed response with IDE autocomplete
+     * @returns Promise<DocumentListData> Typed flat response with IDE autocomplete
      */
-    list: async (args: DocumentListArgs): Promise<DocumentListResult> => {
-      return sdk.resources.call({
+    list: async (args: DocumentListArgs): Promise<DocumentListData> => {
+      return sdk.resources.callDirect({
         resourceId: 'document',
         method: 'list',
         params: args || {}
@@ -5804,18 +8155,17 @@ function createDocumentAdapter(sdk: MirraSDK) {
 function createFeedItemsAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a feed item with flexible content blocks. Use this to show action results, notifications, or updates to users.
-     * @param args.title - Main title of the feed item (shown prominently)
-     * @param args.subtitle - Optional subtitle (shown below title in muted color) (optional)
-     * @param args.blocks - Array of content blocks to display (text, key_value, list, timestamp, user_mention, divider, image, progress)
-     * @param args.itemType - Type: informative (FYI), actionable (needs response), or error
-     * @param args.actions - Optional action buttons for the feed item (optional)
-     * @param args.avatar - Optional avatar to show (user profile, icon, or custom image) (optional)
-     * @param args.metadata - Additional metadata (searchable, not displayed) (optional)
-     * @returns Promise<FeedItemsCreateFeedItemResult> Typed response with IDE autocomplete
+     * Create a notification for the user. Shows up in their activity feed and sends a push notification. The feed item appears in the current conversation context (group chat, DM, or personal feed).
+     * @param args.title - What happened - the main notification text
+     * @param args.subtitle - Secondary context shown below the title (optional)
+     * @param args.category - Activity type - determines icon and styling (e.g. email, calendar, task, document, reminder, message, crypto, shopping, note, memory, flow, call, error, update)
+     * @param args.details - Key-value pairs of relevant info to display (e.g. { "recipients": "3 people", "status": "sent" }) (optional)
+     * @param args.preview - Longer text content shown below details (e.g. email body preview, note content) (optional)
+     * @param args.notify - Send push notification (default: true, set false for background updates) (optional)
+     * @returns Promise<FeedItemCreateData> Typed flat response with IDE autocomplete
      */
-    createFeedItem: async (args: FeedItemsCreateFeedItemArgs): Promise<FeedItemsCreateFeedItemResult> => {
-      return sdk.resources.call({
+    createFeedItem: async (args: FeedItemsCreateFeedItemArgs): Promise<FeedItemCreateData> => {
+      return sdk.resources.callDirect({
         resourceId: 'feed-items',
         method: 'createFeedItem',
         params: args || {}
@@ -5841,10 +8191,10 @@ function createFeedbackAdapter(sdk: MirraSDK) {
      * @param args.errorDetails - Error details: { message, stack, code } (optional)
      * @param args.context - Additional context: { conversationId, recentMessages, platform, appVersion } (optional)
      * @param args.llmAnalysis - LLM analysis of the issue (optional)
-     * @returns Promise<FeedbackReportBugResult> Typed response with IDE autocomplete
+     * @returns Promise<FeedbackReportBugData> Typed flat response with IDE autocomplete
      */
-    reportBug: async (args: FeedbackReportBugArgs): Promise<FeedbackReportBugResult> => {
-      return sdk.resources.call({
+    reportBug: async (args: FeedbackReportBugArgs): Promise<FeedbackReportBugData> => {
+      return sdk.resources.callDirect({
         resourceId: 'feedback',
         method: 'reportBug',
         params: args || {}
@@ -5862,10 +8212,10 @@ function createFeedbackAdapter(sdk: MirraSDK) {
      * @param args.llmAnalysis - LLM analysis of why it failed (optional)
      * @param args.suggestedFix - LLM suggested fix (optional)
      * @param args.context - Additional context: { conversationId, userId, timestamp } (optional)
-     * @returns Promise<FeedbackReportToolFailureResult> Typed response with IDE autocomplete
+     * @returns Promise<FeedbackReportToolFailureData> Typed flat response with IDE autocomplete
      */
-    reportToolFailure: async (args: FeedbackReportToolFailureArgs): Promise<FeedbackReportToolFailureResult> => {
-      return sdk.resources.call({
+    reportToolFailure: async (args: FeedbackReportToolFailureArgs): Promise<FeedbackReportToolFailureData> => {
+      return sdk.resources.callDirect({
         resourceId: 'feedback',
         method: 'reportToolFailure',
         params: args || {}
@@ -5879,10 +8229,10 @@ function createFeedbackAdapter(sdk: MirraSDK) {
      * @param args.suggestedCapability - What capability would enable this (optional)
      * @param args.relatedAdapters - Adapters that might be relevant (optional)
      * @param args.context - Additional context: { conversationId } (optional)
-     * @returns Promise<FeedbackReportMissingCapabilityResult> Typed response with IDE autocomplete
+     * @returns Promise<FeedbackReportMissingCapabilityData> Typed flat response with IDE autocomplete
      */
-    reportMissingCapability: async (args: FeedbackReportMissingCapabilityArgs): Promise<FeedbackReportMissingCapabilityResult> => {
-      return sdk.resources.call({
+    reportMissingCapability: async (args: FeedbackReportMissingCapabilityArgs): Promise<FeedbackReportMissingCapabilityData> => {
+      return sdk.resources.callDirect({
         resourceId: 'feedback',
         method: 'reportMissingCapability',
         params: args || {}
@@ -5895,10 +8245,10 @@ function createFeedbackAdapter(sdk: MirraSDK) {
      * @param args.feedback - Feedback content
      * @param args.category - Category: ux, performance, feature, or general (optional)
      * @param args.context - Additional context: { feature, screen } (optional)
-     * @returns Promise<FeedbackSubmitFeedbackResult> Typed response with IDE autocomplete
+     * @returns Promise<FeedbackSubmitFeedbackData> Typed flat response with IDE autocomplete
      */
-    submitFeedback: async (args: FeedbackSubmitFeedbackArgs): Promise<FeedbackSubmitFeedbackResult> => {
-      return sdk.resources.call({
+    submitFeedback: async (args: FeedbackSubmitFeedbackArgs): Promise<FeedbackSubmitFeedbackData> => {
+      return sdk.resources.callDirect({
         resourceId: 'feedback',
         method: 'submitFeedback',
         params: args || {}
@@ -5911,10 +8261,10 @@ function createFeedbackAdapter(sdk: MirraSDK) {
      * @param args.description - Feature description
      * @param args.useCase - Why the user needs this feature (optional)
      * @param args.priority - Priority: high, medium, or low (optional)
-     * @returns Promise<FeedbackSubmitFeatureRequestResult> Typed response with IDE autocomplete
+     * @returns Promise<FeedbackSubmitFeatureRequestData> Typed flat response with IDE autocomplete
      */
-    submitFeatureRequest: async (args: FeedbackSubmitFeatureRequestArgs): Promise<FeedbackSubmitFeatureRequestResult> => {
-      return sdk.resources.call({
+    submitFeatureRequest: async (args: FeedbackSubmitFeatureRequestArgs): Promise<FeedbackSubmitFeatureRequestData> => {
+      return sdk.resources.callDirect({
         resourceId: 'feedback',
         method: 'submitFeatureRequest',
         params: args || {}
@@ -5937,10 +8287,10 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
      * @param args.description - Event description (optional)
      * @param args.location - Event location (optional)
      * @param args.attendees - Array of attendee email addresses (optional)
-     * @returns Promise<GoogleCalendarCreateEventResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleCalendarCreateEventData> Typed flat response with IDE autocomplete
      */
-    createEvent: async (args: GoogleCalendarCreateEventArgs): Promise<GoogleCalendarCreateEventResult> => {
-      return sdk.resources.call({
+    createEvent: async (args: GoogleCalendarCreateEventArgs): Promise<GoogleCalendarCreateEventData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-calendar',
         method: 'createEvent',
         params: args || {}
@@ -5953,10 +8303,10 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
      * @param args.timeMax - End time for events to list (ISO 8601) (optional)
      * @param args.maxResults - Maximum number of events to return (default: 50, max: 100) (optional)
      * @param args.query - Search query to filter events (optional)
-     * @returns Promise<GoogleCalendarListEventsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleCalendarListEventsData> Typed flat response with IDE autocomplete
      */
-    listEvents: async (args: GoogleCalendarListEventsArgs): Promise<GoogleCalendarListEventsResult> => {
-      return sdk.resources.call({
+    listEvents: async (args: GoogleCalendarListEventsArgs): Promise<GoogleCalendarListEventsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-calendar',
         method: 'listEvents',
         params: args || {}
@@ -5969,10 +8319,10 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
      * @param args.timeMax - End time for events to list (ISO 8601) (optional)
      * @param args.maxResults - Maximum number of events to return (default: 50, max: 100) (optional)
      * @param args.query - Search query to filter events (optional)
-     * @returns Promise<GoogleCalendarGetEventsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleCalendarListEventsData> Typed flat response with IDE autocomplete
      */
-    getEvents: async (args: GoogleCalendarGetEventsArgs): Promise<GoogleCalendarGetEventsResult> => {
-      return sdk.resources.call({
+    getEvents: async (args: GoogleCalendarGetEventsArgs): Promise<GoogleCalendarListEventsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-calendar',
         method: 'getEvents',
         params: args || {}
@@ -5982,10 +8332,10 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
     /**
      * Get a specific calendar event by ID
      * @param args.eventId - Calendar event ID
-     * @returns Promise<GoogleCalendarGetEventResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleCalendarGetEventData> Typed flat response with IDE autocomplete
      */
-    getEvent: async (args: GoogleCalendarGetEventArgs): Promise<GoogleCalendarGetEventResult> => {
-      return sdk.resources.call({
+    getEvent: async (args: GoogleCalendarGetEventArgs): Promise<GoogleCalendarGetEventData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-calendar',
         method: 'getEvent',
         params: args || {}
@@ -6000,10 +8350,10 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
      * @param args.location - Updated event location (optional)
      * @param args.start - Updated start time object with dateTime and optional timeZone (optional)
      * @param args.end - Updated end time object with dateTime and optional timeZone (optional)
-     * @returns Promise<GoogleCalendarUpdateEventResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleCalendarUpdateEventData> Typed flat response with IDE autocomplete
      */
-    updateEvent: async (args: GoogleCalendarUpdateEventArgs): Promise<GoogleCalendarUpdateEventResult> => {
-      return sdk.resources.call({
+    updateEvent: async (args: GoogleCalendarUpdateEventArgs): Promise<GoogleCalendarUpdateEventData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-calendar',
         method: 'updateEvent',
         params: args || {}
@@ -6013,10 +8363,10 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
     /**
      * Delete a calendar event
      * @param args.eventId - Calendar event ID to delete
-     * @returns Promise<GoogleCalendarDeleteEventResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleCalendarDeleteEventData> Typed flat response with IDE autocomplete
      */
-    deleteEvent: async (args: GoogleCalendarDeleteEventArgs): Promise<GoogleCalendarDeleteEventResult> => {
-      return sdk.resources.call({
+    deleteEvent: async (args: GoogleCalendarDeleteEventArgs): Promise<GoogleCalendarDeleteEventData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-calendar',
         method: 'deleteEvent',
         params: args || {}
@@ -6029,10 +8379,10 @@ function createGoogleCalendarAdapter(sdk: MirraSDK) {
      * @param args.timeMin - Start time for events to search (ISO 8601) (optional)
      * @param args.timeMax - End time for events to search (ISO 8601) (optional)
      * @param args.maxResults - Maximum number of events to return (default: 50, max: 100) (optional)
-     * @returns Promise<GoogleCalendarSearchEventsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleCalendarSearchEventsData> Typed flat response with IDE autocomplete
      */
-    searchEvents: async (args: GoogleCalendarSearchEventsArgs): Promise<GoogleCalendarSearchEventsResult> => {
-      return sdk.resources.call({
+    searchEvents: async (args: GoogleCalendarSearchEventsArgs): Promise<GoogleCalendarSearchEventsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-calendar',
         method: 'searchEvents',
         params: args || {}
@@ -6051,10 +8401,10 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * List files in Google Drive
      * @param args.query - Search query (Google Drive query syntax) (optional)
      * @param args.pageSize - Maximum number of files to return (default: 20) (optional)
-     * @returns Promise<GoogleDriveListFilesResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDriveListFilesData> Typed flat response with IDE autocomplete
      */
-    listFiles: async (args: GoogleDriveListFilesArgs): Promise<GoogleDriveListFilesResult> => {
-      return sdk.resources.call({
+    listFiles: async (args: GoogleDriveListFilesArgs): Promise<GoogleDriveListFilesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-drive',
         method: 'listFiles',
         params: args || {}
@@ -6066,10 +8416,10 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * @param args.name - Name of the file
      * @param args.mimeType - MIME type of the file
      * @param args.folderId - Parent folder ID (optional) (optional)
-     * @returns Promise<GoogleDriveCreateFileResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDriveCreateFileData> Typed flat response with IDE autocomplete
      */
-    createFile: async (args: GoogleDriveCreateFileArgs): Promise<GoogleDriveCreateFileResult> => {
-      return sdk.resources.call({
+    createFile: async (args: GoogleDriveCreateFileArgs): Promise<GoogleDriveCreateFileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-drive',
         method: 'createFile',
         params: args || {}
@@ -6080,10 +8430,10 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * Create a new folder in Google Drive
      * @param args.name - Name of the folder
      * @param args.parentFolderId - Parent folder ID (optional) (optional)
-     * @returns Promise<GoogleDriveCreateFolderResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDriveCreateFolderData> Typed flat response with IDE autocomplete
      */
-    createFolder: async (args: GoogleDriveCreateFolderArgs): Promise<GoogleDriveCreateFolderResult> => {
-      return sdk.resources.call({
+    createFolder: async (args: GoogleDriveCreateFolderArgs): Promise<GoogleDriveCreateFolderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-drive',
         method: 'createFolder',
         params: args || {}
@@ -6093,10 +8443,10 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
     /**
      * Get information about a file
      * @param args.fileId - ID of the file
-     * @returns Promise<GoogleDriveGetFileInfoResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDriveGetFileInfoData> Typed flat response with IDE autocomplete
      */
-    getFileInfo: async (args: GoogleDriveGetFileInfoArgs): Promise<GoogleDriveGetFileInfoResult> => {
-      return sdk.resources.call({
+    getFileInfo: async (args: GoogleDriveGetFileInfoArgs): Promise<GoogleDriveGetFileInfoData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-drive',
         method: 'getFileInfo',
         params: args || {}
@@ -6108,10 +8458,10 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * @param args.fileId - ID of the file to share
      * @param args.email - Email address to share with (optional) (optional)
      * @param args.role - Permission role: reader, writer, commenter (default: reader) (optional)
-     * @returns Promise<GoogleDriveShareFileResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDriveShareFileData> Typed flat response with IDE autocomplete
      */
-    shareFile: async (args: GoogleDriveShareFileArgs): Promise<GoogleDriveShareFileResult> => {
-      return sdk.resources.call({
+    shareFile: async (args: GoogleDriveShareFileArgs): Promise<GoogleDriveShareFileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-drive',
         method: 'shareFile',
         params: args || {}
@@ -6121,10 +8471,10 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
     /**
      * Download a file from Google Drive. For Google Docs/Sheets, exports as PDF/XLSX. Returns base64-encoded data.
      * @param args.fileId - ID of the file to download
-     * @returns Promise<GoogleDriveDownloadFileResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDriveDownloadFileData> Typed flat response with IDE autocomplete
      */
-    downloadFile: async (args: GoogleDriveDownloadFileArgs): Promise<GoogleDriveDownloadFileResult> => {
-      return sdk.resources.call({
+    downloadFile: async (args: GoogleDriveDownloadFileArgs): Promise<GoogleDriveDownloadFileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-drive',
         method: 'downloadFile',
         params: args || {}
@@ -6135,10 +8485,10 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * Move a file to a different folder
      * @param args.fileId - ID of the file to move
      * @param args.folderId - ID of the destination folder
-     * @returns Promise<GoogleDriveMoveFileResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDriveMoveFileData> Typed flat response with IDE autocomplete
      */
-    moveFile: async (args: GoogleDriveMoveFileArgs): Promise<GoogleDriveMoveFileResult> => {
-      return sdk.resources.call({
+    moveFile: async (args: GoogleDriveMoveFileArgs): Promise<GoogleDriveMoveFileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-drive',
         method: 'moveFile',
         params: args || {}
@@ -6149,10 +8499,10 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * Delete a file or folder. By default moves to trash; set permanently=true to delete forever.
      * @param args.fileId - ID of the file or folder to delete
      * @param args.permanently - If true, permanently delete instead of moving to trash (default: false) (optional)
-     * @returns Promise<GoogleDriveDeleteFileResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDriveDeleteFileData> Typed flat response with IDE autocomplete
      */
-    deleteFile: async (args: GoogleDriveDeleteFileArgs): Promise<GoogleDriveDeleteFileResult> => {
-      return sdk.resources.call({
+    deleteFile: async (args: GoogleDriveDeleteFileArgs): Promise<GoogleDriveDeleteFileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-drive',
         method: 'deleteFile',
         params: args || {}
@@ -6163,10 +8513,10 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * Search for files using Google Drive query syntax
      * @param args.query - Search query using Drive syntax (e.g., "name contains 'report'", "mimeType='application/pdf'")
      * @param args.pageSize - Maximum number of files to return (default: 20) (optional)
-     * @returns Promise<GoogleDriveSearchFilesResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDriveSearchFilesData> Typed flat response with IDE autocomplete
      */
-    searchFiles: async (args: GoogleDriveSearchFilesArgs): Promise<GoogleDriveSearchFilesResult> => {
-      return sdk.resources.call({
+    searchFiles: async (args: GoogleDriveSearchFilesArgs): Promise<GoogleDriveSearchFilesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-drive',
         method: 'searchFiles',
         params: args || {}
@@ -6178,10 +8528,10 @@ function createGoogleDriveAdapter(sdk: MirraSDK) {
      * @param args.fileId - ID of the file to update
      * @param args.name - New name for the file (optional)
      * @param args.description - New description for the file (optional)
-     * @returns Promise<GoogleDriveUpdateFileResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDriveUpdateFileData> Typed flat response with IDE autocomplete
      */
-    updateFile: async (args: GoogleDriveUpdateFileArgs): Promise<GoogleDriveUpdateFileResult> => {
-      return sdk.resources.call({
+    updateFile: async (args: GoogleDriveUpdateFileArgs): Promise<GoogleDriveUpdateFileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-drive',
         method: 'updateFile',
         params: args || {}
@@ -6204,10 +8554,10 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
      * @param args.cc - CC recipients (comma-separated email addresses) (optional)
      * @param args.bcc - BCC recipients (comma-separated email addresses) (optional)
      * @param args.isHtml - Whether body is HTML format (optional)
-     * @returns Promise<GoogleGmailSendEmailResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleGmailSendEmailData> Typed flat response with IDE autocomplete
      */
-    sendEmail: async (args: GoogleGmailSendEmailArgs): Promise<GoogleGmailSendEmailResult> => {
-      return sdk.resources.call({
+    sendEmail: async (args: GoogleGmailSendEmailArgs): Promise<GoogleGmailSendEmailData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-gmail',
         method: 'sendEmail',
         params: args || {}
@@ -6218,10 +8568,10 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
      * Search emails with Gmail query syntax. Returns normalized email summaries.
      * @param args.query - Gmail search query (e.g., "from:user@example.com is:unread")
      * @param args.maxResults - Maximum number of results to return (default: 50, max: 100) (optional)
-     * @returns Promise<GoogleGmailSearchEmailsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleGmailSearchEmailsData> Typed flat response with IDE autocomplete
      */
-    searchEmails: async (args: GoogleGmailSearchEmailsArgs): Promise<GoogleGmailSearchEmailsResult> => {
-      return sdk.resources.call({
+    searchEmails: async (args: GoogleGmailSearchEmailsArgs): Promise<GoogleGmailSearchEmailsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-gmail',
         method: 'searchEmails',
         params: args || {}
@@ -6231,10 +8581,10 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
     /**
      * List recent emails from inbox. Returns normalized email summaries.
      * @param args.maxResults - Maximum number of results to return (default: 50, max: 100) (optional)
-     * @returns Promise<GoogleGmailListEmailsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleGmailListEmailsData> Typed flat response with IDE autocomplete
      */
-    listEmails: async (args: GoogleGmailListEmailsArgs): Promise<GoogleGmailListEmailsResult> => {
-      return sdk.resources.call({
+    listEmails: async (args: GoogleGmailListEmailsArgs): Promise<GoogleGmailListEmailsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-gmail',
         method: 'listEmails',
         params: args || {}
@@ -6246,10 +8596,10 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
      * @param args.messageId - Gmail message ID
      * @param args.includeHtml - Include HTML body content (default: false) (optional)
      * @param args.includeAttachments - Include attachment metadata (default: false) (optional)
-     * @returns Promise<GoogleGmailGetEmailResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleGmailGetEmailData> Typed flat response with IDE autocomplete
      */
-    getEmail: async (args: GoogleGmailGetEmailArgs): Promise<GoogleGmailGetEmailResult> => {
-      return sdk.resources.call({
+    getEmail: async (args: GoogleGmailGetEmailArgs): Promise<GoogleGmailGetEmailData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-gmail',
         method: 'getEmail',
         params: args || {}
@@ -6264,10 +8614,10 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
      * @param args.cc - CC recipients (comma-separated email addresses) (optional)
      * @param args.bcc - BCC recipients (comma-separated email addresses) (optional)
      * @param args.isHtml - Whether body is HTML format (optional)
-     * @returns Promise<GoogleGmailCreateDraftResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleGmailCreateDraftData> Typed flat response with IDE autocomplete
      */
-    createDraft: async (args: GoogleGmailCreateDraftArgs): Promise<GoogleGmailCreateDraftResult> => {
-      return sdk.resources.call({
+    createDraft: async (args: GoogleGmailCreateDraftArgs): Promise<GoogleGmailCreateDraftData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-gmail',
         method: 'createDraft',
         params: args || {}
@@ -6283,10 +8633,10 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
      * @param args.cc - Updated CC recipients (optional)
      * @param args.bcc - Updated BCC recipients (optional)
      * @param args.isHtml - Whether body is HTML format (optional)
-     * @returns Promise<GoogleGmailUpdateDraftResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleGmailUpdateDraftData> Typed flat response with IDE autocomplete
      */
-    updateDraft: async (args: GoogleGmailUpdateDraftArgs): Promise<GoogleGmailUpdateDraftResult> => {
-      return sdk.resources.call({
+    updateDraft: async (args: GoogleGmailUpdateDraftArgs): Promise<GoogleGmailUpdateDraftData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-gmail',
         method: 'updateDraft',
         params: args || {}
@@ -6296,10 +8646,10 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
     /**
      * Delete a draft email
      * @param args.draftId - Gmail draft ID to delete
-     * @returns Promise<GoogleGmailDeleteDraftResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleGmailDeleteDraftData> Typed flat response with IDE autocomplete
      */
-    deleteDraft: async (args: GoogleGmailDeleteDraftArgs): Promise<GoogleGmailDeleteDraftResult> => {
-      return sdk.resources.call({
+    deleteDraft: async (args: GoogleGmailDeleteDraftArgs): Promise<GoogleGmailDeleteDraftData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-gmail',
         method: 'deleteDraft',
         params: args || {}
@@ -6309,10 +8659,10 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
     /**
      * List all draft emails. Returns normalized draft summaries.
      * @param args.maxResults - Maximum number of drafts to return (default: 10) (optional)
-     * @returns Promise<GoogleGmailListDraftsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleGmailListDraftsData> Typed flat response with IDE autocomplete
      */
-    listDrafts: async (args: GoogleGmailListDraftsArgs): Promise<GoogleGmailListDraftsResult> => {
-      return sdk.resources.call({
+    listDrafts: async (args: GoogleGmailListDraftsArgs): Promise<GoogleGmailListDraftsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-gmail',
         method: 'listDrafts',
         params: args || {}
@@ -6322,10 +8672,10 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
     /**
      * Delete an email
      * @param args.messageId - Gmail message ID to delete
-     * @returns Promise<GoogleGmailDeleteEmailResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleGmailDeleteEmailData> Typed flat response with IDE autocomplete
      */
-    deleteEmail: async (args: GoogleGmailDeleteEmailArgs): Promise<GoogleGmailDeleteEmailResult> => {
-      return sdk.resources.call({
+    deleteEmail: async (args: GoogleGmailDeleteEmailArgs): Promise<GoogleGmailDeleteEmailData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-gmail',
         method: 'deleteEmail',
         params: args || {}
@@ -6336,10 +8686,10 @@ function createGoogleGmailAdapter(sdk: MirraSDK) {
      * Delete multiple emails at once. Uses Gmail batchDelete API for efficiency.
      * @param args.messageIds - Array of Gmail message IDs to delete (max 1000 per request)
      * @param args.permanently - If true, permanently delete. If false (default), move to trash. (optional)
-     * @returns Promise<GoogleGmailBulkDeleteEmailsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleGmailBulkDeleteEmailsData> Typed flat response with IDE autocomplete
      */
-    bulkDeleteEmails: async (args: GoogleGmailBulkDeleteEmailsArgs): Promise<GoogleGmailBulkDeleteEmailsResult> => {
-      return sdk.resources.call({
+    bulkDeleteEmails: async (args: GoogleGmailBulkDeleteEmailsArgs): Promise<GoogleGmailBulkDeleteEmailsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-gmail',
         method: 'bulkDeleteEmails',
         params: args || {}
@@ -6365,10 +8715,10 @@ function createHypertradeAdapter(sdk: MirraSDK) {
      * @param args.reduceOnly - Whether order can only reduce position (default: false) (optional)
      * @param args.postOnly - Whether order should only be maker (default: false) (optional)
      * @param args.clientOrderId - Custom client order ID for tracking (optional)
-     * @returns Promise<HypertradePlaceOrderResult> Typed response with IDE autocomplete
+     * @returns Promise<HypertradePlaceOrderData> Typed flat response with IDE autocomplete
      */
-    placeOrder: async (args: HypertradePlaceOrderArgs): Promise<HypertradePlaceOrderResult> => {
-      return sdk.resources.call({
+    placeOrder: async (args: HypertradePlaceOrderArgs): Promise<HypertradePlaceOrderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'hypertrade',
         method: 'placeOrder',
         params: args || {}
@@ -6381,10 +8731,10 @@ function createHypertradeAdapter(sdk: MirraSDK) {
      * @param args.orderId - Order ID to cancel (optional)
      * @param args.clientOrderId - Client order ID to cancel (optional)
      * @param args.cancelAll - Cancel all orders for this asset (default: false) (optional)
-     * @returns Promise<HypertradeCancelOrderResult> Typed response with IDE autocomplete
+     * @returns Promise<HypertradeCancelOrderData> Typed flat response with IDE autocomplete
      */
-    cancelOrder: async (args: HypertradeCancelOrderArgs): Promise<HypertradeCancelOrderResult> => {
-      return sdk.resources.call({
+    cancelOrder: async (args: HypertradeCancelOrderArgs): Promise<HypertradeCancelOrderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'hypertrade',
         method: 'cancelOrder',
         params: args || {}
@@ -6394,10 +8744,10 @@ function createHypertradeAdapter(sdk: MirraSDK) {
     /**
      * Get current perpetual positions for a wallet. Returns normalized FLAT array of positions with asset, size, entryPrice, markPrice, unrealizedPnl, leverage, liquidationPrice, marginUsed, positionValue, returnOnEquity, side.
      * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
-     * @returns Promise<HypertradeGetPositionsResult> Typed response with IDE autocomplete
+     * @returns Promise<HypertradeGetPositionsData> Typed flat response with IDE autocomplete
      */
-    getPositions: async (args: HypertradeGetPositionsArgs): Promise<HypertradeGetPositionsResult> => {
-      return sdk.resources.call({
+    getPositions: async (args: HypertradeGetPositionsArgs): Promise<HypertradeGetPositionsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'hypertrade',
         method: 'getPositions',
         params: args || {}
@@ -6408,10 +8758,10 @@ function createHypertradeAdapter(sdk: MirraSDK) {
      * Get open orders for a wallet. Returns normalized FLAT array of orders.
      * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
      * @param args.asset - Filter by asset/coin symbol (optional)
-     * @returns Promise<HypertradeGetOpenOrdersResult> Typed response with IDE autocomplete
+     * @returns Promise<HypertradeGetOpenOrdersData> Typed flat response with IDE autocomplete
      */
-    getOpenOrders: async (args: HypertradeGetOpenOrdersArgs): Promise<HypertradeGetOpenOrdersResult> => {
-      return sdk.resources.call({
+    getOpenOrders: async (args: HypertradeGetOpenOrdersArgs): Promise<HypertradeGetOpenOrdersData> => {
+      return sdk.resources.callDirect({
         resourceId: 'hypertrade',
         method: 'getOpenOrders',
         params: args || {}
@@ -6421,10 +8771,10 @@ function createHypertradeAdapter(sdk: MirraSDK) {
     /**
      * Get account balances including perp margin and spot balances. Returns normalized FLAT structure.
      * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
-     * @returns Promise<HypertradeGetBalancesResult> Typed response with IDE autocomplete
+     * @returns Promise<HypertradeGetBalancesData> Typed flat response with IDE autocomplete
      */
-    getBalances: async (args: HypertradeGetBalancesArgs): Promise<HypertradeGetBalancesResult> => {
-      return sdk.resources.call({
+    getBalances: async (args: HypertradeGetBalancesArgs): Promise<HypertradeGetBalancesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'hypertrade',
         method: 'getBalances',
         params: args || {}
@@ -6434,10 +8784,10 @@ function createHypertradeAdapter(sdk: MirraSDK) {
     /**
      * Get market information for perpetual assets. Returns normalized FLAT array of market info. If asset is provided, returns only that asset.
      * @param args.asset - Specific asset/coin symbol to get info for (returns all if omitted) (optional)
-     * @returns Promise<HypertradeGetMarketInfoResult> Typed response with IDE autocomplete
+     * @returns Promise<HypertradeGetMarketInfoData> Typed flat response with IDE autocomplete
      */
-    getMarketInfo: async (args: HypertradeGetMarketInfoArgs): Promise<HypertradeGetMarketInfoResult> => {
-      return sdk.resources.call({
+    getMarketInfo: async (args: HypertradeGetMarketInfoArgs): Promise<HypertradeGetMarketInfoData> => {
+      return sdk.resources.callDirect({
         resourceId: 'hypertrade',
         method: 'getMarketInfo',
         params: args || {}
@@ -6448,10 +8798,10 @@ function createHypertradeAdapter(sdk: MirraSDK) {
      * Get the L2 orderbook for an asset. Returns normalized FLAT structure with bids and asks arrays.
      * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
      * @param args.depth - Number of levels to return (default: all) (optional)
-     * @returns Promise<HypertradeGetOrderbookResult> Typed response with IDE autocomplete
+     * @returns Promise<HypertradeGetOrderbookData> Typed flat response with IDE autocomplete
      */
-    getOrderbook: async (args: HypertradeGetOrderbookArgs): Promise<HypertradeGetOrderbookResult> => {
-      return sdk.resources.call({
+    getOrderbook: async (args: HypertradeGetOrderbookArgs): Promise<HypertradeGetOrderbookData> => {
+      return sdk.resources.callDirect({
         resourceId: 'hypertrade',
         method: 'getOrderbook',
         params: args || {}
@@ -6465,10 +8815,10 @@ function createHypertradeAdapter(sdk: MirraSDK) {
      * @param args.startTime - Start time in milliseconds (default: 24h ago) (optional)
      * @param args.endTime - End time in milliseconds (default: now) (optional)
      * @param args.limit - Max number of candles to return (optional)
-     * @returns Promise<HypertradeGetCandlesResult> Typed response with IDE autocomplete
+     * @returns Promise<HypertradeGetCandlesData> Typed flat response with IDE autocomplete
      */
-    getCandles: async (args: HypertradeGetCandlesArgs): Promise<HypertradeGetCandlesResult> => {
-      return sdk.resources.call({
+    getCandles: async (args: HypertradeGetCandlesArgs): Promise<HypertradeGetCandlesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'hypertrade',
         method: 'getCandles',
         params: args || {}
@@ -6480,10 +8830,10 @@ function createHypertradeAdapter(sdk: MirraSDK) {
      * @param args.asset - Asset/coin symbol (e.g. "ETH", "BTC")
      * @param args.leverage - Leverage multiplier (e.g. 5 for 5x)
      * @param args.isCrossMargin - Use cross margin (default: true). False for isolated margin. (optional)
-     * @returns Promise<HypertradeSetLeverageResult> Typed response with IDE autocomplete
+     * @returns Promise<HypertradeSetLeverageData> Typed flat response with IDE autocomplete
      */
-    setLeverage: async (args: HypertradeSetLeverageArgs): Promise<HypertradeSetLeverageResult> => {
-      return sdk.resources.call({
+    setLeverage: async (args: HypertradeSetLeverageArgs): Promise<HypertradeSetLeverageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'hypertrade',
         method: 'setLeverage',
         params: args || {}
@@ -6495,10 +8845,10 @@ function createHypertradeAdapter(sdk: MirraSDK) {
      * @param args.walletAddress - EVM wallet address (uses context wallet if not provided) (optional)
      * @param args.asset - Filter by asset/coin symbol (optional)
      * @param args.limit - Max number of trades to return (optional)
-     * @returns Promise<HypertradeGetTradeHistoryResult> Typed response with IDE autocomplete
+     * @returns Promise<HypertradeGetTradeHistoryData> Typed flat response with IDE autocomplete
      */
-    getTradeHistory: async (args: HypertradeGetTradeHistoryArgs): Promise<HypertradeGetTradeHistoryResult> => {
-      return sdk.resources.call({
+    getTradeHistory: async (args: HypertradeGetTradeHistoryArgs): Promise<HypertradeGetTradeHistoryData> => {
+      return sdk.resources.callDirect({
         resourceId: 'hypertrade',
         method: 'getTradeHistory',
         params: args || {}
@@ -6516,9 +8866,10 @@ function createSkillsAdapter(sdk: MirraSDK) {
     /**
      * List skills available to the user (built-in + user-created).
      * @param args.category - Filter by category (optional)
+     * @returns Promise<SkillListData> Typed flat response with IDE autocomplete
      */
-    listSkills: async (args: SkillsListSkillsArgs): Promise<any> => {
-      return sdk.resources.call({
+    listSkills: async (args: SkillsListSkillsArgs): Promise<SkillListData> => {
+      return sdk.resources.callDirect({
         resourceId: 'skills',
         method: 'listSkills',
         params: args || {}
@@ -6528,9 +8879,10 @@ function createSkillsAdapter(sdk: MirraSDK) {
     /**
      * Get full details of a skill by ID.
      * @param args.skillId - ID of the skill
+     * @returns Promise<SkillDetailData> Typed flat response with IDE autocomplete
      */
-    getSkill: async (args: SkillsGetSkillArgs): Promise<any> => {
-      return sdk.resources.call({
+    getSkill: async (args: SkillsGetSkillArgs): Promise<SkillDetailData> => {
+      return sdk.resources.callDirect({
         resourceId: 'skills',
         method: 'getSkill',
         params: args || {}
@@ -6547,9 +8899,10 @@ function createSkillsAdapter(sdk: MirraSDK) {
      * @param args.procedure - Step-by-step procedure
      * @param args.category - Skill category
      * @param args.tags - Tags for discovery (optional)
+     * @returns Promise<SkillCreateData> Typed flat response with IDE autocomplete
      */
-    createSkill: async (args: SkillsCreateSkillArgs): Promise<any> => {
-      return sdk.resources.call({
+    createSkill: async (args: SkillsCreateSkillArgs): Promise<SkillCreateData> => {
+      return sdk.resources.callDirect({
         resourceId: 'skills',
         method: 'createSkill',
         params: args || {}
@@ -6560,9 +8913,10 @@ function createSkillsAdapter(sdk: MirraSDK) {
      * Update a user skill procedure, templates, or metadata.
      * @param args.skillId - ID of the skill to update
      * @param args.updates - Fields to update
+     * @returns Promise<SkillUpdateData> Typed flat response with IDE autocomplete
      */
-    updateSkill: async (args: SkillsUpdateSkillArgs): Promise<any> => {
-      return sdk.resources.call({
+    updateSkill: async (args: SkillsUpdateSkillArgs): Promise<SkillUpdateData> => {
+      return sdk.resources.callDirect({
         resourceId: 'skills',
         method: 'updateSkill',
         params: args || {}
@@ -6572,9 +8926,10 @@ function createSkillsAdapter(sdk: MirraSDK) {
     /**
      * Delete a user skill. Cannot delete built-in skills.
      * @param args.skillId - ID of the skill to delete
+     * @returns Promise<SkillDeleteData> Typed flat response with IDE autocomplete
      */
-    deleteSkill: async (args: SkillsDeleteSkillArgs): Promise<any> => {
-      return sdk.resources.call({
+    deleteSkill: async (args: SkillsDeleteSkillArgs): Promise<SkillDeleteData> => {
+      return sdk.resources.callDirect({
         resourceId: 'skills',
         method: 'deleteSkill',
         params: args || {}
@@ -6589,9 +8944,10 @@ function createSkillsAdapter(sdk: MirraSDK) {
      * @param args.budgetPercentage - Token budget used (0-100) (optional)
      * @param args.recentFailureCount - Number of recent failures (optional)
      * @param args.hasDelegation - Whether delegation is configured (optional)
+     * @returns Promise<SkillSelectData> Typed flat response with IDE autocomplete
      */
-    selectSkills: async (args: SkillsSelectSkillsArgs): Promise<any> => {
-      return sdk.resources.call({
+    selectSkills: async (args: SkillsSelectSkillsArgs): Promise<SkillSelectData> => {
+      return sdk.resources.callDirect({
         resourceId: 'skills',
         method: 'selectSkills',
         params: args || {}
@@ -6605,9 +8961,10 @@ function createSkillsAdapter(sdk: MirraSDK) {
      * @param args.iteration - Iteration number
      * @param args.outcome - success or failure
      * @param args.notes - Optional notes (optional)
+     * @returns Promise<SkillRecordUsageData> Typed flat response with IDE autocomplete
      */
-    recordSkillUsage: async (args: SkillsRecordSkillUsageArgs): Promise<any> => {
-      return sdk.resources.call({
+    recordSkillUsage: async (args: SkillsRecordSkillUsageArgs): Promise<SkillRecordUsageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'skills',
         method: 'recordSkillUsage',
         params: args || {}
@@ -6619,9 +8976,10 @@ function createSkillsAdapter(sdk: MirraSDK) {
      * @param args.skillId - Filter by skill ID (optional)
      * @param args.flowId - Filter by flow ID (optional)
      * @param args.limit - Max records to return (default 20) (optional)
+     * @returns Promise<SkillUsageListData> Typed flat response with IDE autocomplete
      */
-    getSkillUsage: async (args: SkillsGetSkillUsageArgs): Promise<any> => {
-      return sdk.resources.call({
+    getSkillUsage: async (args: SkillsGetSkillUsageArgs): Promise<SkillUsageListData> => {
+      return sdk.resources.callDirect({
         resourceId: 'skills',
         method: 'getSkillUsage',
         params: args || {}
@@ -6637,16 +8995,17 @@ function createSkillsAdapter(sdk: MirraSDK) {
 function createJupiterAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Execute a token swap on Jupiter DEX. Returns normalized FLAT structure with transaction, signerWallet, inputMint, outputMint, inputAmount, expectedOutputAmount, priceImpact, slippageBps. No nested objects.
-     * @param args.inputMint - Input token mint address
-     * @param args.outputMint - Output token mint address
-     * @param args.amount - Amount to swap (in UI units, e.g. 0.05 for SOL — decimals are auto-resolved)
+     * Execute a token swap on Jupiter DEX. Provide EITHER `amount` (input to spend) OR `outputAmount` (output to receive), not both. When user says "buy 1000 TOKEN_B", use outputAmount: 1000 — the adapter auto-calculates input from live prices. SOL mint: So11111111111111111111111111111111111111112.
+     * @param args.inputMint - Mint address of the token you are SPENDING (e.g. SOL: So11111111111111111111111111111111111111112)
+     * @param args.outputMint - Mint address of the token you are BUYING
+     * @param args.amount - Amount of INPUT token to spend (in UI units, e.g. 0.5 SOL). Use this when user says "spend X SOL on tokens". Provide this OR outputAmount, not both. (optional)
+     * @param args.outputAmount - Amount of OUTPUT token to receive (UI units). Adapter auto-calculates input from live prices. Use this when user says "buy X tokens". Provide this OR amount, not both. (optional)
      * @param args.inputDecimals - Number of decimals for input token. Auto-resolved from Jupiter token registry if not provided. (optional)
      * @param args.slippageBps - Slippage tolerance in basis points (default: 50) (optional)
-     * @returns Promise<JupiterSwapResult> Typed response with IDE autocomplete
+     * @returns Promise<JupiterSwapData> Typed flat response with IDE autocomplete
      */
-    swap: async (args: JupiterSwapArgs): Promise<JupiterSwapResult> => {
-      return sdk.resources.call({
+    swap: async (args: JupiterSwapArgs): Promise<JupiterSwapData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jupiter',
         method: 'swap',
         params: args || {}
@@ -6654,12 +9013,12 @@ function createJupiterAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get token holdings for a wallet. Returns normalized FLAT structure with owner, solBalance, totalValueUsd, tokenCount, and tokens array.
+     * Get token holdings for a wallet with live USD prices. Returns normalized FLAT structure with owner, solBalance, solValueUsd, totalValueUsd, tokenCount, and tokens array. Each token includes priceUsd and valueUsd.
      * @param args.walletAddress - Wallet address to check (uses actor wallet if not provided) (optional)
-     * @returns Promise<JupiterGetHoldingsResult> Typed response with IDE autocomplete
+     * @returns Promise<JupiterGetHoldingsData> Typed flat response with IDE autocomplete
      */
-    getHoldings: async (args: JupiterGetHoldingsArgs): Promise<JupiterGetHoldingsResult> => {
-      return sdk.resources.call({
+    getHoldings: async (args: JupiterGetHoldingsArgs): Promise<JupiterGetHoldingsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jupiter',
         method: 'getHoldings',
         params: args || {}
@@ -6669,10 +9028,10 @@ function createJupiterAdapter(sdk: MirraSDK) {
     /**
      * Get token security information using Jupiter Shield. Returns normalized FLAT structure with riskLevel, warningCount, and security flags.
      * @param args.tokenMint - Token mint address to check security for
-     * @returns Promise<JupiterGetTokenSecurityResult> Typed response with IDE autocomplete
+     * @returns Promise<JupiterTokenSecurityData> Typed flat response with IDE autocomplete
      */
-    getTokenSecurity: async (args: JupiterGetTokenSecurityArgs): Promise<JupiterGetTokenSecurityResult> => {
-      return sdk.resources.call({
+    getTokenSecurity: async (args: JupiterGetTokenSecurityArgs): Promise<JupiterTokenSecurityData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jupiter',
         method: 'getTokenSecurity',
         params: args || {}
@@ -6680,12 +9039,12 @@ function createJupiterAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Search for tokens by symbol, name, or mint address. Returns normalized FLAT token results with all fields flattened.
+     * Search for tokens by symbol, name, or mint address. Returns top 10 slim results for quick identification. Use getTokenSecurity for detailed token analysis.
      * @param args.query - Search query (symbol, name, or mint address)
-     * @returns Promise<JupiterSearchTokensResult> Typed response with IDE autocomplete
+     * @returns Promise<JupiterSearchTokensData> Typed flat response with IDE autocomplete
      */
-    searchTokens: async (args: JupiterSearchTokensArgs): Promise<JupiterSearchTokensResult> => {
-      return sdk.resources.call({
+    searchTokens: async (args: JupiterSearchTokensArgs): Promise<JupiterSearchTokensData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jupiter',
         method: 'searchTokens',
         params: args || {}
@@ -6693,18 +9052,18 @@ function createJupiterAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Refresh an expired swap with new quote and transaction. Returns normalized FLAT structure.
+     * Refresh an expired swap with a new quote. Only feedItemId and swapId are required — original swap parameters are loaded automatically from the feed item. Optionally override slippageBps.
      * @param args.feedItemId - Feed item ID containing the swap to refresh
      * @param args.swapId - Original swap ID
-     * @param args.inputMint - Input token mint address
-     * @param args.outputMint - Output token mint address
-     * @param args.amount - Amount to swap (in UI units)
-     * @param args.inputDecimals - Input token decimals
-     * @param args.slippageBps - Slippage tolerance in basis points (optional)
-     * @returns Promise<JupiterRefreshSwapResult> Typed response with IDE autocomplete
+     * @param args.inputMint - Optional override. If omitted, uses value from original swap. (optional)
+     * @param args.outputMint - Optional override. If omitted, uses value from original swap. (optional)
+     * @param args.amount - Optional override (in UI units). If omitted, uses value from original swap. (optional)
+     * @param args.inputDecimals - Optional override. If omitted, auto-resolved from original swap or token registry. (optional)
+     * @param args.slippageBps - Slippage tolerance in basis points (default from original swap or 50) (optional)
+     * @returns Promise<JupiterRefreshSwapData> Typed flat response with IDE autocomplete
      */
-    refreshSwap: async (args: JupiterRefreshSwapArgs): Promise<JupiterRefreshSwapResult> => {
-      return sdk.resources.call({
+    refreshSwap: async (args: JupiterRefreshSwapArgs): Promise<JupiterRefreshSwapData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jupiter',
         method: 'refreshSwap',
         params: args || {}
@@ -6718,18 +9077,19 @@ function createJupiterAdapter(sdk: MirraSDK) {
      * @param args.tokenDescription - Description for the token metadata (optional)
      * @param args.tokenImageUrl - URL of the uploaded token image (from user message)
      * @param args.quoteMint - Quote token mint address. Defaults to USDC (EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v). Can also use SOL or JUP mint. (optional)
-     * @param args.initialMarketCap - Initial market cap in quote token units (default: 16000 for meme preset) (optional)
-     * @param args.migrationMarketCap - Market cap threshold for graduation/migration (default: 69000 for meme preset) (optional)
+     * @param args.preset - Market cap preset: "meme" (16k→69k, default), "mid" (69k→420k), "premium" (420k→1M). Sets initialMarketCap and migrationMarketCap. Explicit values override preset. (optional)
+     * @param args.initialMarketCap - Initial market cap in quote token units. Overrides preset value if provided. (optional)
+     * @param args.migrationMarketCap - Market cap threshold for graduation/migration. Overrides preset value if provided. (optional)
      * @param args.antiSniping - Enable anti-sniping protection (default: false) (optional)
      * @param args.feeBps - Creator trading fee in basis points: 100 (1%) or 200 (2%). Default: 100 (optional)
      * @param args.isLpLocked - Lock LP tokens (default: true) (optional)
      * @param args.website - Project website URL for token metadata (optional)
      * @param args.twitter - Twitter/X URL for token metadata (optional)
      * @param args.telegram - Telegram URL for token metadata (optional)
-     * @returns Promise<JupiterLaunchTokenResult> Typed response with IDE autocomplete
+     * @returns Promise<JupiterLaunchTokenData> Typed flat response with IDE autocomplete
      */
-    launchToken: async (args: JupiterLaunchTokenArgs): Promise<JupiterLaunchTokenResult> => {
-      return sdk.resources.call({
+    launchToken: async (args: JupiterLaunchTokenArgs): Promise<JupiterLaunchTokenData> => {
+      return sdk.resources.callDirect({
         resourceId: 'jupiter',
         method: 'launchToken',
         params: args || {}
@@ -6749,10 +9109,10 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
      * @param args.resourceId - ID of the installed resource
      * @param args.method - Method name to call on the resource
      * @param args.parameters - Parameters to pass to the method
-     * @returns Promise<MarketplaceResourcesCallResult> Typed response with IDE autocomplete
+     * @returns Promise<ResourceCallData> Typed flat response with IDE autocomplete
      */
-    call: async (args: MarketplaceResourcesCallArgs): Promise<MarketplaceResourcesCallResult> => {
-      return sdk.resources.call({
+    call: async (args: MarketplaceResourcesCallArgs): Promise<ResourceCallData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-resources',
         method: 'call',
         params: args || {}
@@ -6762,10 +9122,10 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
     /**
      * Install a marketplace resource for the user. Returns flat installation details.
      * @param args.resourceId - ID of the resource to install
-     * @returns Promise<MarketplaceResourcesInstallResult> Typed response with IDE autocomplete
+     * @returns Promise<ResourceInstallData> Typed flat response with IDE autocomplete
      */
-    install: async (args: MarketplaceResourcesInstallArgs): Promise<MarketplaceResourcesInstallResult> => {
-      return sdk.resources.call({
+    install: async (args: MarketplaceResourcesInstallArgs): Promise<ResourceInstallData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-resources',
         method: 'install',
         params: args || {}
@@ -6775,10 +9135,10 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
     /**
      * Uninstall a marketplace resource. Returns confirmation.
      * @param args.resourceId - ID of the resource to uninstall
-     * @returns Promise<MarketplaceResourcesUninstallResult> Typed response with IDE autocomplete
+     * @returns Promise<ResourceUninstallData> Typed flat response with IDE autocomplete
      */
-    uninstall: async (args: MarketplaceResourcesUninstallArgs): Promise<MarketplaceResourcesUninstallResult> => {
-      return sdk.resources.call({
+    uninstall: async (args: MarketplaceResourcesUninstallArgs): Promise<ResourceUninstallData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-resources',
         method: 'uninstall',
         params: args || {}
@@ -6790,10 +9150,10 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
      * @param args.resourceId - ID of the resource to authenticate with
      * @param args.type - Authentication type: api_key, oauth2, basic, or bearer
      * @param args.credentials - Credentials object (structure depends on auth type)
-     * @returns Promise<MarketplaceResourcesAuthenticateResult> Typed response with IDE autocomplete
+     * @returns Promise<ResourceAuthenticateData> Typed flat response with IDE autocomplete
      */
-    authenticate: async (args: MarketplaceResourcesAuthenticateArgs): Promise<MarketplaceResourcesAuthenticateResult> => {
-      return sdk.resources.call({
+    authenticate: async (args: MarketplaceResourcesAuthenticateArgs): Promise<ResourceAuthenticateData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-resources',
         method: 'authenticate',
         params: args || {}
@@ -6802,10 +9162,10 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
 
     /**
      * List all installed marketplace resources for the user.
-     * @returns Promise<MarketplaceResourcesListInstalledResult> Typed response with IDE autocomplete
+     * @returns Promise<ResourceListInstalledData> Typed flat response with IDE autocomplete
      */
-    listInstalled: async (args?: {}): Promise<MarketplaceResourcesListInstalledResult> => {
-      return sdk.resources.call({
+    listInstalled: async (args?: {}): Promise<ResourceListInstalledData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-resources',
         method: 'listInstalled',
         params: args || {}
@@ -6815,10 +9175,10 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
     /**
      * Get details of a specific resource installation.
      * @param args.resourceId - ID of the resource to get installation details for
-     * @returns Promise<MarketplaceResourcesGetInstallationResult> Typed response with IDE autocomplete
+     * @returns Promise<ResourceGetInstallationData> Typed flat response with IDE autocomplete
      */
-    getInstallation: async (args: MarketplaceResourcesGetInstallationArgs): Promise<MarketplaceResourcesGetInstallationResult> => {
-      return sdk.resources.call({
+    getInstallation: async (args: MarketplaceResourcesGetInstallationArgs): Promise<ResourceGetInstallationData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-resources',
         method: 'getInstallation',
         params: args || {}
@@ -6840,9 +9200,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * @param args.runtime - Lambda runtime (default: nodejs18) (optional)
      * @param args.config - Script configuration (timeout, memory, maxCostPerExecution, etc.) (optional)
      * @param args.code - Initial JavaScript/TypeScript code for the script
+     * @returns Promise<ScriptCreateData> Typed flat response with IDE autocomplete
      */
-    createScript: async (args: ScriptsCreateScriptArgs): Promise<any> => {
-      return sdk.resources.call({
+    createScript: async (args: ScriptsCreateScriptArgs): Promise<ScriptCreateData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'createScript',
         params: args || {}
@@ -6852,9 +9213,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
     /**
      * Delete a script and all its versions. Returns flat deletion confirmation.
      * @param args.scriptId - ID of the script to delete
+     * @returns Promise<ScriptDeleteData> Typed flat response with IDE autocomplete
      */
-    deleteScript: async (args: ScriptsDeleteScriptArgs): Promise<any> => {
-      return sdk.resources.call({
+    deleteScript: async (args: ScriptsDeleteScriptArgs): Promise<ScriptDeleteData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'deleteScript',
         params: args || {}
@@ -6866,9 +9228,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * @param args.scriptId - ID of the script
      * @param args.code - Updated code for the new version
      * @param args.commitMessage - Description of changes in this version (optional)
+     * @returns Promise<ScriptVersionCreateData> Typed flat response with IDE autocomplete
      */
-    createVersion: async (args: ScriptsCreateVersionArgs): Promise<any> => {
-      return sdk.resources.call({
+    createVersion: async (args: ScriptsCreateVersionArgs): Promise<ScriptVersionCreateData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'createVersion',
         params: args || {}
@@ -6878,9 +9241,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
     /**
      * List all versions of a script. Returns flat version structures.
      * @param args.scriptId - ID of the script
+     * @returns Promise<ScriptVersionListData> Typed flat response with IDE autocomplete
      */
-    listVersions: async (args: ScriptsListVersionsArgs): Promise<any> => {
-      return sdk.resources.call({
+    listVersions: async (args: ScriptsListVersionsArgs): Promise<ScriptVersionListData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'listVersions',
         params: args || {}
@@ -6891,9 +9255,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * Deploy a script version to AWS Lambda. Must be called after createScript to make the script executable.
      * @param args.scriptId - ID of the script to deploy (from createScript response at data._id)
      * @param args.version - Version number to deploy (default: latest) (optional)
+     * @returns Promise<ScriptDeployData> Typed flat response with IDE autocomplete
      */
-    deployScript: async (args: ScriptsDeployScriptArgs): Promise<any> => {
-      return sdk.resources.call({
+    deployScript: async (args: ScriptsDeployScriptArgs): Promise<ScriptDeployData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'deployScript',
         params: args || {}
@@ -6905,9 +9270,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * @param args.scriptId - ID of the script to execute (from createScript response at data.id)
      * @param args.data - Input data to pass to the script (optional)
      * @param args.trigger - Trigger information (type, source, event) (optional)
+     * @returns Promise<ScriptExecuteData> Typed flat response with IDE autocomplete
      */
-    executeScript: async (args: ScriptsExecuteScriptArgs): Promise<any> => {
-      return sdk.resources.call({
+    executeScript: async (args: ScriptsExecuteScriptArgs): Promise<ScriptExecuteData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'executeScript',
         params: args || {}
@@ -6917,9 +9283,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
     /**
      * Get details of a specific script. Returns flat normalized structure.
      * @param args.scriptId - ID of the script
+     * @returns Promise<ScriptGetData> Typed flat response with IDE autocomplete
      */
-    getScript: async (args: ScriptsGetScriptArgs): Promise<any> => {
-      return sdk.resources.call({
+    getScript: async (args: ScriptsGetScriptArgs): Promise<ScriptGetData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'getScript',
         params: args || {}
@@ -6928,9 +9295,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
 
     /**
      * List all scripts owned by the user. Returns flat script summaries.
+     * @returns Promise<ScriptListData> Typed flat response with IDE autocomplete
      */
-    listScripts: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    listScripts: async (args?: {}): Promise<ScriptListData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'listScripts',
         params: args || {}
@@ -6942,9 +9310,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * @param args.scriptId - ID of the script
      * @param args.status - Filter by status (completed, failed, running) (optional)
      * @param args.limit - Maximum number of executions to return (default: 100) (optional)
+     * @returns Promise<ScriptExecutionsData> Typed flat response with IDE autocomplete
      */
-    getExecutions: async (args: ScriptsGetExecutionsArgs): Promise<any> => {
-      return sdk.resources.call({
+    getExecutions: async (args: ScriptsGetExecutionsArgs): Promise<ScriptExecutionsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'getExecutions',
         params: args || {}
@@ -6954,9 +9323,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
     /**
      * Get details of a specific execution. Returns flat execution structure.
      * @param args.executionId - ID of the execution
+     * @returns Promise<ScriptExecutionData> Typed flat response with IDE autocomplete
      */
-    getExecution: async (args: ScriptsGetExecutionArgs): Promise<any> => {
-      return sdk.resources.call({
+    getExecution: async (args: ScriptsGetExecutionArgs): Promise<ScriptExecutionData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'getExecution',
         params: args || {}
@@ -6967,9 +9337,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * Publish a script to the marketplace. Returns flat publish confirmation.
      * @param args.scriptId - ID of the script to publish
      * @param args.pricing - Pricing configuration for the marketplace (optional)
+     * @returns Promise<ScriptPublishData> Typed flat response with IDE autocomplete
      */
-    publishScript: async (args: ScriptsPublishScriptArgs): Promise<any> => {
-      return sdk.resources.call({
+    publishScript: async (args: ScriptsPublishScriptArgs): Promise<ScriptPublishData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'publishScript',
         params: args || {}
@@ -6979,9 +9350,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
     /**
      * Remove a script from the marketplace. Returns flat unpublish confirmation.
      * @param args.scriptId - ID of the script to unpublish
+     * @returns Promise<ScriptUnpublishData> Typed flat response with IDE autocomplete
      */
-    unpublishScript: async (args: ScriptsUnpublishScriptArgs): Promise<any> => {
-      return sdk.resources.call({
+    unpublishScript: async (args: ScriptsUnpublishScriptArgs): Promise<ScriptUnpublishData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'unpublishScript',
         params: args || {}
@@ -7003,9 +9375,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * @param args.sortOrder - Sort order: asc or desc (default: desc) (optional)
      * @param args.limit - Maximum number of results to return (default: 50, max: 100) (optional)
      * @param args.offset - Number of results to skip for pagination (default: 0) (optional)
+     * @returns Promise<ScriptMarketplaceListData> Typed flat response with IDE autocomplete
      */
-    listMarketplaceScripts: async (args: ScriptsListMarketplaceScriptsArgs): Promise<any> => {
-      return sdk.resources.call({
+    listMarketplaceScripts: async (args: ScriptsListMarketplaceScriptsArgs): Promise<ScriptMarketplaceListData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'listMarketplaceScripts',
         params: args || {}
@@ -7015,9 +9388,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
     /**
      * Get execution metrics for a script. Returns flat metrics structure.
      * @param args.scriptId - ID of the script
+     * @returns Promise<ScriptMetricsData> Typed flat response with IDE autocomplete
      */
-    getMetrics: async (args: ScriptsGetMetricsArgs): Promise<any> => {
-      return sdk.resources.call({
+    getMetrics: async (args: ScriptsGetMetricsArgs): Promise<ScriptMetricsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'getMetrics',
         params: args || {}
@@ -7029,9 +9403,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * @param args.scriptId - ID of the script
      * @param args.name - Name of the webhook
      * @param args.enabled - Whether webhook is enabled (default: true) (optional)
+     * @returns Promise<ScriptWebhookData> Typed flat response with IDE autocomplete
      */
-    createWebhook: async (args: ScriptsCreateWebhookArgs): Promise<any> => {
-      return sdk.resources.call({
+    createWebhook: async (args: ScriptsCreateWebhookArgs): Promise<ScriptWebhookData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'createWebhook',
         params: args || {}
@@ -7045,9 +9420,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * @param args.cronExpression - Cron expression (e.g., "0 9 * * *" for daily at 9am)
      * @param args.enabled - Whether schedule is enabled (default: true) (optional)
      * @param args.data - Data to pass to the script on scheduled execution (optional)
+     * @returns Promise<ScriptScheduleData> Typed flat response with IDE autocomplete
      */
-    createSchedule: async (args: ScriptsCreateScheduleArgs): Promise<any> => {
-      return sdk.resources.call({
+    createSchedule: async (args: ScriptsCreateScheduleArgs): Promise<ScriptScheduleData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'createSchedule',
         params: args || {}
@@ -7057,9 +9433,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
     /**
      * Get the script code for a specific flow. Returns flat flow script structure.
      * @param args.flowId - ID of the flow to get script code for
+     * @returns Promise<ScriptFlowGetData> Typed flat response with IDE autocomplete
      */
-    getFlowScript: async (args: ScriptsGetFlowScriptArgs): Promise<any> => {
-      return sdk.resources.call({
+    getFlowScript: async (args: ScriptsGetFlowScriptArgs): Promise<ScriptFlowGetData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'getFlowScript',
         params: args || {}
@@ -7071,9 +9448,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * @param args.flowId - ID of the flow to modify
      * @param args.newCode - New code to deploy
      * @param args.commitMessage - Description of changes (optional)
+     * @returns Promise<ScriptFlowModifyData> Typed flat response with IDE autocomplete
      */
-    modifyFlowScript: async (args: ScriptsModifyFlowScriptArgs): Promise<any> => {
-      return sdk.resources.call({
+    modifyFlowScript: async (args: ScriptsModifyFlowScriptArgs): Promise<ScriptFlowModifyData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'modifyFlowScript',
         params: args || {}
@@ -7085,9 +9463,10 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * @param args.code - The script code to validate
      * @param args.eventType - Event type for event.data field validation (e.g., "telegram.message", "call.ended"). When provided, validates that event.data.fieldName accesses match the event type schema. (optional)
      * @param args.scriptInputSchema - Schema of scriptInput fields that will be on event.data at runtime. Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array" }. When provided, event.data field errors are reported as errors instead of warnings. (optional)
+     * @returns Promise<ScriptLintData> Typed flat response with IDE autocomplete
      */
-    lintScript: async (args: ScriptsLintScriptArgs): Promise<any> => {
-      return sdk.resources.call({
+    lintScript: async (args: ScriptsLintScriptArgs): Promise<ScriptLintData> => {
+      return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'lintScript',
         params: args || {}
@@ -7104,9 +9483,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
   return {
     /**
      * Create a new template
+     * @returns Promise<TemplateCreateData> Typed flat response with IDE autocomplete
      */
-    create: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    create: async (args?: {}): Promise<TemplateCreateData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'create',
         params: args || {}
@@ -7115,9 +9495,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * Sync template from GitHub
+     * @returns Promise<TemplateSyncData> Typed flat response with IDE autocomplete
      */
-    sync: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    sync: async (args?: {}): Promise<TemplateSyncData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'sync',
         params: args || {}
@@ -7126,9 +9507,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * Build a template
+     * @returns Promise<TemplateBuildData> Typed flat response with IDE autocomplete
      */
-    build: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    build: async (args?: {}): Promise<TemplateBuildData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'build',
         params: args || {}
@@ -7137,9 +9519,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * Publish template to marketplace
+     * @returns Promise<TemplatePublishData> Typed flat response with IDE autocomplete
      */
-    publish: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    publish: async (args?: {}): Promise<TemplatePublishData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'publish',
         params: args || {}
@@ -7148,9 +9531,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * Install a template
+     * @returns Promise<TemplateInstallData> Typed flat response with IDE autocomplete
      */
-    install: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    install: async (args?: {}): Promise<TemplateInstallData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'install',
         params: args || {}
@@ -7159,9 +9543,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * Uninstall a template
+     * @returns Promise<TemplateUninstallData> Typed flat response with IDE autocomplete
      */
-    uninstall: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    uninstall: async (args?: {}): Promise<TemplateUninstallData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'uninstall',
         params: args || {}
@@ -7170,9 +9555,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * List user template installations
+     * @returns Promise<TemplateListInstallationsData> Typed flat response with IDE autocomplete
      */
-    listInstallations: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    listInstallations: async (args?: {}): Promise<TemplateListInstallationsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'listInstallations',
         params: args || {}
@@ -7181,9 +9567,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * Get installation details
+     * @returns Promise<TemplateGetInstallationData> Typed flat response with IDE autocomplete
      */
-    getInstallation: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    getInstallation: async (args?: {}): Promise<TemplateGetInstallationData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'getInstallation',
         params: args || {}
@@ -7192,9 +9579,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * Update installation to new version
+     * @returns Promise<TemplateUpdateInstallationData> Typed flat response with IDE autocomplete
      */
-    updateInstallation: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    updateInstallation: async (args?: {}): Promise<TemplateUpdateInstallationData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'updateInstallation',
         params: args || {}
@@ -7203,9 +9591,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * Check installation requirements
+     * @returns Promise<TemplateCheckRequirementsData> Typed flat response with IDE autocomplete
      */
-    checkRequirements: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    checkRequirements: async (args?: {}): Promise<TemplateCheckRequirementsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'checkRequirements',
         params: args || {}
@@ -7214,9 +9603,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * Estimate installation cost
+     * @returns Promise<TemplateEstimateCostData> Typed flat response with IDE autocomplete
      */
-    estimateCost: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    estimateCost: async (args?: {}): Promise<TemplateEstimateCostData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'estimateCost',
         params: args || {}
@@ -7225,9 +9615,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * List template versions
+     * @returns Promise<TemplateListVersionsData> Typed flat response with IDE autocomplete
      */
-    listVersions: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    listVersions: async (args?: {}): Promise<TemplateListVersionsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'listVersions',
         params: args || {}
@@ -7236,9 +9627,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * Create new template version
+     * @returns Promise<TemplateCreateVersionData> Typed flat response with IDE autocomplete
      */
-    createVersion: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    createVersion: async (args?: {}): Promise<TemplateCreateVersionData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'createVersion',
         params: args || {}
@@ -7247,9 +9639,10 @@ function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
 
     /**
      * Get template build status
+     * @returns Promise<TemplateGetBuildStatusData> Typed flat response with IDE autocomplete
      */
-    getBuildStatus: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    getBuildStatus: async (args?: {}): Promise<TemplateGetBuildStatusData> => {
+      return sdk.resources.callDirect({
         resourceId: 'marketplace-templates',
         method: 'getBuildStatus',
         params: args || {}
@@ -7272,10 +9665,10 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * @param args.metadata - Additional metadata (e.g., priority, deadline, tags, etc.) (optional)
      * @param args.tags - Tags for organizing the memory. Shorthand for metadata.tags. (optional)
      * @param args.groupId - Group ID to scope the memory to a specific group. If omitted, memory is created in the user's personal graph. (optional)
-     * @returns Promise<MemoryCreateResult> Typed response with IDE autocomplete
+     * @returns Promise<MemoryCreateData> Typed flat response with IDE autocomplete
      */
-    create: async (args: MemoryCreateArgs): Promise<MemoryCreateResult> => {
-      return sdk.resources.call({
+    create: async (args: MemoryCreateArgs): Promise<MemoryCreateData> => {
+      return sdk.resources.callDirect({
         resourceId: 'memory',
         method: 'create',
         params: args || {}
@@ -7290,10 +9683,10 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * @param args.dueAt - Due date/time in ISO 8601 format (e.g., "2024-01-15T10:00:00Z") or natural language that will be parsed (optional)
      * @param args.priority - Task priority: "high", "medium", or "low" (optional)
      * @param args.tags - Tags/labels for categorization (e.g., ["work", "urgent"]) (optional)
-     * @returns Promise<MemoryCreateTaskResult> Typed response with IDE autocomplete
+     * @returns Promise<MemoryCreateTaskData> Typed flat response with IDE autocomplete
      */
-    createTask: async (args: MemoryCreateTaskArgs): Promise<MemoryCreateTaskResult> => {
-      return sdk.resources.call({
+    createTask: async (args: MemoryCreateTaskArgs): Promise<MemoryCreateTaskData> => {
+      return sdk.resources.callDirect({
         resourceId: 'memory',
         method: 'createTask',
         params: args || {}
@@ -7308,10 +9701,10 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * @param args.endTime - Filter entities created before this timestamp (Unix milliseconds) (optional)
      * @param args.propertyFilters - Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] } (optional)
      * @param args.limit - Maximum number of results (default: 50, max: 100) (optional)
-     * @returns Promise<MemorySearchResult> Typed response with IDE autocomplete
+     * @returns Promise<MemorySearchData> Typed flat response with IDE autocomplete
      */
-    search: async (args: MemorySearchArgs): Promise<MemorySearchResult> => {
-      return sdk.resources.call({
+    search: async (args: MemorySearchArgs): Promise<MemorySearchData> => {
+      return sdk.resources.callDirect({
         resourceId: 'memory',
         method: 'search',
         params: args || {}
@@ -7324,10 +9717,10 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * @param args.filters - Additional filters (not yet implemented) (optional)
      * @param args.limit - Maximum results (default: 50, max: 100) (optional)
      * @param args.offset - Pagination offset for fetching more results (default: 0) (optional)
-     * @returns Promise<MemoryQueryResult> Typed response with IDE autocomplete
+     * @returns Promise<MemoryQueryData> Typed flat response with IDE autocomplete
      */
-    query: async (args: MemoryQueryArgs): Promise<MemoryQueryResult> => {
-      return sdk.resources.call({
+    query: async (args: MemoryQueryArgs): Promise<MemoryQueryData> => {
+      return sdk.resources.callDirect({
         resourceId: 'memory',
         method: 'query',
         params: args || {}
@@ -7337,10 +9730,10 @@ function createMemoryAdapter(sdk: MirraSDK) {
     /**
      * Find a single entity by ID or name. Returns the FULL untruncated entity content. Use this after `search` or `query` to retrieve complete content for a specific entity (since those operations return truncated results to prevent large payloads).
      * @param args.filters - Filter criteria. Use { id: "entity_id" } to find by ID (recommended), or { name: "entity name" } to find by name.
-     * @returns Promise<MemoryFindOneResult> Typed response with IDE autocomplete
+     * @returns Promise<MemoryFindOneData> Typed flat response with IDE autocomplete
      */
-    findOne: async (args: MemoryFindOneArgs): Promise<MemoryFindOneResult> => {
-      return sdk.resources.call({
+    findOne: async (args: MemoryFindOneArgs): Promise<MemoryFindOneData> => {
+      return sdk.resources.callDirect({
         resourceId: 'memory',
         method: 'findOne',
         params: args || {}
@@ -7354,10 +9747,10 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * @param args.name - Updated display title/name (optional)
      * @param args.content - Updated content (optional)
      * @param args.metadata - Updated metadata (optional)
-     * @returns Promise<MemoryUpdateResult> Typed response with IDE autocomplete
+     * @returns Promise<MemoryUpdateData> Typed flat response with IDE autocomplete
      */
-    update: async (args: MemoryUpdateArgs): Promise<MemoryUpdateResult> => {
-      return sdk.resources.call({
+    update: async (args: MemoryUpdateArgs): Promise<MemoryUpdateData> => {
+      return sdk.resources.callDirect({
         resourceId: 'memory',
         method: 'update',
         params: args || {}
@@ -7367,10 +9760,10 @@ function createMemoryAdapter(sdk: MirraSDK) {
     /**
      * Delete a memory entity. Works with all memory types including tasks, notes, ideas, etc.
      * @param args.id - Entity ID to delete
-     * @returns Promise<MemoryDeleteResult> Typed response with IDE autocomplete
+     * @returns Promise<MemoryDeleteData> Typed flat response with IDE autocomplete
      */
-    delete: async (args: MemoryDeleteArgs): Promise<MemoryDeleteResult> => {
-      return sdk.resources.call({
+    delete: async (args: MemoryDeleteArgs): Promise<MemoryDeleteData> => {
+      return sdk.resources.callDirect({
         resourceId: 'memory',
         method: 'delete',
         params: args || {}
@@ -7382,10 +9775,10 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * @param args.entityId - Entity ID to share
      * @param args.targetGraphId - Target graph ID to share with (group ID or user contact graph ID)
      * @param args.shareReason - Optional reason for sharing (optional)
-     * @returns Promise<MemoryShareResult> Typed response with IDE autocomplete
+     * @returns Promise<MemoryShareData> Typed flat response with IDE autocomplete
      */
-    share: async (args: MemoryShareArgs): Promise<MemoryShareResult> => {
-      return sdk.resources.call({
+    share: async (args: MemoryShareArgs): Promise<MemoryShareData> => {
+      return sdk.resources.callDirect({
         resourceId: 'memory',
         method: 'share',
         params: args || {}
@@ -7396,10 +9789,10 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * Remove sharing of a memory entity from a graph. Only the creator can unshare. Cannot unshare from the primary graph (where it was created).
      * @param args.entityId - Entity ID to unshare
      * @param args.graphId - Graph ID to remove sharing from
-     * @returns Promise<MemoryUnshareResult> Typed response with IDE autocomplete
+     * @returns Promise<MemoryUnshareData> Typed flat response with IDE autocomplete
      */
-    unshare: async (args: MemoryUnshareArgs): Promise<MemoryUnshareResult> => {
-      return sdk.resources.call({
+    unshare: async (args: MemoryUnshareArgs): Promise<MemoryUnshareData> => {
+      return sdk.resources.callDirect({
         resourceId: 'memory',
         method: 'unshare',
         params: args || {}
@@ -7409,10 +9802,10 @@ function createMemoryAdapter(sdk: MirraSDK) {
     /**
      * List all graphs a memory entity is shared with, including share history and metadata.
      * @param args.entityId - Entity ID to list graphs for
-     * @returns Promise<MemoryListGraphsResult> Typed response with IDE autocomplete
+     * @returns Promise<MemoryListGraphsData> Typed flat response with IDE autocomplete
      */
-    listGraphs: async (args: MemoryListGraphsArgs): Promise<MemoryListGraphsResult> => {
-      return sdk.resources.call({
+    listGraphs: async (args: MemoryListGraphsArgs): Promise<MemoryListGraphsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'memory',
         method: 'listGraphs',
         params: args || {}
@@ -7429,15 +9822,15 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
   return {
     /**
      * Send a message to a group (including direct chats). The message is sent as the authenticated user with optional automation metadata. Returns normalized flat structure.
-     * @param args.groupId - Group ID to send the message to (use getContacts or getGroups to get the groupId)
+     * @param args.groupId - Group ID to send the message to (use getGroups to get the groupId)
      * @param args.content - Message text content
      * @param args.replyToMessageId - ID of the message to reply to (creates a threaded reply) (optional)
      * @param args.automation - Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing. (optional)
      * @param args.structuredData - Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }] (optional)
-     * @returns Promise<MirraMessagingSendMessageResult> Typed response with IDE autocomplete
+     * @returns Promise<MirraMessagingSendMessageData> Typed flat response with IDE autocomplete
      */
-    sendMessage: async (args: MirraMessagingSendMessageArgs): Promise<MirraMessagingSendMessageResult> => {
-      return sdk.resources.call({
+    sendMessage: async (args: MirraMessagingSendMessageArgs): Promise<MirraMessagingSendMessageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'mirra-messaging',
         method: 'sendMessage',
         params: args || {}
@@ -7449,39 +9842,12 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
      * @param args.messageId - ID of the message to update
      * @param args.content - New message text content
      * @param args.structuredData - Updated structured data for rich UI rendering (optional)
-     * @returns Promise<MirraMessagingUpdateMessageResult> Typed response with IDE autocomplete
+     * @returns Promise<MirraMessagingUpdateMessageData> Typed flat response with IDE autocomplete
      */
-    updateMessage: async (args: MirraMessagingUpdateMessageArgs): Promise<MirraMessagingUpdateMessageResult> => {
-      return sdk.resources.call({
+    updateMessage: async (args: MirraMessagingUpdateMessageArgs): Promise<MirraMessagingUpdateMessageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'mirra-messaging',
         method: 'updateMessage',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get list of accepted contacts for the user. Returns normalized flat structures.
-     * @param args.limit - Maximum number of contacts to return (default 50) (optional)
-     * @param args.offset - Offset for pagination (default 0) (optional)
-     * @returns Promise<MirraMessagingGetContactsResult> Typed response with IDE autocomplete
-     */
-    getContacts: async (args: MirraMessagingGetContactsArgs): Promise<MirraMessagingGetContactsResult> => {
-      return sdk.resources.call({
-        resourceId: 'mirra-messaging',
-        method: 'getContacts',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Find a contact by username or partial name match. Returns normalized flat structures.
-     * @param args.query - Username or name to search for
-     * @returns Promise<MirraMessagingFindContactResult> Typed response with IDE autocomplete
-     */
-    findContact: async (args: MirraMessagingFindContactArgs): Promise<MirraMessagingFindContactResult> => {
-      return sdk.resources.call({
-        resourceId: 'mirra-messaging',
-        method: 'findContact',
         params: args || {}
       });
     },
@@ -7490,10 +9856,10 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
      * Get list of chat instances for the user. Returns normalized flat structures.
      * @param args.scope - Filter by scope: direct, user, group, or all (default all) (optional)
      * @param args.limit - Maximum number of chats to return (default 50) (optional)
-     * @returns Promise<MirraMessagingGetChatsResult> Typed response with IDE autocomplete
+     * @returns Promise<MirraMessagingGetChatsData> Typed flat response with IDE autocomplete
      */
-    getChats: async (args: MirraMessagingGetChatsArgs): Promise<MirraMessagingGetChatsResult> => {
-      return sdk.resources.call({
+    getChats: async (args: MirraMessagingGetChatsArgs): Promise<MirraMessagingGetChatsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'mirra-messaging',
         method: 'getChats',
         params: args || {}
@@ -7501,12 +9867,13 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get list of groups the user is a member of. Returns normalized flat structures.
+     * Get all conversations the user is a member of, including both direct chats and group chats. Direct chats are named "You & {peerUsername}". Use the groupId from results to send messages or browse history.
      * @param args.limit - Maximum number of groups to return (default 50) (optional)
-     * @returns Promise<MirraMessagingGetGroupsResult> Typed response with IDE autocomplete
+     * @param args.offset - Offset for pagination (default 0) (optional)
+     * @returns Promise<MirraMessagingGetGroupsData> Typed flat response with IDE autocomplete
      */
-    getGroups: async (args: MirraMessagingGetGroupsArgs): Promise<MirraMessagingGetGroupsResult> => {
-      return sdk.resources.call({
+    getGroups: async (args: MirraMessagingGetGroupsArgs): Promise<MirraMessagingGetGroupsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'mirra-messaging',
         method: 'getGroups',
         params: args || {}
@@ -7519,10 +9886,10 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
      * @param args.description - Group description (max 500 characters) (optional)
      * @param args.category - Category for organization: "hobby", "career", "family", "health", "finance", "learning", or "social" (default: "career") (optional)
      * @param args.memberIds - Array of user IDs to add as initial members (optional)
-     * @returns Promise<MirraMessagingCreateGroupResult> Typed response with IDE autocomplete
+     * @returns Promise<MirraMessagingCreateGroupData> Typed flat response with IDE autocomplete
      */
-    createGroup: async (args: MirraMessagingCreateGroupArgs): Promise<MirraMessagingCreateGroupResult> => {
-      return sdk.resources.call({
+    createGroup: async (args: MirraMessagingCreateGroupArgs): Promise<MirraMessagingCreateGroupData> => {
+      return sdk.resources.callDirect({
         resourceId: 'mirra-messaging',
         method: 'createGroup',
         params: args || {}
@@ -7532,7 +9899,7 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
     /**
      * Search chat messages by keywords. Returns summaries by default to avoid overwhelming context. Use includeFullText for complete messages.
      * @param args.query - Keywords to search for
-     * @param args.contactName - Contact name to filter by sender (resolved to userId) (optional)
+     * @param args.senderUsername - Username to filter by sender (partial match supported) (optional)
      * @param args.groupName - Group name to limit search (resolved to groupId) (optional)
      * @param args.groupId - Group ID to limit search (use groupName for name-based lookup) (optional)
      * @param args.scope - "direct", "group", or "all" (default) (optional)
@@ -7542,12 +9909,31 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
      * @param args.snippetLength - Max chars for snippet (default: 200) (optional)
      * @param args.limit - Max results (default 20, max 50) (optional)
      * @param args.offset - Pagination offset (optional)
-     * @returns Promise<MirraMessagingSearchMessagesResult> Typed response with IDE autocomplete
+     * @returns Promise<MirraMessagingSearchMessagesData> Typed flat response with IDE autocomplete
      */
-    searchMessages: async (args: MirraMessagingSearchMessagesArgs): Promise<MirraMessagingSearchMessagesResult> => {
-      return sdk.resources.call({
+    searchMessages: async (args: MirraMessagingSearchMessagesArgs): Promise<MirraMessagingSearchMessagesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'mirra-messaging',
         method: 'searchMessages',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Browse recent messages by recency without requiring a keyword search. Returns full message text sorted newest first. Use this to review recent conversation history.
+     * @param args.groupId - Group ID to filter messages (use getGroups to get groupId) (optional)
+     * @param args.groupName - Group name to filter messages (resolved to groupId) (optional)
+     * @param args.scope - "direct", "group", or "all" (default) (optional)
+     * @param args.startDate - ISO date for time range start (optional)
+     * @param args.endDate - ISO date for time range end (optional)
+     * @param args.limit - Max results (default 20, max 50) (optional)
+     * @param args.offset - Pagination offset (optional)
+     * @returns Promise<MirraMessagingGetRecentMessagesData> Typed flat response with IDE autocomplete
+     */
+    getRecentMessages: async (args: MirraMessagingGetRecentMessagesArgs): Promise<MirraMessagingGetRecentMessagesData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'mirra-messaging',
+        method: 'getRecentMessages',
         params: args || {}
       });
     }
@@ -7563,10 +9949,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Register a new agent on Moltbook. Returns API key and claim URL for verification.
      * @param args.agentName - Unique name for your agent (alphanumeric, underscores allowed)
-     * @returns Promise<MoltbookRegisterAgentResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookRegisterAgentData> Typed flat response with IDE autocomplete
      */
-    registerAgent: async (args: MoltbookRegisterAgentArgs): Promise<MoltbookRegisterAgentResult> => {
-      return sdk.resources.call({
+    registerAgent: async (args: MoltbookRegisterAgentArgs): Promise<MoltbookRegisterAgentData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'registerAgent',
         params: args || {}
@@ -7580,10 +9966,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
      * @param args.type - Post type: "text" or "link" (default: text) (optional)
      * @param args.url - URL for link posts (optional)
      * @param args.submolt - Community name to post in (optional) (optional)
-     * @returns Promise<MoltbookCreatePostResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookCreatePostData> Typed flat response with IDE autocomplete
      */
-    createPost: async (args: MoltbookCreatePostArgs): Promise<MoltbookCreatePostResult> => {
-      return sdk.resources.call({
+    createPost: async (args: MoltbookCreatePostArgs): Promise<MoltbookCreatePostData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'createPost',
         params: args || {}
@@ -7595,10 +9981,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
      * @param args.sort - Sort order: "hot", "new", "top", "rising" (default: hot) (optional)
      * @param args.limit - Max posts to return (default: 25, max: 100) (optional)
      * @param args.submolt - Filter by community name (optional)
-     * @returns Promise<MoltbookGetPostsResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookGetPostsData> Typed flat response with IDE autocomplete
      */
-    getPosts: async (args: MoltbookGetPostsArgs): Promise<MoltbookGetPostsResult> => {
-      return sdk.resources.call({
+    getPosts: async (args: MoltbookGetPostsArgs): Promise<MoltbookGetPostsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'getPosts',
         params: args || {}
@@ -7608,10 +9994,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Get a single post by ID. Returns normalized flat structure.
      * @param args.postId - Post ID
-     * @returns Promise<MoltbookGetPostResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookGetPostData> Typed flat response with IDE autocomplete
      */
-    getPost: async (args: MoltbookGetPostArgs): Promise<MoltbookGetPostResult> => {
-      return sdk.resources.call({
+    getPost: async (args: MoltbookGetPostArgs): Promise<MoltbookGetPostData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'getPost',
         params: args || {}
@@ -7621,10 +10007,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Delete your own post
      * @param args.postId - Post ID to delete
-     * @returns Promise<MoltbookDeletePostResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookDeletePostData> Typed flat response with IDE autocomplete
      */
-    deletePost: async (args: MoltbookDeletePostArgs): Promise<MoltbookDeletePostResult> => {
-      return sdk.resources.call({
+    deletePost: async (args: MoltbookDeletePostArgs): Promise<MoltbookDeletePostData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'deletePost',
         params: args || {}
@@ -7636,10 +10022,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
      * @param args.postId - Post ID to comment on
      * @param args.content - Comment content
      * @param args.parentId - Parent comment ID for replies (optional)
-     * @returns Promise<MoltbookCreateCommentResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookCreateCommentData> Typed flat response with IDE autocomplete
      */
-    createComment: async (args: MoltbookCreateCommentArgs): Promise<MoltbookCreateCommentResult> => {
-      return sdk.resources.call({
+    createComment: async (args: MoltbookCreateCommentArgs): Promise<MoltbookCreateCommentData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'createComment',
         params: args || {}
@@ -7650,10 +10036,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
      * Get comments on a post. Returns normalized flat comment structures.
      * @param args.postId - Post ID
      * @param args.sort - Sort: "top", "new", "controversial" (default: top) (optional)
-     * @returns Promise<MoltbookGetCommentsResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookGetCommentsData> Typed flat response with IDE autocomplete
      */
-    getComments: async (args: MoltbookGetCommentsArgs): Promise<MoltbookGetCommentsResult> => {
-      return sdk.resources.call({
+    getComments: async (args: MoltbookGetCommentsArgs): Promise<MoltbookGetCommentsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'getComments',
         params: args || {}
@@ -7663,10 +10049,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Upvote a post
      * @param args.postId - Post ID to upvote
-     * @returns Promise<MoltbookUpvotePostResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookUpvotePostData> Typed flat response with IDE autocomplete
      */
-    upvotePost: async (args: MoltbookUpvotePostArgs): Promise<MoltbookUpvotePostResult> => {
-      return sdk.resources.call({
+    upvotePost: async (args: MoltbookUpvotePostArgs): Promise<MoltbookUpvotePostData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'upvotePost',
         params: args || {}
@@ -7676,10 +10062,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Downvote a post
      * @param args.postId - Post ID to downvote
-     * @returns Promise<MoltbookDownvotePostResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookDownvotePostData> Typed flat response with IDE autocomplete
      */
-    downvotePost: async (args: MoltbookDownvotePostArgs): Promise<MoltbookDownvotePostResult> => {
-      return sdk.resources.call({
+    downvotePost: async (args: MoltbookDownvotePostArgs): Promise<MoltbookDownvotePostData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'downvotePost',
         params: args || {}
@@ -7689,10 +10075,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Upvote a comment
      * @param args.commentId - Comment ID to upvote
-     * @returns Promise<MoltbookUpvoteCommentResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookUpvoteCommentData> Typed flat response with IDE autocomplete
      */
-    upvoteComment: async (args: MoltbookUpvoteCommentArgs): Promise<MoltbookUpvoteCommentResult> => {
-      return sdk.resources.call({
+    upvoteComment: async (args: MoltbookUpvoteCommentArgs): Promise<MoltbookUpvoteCommentData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'upvoteComment',
         params: args || {}
@@ -7703,10 +10089,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
      * Create a new community (submolt)
      * @param args.name - Community name (alphanumeric, underscores)
      * @param args.description - Community description
-     * @returns Promise<MoltbookCreateSubmoltResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookCreateSubmoltData> Typed flat response with IDE autocomplete
      */
-    createSubmolt: async (args: MoltbookCreateSubmoltArgs): Promise<MoltbookCreateSubmoltResult> => {
-      return sdk.resources.call({
+    createSubmolt: async (args: MoltbookCreateSubmoltArgs): Promise<MoltbookCreateSubmoltData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'createSubmolt',
         params: args || {}
@@ -7715,10 +10101,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
 
     /**
      * List all communities. Returns normalized flat structures.
-     * @returns Promise<MoltbookGetSubmoltsResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookGetSubmoltsData> Typed flat response with IDE autocomplete
      */
-    getSubmolts: async (args?: {}): Promise<MoltbookGetSubmoltsResult> => {
-      return sdk.resources.call({
+    getSubmolts: async (args?: {}): Promise<MoltbookGetSubmoltsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'getSubmolts',
         params: args || {}
@@ -7728,10 +10114,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Get community details. Returns normalized flat structure.
      * @param args.name - Community name
-     * @returns Promise<MoltbookGetSubmoltResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookGetSubmoltData> Typed flat response with IDE autocomplete
      */
-    getSubmolt: async (args: MoltbookGetSubmoltArgs): Promise<MoltbookGetSubmoltResult> => {
-      return sdk.resources.call({
+    getSubmolt: async (args: MoltbookGetSubmoltArgs): Promise<MoltbookGetSubmoltData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'getSubmolt',
         params: args || {}
@@ -7741,10 +10127,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Subscribe to a community
      * @param args.name - Community name to subscribe to
-     * @returns Promise<MoltbookSubscribeResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookSubscribeData> Typed flat response with IDE autocomplete
      */
-    subscribe: async (args: MoltbookSubscribeArgs): Promise<MoltbookSubscribeResult> => {
-      return sdk.resources.call({
+    subscribe: async (args: MoltbookSubscribeArgs): Promise<MoltbookSubscribeData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'subscribe',
         params: args || {}
@@ -7754,10 +10140,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Unsubscribe from a community
      * @param args.name - Community name to unsubscribe from
-     * @returns Promise<MoltbookUnsubscribeResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookUnsubscribeData> Typed flat response with IDE autocomplete
      */
-    unsubscribe: async (args: MoltbookUnsubscribeArgs): Promise<MoltbookUnsubscribeResult> => {
-      return sdk.resources.call({
+    unsubscribe: async (args: MoltbookUnsubscribeArgs): Promise<MoltbookUnsubscribeData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'unsubscribe',
         params: args || {}
@@ -7767,10 +10153,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Follow another agent
      * @param args.agentName - Agent name to follow
-     * @returns Promise<MoltbookFollowAgentResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookFollowAgentData> Typed flat response with IDE autocomplete
      */
-    followAgent: async (args: MoltbookFollowAgentArgs): Promise<MoltbookFollowAgentResult> => {
-      return sdk.resources.call({
+    followAgent: async (args: MoltbookFollowAgentArgs): Promise<MoltbookFollowAgentData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'followAgent',
         params: args || {}
@@ -7780,10 +10166,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Unfollow an agent
      * @param args.agentName - Agent name to unfollow
-     * @returns Promise<MoltbookUnfollowAgentResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookUnfollowAgentData> Typed flat response with IDE autocomplete
      */
-    unfollowAgent: async (args: MoltbookUnfollowAgentArgs): Promise<MoltbookUnfollowAgentResult> => {
-      return sdk.resources.call({
+    unfollowAgent: async (args: MoltbookUnfollowAgentArgs): Promise<MoltbookUnfollowAgentData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'unfollowAgent',
         params: args || {}
@@ -7793,10 +10179,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Get an agent's profile. Returns normalized flat structure.
      * @param args.agentName - Agent name
-     * @returns Promise<MoltbookGetProfileResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookGetProfileData> Typed flat response with IDE autocomplete
      */
-    getProfile: async (args: MoltbookGetProfileArgs): Promise<MoltbookGetProfileResult> => {
-      return sdk.resources.call({
+    getProfile: async (args: MoltbookGetProfileArgs): Promise<MoltbookGetProfileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'getProfile',
         params: args || {}
@@ -7805,10 +10191,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
 
     /**
      * Get your own agent profile. Returns normalized flat structure.
-     * @returns Promise<MoltbookGetMyProfileResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookGetMyProfileData> Typed flat response with IDE autocomplete
      */
-    getMyProfile: async (args?: {}): Promise<MoltbookGetMyProfileResult> => {
-      return sdk.resources.call({
+    getMyProfile: async (args?: {}): Promise<MoltbookGetMyProfileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'getMyProfile',
         params: args || {}
@@ -7819,10 +10205,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
      * Update your agent profile. Returns normalized flat structure.
      * @param args.description - New profile description (optional)
      * @param args.metadata - Additional metadata (optional)
-     * @returns Promise<MoltbookUpdateProfileResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookUpdateProfileData> Typed flat response with IDE autocomplete
      */
-    updateProfile: async (args: MoltbookUpdateProfileArgs): Promise<MoltbookUpdateProfileResult> => {
-      return sdk.resources.call({
+    updateProfile: async (args: MoltbookUpdateProfileArgs): Promise<MoltbookUpdateProfileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'updateProfile',
         params: args || {}
@@ -7832,10 +10218,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Get personalized feed (subscriptions + follows). Returns normalized flat post summaries.
      * @param args.limit - Max posts to return (default: 25, max: 100) (optional)
-     * @returns Promise<MoltbookGetFeedResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookGetFeedData> Typed flat response with IDE autocomplete
      */
-    getFeed: async (args: MoltbookGetFeedArgs): Promise<MoltbookGetFeedResult> => {
-      return sdk.resources.call({
+    getFeed: async (args: MoltbookGetFeedArgs): Promise<MoltbookGetFeedData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'getFeed',
         params: args || {}
@@ -7845,10 +10231,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
     /**
      * Search posts, agents, and communities. Returns normalized flat structures.
      * @param args.query - Search query
-     * @returns Promise<MoltbookSearchResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookSearchData> Typed flat response with IDE autocomplete
      */
-    search: async (args: MoltbookSearchArgs): Promise<MoltbookSearchResult> => {
-      return sdk.resources.call({
+    search: async (args: MoltbookSearchArgs): Promise<MoltbookSearchData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'search',
         params: args || {}
@@ -7857,10 +10243,10 @@ function createMoltbookAdapter(sdk: MirraSDK) {
 
     /**
      * Check agent claim/verification status
-     * @returns Promise<MoltbookGetStatusResult> Typed response with IDE autocomplete
+     * @returns Promise<MoltbookGetStatusData> Typed flat response with IDE autocomplete
      */
-    getStatus: async (args?: {}): Promise<MoltbookGetStatusResult> => {
-      return sdk.resources.call({
+    getStatus: async (args?: {}): Promise<MoltbookGetStatusData> => {
+      return sdk.resources.callDirect({
         resourceId: 'moltbook',
         method: 'getStatus',
         params: args || {}
@@ -7882,9 +10268,10 @@ function createPagesAdapter(sdk: MirraSDK) {
      * @param args.code - JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
      * @param args.description - Optional description of the page (optional)
      * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
+     * @returns Promise<PagesCreatePageData> Typed flat response with IDE autocomplete
      */
-    createPage: async (args: PagesCreatePageArgs): Promise<any> => {
-      return sdk.resources.call({
+    createPage: async (args: PagesCreatePageArgs): Promise<PagesCreatePageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'createPage',
         params: args || {}
@@ -7900,9 +10287,10 @@ function createPagesAdapter(sdk: MirraSDK) {
      * @param args.layout - Layout: "dashboard" (2-col grid, default), "report" (single-col max-w-4xl), "single-column" (full-width single-col) (optional)
      * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
      * @param args.widgets - Array of widget specs. Each widget has: type (string), collection (Data collection slug), transform (optional: { type: "raw"|"groupBy"|"timeSeries", ... }), display ({ title?, height?, colorIndex? }), config (type-specific fields). Widget types and config: - stat-grid: { columns, items: [{ label, valueField, format?, aggregate? }] } - bar-chart: { xField, yField, orientation?, stacked? } - line-chart: { xField, yFields[], smooth? } - area-chart: { xField, yFields[], stacked? } - pie-chart: { labelField, valueField, donut? } - table: { columns: [{ field, label, format?, align? }], limit? } - list: { titleField, subtitleField?, metaField?, metaFormat?, limit? } - metric-card: { valueField, label, format? } - text-block: { content } - treemap: { nameField, valueField } - radar-chart: { axisField, valueFields[] } Transform types: - raw: { sort?: { field, direction }, limit? } - groupBy: { field, metric: { field, op: "sum"|"avg"|"count"|"min"|"max" }, sort?, limit? } - timeSeries: { timeField, granularity?: "day"|"week"|"month" }
+     * @returns Promise<PagesCreateReportPageData> Typed flat response with IDE autocomplete
      */
-    createReportPage: async (args: PagesCreateReportPageArgs): Promise<any> => {
-      return sdk.resources.call({
+    createReportPage: async (args: PagesCreateReportPageArgs): Promise<PagesCreateReportPageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'createReportPage',
         params: args || {}
@@ -7919,9 +10307,10 @@ function createPagesAdapter(sdk: MirraSDK) {
      * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
      * @param args.widgets - Array of widget specs. Same format as createReportPage widgets.
      * @param args.updateReason - Why the page is being updated (used as version description for rollback) (optional)
+     * @returns Promise<PagesUpsertReportPageData> Typed flat response with IDE autocomplete
      */
-    upsertReportPage: async (args: PagesUpsertReportPageArgs): Promise<any> => {
-      return sdk.resources.call({
+    upsertReportPage: async (args: PagesUpsertReportPageArgs): Promise<PagesUpsertReportPageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'upsertReportPage',
         params: args || {}
@@ -7932,9 +10321,10 @@ function createPagesAdapter(sdk: MirraSDK) {
      * Edit a page using search-and-replace. Each edit replaces one exact match of oldCode with newCode in the current source. Much more efficient than updatePage for small changes — only send the parts that change. Use getPage first to read the current code. The old_code string must appear exactly once in the source.
      * @param args.pageId - The page ID to edit
      * @param args.edits - Array of search-and-replace edits. Each edit has oldCode (exact string to find) and newCode (replacement string). Applied sequentially.
+     * @returns Promise<PagesEditPageData> Typed flat response with IDE autocomplete
      */
-    editPage: async (args: PagesEditPageArgs): Promise<any> => {
-      return sdk.resources.call({
+    editPage: async (args: PagesEditPageArgs): Promise<PagesEditPageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'editPage',
         params: args || {}
@@ -7947,9 +10337,10 @@ function createPagesAdapter(sdk: MirraSDK) {
      * @param args.code - New JSX source code (optional)
      * @param args.title - New title (optional)
      * @param args.description - New description (optional)
+     * @returns Promise<PagesUpdatePageData> Typed flat response with IDE autocomplete
      */
-    updatePage: async (args: PagesUpdatePageArgs): Promise<any> => {
-      return sdk.resources.call({
+    updatePage: async (args: PagesUpdatePageArgs): Promise<PagesUpdatePageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'updatePage',
         params: args || {}
@@ -7960,9 +10351,10 @@ function createPagesAdapter(sdk: MirraSDK) {
      * Revert a page to a previous version. The current code becomes a new version entry.
      * @param args.pageId - The page ID to revert
      * @param args.versionIndex - Index of the version to restore (0 = most recent saved version)
+     * @returns Promise<PagesRevertPageData> Typed flat response with IDE autocomplete
      */
-    revertPage: async (args: PagesRevertPageArgs): Promise<any> => {
-      return sdk.resources.call({
+    revertPage: async (args: PagesRevertPageArgs): Promise<PagesRevertPageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'revertPage',
         params: args || {}
@@ -7973,9 +10365,10 @@ function createPagesAdapter(sdk: MirraSDK) {
      * Get a page by its ID or by path within the current graph. Returns page metadata and current code.
      * @param args.pageId - The page ID (optional)
      * @param args.path - The page path (e.g. "/dashboard"). Used with the current graphId. (optional)
+     * @returns Promise<PagesGetPageData> Typed flat response with IDE autocomplete
      */
-    getPage: async (args: PagesGetPageArgs): Promise<any> => {
-      return sdk.resources.call({
+    getPage: async (args: PagesGetPageArgs): Promise<PagesGetPageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'getPage',
         params: args || {}
@@ -7985,9 +10378,10 @@ function createPagesAdapter(sdk: MirraSDK) {
     /**
      * List all pages for the current graph. Optionally filter by status.
      * @param args.status - Filter by status: "active" (default) or "deleted" (optional)
+     * @returns Promise<PagesListPagesData> Typed flat response with IDE autocomplete
      */
-    listPages: async (args: PagesListPagesArgs): Promise<any> => {
-      return sdk.resources.call({
+    listPages: async (args: PagesListPagesArgs): Promise<PagesListPagesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'listPages',
         params: args || {}
@@ -7997,9 +10391,10 @@ function createPagesAdapter(sdk: MirraSDK) {
     /**
      * Soft-delete a page by setting its status to "deleted".
      * @param args.pageId - The page ID to delete
+     * @returns Promise<PagesDeletePageData> Typed flat response with IDE autocomplete
      */
-    deletePage: async (args: PagesDeletePageArgs): Promise<any> => {
-      return sdk.resources.call({
+    deletePage: async (args: PagesDeletePageArgs): Promise<PagesDeletePageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'deletePage',
         params: args || {}
@@ -8010,9 +10405,10 @@ function createPagesAdapter(sdk: MirraSDK) {
      * Publish a page, making it publicly accessible. Generates an API key for the page.
      * @param args.pageId - The page ID to publish
      * @param args.publicCollections - Optional array of collection tags for public discovery (optional)
+     * @returns Promise<PagesPublishPageData> Typed flat response with IDE autocomplete
      */
-    publishPage: async (args: PagesPublishPageArgs): Promise<any> => {
-      return sdk.resources.call({
+    publishPage: async (args: PagesPublishPageArgs): Promise<PagesPublishPageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'publishPage',
         params: args || {}
@@ -8022,9 +10418,10 @@ function createPagesAdapter(sdk: MirraSDK) {
     /**
      * Unpublish a page, making it private.
      * @param args.pageId - The page ID to unpublish
+     * @returns Promise<PagesUnpublishPageData> Typed flat response with IDE autocomplete
      */
-    unpublishPage: async (args: PagesUnpublishPageArgs): Promise<any> => {
-      return sdk.resources.call({
+    unpublishPage: async (args: PagesUnpublishPageArgs): Promise<PagesUnpublishPageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'unpublishPage',
         params: args || {}
@@ -8034,9 +10431,10 @@ function createPagesAdapter(sdk: MirraSDK) {
     /**
      * Get the public URL for a page.
      * @param args.pageId - The page ID
+     * @returns Promise<PagesGetPageUrlData> Typed flat response with IDE autocomplete
      */
-    getPageUrl: async (args: PagesGetPageUrlArgs): Promise<any> => {
-      return sdk.resources.call({
+    getPageUrl: async (args: PagesGetPageUrlArgs): Promise<PagesGetPageUrlData> => {
+      return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'getPageUrl',
         params: args || {}
@@ -8059,9 +10457,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * @param args.offset - Offset for pagination (default: 0) (optional)
      * @param args.active - If true, return only active/open markets (optional)
      * @param args.closed - If true, return only closed/resolved markets (optional)
+     * @returns Promise<PolymarketGetMarketsData> Typed flat response with IDE autocomplete
      */
-    getMarkets: async (args: PolymarketGetMarketsArgs): Promise<any> => {
-      return sdk.resources.call({
+    getMarkets: async (args: PolymarketGetMarketsArgs): Promise<PolymarketGetMarketsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'getMarkets',
         params: args || {}
@@ -8072,9 +10471,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * Get detailed information for a specific Polymarket prediction market. Lookup by conditionId (the unique market identifier on the CTF contract) or by slug (the URL-friendly market name). Returns full market details including current pricing, volume, liquidity, and outcome probabilities.
      * @param args.conditionId - The condition ID of the market (hex string, e.g., "0xabc123...") (optional)
      * @param args.slug - The market slug (URL-friendly name, alternative to conditionId) (optional)
+     * @returns Promise<PolymarketGetMarketData> Typed flat response with IDE autocomplete
      */
-    getMarket: async (args: PolymarketGetMarketArgs): Promise<any> => {
-      return sdk.resources.call({
+    getMarket: async (args: PolymarketGetMarketArgs): Promise<PolymarketGetMarketData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'getMarket',
         params: args || {}
@@ -8088,9 +10488,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * @param args.offset - Offset for pagination (default: 0) (optional)
      * @param args.active - If true, return only active events (optional)
      * @param args.closed - If true, return only closed/resolved events (optional)
+     * @returns Promise<PolymarketGetEventsData> Typed flat response with IDE autocomplete
      */
-    getEvents: async (args: PolymarketGetEventsArgs): Promise<any> => {
-      return sdk.resources.call({
+    getEvents: async (args: PolymarketGetEventsArgs): Promise<PolymarketGetEventsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'getEvents',
         params: args || {}
@@ -8101,9 +10502,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * Get the current price for a specific market outcome token on the Polymarket CLOB. The tokenId is the unique identifier for one side of a binary market outcome (e.g., the "Yes" token or "No" token). Prices range from 0.00 to 1.00, representing the implied probability. Use side to get the BUY or SELL price.
      * @param args.tokenId - The token ID of the outcome to price (available from market.outcomes or market data)
      * @param args.side - Price side: "BUY" or "SELL". Defaults to "BUY". (optional)
+     * @returns Promise<PolymarketGetPriceData> Typed flat response with IDE autocomplete
      */
-    getPrice: async (args: PolymarketGetPriceArgs): Promise<any> => {
-      return sdk.resources.call({
+    getPrice: async (args: PolymarketGetPriceArgs): Promise<PolymarketGetPriceData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'getPrice',
         params: args || {}
@@ -8113,9 +10515,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
     /**
      * Get the current orderbook depth for a market outcome token on the Polymarket CLOB. Returns sorted bid and ask arrays with price/size at each level, plus computed midpoint and spread. Useful for assessing liquidity and slippage before placing orders.
      * @param args.tokenId - The token ID of the outcome (available from market data)
+     * @returns Promise<PolymarketGetOrderbookData> Typed flat response with IDE autocomplete
      */
-    getOrderbook: async (args: PolymarketGetOrderbookArgs): Promise<any> => {
-      return sdk.resources.call({
+    getOrderbook: async (args: PolymarketGetOrderbookArgs): Promise<PolymarketGetOrderbookData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'getOrderbook',
         params: args || {}
@@ -8131,9 +10534,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * @param args.type - Order type: "GTC" (Good Til Cancelled, default), "GTD" (Good Til Date), "FOK" (Fill Or Kill), "FAK" (Fill And Kill) (optional)
      * @param args.expiration - Unix timestamp expiration for GTD orders only (optional)
      * @param args.marketQuestion - Human-readable market question (e.g. "Will Bitcoin reach $100k?"). Pass this from getMarkets results so the order card shows the market name instead of a numeric token ID. (optional)
+     * @returns Promise<PolymarketPlaceOrderData> Typed flat response with IDE autocomplete
      */
-    placeOrder: async (args: PolymarketPlaceOrderArgs): Promise<any> => {
-      return sdk.resources.call({
+    placeOrder: async (args: PolymarketPlaceOrderArgs): Promise<PolymarketPlaceOrderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'placeOrder',
         params: args || {}
@@ -8143,9 +10547,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
     /**
      * Executes a previously approved order using server-stored CLOB credentials. Called automatically when user approves a placeOrder proposal. Signs the order server-side with HMAC-SHA256 and submits to the Polymarket CLOB API with optional Builder attribution headers.
      * @param args.orderPayload - The order payload from placeOrder: { tokenId, price, size, side, type, expiration }
+     * @returns Promise<PolymarketExecuteOrderData> Typed flat response with IDE autocomplete
      */
-    executeOrder: async (args: PolymarketExecuteOrderArgs): Promise<any> => {
-      return sdk.resources.call({
+    executeOrder: async (args: PolymarketExecuteOrderArgs): Promise<PolymarketExecuteOrderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'executeOrder',
         params: args || {}
@@ -8155,9 +10560,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
     /**
      * Creates an action proposal to cancel an existing order. Validates that CLOB credentials exist and saves an ActionProposal to the database. Server signs and submits the cancellation on approval. Returns status "pending" with requiresAction: true.
      * @param args.orderId - The ID of the order to cancel (from getOrders or placeOrder result)
+     * @returns Promise<PolymarketCancelOrderData> Typed flat response with IDE autocomplete
      */
-    cancelOrder: async (args: PolymarketCancelOrderArgs): Promise<any> => {
-      return sdk.resources.call({
+    cancelOrder: async (args: PolymarketCancelOrderArgs): Promise<PolymarketCancelOrderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'cancelOrder',
         params: args || {}
@@ -8167,9 +10573,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
     /**
      * Executes a previously approved cancel using server-stored CLOB credentials. Called automatically when user approves a cancelOrder proposal. Signs the cancel request server-side and submits to the Polymarket CLOB API.
      * @param args.orderId - The ID of the order to cancel
+     * @returns Promise<PolymarketExecuteCancelOrderData> Typed flat response with IDE autocomplete
      */
-    executeCancelOrder: async (args: PolymarketExecuteCancelOrderArgs): Promise<any> => {
-      return sdk.resources.call({
+    executeCancelOrder: async (args: PolymarketExecuteCancelOrderArgs): Promise<PolymarketExecuteCancelOrderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'executeCancelOrder',
         params: args || {}
@@ -8184,9 +10591,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * @param args.side - Order side: "BUY" or "SELL"
      * @param args.type - Order type: "GTC" (default), "GTD", "FOK", "FAK" (optional)
      * @param args.expiration - Unix timestamp expiration for GTD orders (optional)
+     * @returns Promise<PolymarketRefreshOrderData> Typed flat response with IDE autocomplete
      */
-    refreshOrder: async (args: PolymarketRefreshOrderArgs): Promise<any> => {
-      return sdk.resources.call({
+    refreshOrder: async (args: PolymarketRefreshOrderArgs): Promise<PolymarketRefreshOrderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'refreshOrder',
         params: args || {}
@@ -8198,9 +10606,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * @param args.market - Filter by market condition ID to see orders for a specific market (optional)
      * @param args.limit - Maximum number of orders to return (default: 25, max: 100) (optional)
      * @param args.offset - Offset for pagination (default: 0) (optional)
+     * @returns Promise<PolymarketGetOrdersData> Typed flat response with IDE autocomplete
      */
-    getOrders: async (args: PolymarketGetOrdersArgs): Promise<any> => {
-      return sdk.resources.call({
+    getOrders: async (args: PolymarketGetOrdersArgs): Promise<PolymarketGetOrdersData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'getOrders',
         params: args || {}
@@ -8209,9 +10618,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
 
     /**
      * Get current prediction market positions for the authenticated user. Shows all held outcome token positions with average entry price, current price, and computed P&L. Requires the user's wallet address and CLOB credentials.
+     * @returns Promise<PolymarketGetPositionsData> Typed flat response with IDE autocomplete
      */
-    getPositions: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    getPositions: async (args?: {}): Promise<PolymarketGetPositionsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'getPositions',
         params: args || {}
@@ -8223,9 +10633,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * @param args.market - Filter by market condition ID (optional)
      * @param args.limit - Maximum number of trades to return (default: 25, max: 100) (optional)
      * @param args.offset - Offset for pagination (default: 0) (optional)
+     * @returns Promise<PolymarketGetTradesData> Typed flat response with IDE autocomplete
      */
-    getTrades: async (args: PolymarketGetTradesArgs): Promise<any> => {
-      return sdk.resources.call({
+    getTrades: async (args: PolymarketGetTradesArgs): Promise<PolymarketGetTradesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'getTrades',
         params: args || {}
@@ -8236,9 +10647,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * Get the Polymarket Builder program leaderboard rankings. Shows top builders by volume and trade count for a given period. Requires Builder API credentials configured on the server.
      * @param args.period - Time period for rankings: "daily", "weekly", "monthly", or omit for all-time (optional)
      * @param args.limit - Maximum number of entries to return (default: 25, max: 100) (optional)
+     * @returns Promise<PolymarketGetBuilderLeaderboardData> Typed flat response with IDE autocomplete
      */
-    getBuilderLeaderboard: async (args: PolymarketGetBuilderLeaderboardArgs): Promise<any> => {
-      return sdk.resources.call({
+    getBuilderLeaderboard: async (args: PolymarketGetBuilderLeaderboardArgs): Promise<PolymarketGetBuilderLeaderboardData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'getBuilderLeaderboard',
         params: args || {}
@@ -8249,9 +10661,10 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * Get volume time-series data for the Builder program. Shows daily volume and trade count attributed to the builder. Requires Builder API credentials.
      * @param args.startDate - Start date in ISO 8601 format (e.g., "2024-06-01") (optional)
      * @param args.endDate - End date in ISO 8601 format (e.g., "2024-06-30") (optional)
+     * @returns Promise<PolymarketGetBuilderVolumeData> Typed flat response with IDE autocomplete
      */
-    getBuilderVolume: async (args: PolymarketGetBuilderVolumeArgs): Promise<any> => {
-      return sdk.resources.call({
+    getBuilderVolume: async (args: PolymarketGetBuilderVolumeArgs): Promise<PolymarketGetBuilderVolumeData> => {
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'getBuilderVolume',
         params: args || {}
@@ -8264,7 +10677,7 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * @param args.limit - Max results to return (default 5) (optional)
      */
     discoverExtended: async (args: PolymarketDiscoverExtendedArgs): Promise<any> => {
-      return sdk.resources.call({
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'discoverExtended',
         params: args || {}
@@ -8279,7 +10692,7 @@ function createPolymarketAdapter(sdk: MirraSDK) {
      * @param args.body - Request body for POST/PUT/PATCH operations (optional)
      */
     executeExtended: async (args: PolymarketExecuteExtendedArgs): Promise<any> => {
-      return sdk.resources.call({
+      return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'executeExtended',
         params: args || {}
@@ -8302,10 +10715,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.vendor - Filter by product vendor name. (optional)
      * @param args.productType - Filter by product type. (optional)
      * @param args.collectionId - Filter by collection ID to list products in a specific collection. (optional)
-     * @returns Promise<ShopifyListProductsResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyListProductsData> Typed flat response with IDE autocomplete
      */
-    listProducts: async (args: ShopifyListProductsArgs): Promise<ShopifyListProductsResult> => {
-      return sdk.resources.call({
+    listProducts: async (args: ShopifyListProductsArgs): Promise<ShopifyListProductsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'listProducts',
         params: args || {}
@@ -8315,10 +10728,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Get a single product by its Shopify product ID. Returns full product details including all variants, images, and options.
      * @param args.productId - The Shopify product ID.
-     * @returns Promise<ShopifyGetProductResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyProductData> Typed flat response with IDE autocomplete
      */
-    getProduct: async (args: ShopifyGetProductArgs): Promise<ShopifyGetProductResult> => {
-      return sdk.resources.call({
+    getProduct: async (args: ShopifyGetProductArgs): Promise<ShopifyProductData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'getProduct',
         params: args || {}
@@ -8333,10 +10746,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.productType - The product type for categorization. (optional)
      * @param args.tags - Comma-separated list of tags. (optional)
      * @param args.status - Product status: "active", "archived", or "draft". Defaults to "active". (optional)
-     * @returns Promise<ShopifyCreateProductResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyProductData> Typed flat response with IDE autocomplete
      */
-    createProduct: async (args: ShopifyCreateProductArgs): Promise<ShopifyCreateProductResult> => {
-      return sdk.resources.call({
+    createProduct: async (args: ShopifyCreateProductArgs): Promise<ShopifyProductData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'createProduct',
         params: args || {}
@@ -8352,10 +10765,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.productType - New product type. (optional)
      * @param args.tags - New comma-separated tags (replaces existing tags). (optional)
      * @param args.status - New status: "active", "archived", or "draft". (optional)
-     * @returns Promise<ShopifyUpdateProductResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyProductData> Typed flat response with IDE autocomplete
      */
-    updateProduct: async (args: ShopifyUpdateProductArgs): Promise<ShopifyUpdateProductResult> => {
-      return sdk.resources.call({
+    updateProduct: async (args: ShopifyUpdateProductArgs): Promise<ShopifyProductData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'updateProduct',
         params: args || {}
@@ -8365,10 +10778,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Permanently delete a product from the Shopify store. This action cannot be undone.
      * @param args.productId - The Shopify product ID to delete.
-     * @returns Promise<ShopifyDeleteProductResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyDeleteProductData> Typed flat response with IDE autocomplete
      */
-    deleteProduct: async (args: ShopifyDeleteProductArgs): Promise<ShopifyDeleteProductResult> => {
-      return sdk.resources.call({
+    deleteProduct: async (args: ShopifyDeleteProductArgs): Promise<ShopifyDeleteProductData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'deleteProduct',
         params: args || {}
@@ -8385,10 +10798,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.sinceId - Return orders after this order ID. (optional)
      * @param args.createdAtMin - Return orders created after this date (ISO 8601 format). (optional)
      * @param args.createdAtMax - Return orders created before this date (ISO 8601 format). (optional)
-     * @returns Promise<ShopifyListOrdersResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyListOrdersData> Typed flat response with IDE autocomplete
      */
-    listOrders: async (args: ShopifyListOrdersArgs): Promise<ShopifyListOrdersResult> => {
-      return sdk.resources.call({
+    listOrders: async (args: ShopifyListOrdersArgs): Promise<ShopifyListOrdersData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'listOrders',
         params: args || {}
@@ -8398,10 +10811,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Get a single order by its Shopify order ID. Returns full order details including line items and customer information.
      * @param args.orderId - The Shopify order ID.
-     * @returns Promise<ShopifyGetOrderResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyOrderData> Typed flat response with IDE autocomplete
      */
-    getOrder: async (args: ShopifyGetOrderArgs): Promise<ShopifyGetOrderResult> => {
-      return sdk.resources.call({
+    getOrder: async (args: ShopifyGetOrderArgs): Promise<ShopifyOrderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'getOrder',
         params: args || {}
@@ -8417,10 +10830,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.financialStatus - Financial status: "pending", "authorized", "partially_paid", "paid", "partially_refunded", "refunded", "voided". Defaults to "pending". (optional)
      * @param args.shippingAddress - Shipping address object with first_name, last_name, address1, address2, city, province, country, zip, phone. (optional)
      * @param args.customerId - Associate the order with an existing customer by their Shopify customer ID. (optional)
-     * @returns Promise<ShopifyCreateOrderResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyOrderData> Typed flat response with IDE autocomplete
      */
-    createOrder: async (args: ShopifyCreateOrderArgs): Promise<ShopifyCreateOrderResult> => {
-      return sdk.resources.call({
+    createOrder: async (args: ShopifyCreateOrderArgs): Promise<ShopifyOrderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'createOrder',
         params: args || {}
@@ -8432,10 +10845,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.orderId - The Shopify order ID to cancel.
      * @param args.reason - Cancellation reason: "customer", "fraud", "inventory", "declined", or "other". (optional)
      * @param args.email - Whether to send a cancellation email to the customer. Defaults to true. (optional)
-     * @returns Promise<ShopifyCancelOrderResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyOrderData> Typed flat response with IDE autocomplete
      */
-    cancelOrder: async (args: ShopifyCancelOrderArgs): Promise<ShopifyCancelOrderResult> => {
-      return sdk.resources.call({
+    cancelOrder: async (args: ShopifyCancelOrderArgs): Promise<ShopifyOrderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'cancelOrder',
         params: args || {}
@@ -8445,10 +10858,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Close an open order. A closed order is one that has no more work to be done (e.g., fully fulfilled and paid).
      * @param args.orderId - The Shopify order ID to close.
-     * @returns Promise<ShopifyCloseOrderResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyOrderData> Typed flat response with IDE autocomplete
      */
-    closeOrder: async (args: ShopifyCloseOrderArgs): Promise<ShopifyCloseOrderResult> => {
-      return sdk.resources.call({
+    closeOrder: async (args: ShopifyCloseOrderArgs): Promise<ShopifyOrderData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'closeOrder',
         params: args || {}
@@ -8462,10 +10875,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.sinceId - Return customers after this customer ID. (optional)
      * @param args.createdAtMin - Return customers created after this date (ISO 8601 format). (optional)
      * @param args.createdAtMax - Return customers created before this date (ISO 8601 format). (optional)
-     * @returns Promise<ShopifyListCustomersResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyListCustomersData> Typed flat response with IDE autocomplete
      */
-    listCustomers: async (args: ShopifyListCustomersArgs): Promise<ShopifyListCustomersResult> => {
-      return sdk.resources.call({
+    listCustomers: async (args: ShopifyListCustomersArgs): Promise<ShopifyListCustomersData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'listCustomers',
         params: args || {}
@@ -8475,10 +10888,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Get a single customer by their Shopify customer ID. Returns full customer details including addresses.
      * @param args.customerId - The Shopify customer ID.
-     * @returns Promise<ShopifyGetCustomerResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyCustomerData> Typed flat response with IDE autocomplete
      */
-    getCustomer: async (args: ShopifyGetCustomerArgs): Promise<ShopifyGetCustomerResult> => {
-      return sdk.resources.call({
+    getCustomer: async (args: ShopifyGetCustomerArgs): Promise<ShopifyCustomerData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'getCustomer',
         params: args || {}
@@ -8494,10 +10907,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.tags - Comma-separated tags for the customer. (optional)
      * @param args.note - A note about the customer. (optional)
      * @param args.addresses - Array of address objects with address1, city, province, country, zip, phone. (optional)
-     * @returns Promise<ShopifyCreateCustomerResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyCustomerData> Typed flat response with IDE autocomplete
      */
-    createCustomer: async (args: ShopifyCreateCustomerArgs): Promise<ShopifyCreateCustomerResult> => {
-      return sdk.resources.call({
+    createCustomer: async (args: ShopifyCreateCustomerArgs): Promise<ShopifyCustomerData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'createCustomer',
         params: args || {}
@@ -8513,10 +10926,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.phone - New phone number in E.164 format. (optional)
      * @param args.tags - New comma-separated tags (replaces existing). (optional)
      * @param args.note - New note about the customer. (optional)
-     * @returns Promise<ShopifyUpdateCustomerResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyCustomerData> Typed flat response with IDE autocomplete
      */
-    updateCustomer: async (args: ShopifyUpdateCustomerArgs): Promise<ShopifyUpdateCustomerResult> => {
-      return sdk.resources.call({
+    updateCustomer: async (args: ShopifyUpdateCustomerArgs): Promise<ShopifyCustomerData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'updateCustomer',
         params: args || {}
@@ -8527,10 +10940,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * Search customers by a query string. Searches across email, name, and other fields. Returns up to 50 results.
      * @param args.query - Search query string. Examples: "email:john@example.com", "first_name:John", or freeform text like "john doe".
      * @param args.limit - Number of results to return (1-250). Defaults to 50. (optional)
-     * @returns Promise<ShopifySearchCustomersResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifySearchCustomersData> Typed flat response with IDE autocomplete
      */
-    searchCustomers: async (args: ShopifySearchCustomersArgs): Promise<ShopifySearchCustomersResult> => {
-      return sdk.resources.call({
+    searchCustomers: async (args: ShopifySearchCustomersArgs): Promise<ShopifySearchCustomersData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'searchCustomers',
         params: args || {}
@@ -8542,10 +10955,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.inventoryItemIds - Comma-separated list of inventory item IDs to query. (optional)
      * @param args.locationIds - Comma-separated list of location IDs to query. (optional)
      * @param args.limit - Number of results to return (1-250). Defaults to 50. (optional)
-     * @returns Promise<ShopifyGetInventoryLevelsResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyInventoryLevelsData> Typed flat response with IDE autocomplete
      */
-    getInventoryLevels: async (args: ShopifyGetInventoryLevelsArgs): Promise<ShopifyGetInventoryLevelsResult> => {
-      return sdk.resources.call({
+    getInventoryLevels: async (args: ShopifyGetInventoryLevelsArgs): Promise<ShopifyInventoryLevelsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'getInventoryLevels',
         params: args || {}
@@ -8557,10 +10970,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.inventoryItemId - The inventory item ID to adjust.
      * @param args.locationId - The location ID where the inventory is stored.
      * @param args.adjustment - The quantity adjustment. Positive to add stock, negative to remove.
-     * @returns Promise<ShopifyAdjustInventoryResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyInventoryLevelData> Typed flat response with IDE autocomplete
      */
-    adjustInventory: async (args: ShopifyAdjustInventoryArgs): Promise<ShopifyAdjustInventoryResult> => {
-      return sdk.resources.call({
+    adjustInventory: async (args: ShopifyAdjustInventoryArgs): Promise<ShopifyInventoryLevelData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'adjustInventory',
         params: args || {}
@@ -8571,10 +10984,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * List collections in the Shopify store. Returns both custom collections and smart collections combined, sorted by title.
      * @param args.limit - Maximum number of collections to return per type (1-250). Defaults to 50. Note: up to this many custom collections AND this many smart collections may be returned. (optional)
      * @param args.pageInfo - Cursor for pagination from a previous response. (optional)
-     * @returns Promise<ShopifyListCollectionsResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyListCollectionsData> Typed flat response with IDE autocomplete
      */
-    listCollections: async (args: ShopifyListCollectionsArgs): Promise<ShopifyListCollectionsResult> => {
-      return sdk.resources.call({
+    listCollections: async (args: ShopifyListCollectionsArgs): Promise<ShopifyListCollectionsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'listCollections',
         params: args || {}
@@ -8585,10 +10998,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * List pages in the Shopify store with optional pagination.
      * @param args.limit - Number of pages per page, 1-250, default 50 (optional)
      * @param args.pageInfo - Cursor for pagination (optional)
-     * @returns Promise<ShopifyListPagesResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyListPagesData> Typed flat response with IDE autocomplete
      */
-    listPages: async (args: ShopifyListPagesArgs): Promise<ShopifyListPagesResult> => {
-      return sdk.resources.call({
+    listPages: async (args: ShopifyListPagesArgs): Promise<ShopifyListPagesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'listPages',
         params: args || {}
@@ -8598,10 +11011,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Get a single page by ID.
      * @param args.pageId - The Shopify page ID.
-     * @returns Promise<ShopifyGetPageResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyPageData> Typed flat response with IDE autocomplete
      */
-    getPage: async (args: ShopifyGetPageArgs): Promise<ShopifyGetPageResult> => {
-      return sdk.resources.call({
+    getPage: async (args: ShopifyGetPageArgs): Promise<ShopifyPageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'getPage',
         params: args || {}
@@ -8615,10 +11028,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.author - The author of the page. (optional)
      * @param args.templateSuffix - The template suffix for the page. (optional)
      * @param args.published - Whether the page is published. Defaults to true. (optional)
-     * @returns Promise<ShopifyCreatePageResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyPageData> Typed flat response with IDE autocomplete
      */
-    createPage: async (args: ShopifyCreatePageArgs): Promise<ShopifyCreatePageResult> => {
-      return sdk.resources.call({
+    createPage: async (args: ShopifyCreatePageArgs): Promise<ShopifyPageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'createPage',
         params: args || {}
@@ -8633,10 +11046,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.author - New author name. (optional)
      * @param args.templateSuffix - New template suffix. (optional)
      * @param args.published - Whether the page is published. (optional)
-     * @returns Promise<ShopifyUpdatePageResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyPageData> Typed flat response with IDE autocomplete
      */
-    updatePage: async (args: ShopifyUpdatePageArgs): Promise<ShopifyUpdatePageResult> => {
-      return sdk.resources.call({
+    updatePage: async (args: ShopifyUpdatePageArgs): Promise<ShopifyPageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'updatePage',
         params: args || {}
@@ -8646,10 +11059,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Permanently delete a page.
      * @param args.pageId - The Shopify page ID to delete.
-     * @returns Promise<ShopifyDeletePageResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyDeletePageData> Typed flat response with IDE autocomplete
      */
-    deletePage: async (args: ShopifyDeletePageArgs): Promise<ShopifyDeletePageResult> => {
-      return sdk.resources.call({
+    deletePage: async (args: ShopifyDeletePageArgs): Promise<ShopifyDeletePageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'deletePage',
         params: args || {}
@@ -8660,10 +11073,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * List blogs in the Shopify store.
      * @param args.limit - Number of blogs per page, 1-250, default 50 (optional)
      * @param args.pageInfo - Cursor for pagination (optional)
-     * @returns Promise<ShopifyListBlogsResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyListBlogsData> Typed flat response with IDE autocomplete
      */
-    listBlogs: async (args: ShopifyListBlogsArgs): Promise<ShopifyListBlogsResult> => {
-      return sdk.resources.call({
+    listBlogs: async (args: ShopifyListBlogsArgs): Promise<ShopifyListBlogsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'listBlogs',
         params: args || {}
@@ -8673,10 +11086,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Get a blog by ID.
      * @param args.blogId - The Shopify blog ID.
-     * @returns Promise<ShopifyGetBlogResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyBlogData> Typed flat response with IDE autocomplete
      */
-    getBlog: async (args: ShopifyGetBlogArgs): Promise<ShopifyGetBlogResult> => {
-      return sdk.resources.call({
+    getBlog: async (args: ShopifyGetBlogArgs): Promise<ShopifyBlogData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'getBlog',
         params: args || {}
@@ -8687,10 +11100,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * Create a blog.
      * @param args.title - The blog title.
      * @param args.commentable - Comment policy: no, moderate, yes (optional)
-     * @returns Promise<ShopifyCreateBlogResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyBlogData> Typed flat response with IDE autocomplete
      */
-    createBlog: async (args: ShopifyCreateBlogArgs): Promise<ShopifyCreateBlogResult> => {
-      return sdk.resources.call({
+    createBlog: async (args: ShopifyCreateBlogArgs): Promise<ShopifyBlogData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'createBlog',
         params: args || {}
@@ -8702,10 +11115,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.blogId - The Shopify blog ID to update.
      * @param args.title - New blog title. (optional)
      * @param args.commentable - New comment policy: no, moderate, yes (optional)
-     * @returns Promise<ShopifyUpdateBlogResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyBlogData> Typed flat response with IDE autocomplete
      */
-    updateBlog: async (args: ShopifyUpdateBlogArgs): Promise<ShopifyUpdateBlogResult> => {
-      return sdk.resources.call({
+    updateBlog: async (args: ShopifyUpdateBlogArgs): Promise<ShopifyBlogData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'updateBlog',
         params: args || {}
@@ -8715,10 +11128,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Delete a blog.
      * @param args.blogId - The Shopify blog ID to delete.
-     * @returns Promise<ShopifyDeleteBlogResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyDeleteBlogData> Typed flat response with IDE autocomplete
      */
-    deleteBlog: async (args: ShopifyDeleteBlogArgs): Promise<ShopifyDeleteBlogResult> => {
-      return sdk.resources.call({
+    deleteBlog: async (args: ShopifyDeleteBlogArgs): Promise<ShopifyDeleteBlogData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'deleteBlog',
         params: args || {}
@@ -8730,10 +11143,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.blogId - The blog ID to list articles from.
      * @param args.limit - Number of articles per page, 1-250, default 50 (optional)
      * @param args.pageInfo - Cursor for pagination (optional)
-     * @returns Promise<ShopifyListArticlesResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyListArticlesData> Typed flat response with IDE autocomplete
      */
-    listArticles: async (args: ShopifyListArticlesArgs): Promise<ShopifyListArticlesResult> => {
-      return sdk.resources.call({
+    listArticles: async (args: ShopifyListArticlesArgs): Promise<ShopifyListArticlesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'listArticles',
         params: args || {}
@@ -8743,10 +11156,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Get an article by ID.
      * @param args.articleId - The Shopify article ID.
-     * @returns Promise<ShopifyGetArticleResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyArticleData> Typed flat response with IDE autocomplete
      */
-    getArticle: async (args: ShopifyGetArticleArgs): Promise<ShopifyGetArticleResult> => {
-      return sdk.resources.call({
+    getArticle: async (args: ShopifyGetArticleArgs): Promise<ShopifyArticleData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'getArticle',
         params: args || {}
@@ -8764,10 +11177,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.published - Whether the article is published. (optional)
      * @param args.imageUrl - URL of the article featured image. (optional)
      * @param args.imageAlt - Alt text for the article featured image. (optional)
-     * @returns Promise<ShopifyCreateArticleResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyArticleData> Typed flat response with IDE autocomplete
      */
-    createArticle: async (args: ShopifyCreateArticleArgs): Promise<ShopifyCreateArticleResult> => {
-      return sdk.resources.call({
+    createArticle: async (args: ShopifyCreateArticleArgs): Promise<ShopifyArticleData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'createArticle',
         params: args || {}
@@ -8783,10 +11196,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.summary - New summary or excerpt. (optional)
      * @param args.tags - New comma-separated tags. (optional)
      * @param args.published - Whether the article is published. (optional)
-     * @returns Promise<ShopifyUpdateArticleResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyArticleData> Typed flat response with IDE autocomplete
      */
-    updateArticle: async (args: ShopifyUpdateArticleArgs): Promise<ShopifyUpdateArticleResult> => {
-      return sdk.resources.call({
+    updateArticle: async (args: ShopifyUpdateArticleArgs): Promise<ShopifyArticleData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'updateArticle',
         params: args || {}
@@ -8796,10 +11209,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Delete an article.
      * @param args.articleId - The Shopify article ID to delete.
-     * @returns Promise<ShopifyDeleteArticleResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyDeleteArticleData> Typed flat response with IDE autocomplete
      */
-    deleteArticle: async (args: ShopifyDeleteArticleArgs): Promise<ShopifyDeleteArticleResult> => {
-      return sdk.resources.call({
+    deleteArticle: async (args: ShopifyDeleteArticleArgs): Promise<ShopifyDeleteArticleData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'deleteArticle',
         params: args || {}
@@ -8808,10 +11221,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
 
     /**
      * List all themes in the Shopify store.
-     * @returns Promise<ShopifyListThemesResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyListThemesData> Typed flat response with IDE autocomplete
      */
-    listThemes: async (args?: {}): Promise<ShopifyListThemesResult> => {
-      return sdk.resources.call({
+    listThemes: async (args?: {}): Promise<ShopifyListThemesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'listThemes',
         params: args || {}
@@ -8821,10 +11234,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Get a theme by ID.
      * @param args.themeId - The Shopify theme ID.
-     * @returns Promise<ShopifyGetThemeResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyThemeData> Typed flat response with IDE autocomplete
      */
-    getTheme: async (args: ShopifyGetThemeArgs): Promise<ShopifyGetThemeResult> => {
-      return sdk.resources.call({
+    getTheme: async (args: ShopifyGetThemeArgs): Promise<ShopifyThemeData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'getTheme',
         params: args || {}
@@ -8834,10 +11247,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Publish (activate) a theme as the main theme.
      * @param args.themeId - The Shopify theme ID to publish.
-     * @returns Promise<ShopifyPublishThemeResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyThemeData> Typed flat response with IDE autocomplete
      */
-    publishTheme: async (args: ShopifyPublishThemeArgs): Promise<ShopifyPublishThemeResult> => {
-      return sdk.resources.call({
+    publishTheme: async (args: ShopifyPublishThemeArgs): Promise<ShopifyThemeData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'publishTheme',
         params: args || {}
@@ -8848,10 +11261,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * List files in a theme.
      * @param args.themeId - The Shopify theme ID.
      * @param args.filenames - Comma-separated glob patterns like templates/*.json (optional)
-     * @returns Promise<ShopifyListThemeFilesResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyListThemeFilesData> Typed flat response with IDE autocomplete
      */
-    listThemeFiles: async (args: ShopifyListThemeFilesArgs): Promise<ShopifyListThemeFilesResult> => {
-      return sdk.resources.call({
+    listThemeFiles: async (args: ShopifyListThemeFilesArgs): Promise<ShopifyListThemeFilesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'listThemeFiles',
         params: args || {}
@@ -8862,10 +11275,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * Get a single theme file with its content.
      * @param args.themeId - The Shopify theme ID.
      * @param args.filename - The filename/path of the theme file (e.g., "templates/index.json").
-     * @returns Promise<ShopifyGetThemeFileResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyThemeFileData> Typed flat response with IDE autocomplete
      */
-    getThemeFile: async (args: ShopifyGetThemeFileArgs): Promise<ShopifyGetThemeFileResult> => {
-      return sdk.resources.call({
+    getThemeFile: async (args: ShopifyGetThemeFileArgs): Promise<ShopifyThemeFileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'getThemeFile',
         params: args || {}
@@ -8876,10 +11289,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * Create or update theme files.
      * @param args.themeId - The Shopify theme ID.
      * @param args.files - Array of {filename, body} objects
-     * @returns Promise<ShopifyUpsertThemeFilesResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyUpsertThemeFilesData> Typed flat response with IDE autocomplete
      */
-    upsertThemeFiles: async (args: ShopifyUpsertThemeFilesArgs): Promise<ShopifyUpsertThemeFilesResult> => {
-      return sdk.resources.call({
+    upsertThemeFiles: async (args: ShopifyUpsertThemeFilesArgs): Promise<ShopifyUpsertThemeFilesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'upsertThemeFiles',
         params: args || {}
@@ -8890,10 +11303,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * Delete theme files.
      * @param args.themeId - The Shopify theme ID.
      * @param args.filenames - Array of filenames to delete
-     * @returns Promise<ShopifyDeleteThemeFilesResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyDeleteThemeFilesData> Typed flat response with IDE autocomplete
      */
-    deleteThemeFiles: async (args: ShopifyDeleteThemeFilesArgs): Promise<ShopifyDeleteThemeFilesResult> => {
-      return sdk.resources.call({
+    deleteThemeFiles: async (args: ShopifyDeleteThemeFilesArgs): Promise<ShopifyDeleteThemeFilesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'deleteThemeFiles',
         params: args || {}
@@ -8904,10 +11317,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * List navigation menus.
      * @param args.limit - Number of menus per page, 1-250, default 50 (optional)
      * @param args.pageInfo - Cursor for pagination (optional)
-     * @returns Promise<ShopifyListMenusResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyListMenusData> Typed flat response with IDE autocomplete
      */
-    listMenus: async (args: ShopifyListMenusArgs): Promise<ShopifyListMenusResult> => {
-      return sdk.resources.call({
+    listMenus: async (args: ShopifyListMenusArgs): Promise<ShopifyListMenusData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'listMenus',
         params: args || {}
@@ -8917,10 +11330,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Get a menu by ID.
      * @param args.menuId - The Shopify menu ID.
-     * @returns Promise<ShopifyGetMenuResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyMenuData> Typed flat response with IDE autocomplete
      */
-    getMenu: async (args: ShopifyGetMenuArgs): Promise<ShopifyGetMenuResult> => {
-      return sdk.resources.call({
+    getMenu: async (args: ShopifyGetMenuArgs): Promise<ShopifyMenuData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'getMenu',
         params: args || {}
@@ -8932,10 +11345,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.title - The menu title.
      * @param args.handle - The menu handle (URL-friendly identifier). (optional)
      * @param args.items - Array of menu item objects with title, url, type, resourceId (optional)
-     * @returns Promise<ShopifyCreateMenuResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyMenuData> Typed flat response with IDE autocomplete
      */
-    createMenu: async (args: ShopifyCreateMenuArgs): Promise<ShopifyCreateMenuResult> => {
-      return sdk.resources.call({
+    createMenu: async (args: ShopifyCreateMenuArgs): Promise<ShopifyMenuData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'createMenu',
         params: args || {}
@@ -8948,10 +11361,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.title - New menu title. (optional)
      * @param args.handle - New menu handle. (optional)
      * @param args.items - New array of menu item objects with title, url, type, resourceId (optional)
-     * @returns Promise<ShopifyUpdateMenuResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyMenuData> Typed flat response with IDE autocomplete
      */
-    updateMenu: async (args: ShopifyUpdateMenuArgs): Promise<ShopifyUpdateMenuResult> => {
-      return sdk.resources.call({
+    updateMenu: async (args: ShopifyUpdateMenuArgs): Promise<ShopifyMenuData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'updateMenu',
         params: args || {}
@@ -8961,10 +11374,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Delete a menu.
      * @param args.menuId - The Shopify menu ID to delete.
-     * @returns Promise<ShopifyDeleteMenuResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyDeleteMenuData> Typed flat response with IDE autocomplete
      */
-    deleteMenu: async (args: ShopifyDeleteMenuArgs): Promise<ShopifyDeleteMenuResult> => {
-      return sdk.resources.call({
+    deleteMenu: async (args: ShopifyDeleteMenuArgs): Promise<ShopifyDeleteMenuData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'deleteMenu',
         params: args || {}
@@ -8975,10 +11388,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * List URL redirects.
      * @param args.limit - Number of redirects per page, 1-250, default 50 (optional)
      * @param args.pageInfo - Cursor for pagination (optional)
-     * @returns Promise<ShopifyListRedirectsResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyListRedirectsData> Typed flat response with IDE autocomplete
      */
-    listRedirects: async (args: ShopifyListRedirectsArgs): Promise<ShopifyListRedirectsResult> => {
-      return sdk.resources.call({
+    listRedirects: async (args: ShopifyListRedirectsArgs): Promise<ShopifyListRedirectsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'listRedirects',
         params: args || {}
@@ -8989,10 +11402,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * Create a URL redirect.
      * @param args.path - The old path to redirect from
      * @param args.target - The new URL to redirect to
-     * @returns Promise<ShopifyCreateRedirectResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyRedirectData> Typed flat response with IDE autocomplete
      */
-    createRedirect: async (args: ShopifyCreateRedirectArgs): Promise<ShopifyCreateRedirectResult> => {
-      return sdk.resources.call({
+    createRedirect: async (args: ShopifyCreateRedirectArgs): Promise<ShopifyRedirectData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'createRedirect',
         params: args || {}
@@ -9004,10 +11417,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * @param args.redirectId - The Shopify redirect ID to update.
      * @param args.path - New path to redirect from. (optional)
      * @param args.target - New URL to redirect to. (optional)
-     * @returns Promise<ShopifyUpdateRedirectResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyRedirectData> Typed flat response with IDE autocomplete
      */
-    updateRedirect: async (args: ShopifyUpdateRedirectArgs): Promise<ShopifyUpdateRedirectResult> => {
-      return sdk.resources.call({
+    updateRedirect: async (args: ShopifyUpdateRedirectArgs): Promise<ShopifyRedirectData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'updateRedirect',
         params: args || {}
@@ -9017,10 +11430,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * Delete a redirect.
      * @param args.redirectId - The Shopify redirect ID to delete.
-     * @returns Promise<ShopifyDeleteRedirectResult> Typed response with IDE autocomplete
+     * @returns Promise<ShopifyDeleteRedirectData> Typed flat response with IDE autocomplete
      */
-    deleteRedirect: async (args: ShopifyDeleteRedirectArgs): Promise<ShopifyDeleteRedirectResult> => {
-      return sdk.resources.call({
+    deleteRedirect: async (args: ShopifyDeleteRedirectArgs): Promise<ShopifyDeleteRedirectData> => {
+      return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'deleteRedirect',
         params: args || {}
@@ -9039,9 +11452,10 @@ function createSocketAdapter(sdk: MirraSDK) {
      * Send a JSON message to a connected external client
      * @param args.channelId - Channel ID to send to (defaults to 'default') (optional)
      * @param args.message - JSON message to send to the client
+     * @returns Promise<SocketSendData> Typed flat response with IDE autocomplete
      */
-    send: async (args: SocketSendArgs): Promise<any> => {
-      return sdk.resources.call({
+    send: async (args: SocketSendArgs): Promise<SocketSendData> => {
+      return sdk.resources.callDirect({
         resourceId: 'socket',
         method: 'send',
         params: args || {}
@@ -9051,9 +11465,10 @@ function createSocketAdapter(sdk: MirraSDK) {
     /**
      * Check if a specific socket channel is connected
      * @param args.channelId - Channel ID to check (defaults to 'default') (optional)
+     * @returns Promise<SocketStatusData> Typed flat response with IDE autocomplete
      */
-    status: async (args: SocketStatusArgs): Promise<any> => {
-      return sdk.resources.call({
+    status: async (args: SocketStatusArgs): Promise<SocketStatusData> => {
+      return sdk.resources.callDirect({
         resourceId: 'socket',
         method: 'status',
         params: args || {}
@@ -9062,9 +11477,10 @@ function createSocketAdapter(sdk: MirraSDK) {
 
     /**
      * List all connected socket channels for the user
+     * @returns Promise<SocketListData> Typed flat response with IDE autocomplete
      */
-    list: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    list: async (args?: {}): Promise<SocketListData> => {
+      return sdk.resources.callDirect({
         resourceId: 'socket',
         method: 'list',
         params: args || {}
@@ -9075,9 +11491,10 @@ function createSocketAdapter(sdk: MirraSDK) {
      * Update connection metadata for a socket channel. Merges new fields into existing metadata. Useful for storing state across message handlers.
      * @param args.channelId - Channel ID to update metadata for
      * @param args.metadata - Metadata fields to merge into existing connection metadata
+     * @returns Promise<SocketUpdateMetadataData> Typed flat response with IDE autocomplete
      */
-    updateMetadata: async (args: SocketUpdateMetadataArgs): Promise<any> => {
-      return sdk.resources.call({
+    updateMetadata: async (args: SocketUpdateMetadataArgs): Promise<SocketUpdateMetadataData> => {
+      return sdk.resources.callDirect({
         resourceId: 'socket',
         method: 'updateMetadata',
         params: args || {}
@@ -9089,11 +11506,78 @@ function createSocketAdapter(sdk: MirraSDK) {
      * @param args.channelId - Channel ID of the task session
      * @param args.messageType - Message type: assistant, result, or error
      * @param args.text - Text content for assistant/error messages (optional)
+     * @returns Promise<SocketNotifySubscriberData> Typed flat response with IDE autocomplete
      */
-    notifySubscriber: async (args: SocketNotifySubscriberArgs): Promise<any> => {
-      return sdk.resources.call({
+    notifySubscriber: async (args: SocketNotifySubscriberArgs): Promise<SocketNotifySubscriberData> => {
+      return sdk.resources.callDirect({
         resourceId: 'socket',
         method: 'notifySubscriber',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Space Agent Adapter
+ * Category: internal
+ */
+function createSpaceAgentAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Get current status snapshot of the space agent including cycle count, budget usage, last observation, and pending directive count.
+     */
+    getStatus: async (args?: {}): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'getStatus',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get recent Tier 2 (non-silent) agent episodes. Each episode contains observations, actions taken, deltas, next steps, and token usage from a full agent cycle.
+     * @param args.limit - Number of episodes to return (default 5, max 20) (optional)
+     */
+    getRecentEpisodes: async (args: SpaceAgentGetRecentEpisodesArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'getRecentEpisodes',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Queue an instruction for the space agent to process on its next cycle. The agent will address the directive during Tier 2 processing. Use urgent=true to force an immediate cycle.
+     * @param args.directive - The instruction text for the agent (max 2000 characters)
+     * @param args.urgent - If true, forces an immediate cycle by resetting lastCycleAt so the scheduler picks it up right away (optional)
+     */
+    sendDirective: async (args: SpaceAgentSendDirectiveArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'sendDirective',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the agent's workspace memory — the persistent scratchpad the agent uses to track state across cycles.
+     */
+    getMemory: async (args?: {}): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'getMemory',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the agent's workspace configuration including instructions, context, and heartbeat checklist.
+     */
+    getWorkspaceConfig: async (args?: {}): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'getWorkspaceConfig',
         params: args || {}
       });
     }
@@ -9110,10 +11594,10 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * Send a text message to a Telegram chat or user. Supports both chat IDs and usernames.
      * @param args.chatId - Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from searchChats operation.
      * @param args.text - The text content of the message to send
-     * @returns Promise<TelegramSendMessageResult> Typed response with IDE autocomplete
+     * @returns Promise<TelegramSendMessageData> Typed flat response with IDE autocomplete
      */
-    sendMessage: async (args: TelegramSendMessageArgs): Promise<TelegramSendMessageResult> => {
-      return sdk.resources.call({
+    sendMessage: async (args: TelegramSendMessageArgs): Promise<TelegramSendMessageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegram',
         method: 'sendMessage',
         params: args || {}
@@ -9133,10 +11617,10 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * @param args.limit - Max results (default: 50, max: 100) (optional)
      * @param args.offset - Pagination offset (default: 0) (optional)
      * @param args.forceRefresh - Bypass cache and fetch fresh data (optional)
-     * @returns Promise<TelegramSearchChatsResult> Typed response with IDE autocomplete
+     * @returns Promise<TelegramSearchChatsData> Typed flat response with IDE autocomplete
      */
-    searchChats: async (args: TelegramSearchChatsArgs): Promise<TelegramSearchChatsResult> => {
-      return sdk.resources.call({
+    searchChats: async (args: TelegramSearchChatsArgs): Promise<TelegramSearchChatsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegram',
         method: 'searchChats',
         params: args || {}
@@ -9152,10 +11636,10 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * @param args.toDate - ISO date string for end of date range (optional)
      * @param args.limit - Maximum number of messages to return (default: 100, max: 100) (optional)
      * @param args.senderId - Filter messages by sender ID (optional)
-     * @returns Promise<TelegramSearchMessagesResult> Typed response with IDE autocomplete
+     * @returns Promise<TelegramSearchMessagesData> Typed flat response with IDE autocomplete
      */
-    searchMessages: async (args: TelegramSearchMessagesArgs): Promise<TelegramSearchMessagesResult> => {
-      return sdk.resources.call({
+    searchMessages: async (args: TelegramSearchMessagesArgs): Promise<TelegramSearchMessagesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegram',
         method: 'searchMessages',
         params: args || {}
@@ -9169,10 +11653,10 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * @param args.offsetId - Message ID to use as pagination offset (optional)
      * @param args.minDate - ISO date string for minimum message date (optional)
      * @param args.maxDate - ISO date string for maximum message date (optional)
-     * @returns Promise<TelegramGetChatMessagesResult> Typed response with IDE autocomplete
+     * @returns Promise<TelegramGetChatMessagesData> Typed flat response with IDE autocomplete
      */
-    getChatMessages: async (args: TelegramGetChatMessagesArgs): Promise<TelegramGetChatMessagesResult> => {
-      return sdk.resources.call({
+    getChatMessages: async (args: TelegramGetChatMessagesArgs): Promise<TelegramGetChatMessagesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegram',
         method: 'getChatMessages',
         params: args || {}
@@ -9184,10 +11668,10 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * @param args.chatIds - Array of chat IDs to filter by. If not provided, checks all chats. (optional)
      * @param args.priorityOnly - If true, only return chats with unread messages (optional)
      * @param args.groupBy - Group results by "chat" or "sender" (optional)
-     * @returns Promise<TelegramGetUnreadSummaryResult> Typed response with IDE autocomplete
+     * @returns Promise<TelegramUnreadSummaryData> Typed flat response with IDE autocomplete
      */
-    getUnreadSummary: async (args: TelegramGetUnreadSummaryArgs): Promise<TelegramGetUnreadSummaryResult> => {
-      return sdk.resources.call({
+    getUnreadSummary: async (args: TelegramGetUnreadSummaryArgs): Promise<TelegramUnreadSummaryData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegram',
         method: 'getUnreadSummary',
         params: args || {}
@@ -9198,10 +11682,10 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * Mark messages as read in a Telegram chat up to a specific message ID.
      * @param args.chatId - Chat ID to mark messages as read in
      * @param args.maxMessageId - Maximum message ID to mark as read. If not provided, marks all messages as read. (optional)
-     * @returns Promise<TelegramMarkAsReadResult> Typed response with IDE autocomplete
+     * @returns Promise<TelegramMarkAsReadData> Typed flat response with IDE autocomplete
      */
-    markAsRead: async (args: TelegramMarkAsReadArgs): Promise<TelegramMarkAsReadResult> => {
-      return sdk.resources.call({
+    markAsRead: async (args: TelegramMarkAsReadArgs): Promise<TelegramMarkAsReadData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegram',
         method: 'markAsRead',
         params: args || {}
@@ -9213,10 +11697,10 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * @param args.chatIds - Array of chat IDs to filter mentions by (optional)
      * @param args.sinceDate - ISO date string - only return mentions since this date (optional)
      * @param args.onlyUnread - If true, only return unread mentions (optional)
-     * @returns Promise<TelegramGetMentionsResult> Typed response with IDE autocomplete
+     * @returns Promise<TelegramMentionsData> Typed flat response with IDE autocomplete
      */
-    getMentions: async (args: TelegramGetMentionsArgs): Promise<TelegramGetMentionsResult> => {
-      return sdk.resources.call({
+    getMentions: async (args: TelegramGetMentionsArgs): Promise<TelegramMentionsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegram',
         method: 'getMentions',
         params: args || {}
@@ -9226,10 +11710,10 @@ function createTelegramAdapter(sdk: MirraSDK) {
     /**
      * Leave a Telegram group, supergroup, or channel. Removes the user from the group and clears it from the local cache.
      * @param args.chatId - The ID of the group, supergroup, or channel to leave. Can be obtained from searchChats operation.
-     * @returns Promise<TelegramLeaveGroupResult> Typed response with IDE autocomplete
+     * @returns Promise<TelegramLeaveGroupData> Typed flat response with IDE autocomplete
      */
-    leaveGroup: async (args: TelegramLeaveGroupArgs): Promise<TelegramLeaveGroupResult> => {
-      return sdk.resources.call({
+    leaveGroup: async (args: TelegramLeaveGroupArgs): Promise<TelegramLeaveGroupData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegram',
         method: 'leaveGroup',
         params: args || {}
@@ -9251,9 +11735,10 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
      * @param args.text - Message text to send (supports Markdown)
      * @param args.parseMode - Parse mode: Markdown, MarkdownV2, or HTML (optional)
      * @param args.disableNotification - Send silently without notification sound (optional)
+     * @returns Promise<TelegramBotSendMessageData> Typed flat response with IDE autocomplete
      */
-    sendMessage: async (args: TelegramBotSendMessageArgs): Promise<any> => {
-      return sdk.resources.call({
+    sendMessage: async (args: TelegramBotSendMessageArgs): Promise<TelegramBotSendMessageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'sendMessage',
         params: args || {}
@@ -9267,9 +11752,10 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
      * @param args.text - Reply text (supports Markdown)
      * @param args.replyToMessageId - Message ID to reply to
      * @param args.parseMode - Parse mode: Markdown, MarkdownV2, or HTML (optional)
+     * @returns Promise<TelegramBotReplyToMessageData> Typed flat response with IDE autocomplete
      */
-    replyToMessage: async (args: TelegramBotReplyToMessageArgs): Promise<any> => {
-      return sdk.resources.call({
+    replyToMessage: async (args: TelegramBotReplyToMessageArgs): Promise<TelegramBotReplyToMessageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'replyToMessage',
         params: args || {}
@@ -9282,9 +11768,10 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
      * @param args.callbackQueryId - Callback query ID from the button press event
      * @param args.text - Optional text to show as a notification to the user (optional)
      * @param args.showAlert - If true, show an alert instead of a toast notification (optional)
+     * @returns Promise<TelegramBotAnswerCallbackQueryData> Typed flat response with IDE autocomplete
      */
-    answerCallbackQuery: async (args: TelegramBotAnswerCallbackQueryArgs): Promise<any> => {
-      return sdk.resources.call({
+    answerCallbackQuery: async (args: TelegramBotAnswerCallbackQueryArgs): Promise<TelegramBotAnswerCallbackQueryData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'answerCallbackQuery',
         params: args || {}
@@ -9298,9 +11785,10 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
      * @param args.text - Message text (supports Markdown)
      * @param args.buttons - Array of button rows. Each row is an array of { text, callbackData } objects
      * @param args.parseMode - Parse mode: Markdown, MarkdownV2, or HTML (optional)
+     * @returns Promise<TelegramBotSendMessageWithButtonsData> Typed flat response with IDE autocomplete
      */
-    sendMessageWithButtons: async (args: TelegramBotSendMessageWithButtonsArgs): Promise<any> => {
-      return sdk.resources.call({
+    sendMessageWithButtons: async (args: TelegramBotSendMessageWithButtonsArgs): Promise<TelegramBotSendMessageWithButtonsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'sendMessageWithButtons',
         params: args || {}
@@ -9311,9 +11799,10 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
      * Set the list of commands shown in the bot menu
      * @param args.botUsername - Username of the bot
      * @param args.commands - Array of { command, description } objects
+     * @returns Promise<TelegramBotSetBotCommandsData> Typed flat response with IDE autocomplete
      */
-    setBotCommands: async (args: TelegramBotSetBotCommandsArgs): Promise<any> => {
-      return sdk.resources.call({
+    setBotCommands: async (args: TelegramBotSetBotCommandsArgs): Promise<TelegramBotSetBotCommandsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'setBotCommands',
         params: args || {}
@@ -9323,9 +11812,10 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
     /**
      * Get information about the bot (username, name, can_join_groups, etc.)
      * @param args.botUsername - Username of the bot
+     * @returns Promise<TelegramBotGetBotInfoData> Typed flat response with IDE autocomplete
      */
-    getBotInfo: async (args: TelegramBotGetBotInfoArgs): Promise<any> => {
-      return sdk.resources.call({
+    getBotInfo: async (args: TelegramBotGetBotInfoArgs): Promise<TelegramBotGetBotInfoData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'getBotInfo',
         params: args || {}
@@ -9334,9 +11824,10 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
 
     /**
      * List all Telegram bots registered by the user
+     * @returns Promise<TelegramBotListBotsData> Typed flat response with IDE autocomplete
      */
-    listBots: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    listBots: async (args?: {}): Promise<TelegramBotListBotsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'listBots',
         params: args || {}
@@ -9344,15 +11835,16 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Ban or kick a user from a group chat. The bot must be an admin with "Ban Users" permission. To kick (remove without permanent ban), set untilDate to ~30 seconds in the future — e.g. Math.floor(Date.now()/1000) + 30.
+     * Ban or kick a user from a group chat. The bot must be an admin with "Ban Users" permission. Accepts a numeric user ID or @username. To kick (remove without permanent ban), set untilDate to ~30 seconds in the future — e.g. Math.floor(Date.now()/1000) + 30.
      * @param args.botUsername - Username of the bot (without @)
      * @param args.chatId - Group chat ID
-     * @param args.userId - Telegram user ID to ban
+     * @param args.userId - Telegram user ID or @username to ban. Examples: "123456", "@johndoe"
      * @param args.untilDate - Unix timestamp for temporary ban. Set to ~30s in the future for a "kick" (remove without permanent ban). Omit for permanent ban. (optional)
      * @param args.revokeMessages - If true, delete all messages from this user in the group (optional)
+     * @returns Promise<TelegramBotBanChatMemberData> Typed flat response with IDE autocomplete
      */
-    banChatMember: async (args: TelegramBotBanChatMemberArgs): Promise<any> => {
-      return sdk.resources.call({
+    banChatMember: async (args: TelegramBotBanChatMemberArgs): Promise<TelegramBotBanChatMemberData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'banChatMember',
         params: args || {}
@@ -9360,14 +11852,15 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Unban a previously banned user in a group chat. The bot must be an admin with "Ban Users" permission.
+     * Unban a previously banned user in a group chat. The bot must be an admin with "Ban Users" permission. Accepts a numeric user ID or @username.
      * @param args.botUsername - Username of the bot (without @)
      * @param args.chatId - Group chat ID
-     * @param args.userId - Telegram user ID to unban
+     * @param args.userId - Telegram user ID or @username to unban. Examples: "123456", "@johndoe"
      * @param args.onlyIfBanned - If true, only unban if the user is actually banned (will not re-add a user who left voluntarily) (optional)
+     * @returns Promise<TelegramBotUnbanChatMemberData> Typed flat response with IDE autocomplete
      */
-    unbanChatMember: async (args: TelegramBotUnbanChatMemberArgs): Promise<any> => {
-      return sdk.resources.call({
+    unbanChatMember: async (args: TelegramBotUnbanChatMemberArgs): Promise<TelegramBotUnbanChatMemberData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'unbanChatMember',
         params: args || {}
@@ -9375,15 +11868,16 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Restrict a user's permissions in a group chat (mute, block media, etc.). The bot must be an admin with "Ban Users" permission. Pass a permissions object to control what the user can do.
+     * Restrict a user's permissions in a group chat (mute, block media, etc.). The bot must be an admin with "Ban Users" permission. Accepts a numeric user ID or @username. Pass a permissions object to control what the user can do.
      * @param args.botUsername - Username of the bot (without @)
      * @param args.chatId - Group chat ID
-     * @param args.userId - Telegram user ID to restrict
+     * @param args.userId - Telegram user ID or @username to restrict. Examples: "123456", "@johndoe"
      * @param args.permissions - ChatPermissions object with boolean fields: canSendMessages, canSendPhotos, canSendVideos, canSendAudios, canSendDocuments, canSendVoiceNotes, canSendVideoNotes, canSendPolls, canSendOtherMessages, canAddWebPagePreviews, canChangeInfo, canInviteUsers, canPinMessages, canManageTopics. Set to false to restrict.
      * @param args.untilDate - Unix timestamp for temporary restriction. Omit for permanent restriction. (optional)
+     * @returns Promise<TelegramBotRestrictChatMemberData> Typed flat response with IDE autocomplete
      */
-    restrictChatMember: async (args: TelegramBotRestrictChatMemberArgs): Promise<any> => {
-      return sdk.resources.call({
+    restrictChatMember: async (args: TelegramBotRestrictChatMemberArgs): Promise<TelegramBotRestrictChatMemberData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'restrictChatMember',
         params: args || {}
@@ -9391,13 +11885,14 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Look up a user in a group chat by their userId. Returns their membership status (creator, administrator, member, restricted, left, kicked) and permissions.
+     * Look up a user in a group chat by their user ID or @username. Returns their membership status (creator, administrator, member, restricted, left, kicked) and permissions.
      * @param args.botUsername - Username of the bot (without @)
      * @param args.chatId - Group chat ID
-     * @param args.userId - Telegram user ID to look up
+     * @param args.userId - Telegram user ID or @username to look up. Examples: "123456", "@johndoe"
+     * @returns Promise<TelegramBotGetChatMemberData> Typed flat response with IDE autocomplete
      */
-    getChatMember: async (args: TelegramBotGetChatMemberArgs): Promise<any> => {
-      return sdk.resources.call({
+    getChatMember: async (args: TelegramBotGetChatMemberArgs): Promise<TelegramBotGetChatMemberData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'getChatMember',
         params: args || {}
@@ -9409,9 +11904,10 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
      * @param args.botUsername - Username of the bot (without @)
      * @param args.chatId - Group chat ID
      * @param args.messageId - ID of the message to delete
+     * @returns Promise<TelegramBotDeleteMessageData> Typed flat response with IDE autocomplete
      */
-    deleteMessage: async (args: TelegramBotDeleteMessageArgs): Promise<any> => {
-      return sdk.resources.call({
+    deleteMessage: async (args: TelegramBotDeleteMessageArgs): Promise<TelegramBotDeleteMessageData> => {
+      return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'deleteMessage',
         params: args || {}
@@ -9428,10 +11924,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
   return {
     /**
      * Get all boards for the authenticated user
-     * @returns Promise<TrelloGetBoardsResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloGetBoardsData> Typed flat response with IDE autocomplete
      */
-    getBoards: async (args?: {}): Promise<TrelloGetBoardsResult> => {
-      return sdk.resources.call({
+    getBoards: async (args?: {}): Promise<TrelloGetBoardsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'getBoards',
         params: args || {}
@@ -9441,10 +11937,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
     /**
      * Get a specific board by ID including its lists
      * @param args.boardId - The ID of the board to retrieve
-     * @returns Promise<TrelloGetBoardResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloGetBoardData> Typed flat response with IDE autocomplete
      */
-    getBoard: async (args: TrelloGetBoardArgs): Promise<TrelloGetBoardResult> => {
-      return sdk.resources.call({
+    getBoard: async (args: TrelloGetBoardArgs): Promise<TrelloGetBoardData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'getBoard',
         params: args || {}
@@ -9457,10 +11953,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
      * @param args.idList - ID of the list to add the card to
      * @param args.desc - Card description (supports markdown) (optional)
      * @param args.description - Card description (alias for "desc", supports markdown) (optional)
-     * @returns Promise<TrelloCreateCardResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloCreateCardData> Typed flat response with IDE autocomplete
      */
-    createCard: async (args: TrelloCreateCardArgs): Promise<TrelloCreateCardResult> => {
-      return sdk.resources.call({
+    createCard: async (args: TrelloCreateCardArgs): Promise<TrelloCreateCardData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'createCard',
         params: args || {}
@@ -9470,10 +11966,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
     /**
      * Get a specific card by ID
      * @param args.cardId - The ID of the card to retrieve
-     * @returns Promise<TrelloGetCardResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloGetCardData> Typed flat response with IDE autocomplete
      */
-    getCard: async (args: TrelloGetCardArgs): Promise<TrelloGetCardResult> => {
-      return sdk.resources.call({
+    getCard: async (args: TrelloGetCardArgs): Promise<TrelloGetCardData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'getCard',
         params: args || {}
@@ -9488,10 +11984,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
      * @param args.description - New card description (alias for "desc", supports markdown) (optional)
      * @param args.idList - Move card to a different list (optional)
      * @param args.closed - Archive the card (optional)
-     * @returns Promise<TrelloUpdateCardResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloUpdateCardData> Typed flat response with IDE autocomplete
      */
-    updateCard: async (args: TrelloUpdateCardArgs): Promise<TrelloUpdateCardResult> => {
-      return sdk.resources.call({
+    updateCard: async (args: TrelloUpdateCardArgs): Promise<TrelloUpdateCardData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'updateCard',
         params: args || {}
@@ -9501,10 +11997,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
     /**
      * Delete a card permanently
      * @param args.cardId - The ID of the card to delete
-     * @returns Promise<TrelloDeleteCardResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloDeleteCardData> Typed flat response with IDE autocomplete
      */
-    deleteCard: async (args: TrelloDeleteCardArgs): Promise<TrelloDeleteCardResult> => {
-      return sdk.resources.call({
+    deleteCard: async (args: TrelloDeleteCardArgs): Promise<TrelloDeleteCardData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'deleteCard',
         params: args || {}
@@ -9515,10 +12011,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
      * Create a new checklist on a card
      * @param args.cardId - The ID of the card to add the checklist to
      * @param args.name - Checklist name
-     * @returns Promise<TrelloCreateChecklistResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloCreateChecklistData> Typed flat response with IDE autocomplete
      */
-    createChecklist: async (args: TrelloCreateChecklistArgs): Promise<TrelloCreateChecklistResult> => {
-      return sdk.resources.call({
+    createChecklist: async (args: TrelloCreateChecklistArgs): Promise<TrelloCreateChecklistData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'createChecklist',
         params: args || {}
@@ -9528,10 +12024,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
     /**
      * Get a specific checklist by ID
      * @param args.checklistId - The ID of the checklist to retrieve
-     * @returns Promise<TrelloGetChecklistResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloGetChecklistData> Typed flat response with IDE autocomplete
      */
-    getChecklist: async (args: TrelloGetChecklistArgs): Promise<TrelloGetChecklistResult> => {
-      return sdk.resources.call({
+    getChecklist: async (args: TrelloGetChecklistArgs): Promise<TrelloGetChecklistData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'getChecklist',
         params: args || {}
@@ -9542,10 +12038,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
      * Update a checklist name
      * @param args.checklistId - The ID of the checklist to update
      * @param args.name - New checklist name
-     * @returns Promise<TrelloUpdateChecklistResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloUpdateChecklistData> Typed flat response with IDE autocomplete
      */
-    updateChecklist: async (args: TrelloUpdateChecklistArgs): Promise<TrelloUpdateChecklistResult> => {
-      return sdk.resources.call({
+    updateChecklist: async (args: TrelloUpdateChecklistArgs): Promise<TrelloUpdateChecklistData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'updateChecklist',
         params: args || {}
@@ -9555,10 +12051,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
     /**
      * Delete a checklist from a card
      * @param args.checklistId - The ID of the checklist to delete
-     * @returns Promise<TrelloDeleteChecklistResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloDeleteChecklistData> Typed flat response with IDE autocomplete
      */
-    deleteChecklist: async (args: TrelloDeleteChecklistArgs): Promise<TrelloDeleteChecklistResult> => {
-      return sdk.resources.call({
+    deleteChecklist: async (args: TrelloDeleteChecklistArgs): Promise<TrelloDeleteChecklistData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'deleteChecklist',
         params: args || {}
@@ -9569,10 +12065,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
      * Add a check item to a checklist
      * @param args.checklistId - The ID of the checklist to add the item to
      * @param args.name - Check item text
-     * @returns Promise<TrelloAddCheckItemResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloAddCheckItemData> Typed flat response with IDE autocomplete
      */
-    addCheckItem: async (args: TrelloAddCheckItemArgs): Promise<TrelloAddCheckItemResult> => {
-      return sdk.resources.call({
+    addCheckItem: async (args: TrelloAddCheckItemArgs): Promise<TrelloAddCheckItemData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'addCheckItem',
         params: args || {}
@@ -9585,10 +12081,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
      * @param args.checkItemId - The ID of the check item to update
      * @param args.name - New check item text (optional)
      * @param args.state - Check state: "complete" or "incomplete" (optional)
-     * @returns Promise<TrelloUpdateCheckItemResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloUpdateCheckItemData> Typed flat response with IDE autocomplete
      */
-    updateCheckItem: async (args: TrelloUpdateCheckItemArgs): Promise<TrelloUpdateCheckItemResult> => {
-      return sdk.resources.call({
+    updateCheckItem: async (args: TrelloUpdateCheckItemArgs): Promise<TrelloUpdateCheckItemData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'updateCheckItem',
         params: args || {}
@@ -9599,10 +12095,10 @@ function createTrelloAdapter(sdk: MirraSDK) {
      * Delete a check item from a checklist
      * @param args.checklistId - The ID of the checklist containing the item
      * @param args.checkItemId - The ID of the check item to delete
-     * @returns Promise<TrelloDeleteCheckItemResult> Typed response with IDE autocomplete
+     * @returns Promise<TrelloDeleteCheckItemData> Typed flat response with IDE autocomplete
      */
-    deleteCheckItem: async (args: TrelloDeleteCheckItemArgs): Promise<TrelloDeleteCheckItemResult> => {
-      return sdk.resources.call({
+    deleteCheckItem: async (args: TrelloDeleteCheckItemArgs): Promise<TrelloDeleteCheckItemData> => {
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'deleteCheckItem',
         params: args || {}
@@ -9615,7 +12111,7 @@ function createTrelloAdapter(sdk: MirraSDK) {
      * @param args.limit - Max results to return (default 5) (optional)
      */
     discoverExtended: async (args: TrelloDiscoverExtendedArgs): Promise<any> => {
-      return sdk.resources.call({
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'discoverExtended',
         params: args || {}
@@ -9630,7 +12126,7 @@ function createTrelloAdapter(sdk: MirraSDK) {
      * @param args.body - Request body for POST/PUT/PATCH operations (optional)
      */
     executeExtended: async (args: TrelloExecuteExtendedArgs): Promise<any> => {
-      return sdk.resources.call({
+      return sdk.resources.callDirect({
         resourceId: 'trello',
         method: 'executeExtended',
         params: args || {}
@@ -9652,9 +12148,10 @@ function createTunnelAdapter(sdk: MirraSDK) {
      * @param args.path - Request path (e.g., /api/query)
      * @param args.headers - Request headers (optional)
      * @param args.body - Request body (for POST/PUT/PATCH) (optional)
+     * @returns Promise<TunnelCallData> Typed flat response with IDE autocomplete
      */
-    call: async (args: TunnelCallArgs): Promise<any> => {
-      return sdk.resources.call({
+    call: async (args: TunnelCallArgs): Promise<TunnelCallData> => {
+      return sdk.resources.callDirect({
         resourceId: 'tunnel',
         method: 'call',
         params: args || {}
@@ -9664,9 +12161,10 @@ function createTunnelAdapter(sdk: MirraSDK) {
     /**
      * Check if a specific tunnel is connected
      * @param args.tunnel - Tunnel name to check (defaults to 'default') (optional)
+     * @returns Promise<TunnelStatusData> Typed flat response with IDE autocomplete
      */
-    status: async (args: TunnelStatusArgs): Promise<any> => {
-      return sdk.resources.call({
+    status: async (args: TunnelStatusArgs): Promise<TunnelStatusData> => {
+      return sdk.resources.callDirect({
         resourceId: 'tunnel',
         method: 'status',
         params: args || {}
@@ -9675,9 +12173,10 @@ function createTunnelAdapter(sdk: MirraSDK) {
 
     /**
      * List all connected tunnels for the user
+     * @returns Promise<TunnelListData> Typed flat response with IDE autocomplete
      */
-    list: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    list: async (args?: {}): Promise<TunnelListData> => {
+      return sdk.resources.callDirect({
         resourceId: 'tunnel',
         method: 'list',
         params: args || {}
@@ -9695,10 +12194,10 @@ function createTwitterAdapter(sdk: MirraSDK) {
     /**
      * Post a tweet
      * @param args.text - Tweet text (max 280 characters)
-     * @returns Promise<TwitterPostTweetResult> Typed response with IDE autocomplete
+     * @returns Promise<TwitterPostTweetData> Typed flat response with IDE autocomplete
      */
-    postTweet: async (args: TwitterPostTweetArgs): Promise<TwitterPostTweetResult> => {
-      return sdk.resources.call({
+    postTweet: async (args: TwitterPostTweetArgs): Promise<TwitterPostTweetData> => {
+      return sdk.resources.callDirect({
         resourceId: 'twitter',
         method: 'postTweet',
         params: args || {}
@@ -9711,10 +12210,10 @@ function createTwitterAdapter(sdk: MirraSDK) {
      * @param args.userName - Twitter username/handle without @ symbol (e.g., "elonmusk"). Provide userName OR userId, not both. (optional)
      * @param args.cursor - Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values. (optional)
      * @param args.includeReplies - Whether to include replies in results. Defaults to false (only original tweets). (optional)
-     * @returns Promise<TwitterGetUserTweetsResult> Typed response with IDE autocomplete
+     * @returns Promise<TwitterGetUserTweetsData> Typed flat response with IDE autocomplete
      */
-    getUserTweets: async (args: TwitterGetUserTweetsArgs): Promise<TwitterGetUserTweetsResult> => {
-      return sdk.resources.call({
+    getUserTweets: async (args: TwitterGetUserTweetsArgs): Promise<TwitterGetUserTweetsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'twitter',
         method: 'getUserTweets',
         params: args || {}
@@ -9726,12 +12225,25 @@ function createTwitterAdapter(sdk: MirraSDK) {
      * @param args.query - Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR \"machine learning\"". Supported operators: from:user, to:user, since:YYYY-MM-DD, until:YYYY-MM-DD, lang:xx, filter:media, filter:links, -filter:retweets, AND, OR, -keyword, "exact phrase".
      * @param args.queryType - Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". Only these two values are valid. (optional)
      * @param args.cursor - Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values. (optional)
-     * @returns Promise<TwitterAdvancedSearchResult> Typed response with IDE autocomplete
+     * @returns Promise<TwitterAdvancedSearchData> Typed flat response with IDE autocomplete
      */
-    advancedSearch: async (args: TwitterAdvancedSearchArgs): Promise<TwitterAdvancedSearchResult> => {
-      return sdk.resources.call({
+    advancedSearch: async (args: TwitterAdvancedSearchArgs): Promise<TwitterAdvancedSearchData> => {
+      return sdk.resources.callDirect({
         resourceId: 'twitter',
         method: 'advancedSearch',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Fetch one or more tweets by their IDs. Useful for retrieving parent/original tweets when processing replies. Accepts a single ID or comma-separated list of IDs (max 100).
+     * @param args.tweetIds - One or more tweet IDs, comma-separated. Example: "1846987139428634858" or "1846987139428634858,1866332309399781537"
+     * @returns Promise<TwitterGetTweetByIdData> Typed flat response with IDE autocomplete
+     */
+    getTweetById: async (args: TwitterGetTweetByIdArgs): Promise<TwitterGetTweetByIdData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'twitter',
+        method: 'getTweetById',
         params: args || {}
       });
     }
@@ -9745,21 +12257,23 @@ function createTwitterAdapter(sdk: MirraSDK) {
 function createFlowsAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a flow (event-triggered or time-scheduled). This is the unified, simplified interface for flow creation. TRIGGER TYPE (provide exactly one): - schedule: Cron expression for time-based flows (e.g., "0 9 * * *"). Times are automatically in the user's local timezone. - eventType: Event type shorthand for event flows that process ALL events of that type (e.g., "telegram.message") - eventFilter: Full filter object for event flows that need pre-filtering (RECOMMENDED for most event flows) - trigger: Legacy nested structure (still supported) EFFICIENCY RULE FOR EVENT FLOWS: Always filter in eventFilter conditions, NEVER in the script. - eventFilter conditions: FREE (evaluated in-memory before script runs) - Script filtering: EXPENSIVE (invokes Lambda for every single event, even ones you discard) BAD — triggers Lambda for every Telegram message, script checks if it's a command: { eventType: "telegram.message", code: "...if (!text.startsWith('/')) return { success: false, noOp: true, reason: 'Not a command' }..." } GOOD — only triggers Lambda when the message starts with "/": { eventFilter: { operator: "and", conditions: [ { operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" } ]}, code: "...handle the command..." } Use eventType ONLY when you want to process every single event of that type. Use eventFilter when you need to react to a subset of events (specific sender, content pattern, etc.). VALID FILTER OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not SCRIPT (provide exactly one): - code: Inline script code - will auto-create, deploy, and link the script - scriptId: ID of an existing deployed script EXAMPLES: Time flow with inline code: { title: "Daily Report", schedule: "0 9 * * *", code: "export async function handler(event, context, mirra) { await mirra.telegram.sendMessage({...}); return { done: true }; }" } Event flow — process ALL messages (only if you truly need every message): { title: "Message Logger", eventType: "telegram.message", code: "export async function handler(event, context, mirra) { console.log(event.data.text); return { logged: true }; }" } Event flow — react to a SUBSET of events (preferred for most use cases): { title: "Command Handler", eventFilter: { operator: "and", conditions: [ { operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" } ]}, code: "export async function handler(event, context, mirra) { const cmd = event.data.text.split(' ')[0]; return { command: cmd }; }" } Event flow with existing script: { eventType: "gmail.email_received", scriptId: "existing-script-id" } HANDLER RETURN VALUES: The handler's return object controls how the flow executor records the result: Success — work was done: return { success: true, ...data } No-Op — nothing to do (not an error): return { success: false, noOp: true, reason: "No transcript available" } Use for unavoidable cases where the handler has no work (e.g., time-based flow finds no new data, external API returned empty results). No-ops are recorded as successful executions and do NOT count toward the 3-consecutive-failure auto-pause threshold. WARNING: If your event flow returns noOp frequently, your eventFilter is too broad. Move the filtering logic into eventFilter conditions instead of checking inside the script. Failure — something went wrong: return { success: false, reason: "What went wrong" } Use for actual errors. 3 consecutive failures will auto-pause the flow. HANDLER EVENT DATA ACCESS: Scripts access data via event.data.*. Normalized fields (all event types): - event.data.text (string) — message/content text - event.data.sender (string) — sender name - event.data.senderId (string) — sender ID - event.data.timestamp (Date) — event timestamp - event.data.event (IntegrationEvent) — full event for platform-specific fields Platform-specific fields (access via event.data.event): - Telegram: event.data.event.telegram.chatId, .messageId, .isGroupChat, .isOutgoing, .hasMedia - Telegram Bot: event.data.event.bot.chatId, .botUsername, .from.userId, .from.username, .text, .chatType - Gmail: event.data.event.email.subject, .from, .to, .threadId - Calls: event.data.event.call.participants, .recentTranscripts DO NOT access platform fields at top level — event.data.chat, event.data.botUsername DO NOT exist. OUTGOING MESSAGE FILTERING: By default, flows SKIP events sent by the user themselves (outgoing messages). This prevents feedback loops where a flow's own actions re-trigger itself. To include the user's own outgoing messages, set includeOwnMessages: true in the trigger config. Use with caution — this can cause infinite loops if the flow sends messages that match its own trigger.
+     * Create a flow (event-triggered or time-scheduled). This is the unified, simplified interface for flow creation. TRIGGER TYPE (provide exactly one): - schedule: Cron expression for time-based flows (e.g., "0 9 * * *"). Times are automatically in the user's local timezone. - eventType: Event type shorthand for event flows that process ALL events of that type (e.g., "telegram.message") - eventFilter: Full filter object for event flows that need pre-filtering (RECOMMENDED for most event flows) - webhook: Set to true to create a webhook-triggered flow. Returns a webhookUrl that external services POST to. - trigger: Legacy nested structure (still supported) EFFICIENCY RULE FOR EVENT FLOWS: Always filter in eventFilter conditions, NEVER in the script. - eventFilter conditions: FREE (evaluated in-memory before script runs) - Script filtering: EXPENSIVE (invokes Lambda for every single event, even ones you discard) BAD — triggers Lambda for every Telegram message, script checks if it's a command: { eventType: "telegram.message", code: "...if (!text.startsWith('/')) return { success: false, noOp: true, reason: 'Not a command' }..." } GOOD — only triggers Lambda when matching events (flat format): { eventFilter: { when: "telegram.bot_command", command: "/weather" }, code: "...handle the command..." } GOOD — condition tree format (for advanced OR/regex logic): { eventFilter: { operator: "and", conditions: [ { operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" } ]}, code: "...handle the command..." } Use eventType ONLY when you want to process every single event of that type. Use eventFilter when you need to react to a subset of events (specific sender, content pattern, etc.). VALID FILTER OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, in, notIn, exists, notExists, matchesRegex, and, or, not SCRIPT (provide exactly one): - code: Inline script code - will auto-create, deploy, and link the script - scriptId: ID of an existing deployed script EXAMPLES: Time flow with inline code: { title: "Daily Report", schedule: "0 9 * * *", code: "export async function handler(event, context, mirra) { await mirra.telegram.sendMessage({...}); return { done: true }; }" } Event flow — process ALL messages (only if you truly need every message): { title: "Message Logger", eventType: "telegram.message", code: "export async function handler(event, context, mirra) { console.log(event.fields.content_text); return { logged: true }; }" } Event flow — flat format (PREFERRED for most event flows): { title: "Bot Command Handler", eventFilter: { when: "telegram.bot_command", command: "/start" }, code: "export async function handler(event, context, mirra) { const chatId = event.fields.chat_id; await mirra.telegramBot.replyToMessage({ chatId, text: 'Welcome!' }); return { handled: true }; }" } Event flow — condition tree format (for OR logic, regex, nested conditions): { title: "Command Handler", eventFilter: { operator: "and", conditions: [ { operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" } ]}, code: "export async function handler(event, context, mirra) { const cmd = event.fields.message_text.split(' ')[0]; return { command: cmd }; }" } Event flow with existing script: { eventType: "gmail.email_received", scriptId: "existing-script-id" } HANDLER RETURN VALUES: The handler's return object controls how the flow executor records the result: Success — work was done: return { success: true, ...data } No-Op — nothing to do (not an error): return { success: false, noOp: true, reason: "No transcript available" } Use for unavoidable cases where the handler has no work (e.g., time-based flow finds no new data, external API returned empty results). No-ops are recorded as successful executions and do NOT count toward the 3-consecutive-failure auto-pause threshold. WARNING: If your event flow returns noOp frequently, your eventFilter is too broad. Move the filtering logic into eventFilter conditions instead of checking inside the script. Failure — something went wrong: return { success: false, reason: "What went wrong" } Use for actual errors. 3 consecutive failures will auto-pause the flow. HANDLER EVENT DATA ACCESS: PREFERRED — event.fields.* (same alias names as eventFilter): Scripts can access event.fields.* using the SAME names as eventFilter conditions. This means the LLM uses one vocabulary for both filters and handler code. Examples: event.fields.chat_id, event.fields.message_text, event.fields.sender_username, event.fields.content_text, event.fields.subject, event.fields.price_usd ADVANCED — event.data.* (normalized fields, all event types): - event.data.text (string) — message/content text - event.data.sender (string) — sender name - event.data.senderId (string) — sender ID - event.data.timestamp (Date) — event timestamp - event.data.event (IntegrationEvent) — full event for fields without aliases For fields with NO alias (e.g., messageId, callbackQueryId, entities), use event.data.bot.* or event.data.event.*: - Telegram Bot: event.data.bot.messageId, .callbackQueryId, .entities - Calls: event.data.event.call.participants, .recentTranscripts DO NOT use "event.data.*" paths in eventFilter — those are script-only. DO NOT access platform fields at top level — event.data.chat, event.data.botUsername DO NOT exist. LOOP PREVENTION: Flows have built-in loop prevention. When a flow sends a message (e.g. via Telegram), the resulting event is tagged with the originating flow ID so it won't re-trigger the same flow. A circuit breaker also auto-pauses flows that fire too rapidly (10+ times in 60s).
      * @param args.title - Flow title. Required if providing inline code. (optional)
      * @param args.description - Detailed description of what the flow does (optional)
      * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId. (optional)
      * @param args.scriptId - ID of existing deployed script. Cannot use with code. (optional)
      * @param args.schedule - Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone. (optional)
      * @param args.eventType - Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead. (optional)
-     * @param args.eventFilter - Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] } (optional)
+     * @param args.eventFilter - Event filter for pre-filtering events before the script runs (evaluated in-memory, free). SIMPLE FORMAT (recommended): Pass a flat object with "when" set to the event type, then field aliases as keys. { "when": "telegram.bot_message", "chat_id": "-1001234567890", "message_text_contains": "urgent" } Add _contains, _gt, _lt, _not, _starts_with, _ends_with, _matches, _in suffixes for non-equals operators. Default operator is equals when no suffix is given. Arrays auto-detect as "in" operator. VALID FIELD ALIASES per event type (use these — do NOT use event.data.* paths here): telegram.bot_message: chat_id, chat_type, sender_username, sender_user_id, message_text, bot_username, has_media, media_type telegram.bot_command: command, chat_id, chat_type, sender_username, sender_user_id, bot_username telegram.bot_callback_query: chat_id, callback_data, sender_username, bot_username telegram.message: chat_id, is_group_chat, has_media, message_text gmail.email_received: from_email, from_name, subject, has_attachments, is_unread, body_text call.ended: duration_seconds, was_recorded, scope crypto_price_update: price_usd, token_address, chain recording.transcribed: duration_seconds, speaker_count, transcript_text flow.complete: flow_title, flow_success, flow_type All event types: event_type, sender_name, sender_id, content_text, channel_id, channel_name ADVANCED FORMAT (full condition tree — for OR logic, regex, or nested conditions): { "operator": "or", "conditions": [ { "operator": "equals", "field": "bot.chatId", "value": "123" }, { "operator": "equals", "field": "bot.chatId", "value": "456" } ]} Valid operators: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, in, notIn, exists, notExists, matchesRegex, and, or, not (optional)
      * @param args.trigger - Legacy nested trigger structure. Prefer eventType or eventFilter instead. (optional)
      * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields. (optional)
      * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings. (optional)
      * @param args.enabled - Whether the flow is enabled (default: true) (optional)
+     * @param args.webhook - Set to true to create a webhook-triggered flow. Returns a webhookUrl in the response. External services POST to this URL to trigger the flow. The request body is available as event.data.body in the handler. (optional)
+     * @returns Promise<FlowsCreateFlowData> Typed flat response with IDE autocomplete
      */
-    createFlow: async (args: FlowsCreateFlowArgs): Promise<any> => {
-      return sdk.resources.call({
+    createFlow: async (args: FlowsCreateFlowArgs): Promise<FlowsCreateFlowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'createFlow',
         params: args || {}
@@ -9774,9 +12288,10 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.scriptId - ID of the script to execute when triggered
      * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler). (optional)
      * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }. (optional)
+     * @returns Promise<FlowsCreateTimeFlowData> Typed flat response with IDE autocomplete
      */
-    createTimeFlow: async (args: FlowsCreateTimeFlowArgs): Promise<any> => {
-      return sdk.resources.call({
+    createTimeFlow: async (args: FlowsCreateTimeFlowArgs): Promise<FlowsCreateTimeFlowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'createTimeFlow',
         params: args || {}
@@ -9791,9 +12306,10 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.scriptId - ID of the script to execute when triggered
      * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler). (optional)
      * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }. (optional)
+     * @returns Promise<FlowsCreateEventFlowData> Typed flat response with IDE autocomplete
      */
-    createEventFlow: async (args: FlowsCreateEventFlowArgs): Promise<any> => {
-      return sdk.resources.call({
+    createEventFlow: async (args: FlowsCreateEventFlowArgs): Promise<FlowsCreateEventFlowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'createEventFlow',
         params: args || {}
@@ -9801,11 +12317,13 @@ function createFlowsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get a specific flow by ID. Returns normalized flat structure.
-     * @param args.id - Flow ID
+     * Get a specific flow by ID. Returns normalized flat structure. Use includeScript=true to also return the flow's script code.
+     * @param args.id - Flow ID (24-character hex string returned by createFlow/createEventFlow). Get IDs from the flow creation response or by searching flows.
+     * @param args.includeScript - Include the flow's script code in the response. Default: false. (optional)
+     * @returns Promise<FlowsGetFlowData> Typed flat response with IDE autocomplete
      */
-    getFlow: async (args: FlowsGetFlowArgs): Promise<any> => {
-      return sdk.resources.call({
+    getFlow: async (args: FlowsGetFlowArgs): Promise<FlowsGetFlowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'getFlow',
         params: args || {}
@@ -9814,7 +12332,7 @@ function createFlowsAdapter(sdk: MirraSDK) {
 
     /**
      * Update an existing flow. Returns normalized flat structure.
-     * @param args.id - Flow ID to update
+     * @param args.id - Flow ID to update (24-character hex string returned by createFlow/createEventFlow)
      * @param args.title - New title (optional)
      * @param args.description - New description (optional)
      * @param args.trigger - New trigger configuration (optional)
@@ -9825,9 +12343,10 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.schedule - Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone. (optional)
      * @param args.eventType - Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead. (optional)
      * @param args.eventFilter - Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] } (optional)
+     * @returns Promise<FlowsUpdateFlowData> Typed flat response with IDE autocomplete
      */
-    updateFlow: async (args: FlowsUpdateFlowArgs): Promise<any> => {
-      return sdk.resources.call({
+    updateFlow: async (args: FlowsUpdateFlowArgs): Promise<FlowsUpdateFlowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'updateFlow',
         params: args || {}
@@ -9835,11 +12354,26 @@ function createFlowsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Delete a flow
-     * @param args.id - Flow ID to delete
+     * Modify the script code for a flow. Validates code, creates a new version (or a private copy if user does not own the original), deploys to Lambda, and updates the flow.
+     * @param args.flowId - Flow ID to modify (24-character hex string)
+     * @param args.newCode - New handler code. Must include export async function handler(event, context, mirra) wrapper.
+     * @param args.commitMessage - Description of changes (optional) (optional)
      */
-    deleteFlow: async (args: FlowsDeleteFlowArgs): Promise<any> => {
-      return sdk.resources.call({
+    modifyFlowScript: async (args: FlowsModifyFlowScriptArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'modifyFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a flow
+     * @param args.id - Flow ID to delete (24-character hex string returned by createFlow/createEventFlow)
+     * @returns Promise<FlowsDeleteFlowData> Typed flat response with IDE autocomplete
+     */
+    deleteFlow: async (args: FlowsDeleteFlowArgs): Promise<FlowsDeleteFlowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'deleteFlow',
         params: args || {}
@@ -9848,10 +12382,11 @@ function createFlowsAdapter(sdk: MirraSDK) {
 
     /**
      * Pause an active flow. Returns normalized flat structure.
-     * @param args.id - Flow ID to pause
+     * @param args.id - Flow ID to pause (24-character hex string)
+     * @returns Promise<FlowsPauseFlowData> Typed flat response with IDE autocomplete
      */
-    pauseFlow: async (args: FlowsPauseFlowArgs): Promise<any> => {
-      return sdk.resources.call({
+    pauseFlow: async (args: FlowsPauseFlowArgs): Promise<FlowsPauseFlowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'pauseFlow',
         params: args || {}
@@ -9860,10 +12395,11 @@ function createFlowsAdapter(sdk: MirraSDK) {
 
     /**
      * Resume a paused flow. Returns normalized flat structure.
-     * @param args.id - Flow ID to resume
+     * @param args.id - Flow ID to resume (24-character hex string)
+     * @returns Promise<FlowsResumeFlowData> Typed flat response with IDE autocomplete
      */
-    resumeFlow: async (args: FlowsResumeFlowArgs): Promise<any> => {
-      return sdk.resources.call({
+    resumeFlow: async (args: FlowsResumeFlowArgs): Promise<FlowsResumeFlowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'resumeFlow',
         params: args || {}
@@ -9878,9 +12414,10 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
      * @param args.limit - Maximum number of results (default: 20) (optional)
      * @param args.offset - Pagination offset (default: 0) (optional)
+     * @returns Promise<FlowsSearchFlowsData> Typed flat response with IDE autocomplete
      */
-    searchFlows: async (args: FlowsSearchFlowsArgs): Promise<any> => {
-      return sdk.resources.call({
+    searchFlows: async (args: FlowsSearchFlowsArgs): Promise<FlowsSearchFlowsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'searchFlows',
         params: args || {}
@@ -9893,9 +12430,10 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.success - Whether execution succeeded
      * @param args.result - Execution result data (optional)
      * @param args.error - Error message if execution failed (optional)
+     * @returns Promise<FlowsRecordExecutionData> Typed flat response with IDE autocomplete
      */
-    recordExecution: async (args: FlowsRecordExecutionArgs): Promise<any> => {
-      return sdk.resources.call({
+    recordExecution: async (args: FlowsRecordExecutionArgs): Promise<FlowsRecordExecutionData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'recordExecution',
         params: args || {}
@@ -9903,12 +12441,15 @@ function createFlowsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * List all available event types that can trigger automations. Returns normalized event types. IMPORTANT: Use includeSchema: true when writing scripts to see available fields and correct access patterns. Scripts receive an ExecutionRequest, NOT the raw IntegrationEvent. Correct access patterns: - event.data.text (normalized text content) - event.data.sender (normalized sender name) - event.data.event (full IntegrationEvent object) - event.trigger.event (also full IntegrationEvent) Common WRONG patterns that don't work: - event.summary (doesn't exist) - event.content.text (wrong path) - event.timestamp (wrong path)
+     * List available event types that can trigger automations. Returns normalized event types. Filter by source or sources to narrow results (e.g., source: "telegram" or sources: ["telegram", "gmail"]). IMPORTANT: Use includeSchema: true when writing scripts to see available fields and correct access patterns. PREFERRED — event.fields.* uses the same alias names as eventFilter: - event.fields.chat_id, event.fields.message_text, event.fields.sender_name, etc. ADVANCED — event.data.* for normalized fields and full event: - event.data.text (normalized text content) - event.data.sender (normalized sender name) - event.data.event (full IntegrationEvent for fields without aliases) Common WRONG patterns that don't work: - event.summary (doesn't exist) - event.content.text (wrong path) - event.timestamp (wrong path)
+     * @param args.source - Filter by source/category (e.g., "telegram", "gmail", "calendar"). Returns only event types from this source. (optional)
+     * @param args.sources - Array of sources to filter by (e.g., ["telegram", "gmail"]). More efficient than separate calls. (optional)
      * @param args.includeTemplates - Include condition templates for each event type (optional)
      * @param args.includeSchema - Include field schema showing available paths for script access. RECOMMENDED when writing scripts to see correct field access patterns. (optional)
+     * @returns Promise<FlowsListEventTypesData> Typed flat response with IDE autocomplete
      */
-    listEventTypes: async (args: FlowsListEventTypesArgs): Promise<any> => {
-      return sdk.resources.call({
+    listEventTypes: async (args: FlowsListEventTypesArgs): Promise<FlowsListEventTypesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'listEventTypes',
         params: args || {}
@@ -9920,9 +12461,10 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.flowId - ID of the flow to test
      * @param args.dryRun - If true (default), only validate trigger matching without executing script. If false, execute the script (causes side effects). (optional)
      * @param args.eventOverrides - Custom field values to merge into the generated test event (e.g., {"content.text": "custom message"}) (optional)
+     * @returns Promise<FlowsTestFlowData> Typed flat response with IDE autocomplete
      */
-    testFlow: async (args: FlowsTestFlowArgs): Promise<any> => {
-      return sdk.resources.call({
+    testFlow: async (args: FlowsTestFlowArgs): Promise<FlowsTestFlowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'testFlow',
         params: args || {}
@@ -9933,9 +12475,10 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * Check if a custom event would match a flow trigger without any execution. Useful for debugging trigger conditions or testing with real event data.
      * @param args.flowId - ID of the flow
      * @param args.event - Event object to test against the trigger (must match IntegrationEvent structure)
+     * @returns Promise<FlowsValidateTriggerData> Typed flat response with IDE autocomplete
      */
-    validateTrigger: async (args: FlowsValidateTriggerArgs): Promise<any> => {
-      return sdk.resources.call({
+    validateTrigger: async (args: FlowsValidateTriggerArgs): Promise<FlowsValidateTriggerData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'validateTrigger',
         params: args || {}
@@ -9946,9 +12489,10 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * Get all active flows triggered by a specific event type. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. ⚠️ RESPONSE FORMAT: Returns { eventType, count, flows: Array }. Access the array via `result.flows`.
      * @param args.eventType - Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
      * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
+     * @returns Promise<FlowsGetFlowsByEventTypeData> Typed flat response with IDE autocomplete
      */
-    getFlowsByEventType: async (args: FlowsGetFlowsByEventTypeArgs): Promise<any> => {
-      return sdk.resources.call({
+    getFlowsByEventType: async (args: FlowsGetFlowsByEventTypeArgs): Promise<FlowsGetFlowsByEventTypeData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'getFlowsByEventType',
         params: args || {}
@@ -9961,9 +12505,10 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.operations - Array of operations to execute. Each item must have adapter, operation, and args properties.
      * @param args.batchSize - Number of operations to process per execution (default: 5) (optional)
      * @param args.intervalSeconds - Seconds between batch executions (default: 60, minimum: 60) (optional)
+     * @returns Promise<FlowsCreateBatchOperationData> Typed flat response with IDE autocomplete
      */
-    createBatchOperation: async (args: FlowsCreateBatchOperationArgs): Promise<any> => {
-      return sdk.resources.call({
+    createBatchOperation: async (args: FlowsCreateBatchOperationArgs): Promise<FlowsCreateBatchOperationData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'createBatchOperation',
         params: args || {}
@@ -9976,9 +12521,10 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.pricing - Pricing configuration. Defaults to { model: "free" }. Supported models: "free", "pay-per-execution". For paid models, include basePrice. (optional)
      * @param args.tags - Tags for marketplace discovery (e.g., ["telegram", "automation"]) (optional)
      * @param args.category - Marketplace category (e.g., "messaging", "productivity"). Defaults to "uncategorized". (optional)
+     * @returns Promise<FlowsPublishFlowData> Typed flat response with IDE autocomplete
      */
-    publishFlow: async (args: FlowsPublishFlowArgs): Promise<any> => {
-      return sdk.resources.call({
+    publishFlow: async (args: FlowsPublishFlowArgs): Promise<FlowsPublishFlowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'publishFlow',
         params: args || {}
@@ -9988,9 +12534,10 @@ function createFlowsAdapter(sdk: MirraSDK) {
     /**
      * Remove a flow from the marketplace. Existing installations will continue to work.
      * @param args.flowId - ID of the flow to unpublish
+     * @returns Promise<FlowsUnpublishFlowData> Typed flat response with IDE autocomplete
      */
-    unpublishFlow: async (args: FlowsUnpublishFlowArgs): Promise<any> => {
-      return sdk.resources.call({
+    unpublishFlow: async (args: FlowsUnpublishFlowArgs): Promise<FlowsUnpublishFlowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'unpublishFlow',
         params: args || {}
@@ -10007,9 +12554,10 @@ function createUserAdapter(sdk: MirraSDK) {
   return {
     /**
      * Get user profile information including username, email, timezone, phone, and usage stats
+     * @returns Promise<UserGetProfileData> Typed flat response with IDE autocomplete
      */
-    getProfile: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    getProfile: async (args?: {}): Promise<UserGetProfileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'user',
         method: 'getProfile',
         params: args || {}
@@ -10022,9 +12570,10 @@ function createUserAdapter(sdk: MirraSDK) {
      * @param args.email - New email address (optional)
      * @param args.timezone - IANA timezone identifier (e.g., America/Los_Angeles) (optional)
      * @param args.phoneNumber - Phone number (7-15 digits with optional formatting) (optional)
+     * @returns Promise<UserUpdateProfileData> Typed flat response with IDE autocomplete
      */
-    updateProfile: async (args: UserUpdateProfileArgs): Promise<any> => {
-      return sdk.resources.call({
+    updateProfile: async (args: UserUpdateProfileArgs): Promise<UserUpdateProfileData> => {
+      return sdk.resources.callDirect({
         resourceId: 'user',
         method: 'updateProfile',
         params: args || {}
@@ -10035,9 +12584,10 @@ function createUserAdapter(sdk: MirraSDK) {
      * Update user preferences (notification settings, etc)
      * @param args.timezone - Preferred timezone for scheduling (optional)
      * @param args.socials - Social media links (twitter, discord) (optional)
+     * @returns Promise<UserUpdatePreferencesData> Typed flat response with IDE autocomplete
      */
-    updatePreferences: async (args: UserUpdatePreferencesArgs): Promise<any> => {
-      return sdk.resources.call({
+    updatePreferences: async (args: UserUpdatePreferencesArgs): Promise<UserUpdatePreferencesData> => {
+      return sdk.resources.callDirect({
         resourceId: 'user',
         method: 'updatePreferences',
         params: args || {}
@@ -10046,9 +12596,10 @@ function createUserAdapter(sdk: MirraSDK) {
 
     /**
      * Get token usage statistics, quota, and billing information
+     * @returns Promise<UserGetUsageStatsData> Typed flat response with IDE autocomplete
      */
-    getUsageStats: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    getUsageStats: async (args?: {}): Promise<UserGetUsageStatsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'user',
         method: 'getUsageStats',
         params: args || {}
@@ -10057,9 +12608,10 @@ function createUserAdapter(sdk: MirraSDK) {
 
     /**
      * Get active sessions/devices (based on push token registrations)
+     * @returns Promise<UserGetSessionsData> Typed flat response with IDE autocomplete
      */
-    getSessions: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    getSessions: async (args?: {}): Promise<UserGetSessionsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'user',
         method: 'getSessions',
         params: args || {}
@@ -10069,9 +12621,10 @@ function createUserAdapter(sdk: MirraSDK) {
     /**
      * Soft delete user account (set inactive flag) - CAUTION: This marks the account for deletion
      * @param args.confirm - Must be true to confirm account deactivation
+     * @returns Promise<UserDeactivateAccountData> Typed flat response with IDE autocomplete
      */
-    deactivateAccount: async (args: UserDeactivateAccountArgs): Promise<any> => {
-      return sdk.resources.call({
+    deactivateAccount: async (args: UserDeactivateAccountArgs): Promise<UserDeactivateAccountData> => {
+      return sdk.resources.callDirect({
         resourceId: 'user',
         method: 'deactivateAccount',
         params: args || {}
@@ -10090,9 +12643,10 @@ function createContactsAdapter(sdk: MirraSDK) {
      * Get a list of all accepted contacts for the user with their profile information
      * @param args.limit - Maximum number of contacts to return (default: 100) (optional)
      * @param args.offset - Number of contacts to skip for pagination (default: 0) (optional)
+     * @returns Promise<ContactsListContactsData> Typed flat response with IDE autocomplete
      */
-    listContacts: async (args: ContactsListContactsArgs): Promise<any> => {
-      return sdk.resources.call({
+    listContacts: async (args: ContactsListContactsArgs): Promise<ContactsListContactsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'contacts',
         method: 'listContacts',
         params: args || {}
@@ -10103,9 +12657,10 @@ function createContactsAdapter(sdk: MirraSDK) {
      * Get detailed information about a specific contact by their ID or username
      * @param args.contactId - The contact user ID (MongoDB ObjectId) (optional)
      * @param args.username - The contact username (optional)
+     * @returns Promise<ContactsGetContactData> Typed flat response with IDE autocomplete
      */
-    getContact: async (args: ContactsGetContactArgs): Promise<any> => {
-      return sdk.resources.call({
+    getContact: async (args: ContactsGetContactArgs): Promise<ContactsGetContactData> => {
+      return sdk.resources.callDirect({
         resourceId: 'contacts',
         method: 'getContact',
         params: args || {}
@@ -10115,9 +12670,10 @@ function createContactsAdapter(sdk: MirraSDK) {
     /**
      * Send a contact request to another user by their username
      * @param args.username - Username of the user to add as a contact
+     * @returns Promise<ContactsAddContactData> Typed flat response with IDE autocomplete
      */
-    addContact: async (args: ContactsAddContactArgs): Promise<any> => {
-      return sdk.resources.call({
+    addContact: async (args: ContactsAddContactArgs): Promise<ContactsAddContactData> => {
+      return sdk.resources.callDirect({
         resourceId: 'contacts',
         method: 'addContact',
         params: args || {}
@@ -10128,9 +12684,10 @@ function createContactsAdapter(sdk: MirraSDK) {
      * Remove a user from your contacts list (unfriend)
      * @param args.contactId - The contact user ID to remove (optional)
      * @param args.username - The contact username to remove (optional)
+     * @returns Promise<ContactsRemoveContactData> Typed flat response with IDE autocomplete
      */
-    removeContact: async (args: ContactsRemoveContactArgs): Promise<any> => {
-      return sdk.resources.call({
+    removeContact: async (args: ContactsRemoveContactArgs): Promise<ContactsRemoveContactData> => {
+      return sdk.resources.callDirect({
         resourceId: 'contacts',
         method: 'removeContact',
         params: args || {}
@@ -10142,9 +12699,10 @@ function createContactsAdapter(sdk: MirraSDK) {
      * @param args.query - Search query - can be username, email, phone, or wallet address
      * @param args.searchType - Type of search to perform: all, username, email, phone, or wallet (default: all) (optional)
      * @param args.limit - Maximum number of results (default: 20) (optional)
+     * @returns Promise<ContactsSearchContactsData> Typed flat response with IDE autocomplete
      */
-    searchContacts: async (args: ContactsSearchContactsArgs): Promise<any> => {
-      return sdk.resources.call({
+    searchContacts: async (args: ContactsSearchContactsArgs): Promise<ContactsSearchContactsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'contacts',
         method: 'searchContacts',
         params: args || {}
@@ -10155,9 +12713,10 @@ function createContactsAdapter(sdk: MirraSDK) {
      * Block a user (prevents them from contacting you)
      * @param args.contactId - The user ID to block (optional)
      * @param args.username - The username to block (optional)
+     * @returns Promise<ContactsBlockContactData> Typed flat response with IDE autocomplete
      */
-    blockContact: async (args: ContactsBlockContactArgs): Promise<any> => {
-      return sdk.resources.call({
+    blockContact: async (args: ContactsBlockContactArgs): Promise<ContactsBlockContactData> => {
+      return sdk.resources.callDirect({
         resourceId: 'contacts',
         method: 'blockContact',
         params: args || {}
@@ -10168,9 +12727,10 @@ function createContactsAdapter(sdk: MirraSDK) {
      * Unblock a previously blocked user
      * @param args.contactId - The user ID to unblock (optional)
      * @param args.username - The username to unblock (optional)
+     * @returns Promise<ContactsUnblockContactData> Typed flat response with IDE autocomplete
      */
-    unblockContact: async (args: ContactsUnblockContactArgs): Promise<any> => {
-      return sdk.resources.call({
+    unblockContact: async (args: ContactsUnblockContactArgs): Promise<ContactsUnblockContactData> => {
+      return sdk.resources.callDirect({
         resourceId: 'contacts',
         method: 'unblockContact',
         params: args || {}
@@ -10181,9 +12741,10 @@ function createContactsAdapter(sdk: MirraSDK) {
      * Get a list of all users you have blocked
      * @param args.limit - Maximum number of results (default: 100) (optional)
      * @param args.offset - Number of items to skip for pagination (default: 0) (optional)
+     * @returns Promise<ContactsGetBlockedContactsData> Typed flat response with IDE autocomplete
      */
-    getBlockedContacts: async (args: ContactsGetBlockedContactsArgs): Promise<any> => {
-      return sdk.resources.call({
+    getBlockedContacts: async (args: ContactsGetBlockedContactsArgs): Promise<ContactsGetBlockedContactsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'contacts',
         method: 'getBlockedContacts',
         params: args || {}
@@ -10194,9 +12755,10 @@ function createContactsAdapter(sdk: MirraSDK) {
      * Get pending contact requests (sent by you or received from others)
      * @param args.type - Type of requests to retrieve: all, sent, or received (default: all) (optional)
      * @param args.status - Filter by request status: pending, accepted, or rejected (default: pending) (optional)
+     * @returns Promise<ContactsGetContactRequestsData> Typed flat response with IDE autocomplete
      */
-    getContactRequests: async (args: ContactsGetContactRequestsArgs): Promise<any> => {
-      return sdk.resources.call({
+    getContactRequests: async (args: ContactsGetContactRequestsArgs): Promise<ContactsGetContactRequestsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'contacts',
         method: 'getContactRequests',
         params: args || {}
@@ -10215,9 +12777,10 @@ function createCryptoAdapter(sdk: MirraSDK) {
      * Get the current price of a crypto asset. Returns normalized flat structure. IMPORTANT: Not all tokens are supported by the pricing service. Before using this operation in a Flow or automation, always make a test call first to verify the token is supported. If the call fails with "not supported", do NOT create the Flow — inform the user that price tracking is not available for that token.
      * @param args.tokenAddress - Token contract address (EVM: 0x..., SVM: base58)
      * @param args.chainName - Specific chain name (auto-detected if not provided) (optional)
+     * @returns Promise<CryptoGetPriceData> Typed flat response with IDE autocomplete
      */
-    getPrice: async (args: CryptoGetPriceArgs): Promise<any> => {
-      return sdk.resources.call({
+    getPrice: async (args: CryptoGetPriceArgs): Promise<CryptoGetPriceData> => {
+      return sdk.resources.callDirect({
         resourceId: 'crypto',
         method: 'getPrice',
         params: args || {}
@@ -10229,9 +12792,10 @@ function createCryptoAdapter(sdk: MirraSDK) {
      * @param args.recipient - Contact username, user ID, or Solana wallet address
      * @param args.token - Token symbol (SOL, USDC), name, or mint address
      * @param args.amount - Amount to send (in UI units)
+     * @returns Promise<CryptoSendTokenData> Typed flat response with IDE autocomplete
      */
-    sendToken: async (args: CryptoSendTokenArgs): Promise<any> => {
-      return sdk.resources.call({
+    sendToken: async (args: CryptoSendTokenArgs): Promise<CryptoSendTokenData> => {
+      return sdk.resources.callDirect({
         resourceId: 'crypto',
         method: 'sendToken',
         params: args || {}
@@ -10246,9 +12810,10 @@ function createCryptoAdapter(sdk: MirraSDK) {
      * @param args.scriptId - ID of the script to execute when price target is reached
      * @param args.chainName - Chain name (auto-detected if not provided) (optional)
      * @param args.percentStep - Progressive alert step percentage (default: 0.1 = 10%) (optional)
+     * @returns Promise<CryptoMonitorPriceData> Typed flat response with IDE autocomplete
      */
-    monitorPrice: async (args: CryptoMonitorPriceArgs): Promise<any> => {
-      return sdk.resources.call({
+    monitorPrice: async (args: CryptoMonitorPriceArgs): Promise<CryptoMonitorPriceData> => {
+      return sdk.resources.callDirect({
         resourceId: 'crypto',
         method: 'monitorPrice',
         params: args || {}
@@ -10257,9 +12822,10 @@ function createCryptoAdapter(sdk: MirraSDK) {
 
     /**
      * List all active crypto price monitoring assignments. Returns normalized flat structures.
+     * @returns Promise<CryptoListSubscriptionsData> Typed flat response with IDE autocomplete
      */
-    listSubscriptions: async (args?: {}): Promise<any> => {
-      return sdk.resources.call({
+    listSubscriptions: async (args?: {}): Promise<CryptoListSubscriptionsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'crypto',
         method: 'listSubscriptions',
         params: args || {}
@@ -10269,9 +12835,10 @@ function createCryptoAdapter(sdk: MirraSDK) {
     /**
      * Stop monitoring a crypto asset. Returns normalized flat structure.
      * @param args.tokenAddress - Token address to stop monitoring
+     * @returns Promise<CryptoUnsubscribeAssetData> Typed flat response with IDE autocomplete
      */
-    unsubscribeAsset: async (args: CryptoUnsubscribeAssetArgs): Promise<any> => {
-      return sdk.resources.call({
+    unsubscribeAsset: async (args: CryptoUnsubscribeAssetArgs): Promise<CryptoUnsubscribeAssetData> => {
+      return sdk.resources.callDirect({
         resourceId: 'crypto',
         method: 'unsubscribeAsset',
         params: args || {}
@@ -10287,9 +12854,10 @@ function createCryptoAdapter(sdk: MirraSDK) {
      * @param args.amount - Amount to send
      * @param args.tokenMint - Token mint address (optional, will resolve if not provided) (optional)
      * @param args.tokenDecimals - Token decimals (optional) (optional)
+     * @returns Promise<CryptoRefreshTransactionData> Typed flat response with IDE autocomplete
      */
-    refreshTransaction: async (args: CryptoRefreshTransactionArgs): Promise<any> => {
-      return sdk.resources.call({
+    refreshTransaction: async (args: CryptoRefreshTransactionArgs): Promise<CryptoRefreshTransactionData> => {
+      return sdk.resources.callDirect({
         resourceId: 'crypto',
         method: 'refreshTransaction',
         params: args || {}
@@ -10307,10 +12875,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
     /**
      * Create a new Google Doc
      * @param args.title - Title of the document
-     * @returns Promise<GoogleDocsCreateDocumentResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsCreateDocumentData> Typed flat response with IDE autocomplete
      */
-    createDocument: async (args: GoogleDocsCreateDocumentArgs): Promise<GoogleDocsCreateDocumentResult> => {
-      return sdk.resources.call({
+    createDocument: async (args: GoogleDocsCreateDocumentArgs): Promise<GoogleDocsCreateDocumentData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'createDocument',
         params: args || {}
@@ -10320,10 +12888,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
     /**
      * Get a Google Doc by ID. Returns normalized flat structure with extracted fields.
      * @param args.documentId - ID of the document
-     * @returns Promise<GoogleDocsGetDocumentResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsDocumentData> Typed flat response with IDE autocomplete
      */
-    getDocument: async (args: GoogleDocsGetDocumentArgs): Promise<GoogleDocsGetDocumentResult> => {
-      return sdk.resources.call({
+    getDocument: async (args: GoogleDocsGetDocumentArgs): Promise<GoogleDocsDocumentData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'getDocument',
         params: args || {}
@@ -10334,10 +12902,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * Append text to the end of a document
      * @param args.documentId - ID of the document
      * @param args.text - Text to append
-     * @returns Promise<GoogleDocsAppendTextResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
      */
-    appendText: async (args: GoogleDocsAppendTextArgs): Promise<GoogleDocsAppendTextResult> => {
-      return sdk.resources.call({
+    appendText: async (args: GoogleDocsAppendTextArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'appendText',
         params: args || {}
@@ -10349,10 +12917,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.documentId - ID of the document
      * @param args.searchText - Text to search for
      * @param args.replaceText - Text to replace with
-     * @returns Promise<GoogleDocsReplaceTextResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
      */
-    replaceText: async (args: GoogleDocsReplaceTextArgs): Promise<GoogleDocsReplaceTextResult> => {
-      return sdk.resources.call({
+    replaceText: async (args: GoogleDocsReplaceTextArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'replaceText',
         params: args || {}
@@ -10362,10 +12930,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
     /**
      * Get the text content of a Google Doc
      * @param args.documentId - ID of the document
-     * @returns Promise<GoogleDocsGetDocumentContentResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsContentData> Typed flat response with IDE autocomplete
      */
-    getDocumentContent: async (args: GoogleDocsGetDocumentContentArgs): Promise<GoogleDocsGetDocumentContentResult> => {
-      return sdk.resources.call({
+    getDocumentContent: async (args: GoogleDocsGetDocumentContentArgs): Promise<GoogleDocsContentData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'getDocumentContent',
         params: args || {}
@@ -10377,10 +12945,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.documentId - ID of the document
      * @param args.text - Text to insert
      * @param args.position - Character position to insert at (1-indexed)
-     * @returns Promise<GoogleDocsInsertTextAtPositionResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
      */
-    insertTextAtPosition: async (args: GoogleDocsInsertTextAtPositionArgs): Promise<GoogleDocsInsertTextAtPositionResult> => {
-      return sdk.resources.call({
+    insertTextAtPosition: async (args: GoogleDocsInsertTextAtPositionArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'insertTextAtPosition',
         params: args || {}
@@ -10393,10 +12961,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.searchText - Text to search for
      * @param args.textToInsert - Text to insert after the search text
      * @param args.occurrence - Which occurrence to insert after (default: 1) (optional)
-     * @returns Promise<GoogleDocsInsertTextAfterResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
      */
-    insertTextAfter: async (args: GoogleDocsInsertTextAfterArgs): Promise<GoogleDocsInsertTextAfterResult> => {
-      return sdk.resources.call({
+    insertTextAfter: async (args: GoogleDocsInsertTextAfterArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'insertTextAfter',
         params: args || {}
@@ -10410,10 +12978,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.level - Heading level (1-6)
      * @param args.position - Character position to insert at (optional)
      * @param args.insertAfterText - Insert after this text instead of at position (optional)
-     * @returns Promise<GoogleDocsInsertHeadingResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
      */
-    insertHeading: async (args: GoogleDocsInsertHeadingArgs): Promise<GoogleDocsInsertHeadingResult> => {
-      return sdk.resources.call({
+    insertHeading: async (args: GoogleDocsInsertHeadingArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'insertHeading',
         params: args || {}
@@ -10427,10 +12995,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.listType - Type of list: "bulleted" or "numbered"
      * @param args.position - Character position to insert at (optional)
      * @param args.insertAfterText - Insert after this text instead of at position (optional)
-     * @returns Promise<GoogleDocsInsertListResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
      */
-    insertList: async (args: GoogleDocsInsertListArgs): Promise<GoogleDocsInsertListResult> => {
-      return sdk.resources.call({
+    insertList: async (args: GoogleDocsInsertListArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'insertList',
         params: args || {}
@@ -10444,10 +13012,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.hasHeader - Whether the first row is a header (default: true) (optional)
      * @param args.position - Character position to insert at (optional)
      * @param args.insertAfterText - Insert after this text instead of at position (optional)
-     * @returns Promise<GoogleDocsInsertTableResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
      */
-    insertTable: async (args: GoogleDocsInsertTableArgs): Promise<GoogleDocsInsertTableResult> => {
-      return sdk.resources.call({
+    insertTable: async (args: GoogleDocsInsertTableArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'insertTable',
         params: args || {}
@@ -10458,10 +13026,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * Replace the entire content of a document
      * @param args.documentId - ID of the document
      * @param args.newContent - New content to replace existing content
-     * @returns Promise<GoogleDocsUpdateDocumentContentResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
      */
-    updateDocumentContent: async (args: GoogleDocsUpdateDocumentContentArgs): Promise<GoogleDocsUpdateDocumentContentResult> => {
-      return sdk.resources.call({
+    updateDocumentContent: async (args: GoogleDocsUpdateDocumentContentArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'updateDocumentContent',
         params: args || {}
@@ -10473,10 +13041,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.documentId - ID of the document
      * @param args.heading - Section heading text
      * @param args.content - Section content text
-     * @returns Promise<GoogleDocsCreateSectionResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsSectionResultData> Typed flat response with IDE autocomplete
      */
-    createSection: async (args: GoogleDocsCreateSectionArgs): Promise<GoogleDocsCreateSectionResult> => {
-      return sdk.resources.call({
+    createSection: async (args: GoogleDocsCreateSectionArgs): Promise<GoogleDocsSectionResultData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'createSection',
         params: args || {}
@@ -10488,10 +13056,10 @@ function createGoogleDocsAdapter(sdk: MirraSDK) {
      * @param args.documentId - ID of the document
      * @param args.position - Position to find (1 for start, -1 for end)
      * @param args.searchText - Text to search for (returns position after this text) (optional)
-     * @returns Promise<GoogleDocsFindInsertionPointResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleDocsInsertionPointData> Typed flat response with IDE autocomplete
      */
-    findInsertionPoint: async (args: GoogleDocsFindInsertionPointArgs): Promise<GoogleDocsFindInsertionPointResult> => {
-      return sdk.resources.call({
+    findInsertionPoint: async (args: GoogleDocsFindInsertionPointArgs): Promise<GoogleDocsInsertionPointData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-docs',
         method: 'findInsertionPoint',
         params: args || {}
@@ -10509,10 +13077,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
     /**
      * Create a new Google Sheets spreadsheet
      * @param args.title - Title of the spreadsheet
-     * @returns Promise<GoogleSheetsCreateSpreadsheetResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsCreateSpreadsheetData> Typed flat response with IDE autocomplete
      */
-    createSpreadsheet: async (args: GoogleSheetsCreateSpreadsheetArgs): Promise<GoogleSheetsCreateSpreadsheetResult> => {
-      return sdk.resources.call({
+    createSpreadsheet: async (args: GoogleSheetsCreateSpreadsheetArgs): Promise<GoogleSheetsCreateSpreadsheetData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'createSpreadsheet',
         params: args || {}
@@ -10523,10 +13091,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * Read data from a range in a spreadsheet
      * @param args.spreadsheetId - ID of the spreadsheet
      * @param args.range - Cell range (e.g., "Sheet1!A1:B10")
-     * @returns Promise<GoogleSheetsReadRangeResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsReadRangeData> Typed flat response with IDE autocomplete
      */
-    readRange: async (args: GoogleSheetsReadRangeArgs): Promise<GoogleSheetsReadRangeResult> => {
-      return sdk.resources.call({
+    readRange: async (args: GoogleSheetsReadRangeArgs): Promise<GoogleSheetsReadRangeData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'readRange',
         params: args || {}
@@ -10538,10 +13106,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.spreadsheetId - ID of the spreadsheet
      * @param args.range - Cell range (e.g., "Sheet1!A1:B10")
      * @param args.values - Data to write (2D array)
-     * @returns Promise<GoogleSheetsWriteRangeResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsWriteRangeData> Typed flat response with IDE autocomplete
      */
-    writeRange: async (args: GoogleSheetsWriteRangeArgs): Promise<GoogleSheetsWriteRangeResult> => {
-      return sdk.resources.call({
+    writeRange: async (args: GoogleSheetsWriteRangeArgs): Promise<GoogleSheetsWriteRangeData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'writeRange',
         params: args || {}
@@ -10553,10 +13121,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.spreadsheetId - ID of the spreadsheet
      * @param args.sheetName - Name of the sheet
      * @param args.values - Row values to append
-     * @returns Promise<GoogleSheetsAppendRowResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsAppendRowData> Typed flat response with IDE autocomplete
      */
-    appendRow: async (args: GoogleSheetsAppendRowArgs): Promise<GoogleSheetsAppendRowResult> => {
-      return sdk.resources.call({
+    appendRow: async (args: GoogleSheetsAppendRowArgs): Promise<GoogleSheetsAppendRowData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'appendRow',
         params: args || {}
@@ -10566,10 +13134,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
     /**
      * Get spreadsheet metadata and properties
      * @param args.spreadsheetId - ID of the spreadsheet
-     * @returns Promise<GoogleSheetsGetSpreadsheetResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsGetSpreadsheetData> Typed flat response with IDE autocomplete
      */
-    getSpreadsheet: async (args: GoogleSheetsGetSpreadsheetArgs): Promise<GoogleSheetsGetSpreadsheetResult> => {
-      return sdk.resources.call({
+    getSpreadsheet: async (args: GoogleSheetsGetSpreadsheetArgs): Promise<GoogleSheetsGetSpreadsheetData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'getSpreadsheet',
         params: args || {}
@@ -10585,10 +13153,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.italic - Make text italic (optional)
      * @param args.foregroundColor - Text color (hex or named color) (optional)
      * @param args.backgroundColor - Cell background color (hex or named color) (optional)
-     * @returns Promise<GoogleSheetsInsertAtCellResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsInsertAtCellData> Typed flat response with IDE autocomplete
      */
-    insertAtCell: async (args: GoogleSheetsInsertAtCellArgs): Promise<GoogleSheetsInsertAtCellResult> => {
-      return sdk.resources.call({
+    insertAtCell: async (args: GoogleSheetsInsertAtCellArgs): Promise<GoogleSheetsInsertAtCellData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'insertAtCell',
         params: args || {}
@@ -10601,10 +13169,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.cell - Cell reference in format SheetName!A1
      * @param args.formula - Formula to insert (with or without leading =)
      * @param args.note - Optional note to add to the cell (optional)
-     * @returns Promise<GoogleSheetsInsertFormulaResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsInsertFormulaData> Typed flat response with IDE autocomplete
      */
-    insertFormula: async (args: GoogleSheetsInsertFormulaArgs): Promise<GoogleSheetsInsertFormulaResult> => {
-      return sdk.resources.call({
+    insertFormula: async (args: GoogleSheetsInsertFormulaArgs): Promise<GoogleSheetsInsertFormulaData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'insertFormula',
         params: args || {}
@@ -10620,10 +13188,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.foregroundColor - Text color (hex or named color) (optional)
      * @param args.backgroundColor - Cell background color (hex or named color) (optional)
      * @param args.borders - Add borders to cells (optional)
-     * @returns Promise<GoogleSheetsFormatRangeResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsFormatRangeData> Typed flat response with IDE autocomplete
      */
-    formatRange: async (args: GoogleSheetsFormatRangeArgs): Promise<GoogleSheetsFormatRangeResult> => {
-      return sdk.resources.call({
+    formatRange: async (args: GoogleSheetsFormatRangeArgs): Promise<GoogleSheetsFormatRangeData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'formatRange',
         params: args || {}
@@ -10638,10 +13206,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.chartType - Chart type: BAR, LINE, AREA, PIE, or SCATTER
      * @param args.title - Chart title
      * @param args.position - Chart position with row, column, rowCount, columnCount
-     * @returns Promise<GoogleSheetsCreateChartResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsCreateChartData> Typed flat response with IDE autocomplete
      */
-    createChart: async (args: GoogleSheetsCreateChartArgs): Promise<GoogleSheetsCreateChartResult> => {
-      return sdk.resources.call({
+    createChart: async (args: GoogleSheetsCreateChartArgs): Promise<GoogleSheetsCreateChartData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'createChart',
         params: args || {}
@@ -10656,10 +13224,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.sheetName - Limit search to specific sheet (optional)
      * @param args.matchCase - Case-sensitive search (optional)
      * @param args.matchEntireCell - Match entire cell content only (optional)
-     * @returns Promise<GoogleSheetsFindAndReplaceResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsFindAndReplaceData> Typed flat response with IDE autocomplete
      */
-    findAndReplace: async (args: GoogleSheetsFindAndReplaceArgs): Promise<GoogleSheetsFindAndReplaceResult> => {
-      return sdk.resources.call({
+    findAndReplace: async (args: GoogleSheetsFindAndReplaceArgs): Promise<GoogleSheetsFindAndReplaceData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'findAndReplace',
         params: args || {}
@@ -10673,10 +13241,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.rowsData - 2D array of row data to insert
      * @param args.startingRow - Row number to start insertion (1-indexed). If not provided, appends to end (optional)
      * @param args.formattingOptions - Optional formatting to apply (bold, italic, foregroundColor, backgroundColor, borders) (optional)
-     * @returns Promise<GoogleSheetsInsertMultipleRowsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsInsertMultipleRowsData> Typed flat response with IDE autocomplete
      */
-    insertMultipleRows: async (args: GoogleSheetsInsertMultipleRowsArgs): Promise<GoogleSheetsInsertMultipleRowsResult> => {
-      return sdk.resources.call({
+    insertMultipleRows: async (args: GoogleSheetsInsertMultipleRowsArgs): Promise<GoogleSheetsInsertMultipleRowsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'insertMultipleRows',
         params: args || {}
@@ -10688,10 +13256,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.spreadsheetId - ID of the spreadsheet
      * @param args.sheetName - Name of the sheet
      * @param args.range - Range to clear (e.g., A1:B10)
-     * @returns Promise<GoogleSheetsClearRangeResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsClearRangeData> Typed flat response with IDE autocomplete
      */
-    clearRange: async (args: GoogleSheetsClearRangeArgs): Promise<GoogleSheetsClearRangeResult> => {
-      return sdk.resources.call({
+    clearRange: async (args: GoogleSheetsClearRangeArgs): Promise<GoogleSheetsClearRangeData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'clearRange',
         params: args || {}
@@ -10704,10 +13272,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
      * @param args.startRowIndex - Row index to start inserting at (0-indexed). To insert before row 5 in the UI, use index 4.
      * @param args.numRows - Number of rows to insert
-     * @returns Promise<GoogleSheetsInsertRowsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsInsertRowsData> Typed flat response with IDE autocomplete
      */
-    insertRows: async (args: GoogleSheetsInsertRowsArgs): Promise<GoogleSheetsInsertRowsResult> => {
-      return sdk.resources.call({
+    insertRows: async (args: GoogleSheetsInsertRowsArgs): Promise<GoogleSheetsInsertRowsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'insertRows',
         params: args || {}
@@ -10720,10 +13288,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
      * @param args.startRowIndex - Row index to start deleting from (0-indexed). To delete row 5 in the UI, use index 4.
      * @param args.numRows - Number of rows to delete
-     * @returns Promise<GoogleSheetsDeleteRowsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsDeleteRowsData> Typed flat response with IDE autocomplete
      */
-    deleteRows: async (args: GoogleSheetsDeleteRowsArgs): Promise<GoogleSheetsDeleteRowsResult> => {
-      return sdk.resources.call({
+    deleteRows: async (args: GoogleSheetsDeleteRowsArgs): Promise<GoogleSheetsDeleteRowsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'deleteRows',
         params: args || {}
@@ -10736,10 +13304,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
      * @param args.startColumnIndex - Column index to start inserting at (0-indexed: A=0, B=1, C=2, D=3, etc.). To insert before column D, use index 3.
      * @param args.numColumns - Number of columns to insert
-     * @returns Promise<GoogleSheetsInsertColumnsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsInsertColumnsData> Typed flat response with IDE autocomplete
      */
-    insertColumns: async (args: GoogleSheetsInsertColumnsArgs): Promise<GoogleSheetsInsertColumnsResult> => {
-      return sdk.resources.call({
+    insertColumns: async (args: GoogleSheetsInsertColumnsArgs): Promise<GoogleSheetsInsertColumnsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'insertColumns',
         params: args || {}
@@ -10752,10 +13320,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
      * @param args.startColumnIndex - Column index to start deleting from (0-indexed: A=0, B=1, C=2, D=3, etc.). To delete column D, use index 3.
      * @param args.numColumns - Number of columns to delete
-     * @returns Promise<GoogleSheetsDeleteColumnsResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsDeleteColumnsData> Typed flat response with IDE autocomplete
      */
-    deleteColumns: async (args: GoogleSheetsDeleteColumnsArgs): Promise<GoogleSheetsDeleteColumnsResult> => {
-      return sdk.resources.call({
+    deleteColumns: async (args: GoogleSheetsDeleteColumnsArgs): Promise<GoogleSheetsDeleteColumnsData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'deleteColumns',
         params: args || {}
@@ -10769,10 +13337,10 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
      * @param args.sourceRange - Source range in A1 notation WITHOUT sheet name (e.g., "A1:C5", not "Sheet1!A1:C5")
      * @param args.targetSheetId - Numeric sheet ID of the target sheet (can be same as sourceSheetId to copy within same sheet)
      * @param args.targetStartCell - Target start cell in A1 notation (e.g., "E1"). The copied data will fill cells starting from this position.
-     * @returns Promise<GoogleSheetsCopyRangeResult> Typed response with IDE autocomplete
+     * @returns Promise<GoogleSheetsCopyRangeData> Typed flat response with IDE autocomplete
      */
-    copyRange: async (args: GoogleSheetsCopyRangeArgs): Promise<GoogleSheetsCopyRangeResult> => {
-      return sdk.resources.call({
+    copyRange: async (args: GoogleSheetsCopyRangeArgs): Promise<GoogleSheetsCopyRangeData> => {
+      return sdk.resources.callDirect({
         resourceId: 'google-sheets',
         method: 'copyRange',
         params: args || {}
@@ -10811,6 +13379,7 @@ export const generatedAdapters = {
   polymarket: createPolymarketAdapter,
   shopify: createShopifyAdapter,
   socket: createSocketAdapter,
+  spaceAgent: createSpaceAgentAdapter,
   telegram: createTelegramAdapter,
   telegramBot: createTelegramBotAdapter,
   trello: createTrelloAdapter,

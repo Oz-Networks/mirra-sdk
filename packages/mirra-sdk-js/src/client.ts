@@ -18,6 +18,8 @@ import {
   ChatStreamChunk,
   DecideRequest,
   DecideResponse,
+  AgentRequest,
+  AgentResponse,
   BatchChatRequest,
   Agent,
   CreateAgentParams,
@@ -61,10 +63,14 @@ import {
 export class MirraSDK {
   private client: AxiosInstance;
   private apiKey: string;
+  /** Base SDK URL without version segment (e.g. https://api.fxn.world/api/sdk) */
+  private sdkBaseUrl: string;
 
   constructor(config: MirraSDKConfig) {
     this.apiKey = config.apiKey;
     const baseUrl = config.baseUrl || 'https://api.fxn.world/api/sdk/v1';
+    // Strip trailing /v1 (or /v2, etc.) to get the versionless SDK base
+    this.sdkBaseUrl = baseUrl.replace(/\/v\d+\/?$/, '');
 
     this.client = axios.create({
       baseURL: baseUrl,
@@ -223,6 +229,29 @@ export class MirraSDK {
      */
     chatStream: (request: ChatRequest): AsyncGenerator<ChatStreamChunk, void, unknown> => {
       return this._streamChat(request);
+    },
+
+    /**
+     * Run an AI agent that can call tools across multiple rounds
+     * The agent decides which tools to use, executes them, and continues
+     * until the task is complete or max rounds are reached.
+     *
+     * @example
+     * ```typescript
+     * const result = await sdk.ai.agent({
+     *   messages: [{ role: 'user', content: 'Find my meetings tomorrow' }],
+     *   tools: ['googleCalendar', 'memory'],
+     * });
+     * console.log(result.content);
+     * console.log(`Rounds: ${result.rounds}, Tools: ${result.toolCalls.length}`);
+     * ```
+     */
+    agent: async (request: AgentRequest): Promise<AgentResponse> => {
+      const response = await this.client.post<MirraResponse<AgentResponse>>(
+        '/ai/agent',
+        request
+      );
+      return response.data.data!;
     },
 
     /**
@@ -468,14 +497,21 @@ export class MirraSDK {
 
   resources = {
     /**
-     * Call a resource method
+     * Call a resource method (v2 — returns flat payload, matching sandbox behavior)
      */
     call: async (params: CallResourceParams): Promise<any> => {
       const response = await this.client.post<MirraResponse<any>>(
-        '/resources/call',
+        `${this.sdkBaseUrl}/v2/resources/call`,
         params
       );
       return response.data.data!;
+    },
+
+    /**
+     * @deprecated Use `call()` instead — both now hit the v2 endpoint.
+     */
+    callDirect: async (params: CallResourceParams): Promise<any> => {
+      return this.resources.call(params);
     },
 
     /**
@@ -849,22 +885,22 @@ export class MirraSDK {
      * Get a flow by ID
      */
     get: async (id: string): Promise<Flow> => {
-      const response = await this.client.post<MirraResponse<Flow>>(
-        '/flows/getFlow',
-        { flowId: id }
-      );
-      return response.data.data!;
+      return this.resources.call({
+        resourceId: 'flows',
+        method: 'getFlow',
+        params: { flowId: id },
+      });
     },
 
     /**
      * List all flows for the authenticated user
      */
     list: async (params?: ListFlowsParams): Promise<Flow[]> => {
-      const response = await this.client.post<MirraResponse<Flow[]>>(
-        '/flows/searchFlows',
-        params || {}
-      );
-      return response.data.data!;
+      return this.resources.call({
+        resourceId: 'flows',
+        method: 'searchFlows',
+        params: params || {},
+      });
     },
 
     /**
