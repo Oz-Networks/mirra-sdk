@@ -1323,6 +1323,23 @@ export interface SpaceAgentSendDirectiveArgs {
   directive: string; // The instruction text for the agent (max 2000 characters)
   urgent?: boolean; // If true, forces an immediate cycle by resetting lastCycleAt so the scheduler picks it up right away
 }
+export interface SpaceAgentRespondToAttentionArgs {
+  message: string; // Your response to the agent's attention request
+}
+export interface SpaceAgentUpdateWorkspaceConfigArgs {
+  instructions?: string; // Agent instructions (max 20,000 characters)
+  context?: string; // Agent context (max 20,000 characters)
+  heartbeat?: string; // Agent heartbeat checklist (max 20,000 characters)
+}
+export interface SpaceAgentUpdateMemoryArgs {
+  entries: any[]; // Array of memory entries to append (non-empty strings)
+}
+export interface SpaceAgentUpdateBudgetArgs {
+  budgetCap: number; // Monthly token budget cap (positive number)
+}
+export interface SpaceAgentSetStatusArgs {
+  status: string; // Target status: "active" or "dormant"
+}
 
 // Telegram Adapter Types
 export interface TelegramSendMessageArgs {
@@ -11578,6 +11595,101 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'spaceAgent',
         method: 'getWorkspaceConfig',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Respond to the space agent's attention request. Clears the attention state, stores your response, and forces an immediate cycle so the agent can process it.
+     * @param args.message - Your response to the agent's attention request
+     */
+    respondToAttention: async (args: SpaceAgentRespondToAttentionArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'respondToAttention',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Dismiss the agent's attention request without responding. The agent returns to active status but does not immediately cycle.
+     */
+    dismissAttention: async (args?: {}): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'dismissAttention',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Force an immediate agent cycle. The scheduler will pick up the agent on its next pass.
+     */
+    triggerCycle: async (args?: {}): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'triggerCycle',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update the agent's workspace configuration fields. Only the provided fields are updated; omitted fields remain unchanged.
+     * @param args.instructions - Agent instructions (max 20,000 characters) (optional)
+     * @param args.context - Agent context (max 20,000 characters) (optional)
+     * @param args.heartbeat - Agent heartbeat checklist (max 20,000 characters) (optional)
+     */
+    updateWorkspaceConfig: async (args: SpaceAgentUpdateWorkspaceConfigArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'updateWorkspaceConfig',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Append entries to the agent's workspace memory. Entries are added with a date header. Memory is truncated at 20,000 characters (oldest entries trimmed).
+     * @param args.entries - Array of memory entries to append (non-empty strings)
+     */
+    updateMemory: async (args: SpaceAgentUpdateMemoryArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'updateMemory',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Set the agent's monthly token budget cap.
+     * @param args.budgetCap - Monthly token budget cap (positive number)
+     */
+    updateBudget: async (args: SpaceAgentUpdateBudgetArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'updateBudget',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Pause or resume the space agent. Set to "dormant" to pause or "active" to resume. Cannot pause while agent is processing.
+     * @param args.status - Target status: "active" or "dormant"
+     */
+    setStatus: async (args: SpaceAgentSetStatusArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'setStatus',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a summary of workspace activity since the agent's last cycle — flow executions, chat messages, voice recordings, and transcripts.
+     */
+    getActivitySummary: async (args?: {}): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'spaceAgent',
+        method: 'getActivitySummary',
         params: args || {}
       });
     }
