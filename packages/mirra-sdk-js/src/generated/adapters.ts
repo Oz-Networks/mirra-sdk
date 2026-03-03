@@ -917,6 +917,7 @@ export interface PagesCreatePageArgs {
   code: string; // JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
   description?: string; // Optional description of the page
   visibility?: string; // Page visibility: "private" (default) or "public"
+  graphId?: string; // Optional graph ID for the page's data source (e.g. a group graph for memory queries). The page URL stays under the caller's personal subdomain. The caller must be a member of the target graph.
 }
 export interface PagesCreateReportPageArgs {
   path: string; // URL path for the page (e.g. "/sales-report"). Must start with /, lowercase alphanumeric and hyphens only.
@@ -10285,6 +10286,7 @@ function createPagesAdapter(sdk: MirraSDK) {
      * @param args.code - JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
      * @param args.description - Optional description of the page (optional)
      * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
+     * @param args.graphId - Optional graph ID for the page's data source (e.g. a group graph for memory queries). The page URL stays under the caller's personal subdomain. The caller must be a member of the target graph. (optional)
      * @returns Promise<PagesCreatePageData> Typed flat response with IDE autocomplete
      */
     createPage: async (args: PagesCreatePageArgs): Promise<PagesCreatePageData> => {
