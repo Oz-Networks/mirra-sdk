@@ -206,24 +206,24 @@ export interface DesktopExecuteCommandArgs {
   timeoutMs?: number; // Timeout in milliseconds (defaults to 120000)
 }
 export interface DesktopReadFileArgs {
-  path: string; // Absolute path to the file to read
+  path: string; // Path to the file. Supports ~ for home directory (e.g., "~/Documents/data.json")
   offset?: number; // Line number to start reading from (1-indexed, defaults to 1)
   limit?: number; // Maximum number of lines to return (defaults to 200)
   maxBytes?: number; // Maximum file size in bytes before rejecting (defaults to 10485760 = 10 MB)
 }
 export interface DesktopWriteFileArgs {
-  path: string; // Absolute path to the file to write
+  path: string; // Path to the file. Supports ~ for home directory (e.g., "~/scripts/hello.sh")
   content: string; // Text content to write to the file
   append?: boolean; // If true, append to existing file instead of overwriting (defaults to false)
 }
 export interface DesktopEditFileArgs {
-  path: string; // Absolute path to the file to edit
+  path: string; // Path to the file. Supports ~ for home directory (e.g., "~/projects/config.json")
   oldString: string; // The exact text to find and replace (must match verbatim)
   newString: string; // The replacement text (use empty string to delete the matched text)
   replaceAll?: boolean; // If true, replace every occurrence of oldString. Defaults to false (single match required).
 }
 export interface DesktopListDirectoryArgs {
-  path: string; // Absolute path to the directory to list
+  path: string; // Path to the directory. Supports ~ for home directory (e.g., "~/Documents")
   recursive?: boolean; // If true, list recursively (max depth 3). Defaults to false.
   includeHidden?: boolean; // If true, include hidden files (starting with .). Defaults to false.
 }
@@ -2323,6 +2323,7 @@ export type DesktopExecuteCommandResult = AdapterResultBase<DesktopExecuteComman
 
 export interface DesktopReadFileData {
   content: string; // File contents with line numbers in cat -n format
+  rawContent: string; // File contents WITHOUT line numbers — use this for JSON.parse(), CSV parsing, or any programmatic processing
   path: string; // Absolute path of the file that was read
   sizeBytes: number; // File size in bytes
   totalLines: number; // Total number of lines in the file
@@ -7886,8 +7887,8 @@ function createDesktopAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Read the text contents of a file on the user's desktop with line-based pagination. Returns 200 lines by default starting from line 1, with line numbers in "cat -n" format. Use offset/limit to paginate through large files. Check hasMore to know if more content follows.
-     * @param args.path - Absolute path to the file to read
+     * Read the text contents of a file on the user's desktop with line-based pagination. Returns 200 lines by default starting from line 1. The "content" field has line numbers in "cat -n" format for display; the "rawContent" field has clean text for programmatic use (JSON.parse, CSV parsing, etc). Supports ~ for home directory. Use offset/limit to paginate through large files. Check hasMore to know if more content follows.
+     * @param args.path - Path to the file. Supports ~ for home directory (e.g., "~/Documents/data.json")
      * @param args.offset - Line number to start reading from (1-indexed, defaults to 1) (optional)
      * @param args.limit - Maximum number of lines to return (defaults to 200) (optional)
      * @param args.maxBytes - Maximum file size in bytes before rejecting (defaults to 10485760 = 10 MB) (optional)
@@ -7903,7 +7904,7 @@ function createDesktopAdapter(sdk: MirraSDK) {
 
     /**
      * Write or create a file on the user's desktop. Parent directories are created automatically. Requires user consent.
-     * @param args.path - Absolute path to the file to write
+     * @param args.path - Path to the file. Supports ~ for home directory (e.g., "~/scripts/hello.sh")
      * @param args.content - Text content to write to the file
      * @param args.append - If true, append to existing file instead of overwriting (defaults to false) (optional)
      * @returns Promise<DesktopWriteFileData> Typed flat response with IDE autocomplete
@@ -7918,7 +7919,7 @@ function createDesktopAdapter(sdk: MirraSDK) {
 
     /**
      * Make a targeted text replacement in a file on the user's desktop. Read the file first with readFile to find the exact text, then use editFile to surgically replace it. old_string must appear verbatim in the file. If it matches multiple locations the edit fails unless replaceAll is true. Requires user consent.
-     * @param args.path - Absolute path to the file to edit
+     * @param args.path - Path to the file. Supports ~ for home directory (e.g., "~/projects/config.json")
      * @param args.oldString - The exact text to find and replace (must match verbatim)
      * @param args.newString - The replacement text (use empty string to delete the matched text)
      * @param args.replaceAll - If true, replace every occurrence of oldString. Defaults to false (single match required). (optional)
@@ -7934,7 +7935,7 @@ function createDesktopAdapter(sdk: MirraSDK) {
 
     /**
      * List files and directories at a given path on the user's desktop. Returns name, type, size, and modification time for each entry.
-     * @param args.path - Absolute path to the directory to list
+     * @param args.path - Path to the directory. Supports ~ for home directory (e.g., "~/Documents")
      * @param args.recursive - If true, list recursively (max depth 3). Defaults to false. (optional)
      * @param args.includeHidden - If true, include hidden files (starting with .). Defaults to false. (optional)
      * @returns Promise<DesktopListDirectoryData> Typed flat response with IDE autocomplete
