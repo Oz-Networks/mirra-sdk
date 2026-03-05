@@ -753,12 +753,12 @@ export interface MemorySearchArgs {
   startTime?: number; // Filter entities created after this timestamp (Unix milliseconds)
   endTime?: number; // Filter entities created before this timestamp (Unix milliseconds)
   propertyFilters?: any; // Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] }
-  limit?: number; // Maximum number of results (default: 50, max: 100)
+  limit?: number; // Maximum number of results (default: 20, max: 100)
 }
 export interface MemoryQueryArgs {
   type?: string; // Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against entityType, meta_item_type, subType, or semantic_roles
   filters?: any; // Additional filters (not yet implemented)
-  limit?: number; // Maximum results (default: 50, max: 100)
+  limit?: number; // Maximum results (default: 20, max: 100)
   offset?: number; // Pagination offset for fetching more results (default: 0)
 }
 export interface MemoryFindOneArgs {
@@ -9719,7 +9719,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * @param args.startTime - Filter entities created after this timestamp (Unix milliseconds) (optional)
      * @param args.endTime - Filter entities created before this timestamp (Unix milliseconds) (optional)
      * @param args.propertyFilters - Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] } (optional)
-     * @param args.limit - Maximum number of results (default: 50, max: 100) (optional)
+     * @param args.limit - Maximum number of results (default: 20, max: 100) (optional)
      * @returns Promise<MemorySearchData> Typed flat response with IDE autocomplete
      */
     search: async (args: MemorySearchArgs): Promise<MemorySearchData> => {
@@ -9734,7 +9734,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * Query memory entities with filters. Returns lightweight summaries with TRUNCATED content (max 200 chars) to prevent large payloads. Use type="task" to list all tasks (including those created via createTask). To get full untruncated content for a specific entity, use `findOne` with the entity ID.
      * @param args.type - Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against entityType, meta_item_type, subType, or semantic_roles (optional)
      * @param args.filters - Additional filters (not yet implemented) (optional)
-     * @param args.limit - Maximum results (default: 50, max: 100) (optional)
+     * @param args.limit - Maximum results (default: 20, max: 100) (optional)
      * @param args.offset - Pagination offset for fetching more results (default: 0) (optional)
      * @returns Promise<MemoryQueryData> Typed flat response with IDE autocomplete
      */
