@@ -27,6 +27,12 @@ Pre-built templates for common use cases:
 - **Location**: [`templates/`](./templates/)
 - **Browse**: [Templates Directory](./templates/)
 
+### Claude Code Skills
+- **Location**: [`skills/`](./skills/)
+- Auto-generated skills for every Mirra adapter
+- Copy any skill folder into your `.claude/skills/` to teach Claude Code how to use that Mirra integration
+- **Install**: `cp -r skills/mirra-google-gmail ~/.claude/skills/`
+
 ## 📚 Documentation
 
 - [Getting Started Guide](./GETTING_STARTED_WITH_SDKS.md)
