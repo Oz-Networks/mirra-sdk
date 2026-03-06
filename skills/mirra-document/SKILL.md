@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/document/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "document",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/document/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -65,10 +71,10 @@ Upload and process a document (PDF, DOCX, TXT, MD). Returns normalized flat stru
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/document/upload" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"file":"<value>","filename":"<value>","mimeType":"<value>"}' | jq .
+  -d '{"resourceId":"document","method":"upload","params":{"file":"<value>","filename":"<value>","mimeType":"<value>"}}' | jq .
 ```
 
 ### `get`
@@ -86,10 +92,10 @@ Get document metadata and content. Returns normalized flat structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/document/get" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>"}' | jq .
+  -d '{"resourceId":"document","method":"get","params":{"documentId":"<ID>"}}' | jq .
 ```
 
 ### `getStatus`
@@ -107,10 +113,10 @@ Get document processing status. Returns normalized flat structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/document/getStatus" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>"}' | jq .
+  -d '{"resourceId":"document","method":"getStatus","params":{"documentId":"<ID>"}}' | jq .
 ```
 
 ### `getChunks`
@@ -128,10 +134,10 @@ Get all chunks for a document. Returns normalized flat chunk structures.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/document/getChunks" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>"}' | jq .
+  -d '{"resourceId":"document","method":"getChunks","params":{"documentId":"<ID>"}}' | jq .
 ```
 
 ### `delete`
@@ -149,10 +155,10 @@ Delete a document and all its chunks. Returns normalized flat structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/document/delete" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>"}' | jq .
+  -d '{"resourceId":"document","method":"delete","params":{"documentId":"<ID>"}}' | jq .
 ```
 
 ### `share`
@@ -172,10 +178,10 @@ Share a document to another graph (group or user-contact). Returns normalized fl
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/document/share" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>","targetGraphId":"<ID>"}' | jq .
+  -d '{"resourceId":"document","method":"share","params":{"documentId":"<ID>","targetGraphId":"<ID>"}}' | jq .
 ```
 
 ### `unshare`
@@ -194,10 +200,10 @@ Remove document access from a graph. Returns normalized flat structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/document/unshare" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>","graphId":"<ID>"}' | jq .
+  -d '{"resourceId":"document","method":"unshare","params":{"documentId":"<ID>","graphId":"<ID>"}}' | jq .
 ```
 
 ### `listGraphs`
@@ -215,10 +221,10 @@ List all graphs a document is shared in. Returns normalized flat graph structure
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/document/listGraphs" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>"}' | jq .
+  -d '{"resourceId":"document","method":"listGraphs","params":{"documentId":"<ID>"}}' | jq .
 ```
 
 ### `search`
@@ -239,10 +245,10 @@ Semantic search across document chunks. Returns normalized flat chunk structures
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/document/search" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"search term"}' | jq .
+  -d '{"resourceId":"document","method":"search","params":{"query":"search term"}}' | jq .
 ```
 
 ### `list`
@@ -262,10 +268,10 @@ List documents in a graph. Returns normalized flat document structures.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/document/list" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"document","method":"list","params":{}}' | jq .
 ```
 
 ## Response Format

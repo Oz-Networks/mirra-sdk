@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleGmail/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "google-gmail",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/googleGmail/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -67,10 +73,10 @@ Send an email via Gmail
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleGmail/sendEmail" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"to":"recipient@example.com","subject":"Hello","body":"This is a test email"}' | jq .
+  -d '{"resourceId":"google-gmail","method":"sendEmail","params":{"to":"recipient@example.com","subject":"Hello","body":"This is a test email"}}' | jq .
 ```
 
 **Example response:**
@@ -99,10 +105,10 @@ Search emails with Gmail query syntax. Returns normalized email summaries.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleGmail/searchEmails" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"from:sender@example.com is:unread","maxResults":5}' | jq .
+  -d '{"resourceId":"google-gmail","method":"searchEmails","params":{"query":"from:sender@example.com is:unread","maxResults":5}}' | jq .
 ```
 
 **Example response:**
@@ -146,10 +152,10 @@ List recent emails from inbox. Returns normalized email summaries.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleGmail/listEmails" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"maxResults":20}' | jq .
+  -d '{"resourceId":"google-gmail","method":"listEmails","params":{"maxResults":20}}' | jq .
 ```
 
 **Example response:**
@@ -194,10 +200,10 @@ Get full details of a specific email by ID. Returns normalized flat structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleGmail/getEmail" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"messageId":"msg_abc123"}' | jq .
+  -d '{"resourceId":"google-gmail","method":"getEmail","params":{"messageId":"msg_abc123"}}' | jq .
 ```
 
 **Example response:**
@@ -241,10 +247,10 @@ Create a draft email in Gmail
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleGmail/createDraft" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"to":"recipient@example.com","subject":"Draft Subject","body":"Draft content"}' | jq .
+  -d '{"resourceId":"google-gmail","method":"createDraft","params":{"to":"recipient@example.com","subject":"Draft Subject","body":"Draft content"}}' | jq .
 ```
 
 **Example response:**
@@ -278,10 +284,10 @@ Update an existing draft email
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleGmail/updateDraft" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"draftId":"draft_xyz789","subject":"Updated Subject","body":"Updated content"}' | jq .
+  -d '{"resourceId":"google-gmail","method":"updateDraft","params":{"draftId":"draft_xyz789","subject":"Updated Subject","body":"Updated content"}}' | jq .
 ```
 
 **Example response:**
@@ -308,10 +314,10 @@ Delete a draft email
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleGmail/deleteDraft" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"draftId":"draft_xyz789"}' | jq .
+  -d '{"resourceId":"google-gmail","method":"deleteDraft","params":{"draftId":"draft_xyz789"}}' | jq .
 ```
 
 **Example response:**
@@ -337,10 +343,10 @@ List all draft emails. Returns normalized draft summaries.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleGmail/listDrafts" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"maxResults":20}' | jq .
+  -d '{"resourceId":"google-gmail","method":"listDrafts","params":{"maxResults":20}}' | jq .
 ```
 
 **Example response:**
@@ -382,10 +388,10 @@ Delete an email
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleGmail/deleteEmail" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"messageId":"msg_abc123"}' | jq .
+  -d '{"resourceId":"google-gmail","method":"deleteEmail","params":{"messageId":"msg_abc123"}}' | jq .
 ```
 
 **Example response:**
@@ -414,10 +420,10 @@ Delete multiple emails at once. Uses Gmail batchDelete API for efficiency.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleGmail/bulkDeleteEmails" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"messageIds":["msg_abc123","msg_def456","msg_ghi789"]}' | jq .
+  -d '{"resourceId":"google-gmail","method":"bulkDeleteEmails","params":{"messageIds":["msg_abc123","msg_def456","msg_ghi789"]}}' | jq .
 ```
 
 **Example response:**

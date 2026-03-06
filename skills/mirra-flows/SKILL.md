@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "flows",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/flows/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -106,10 +112,10 @@ Valid operators: equals, notEquals, contains, startsWith, endsWith, greaterThan,
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/createFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"Weather Command","eventFilter":{"when":"telegram.bot_command","command":"/weather"},"code":"export async function handler(event, context, mirra) { const chatId = event.fields.chat_id; const messageId = event.data.bot.messageId; await mirra.telegramBot.replyToMessage({ chatId, replyToMessageId: messageId, text: \"Checking weather...\" }); return { handled: true }; }"}' | jq .
+  -d '{"resourceId":"flows","method":"createFlow","params":{"title":"Weather Command","eventFilter":{"when":"telegram.bot_command","command":"/weather"},"code":"export async function handler(event, context, mirra) { const chatId = event.fields.chat_id; const messageId = event.data.bot.messageId; await mirra.telegramBot.replyToMessage({ chatId, replyToMessageId: messageId, text: \"Checking weather...\" }); return { handled: true }; }"}}' | jq .
 ```
 
 ### `createTimeFlow`
@@ -132,10 +138,10 @@ Create a new time-based flow with cron schedule. NOTE: Consider using createFlow
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/createTimeFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"<value>","description":"<value>","schedule":"<value>","scriptId":"<ID>"}' | jq .
+  -d '{"resourceId":"flows","method":"createTimeFlow","params":{"title":"<value>","description":"<value>","schedule":"<value>","scriptId":"<ID>"}}' | jq .
 ```
 
 ### `createEventFlow`
@@ -158,10 +164,10 @@ Create an event-based flow with pre-filtering conditions. NOTE: Consider using c
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/createEventFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"VIP Message Handler","description":"Process messages from VIP contact","trigger":{"type":"event","config":{"eventFilter":{"operator":"and","conditions":[{"operator":"equals","field":"type","value":"telegram.message"},{"operator":"equals","field":"actor.id","value":"12345"}]}}},"scriptId":"script-id-here"}' | jq .
+  -d '{"resourceId":"flows","method":"createEventFlow","params":{"title":"VIP Message Handler","description":"Process messages from VIP contact","trigger":{"type":"event","config":{"eventFilter":{"operator":"and","conditions":[{"operator":"equals","field":"type","value":"telegram.message"},{"operator":"equals","field":"actor.id","value":"12345"}]}}},"scriptId":"script-id-here"}}' | jq .
 ```
 
 ### `getFlow`
@@ -180,10 +186,10 @@ Get a specific flow by ID. Returns normalized flat structure. Use includeScript=
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/getFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"id":"<ID>"}' | jq .
+  -d '{"resourceId":"flows","method":"getFlow","params":{"id":"<ID>"}}' | jq .
 ```
 
 ### `updateFlow`
@@ -211,10 +217,10 @@ Update an existing flow. Returns normalized flat structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/updateFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"id":"<ID>"}' | jq .
+  -d '{"resourceId":"flows","method":"updateFlow","params":{"id":"<ID>"}}' | jq .
 ```
 
 ### `modifyFlowScript`
@@ -234,10 +240,10 @@ Modify the script code for a flow. Validates code, creates a new version (or a p
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/modifyFlowScript" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"flowId":"507f1f77bcf86cd799439011","newCode":"export async function handler(event, context, mirra) { /* modified */ }","commitMessage":"Filter by current user only"}' | jq .
+  -d '{"resourceId":"flows","method":"modifyFlowScript","params":{"flowId":"507f1f77bcf86cd799439011","newCode":"export async function handler(event, context, mirra) { /* modified */ }","commitMessage":"Filter by current user only"}}' | jq .
 ```
 
 **Example response:**
@@ -267,10 +273,10 @@ Execute a flow on-demand with custom input. The input object is merged into the 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/executeFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"flowId":"507f1f77bcf86cd799439011","input":{"question":"How do I get started?","productId":"product_123"}}' | jq .
+  -d '{"resourceId":"flows","method":"executeFlow","params":{"flowId":"507f1f77bcf86cd799439011","input":{"question":"How do I get started?","productId":"product_123"}}}' | jq .
 ```
 
 **Example response:**
@@ -302,10 +308,10 @@ Delete a flow
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/deleteFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"id":"<ID>"}' | jq .
+  -d '{"resourceId":"flows","method":"deleteFlow","params":{"id":"<ID>"}}' | jq .
 ```
 
 ### `pauseFlow`
@@ -323,10 +329,10 @@ Pause an active flow. Returns normalized flat structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/pauseFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"id":"<ID>"}' | jq .
+  -d '{"resourceId":"flows","method":"pauseFlow","params":{"id":"<ID>"}}' | jq .
 ```
 
 ### `resumeFlow`
@@ -344,10 +350,10 @@ Resume a paused flow. Returns normalized flat structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/resumeFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"id":"<ID>"}' | jq .
+  -d '{"resourceId":"flows","method":"resumeFlow","params":{"id":"<ID>"}}' | jq .
 ```
 
 ### `searchFlows`
@@ -370,10 +376,10 @@ Search flows with filters. Default returns minimal info (id, title, status, trig
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/searchFlows" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"flows","method":"searchFlows","params":{}}' | jq .
 ```
 
 ### `recordExecution`
@@ -394,10 +400,10 @@ Record execution result for a flow. Returns normalized flat structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/recordExecution" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"id":"<ID>","success":true}' | jq .
+  -d '{"resourceId":"flows","method":"recordExecution","params":{"id":"<ID>","success":true}}' | jq .
 ```
 
 ### `listEventTypes`
@@ -418,10 +424,10 @@ List available event types that can trigger automations. Returns normalized even
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/listEventTypes" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"flows","method":"listEventTypes","params":{}}' | jq .
 ```
 
 ### `testFlow`
@@ -441,10 +447,10 @@ Test a flow by generating an event that matches the trigger conditions.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/testFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"flowId":"<ID>"}' | jq .
+  -d '{"resourceId":"flows","method":"testFlow","params":{"flowId":"<ID>"}}' | jq .
 ```
 
 ### `validateTrigger`
@@ -463,10 +469,10 @@ Check if a custom event would match a flow trigger without any execution. Useful
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/validateTrigger" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"flowId":"<ID>","event":{}}' | jq .
+  -d '{"resourceId":"flows","method":"validateTrigger","params":{"flowId":"<ID>","event":{}}}' | jq .
 ```
 
 ### `getFlowsByEventType`
@@ -485,10 +491,10 @@ Get all active flows triggered by a specific event type. Default returns minimal
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/getFlowsByEventType" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"eventType":"<value>"}' | jq .
+  -d '{"resourceId":"flows","method":"getFlowsByEventType","params":{"eventType":"<value>"}}' | jq .
 ```
 
 ### `createBatchOperation`
@@ -509,10 +515,10 @@ Create a self-managing flow that processes multiple adapter operations over time
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/createBatchOperation" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"Leave old Telegram groups","operations":[{"adapter":"telegram","operation":"leaveGroup","args":{"groupId":"-100123"}},{"adapter":"telegram","operation":"leaveGroup","args":{"groupId":"-100456"}}],"batchSize":5,"intervalSeconds":60}' | jq .
+  -d '{"resourceId":"flows","method":"createBatchOperation","params":{"title":"Leave old Telegram groups","operations":[{"adapter":"telegram","operation":"leaveGroup","args":{"groupId":"-100123"}},{"adapter":"telegram","operation":"leaveGroup","args":{"groupId":"-100456"}}],"batchSize":5,"intervalSeconds":60}}' | jq .
 ```
 
 ### `publishFlow`
@@ -533,10 +539,10 @@ Publish a flow to the marketplace so other users can discover and install it. Th
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/publishFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"flowId":"507f1f77bcf86cd799439011","tags":["telegram","notifications"],"category":"messaging"}' | jq .
+  -d '{"resourceId":"flows","method":"publishFlow","params":{"flowId":"507f1f77bcf86cd799439011","tags":["telegram","notifications"],"category":"messaging"}}' | jq .
 ```
 
 ### `unpublishFlow`
@@ -554,10 +560,10 @@ Remove a flow from the marketplace. Existing installations will continue to work
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/flows/unpublishFlow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"flowId":"<ID>"}' | jq .
+  -d '{"resourceId":"flows","method":"unpublishFlow","params":{"flowId":"<ID>"}}' | jq .
 ```
 
 ## Response Format

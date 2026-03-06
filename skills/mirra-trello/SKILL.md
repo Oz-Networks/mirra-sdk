@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "trello",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/trello/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -63,10 +69,10 @@ Get all boards for the authenticated user
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/getBoards" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"trello","method":"getBoards","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -103,10 +109,10 @@ Get a specific board by ID including its lists
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/getBoard" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"boardId":"123"}' | jq .
+  -d '{"resourceId":"trello","method":"getBoard","params":{"boardId":"123"}}' | jq .
 ```
 
 **Example response:**
@@ -150,10 +156,10 @@ Create a new card in a Trello list
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/createCard" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"name":"New Task","idList":"list123","description":"Task description"}' | jq .
+  -d '{"resourceId":"trello","method":"createCard","params":{"name":"New Task","idList":"list123","description":"Task description"}}' | jq .
 ```
 
 **Example response:**
@@ -195,10 +201,10 @@ Get a specific card by ID
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/getCard" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"cardId":"card456"}' | jq .
+  -d '{"resourceId":"trello","method":"getCard","params":{"cardId":"card456"}}' | jq .
 ```
 
 **Example response:**
@@ -248,10 +254,10 @@ Update an existing card
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/updateCard" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"cardId":"card456","name":"Updated Task","idList":"list789"}' | jq .
+  -d '{"resourceId":"trello","method":"updateCard","params":{"cardId":"card456","name":"Updated Task","idList":"list789"}}' | jq .
 ```
 
 **Example response:**
@@ -293,10 +299,10 @@ Delete a card permanently
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/deleteCard" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"cardId":"card456"}' | jq .
+  -d '{"resourceId":"trello","method":"deleteCard","params":{"cardId":"card456"}}' | jq .
 ```
 
 **Example response:**
@@ -327,10 +333,10 @@ Create a new checklist on a card
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/createChecklist" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"cardId":"card456","name":"Tasks"}' | jq .
+  -d '{"resourceId":"trello","method":"createChecklist","params":{"cardId":"card456","name":"Tasks"}}' | jq .
 ```
 
 **Example response:**
@@ -365,10 +371,10 @@ Get a specific checklist by ID
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/getChecklist" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"checklistId":"checklist123"}' | jq .
+  -d '{"resourceId":"trello","method":"getChecklist","params":{"checklistId":"checklist123"}}' | jq .
 ```
 
 **Example response:**
@@ -419,10 +425,10 @@ Update a checklist name
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/updateChecklist" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"checklistId":"checklist123","name":"Updated Tasks"}' | jq .
+  -d '{"resourceId":"trello","method":"updateChecklist","params":{"checklistId":"checklist123","name":"Updated Tasks"}}' | jq .
 ```
 
 **Example response:**
@@ -457,10 +463,10 @@ Delete a checklist from a card
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/deleteChecklist" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"checklistId":"checklist123"}' | jq .
+  -d '{"resourceId":"trello","method":"deleteChecklist","params":{"checklistId":"checklist123"}}' | jq .
 ```
 
 **Example response:**
@@ -491,10 +497,10 @@ Add a check item to a checklist
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/addCheckItem" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"checklistId":"checklist123","name":"New task"}' | jq .
+  -d '{"resourceId":"trello","method":"addCheckItem","params":{"checklistId":"checklist123","name":"New task"}}' | jq .
 ```
 
 **Example response:**
@@ -529,10 +535,10 @@ Update a check item (name or completion state)
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/updateCheckItem" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"cardId":"card456","checkItemId":"item789","state":"complete"}' | jq .
+  -d '{"resourceId":"trello","method":"updateCheckItem","params":{"cardId":"card456","checkItemId":"item789","state":"complete"}}' | jq .
 ```
 
 **Example response:**
@@ -565,10 +571,10 @@ Delete a check item from a checklist
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/deleteCheckItem" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"checklistId":"checklist123","checkItemId":"item789"}' | jq .
+  -d '{"resourceId":"trello","method":"deleteCheckItem","params":{"checklistId":"checklist123","checkItemId":"item789"}}' | jq .
 ```
 
 **Example response:**
@@ -599,10 +605,10 @@ Search Trello API for available operations beyond core tools
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/discoverExtended" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"search term"}' | jq .
+  -d '{"resourceId":"trello","method":"discoverExtended","params":{"query":"search term"}}' | jq .
 ```
 
 ### `executeExtended`
@@ -623,10 +629,10 @@ Execute a Trello API operation by operationId
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/trello/executeExtended" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"operationId":"<ID>"}' | jq .
+  -d '{"resourceId":"trello","method":"executeExtended","params":{"operationId":"<ID>"}}' | jq .
 ```
 
 ## Response Format

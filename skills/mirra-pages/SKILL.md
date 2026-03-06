@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "pages",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/pages/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -67,10 +73,10 @@ Create a new page with JSX code. The code is compiled to HTML with React, Tailwi
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/createPage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"path":"/sales-dashboard","title":"Sales Dashboard","code":"function App() {\n  const data = [\n    { month: 'Jan', revenue: 4000, orders: 240 },\n    { month: 'Feb', revenue: 3000, orders: 198 },\n    { month: 'Mar', revenue: 5000, orders: 305 },\n    { month: 'Apr', revenue: 4500, orders: 278 },\n    { month: 'May', revenue: 6000, orders: 389 },\n    { month: 'Jun', revenue: 5500, orders: 342 }\n  ];\n\n  return (\n    <div className=\"min-h-screen p-8 md:p-12\">\n      <h1 className=\"mb-2\">Sales Dashboard</h1>\n      <p className=\"text-m-text-secondary mb-8\">Revenue and order tracking</p>\n      <div className=\"bg-m-surface border border-m-border rounded-xl p-6\">\n        <h3 className=\"mb-4\">Monthly Revenue</h3>\n        <ResponsiveContainer width=\"100%\" height={400}>\n          <LineChart data={data}>\n            <CartesianGrid strokeDasharray=\"3 3\" stroke=\"var(--m-border)\" />\n            <XAxis dataKey=\"month\" stroke=\"var(--m-text-muted)\" />\n            <YAxis stroke=\"var(--m-text-muted)\" />\n            <Tooltip />\n            <Line type=\"monotone\" dataKey=\"revenue\" stroke={MIRRA_COLORS[0]} strokeWidth={2} dot={false} />\n            <Line type=\"monotone\" dataKey=\"orders\" stroke={MIRRA_COLORS[1]} strokeWidth={2} dot={false} />\n          </LineChart>\n        </ResponsiveContainer>\n      </div>\n    </div>\n  );\n}"}' | jq .
+  -d '{"resourceId":"pages","method":"createPage","params":{"path":"/sales-dashboard","title":"Sales Dashboard","code":"function App() {\n  const data = [\n    { month: 'Jan', revenue: 4000, orders: 240 },\n    { month: 'Feb', revenue: 3000, orders: 198 },\n    { month: 'Mar', revenue: 5000, orders: 305 },\n    { month: 'Apr', revenue: 4500, orders: 278 },\n    { month: 'May', revenue: 6000, orders: 389 },\n    { month: 'Jun', revenue: 5500, orders: 342 }\n  ];\n\n  return (\n    <div className=\"min-h-screen p-8 md:p-12\">\n      <h1 className=\"mb-2\">Sales Dashboard</h1>\n      <p className=\"text-m-text-secondary mb-8\">Revenue and order tracking</p>\n      <div className=\"bg-m-surface border border-m-border rounded-xl p-6\">\n        <h3 className=\"mb-4\">Monthly Revenue</h3>\n        <ResponsiveContainer width=\"100%\" height={400}>\n          <LineChart data={data}>\n            <CartesianGrid strokeDasharray=\"3 3\" stroke=\"var(--m-border)\" />\n            <XAxis dataKey=\"month\" stroke=\"var(--m-text-muted)\" />\n            <YAxis stroke=\"var(--m-text-muted)\" />\n            <Tooltip />\n            <Line type=\"monotone\" dataKey=\"revenue\" stroke={MIRRA_COLORS[0]} strokeWidth={2} dot={false} />\n            <Line type=\"monotone\" dataKey=\"orders\" stroke={MIRRA_COLORS[1]} strokeWidth={2} dot={false} />\n          </LineChart>\n        </ResponsiveContainer>\n      </div>\n    </div>\n  );\n}"}}' | jq .
 ```
 
 ### `createReportPage`
@@ -112,10 +118,10 @@ Transform types:
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/createReportPage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"path":"/telegram-report","title":"Telegram Analytics","layout":"dashboard","widgets":[{"type":"stat-grid","collection":"telegram_messages","transform":{"type":"raw"},"display":{"title":"Overview"},"config":{"columns":3,"items":[{"label":"Total Messages","valueField":"id","format":"count","aggregate":"count"},{"label":"Unique Senders","valueField":"senderId","format":"number","aggregate":"count"},{"label":"Media Count","valueField":"hasMedia","format":"number","aggregate":"sum"}]}},{"type":"bar-chart","collection":"telegram_messages","transform":{"type":"groupBy","field":"senderName","metric":{"field":"id","op":"count"},"sort":{"field":"id","direction":"desc"},"limit":10},"display":{"title":"Top Senders","height":300},"config":{"xField":"_group","yField":"_value","orientation":"horizontal"}},{"type":"area-chart","collection":"telegram_messages","transform":{"type":"timeSeries","timeField":"date","granularity":"day"},"display":{"title":"Messages Over Time","height":250},"config":{"xField":"_time","yFields":["_count"]}}]}' | jq .
+  -d '{"resourceId":"pages","method":"createReportPage","params":{"path":"/telegram-report","title":"Telegram Analytics","layout":"dashboard","widgets":[{"type":"stat-grid","collection":"telegram_messages","transform":{"type":"raw"},"display":{"title":"Overview"},"config":{"columns":3,"items":[{"label":"Total Messages","valueField":"id","format":"count","aggregate":"count"},{"label":"Unique Senders","valueField":"senderId","format":"number","aggregate":"count"},{"label":"Media Count","valueField":"hasMedia","format":"number","aggregate":"sum"}]}},{"type":"bar-chart","collection":"telegram_messages","transform":{"type":"groupBy","field":"senderName","metric":{"field":"id","op":"count"},"sort":{"field":"id","direction":"desc"},"limit":10},"display":{"title":"Top Senders","height":300},"config":{"xField":"_group","yField":"_value","orientation":"horizontal"}},{"type":"area-chart","collection":"telegram_messages","transform":{"type":"timeSeries","timeField":"date","granularity":"day"},"display":{"title":"Messages Over Time","height":250},"config":{"xField":"_time","yFields":["_count"]}}]}}' | jq .
 ```
 
 ### `upsertReportPage`
@@ -158,10 +164,10 @@ Transform types:
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/upsertReportPage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"path":"/agent-report-my-space","title":"My Space Report","layout":"dashboard","updateReason":"Added new chart widget","widgets":[{"type":"stat-grid","collection":"metrics","display":{"title":"Overview"},"config":{"columns":3,"items":[{"label":"Total Items","valueField":"count","aggregate":"sum"},{"label":"Active","valueField":"isActive","aggregate":"count"},{"label":"Latest","valueField":"createdAt","aggregate":"max"}]},"transform":{"type":"raw","limit":100}},{"type":"bar-chart","collection":"metrics","display":{"title":"Items by Category","height":300},"config":{"xField":"_group","yField":"_value"},"transform":{"type":"groupBy","field":"category","metric":{"field":"id","op":"count"},"limit":10}},{"type":"text-block","config":{"content":"Report updated automatically."}}]}' | jq .
+  -d '{"resourceId":"pages","method":"upsertReportPage","params":{"path":"/agent-report-my-space","title":"My Space Report","layout":"dashboard","updateReason":"Added new chart widget","widgets":[{"type":"stat-grid","collection":"metrics","display":{"title":"Overview"},"config":{"columns":3,"items":[{"label":"Total Items","valueField":"count","aggregate":"sum"},{"label":"Active","valueField":"isActive","aggregate":"count"},{"label":"Latest","valueField":"createdAt","aggregate":"max"}]},"transform":{"type":"raw","limit":100}},{"type":"bar-chart","collection":"metrics","display":{"title":"Items by Category","height":300},"config":{"xField":"_group","yField":"_value"},"transform":{"type":"groupBy","field":"category","metric":{"field":"id","op":"count"},"limit":10}},{"type":"text-block","config":{"content":"Report updated automatically."}}]}}' | jq .
 ```
 
 **Example response:**
@@ -193,10 +199,10 @@ Edit a page using search-and-replace. Each edit replaces one exact match of oldC
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/editPage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"pageId":"6650abcd1234ef5678901234","edits":[{"oldCode":"text-2xl font-bold text-gray-800","newCode":"text-4xl font-semibold text-blue-900"}]}' | jq .
+  -d '{"resourceId":"pages","method":"editPage","params":{"pageId":"6650abcd1234ef5678901234","edits":[{"oldCode":"text-2xl font-bold text-gray-800","newCode":"text-4xl font-semibold text-blue-900"}]}}' | jq .
 ```
 
 ### `updatePage`
@@ -217,10 +223,10 @@ Replace the entire page code. Use editPage instead for small changes — it is m
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/updatePage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"pageId":"6650abcd1234ef5678901234","code":"function App() {\n  return <div className=\"p-8\"><h1 className=\"text-2xl font-bold\">Updated Page</h1></div>;\n}"}' | jq .
+  -d '{"resourceId":"pages","method":"updatePage","params":{"pageId":"6650abcd1234ef5678901234","code":"function App() {\n  return <div className=\"p-8\"><h1 className=\"text-2xl font-bold\">Updated Page</h1></div>;\n}"}}' | jq .
 ```
 
 ### `revertPage`
@@ -239,10 +245,10 @@ Revert a page to a previous version. The current code becomes a new version entr
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/revertPage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"pageId":"6650abcd1234ef5678901234","versionIndex":0}' | jq .
+  -d '{"resourceId":"pages","method":"revertPage","params":{"pageId":"6650abcd1234ef5678901234","versionIndex":0}}' | jq .
 ```
 
 ### `getPage`
@@ -261,10 +267,10 @@ Get a page by its ID or by path within the current graph. Returns page metadata 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/getPage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"pageId":"6650abcd1234ef5678901234"}' | jq .
+  -d '{"resourceId":"pages","method":"getPage","params":{"pageId":"6650abcd1234ef5678901234"}}' | jq .
 ```
 
 ### `listPages`
@@ -282,10 +288,10 @@ List all pages for the current graph. Optionally filter by status.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/listPages" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"pages","method":"listPages","params":{}}' | jq .
 ```
 
 ### `deletePage`
@@ -303,10 +309,10 @@ Soft-delete a page by setting its status to "deleted".
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/deletePage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"pageId":"6650abcd1234ef5678901234"}' | jq .
+  -d '{"resourceId":"pages","method":"deletePage","params":{"pageId":"6650abcd1234ef5678901234"}}' | jq .
 ```
 
 ### `publishPage`
@@ -325,10 +331,10 @@ Publish a page, making it publicly accessible. Generates an API key for the page
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/publishPage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"pageId":"6650abcd1234ef5678901234"}' | jq .
+  -d '{"resourceId":"pages","method":"publishPage","params":{"pageId":"6650abcd1234ef5678901234"}}' | jq .
 ```
 
 ### `unpublishPage`
@@ -346,10 +352,10 @@ Unpublish a page, making it private.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/unpublishPage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"pageId":"6650abcd1234ef5678901234"}' | jq .
+  -d '{"resourceId":"pages","method":"unpublishPage","params":{"pageId":"6650abcd1234ef5678901234"}}' | jq .
 ```
 
 ### `getPageUrl`
@@ -367,10 +373,10 @@ Get the public URL for a page.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/pages/getPageUrl" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"pageId":"6650abcd1234ef5678901234"}' | jq .
+  -d '{"resourceId":"pages","method":"getPageUrl","params":{"pageId":"6650abcd1234ef5678901234"}}' | jq .
 ```
 
 ## Response Format

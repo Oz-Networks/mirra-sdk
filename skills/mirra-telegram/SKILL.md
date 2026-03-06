@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegram/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "telegram",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/telegram/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -61,10 +67,10 @@ Send a text message to a Telegram chat or user. Supports both chat IDs and usern
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegram/sendMessage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"chatId":"123456789","text":"Hello from Mirra!"}' | jq .
+  -d '{"resourceId":"telegram","method":"sendMessage","params":{"chatId":"123456789","text":"Hello from Mirra!"}}' | jq .
 ```
 
 **Example response:**
@@ -105,10 +111,10 @@ Powerful unified chat search with filtering, sorting, and activity tracking. Rep
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegram/searchChats" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"telegram","method":"searchChats","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -154,10 +160,10 @@ Search for messages across Telegram chats. When chatIds is omitted, performs glo
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegram/searchMessages" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"project update"}' | jq .
+  -d '{"resourceId":"telegram","method":"searchMessages","params":{"query":"project update"}}' | jq .
 ```
 
 **Example response:**
@@ -202,10 +208,10 @@ Get message history from a specific Telegram chat with pagination and date filte
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegram/getChatMessages" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"chatId":"123456789","limit":50}' | jq .
+  -d '{"resourceId":"telegram","method":"getChatMessages","params":{"chatId":"123456789","limit":50}}' | jq .
 ```
 
 **Example response:**
@@ -249,10 +255,10 @@ Get summary of unread messages across Telegram chats, including mentions and fla
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegram/getUnreadSummary" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"priorityOnly":true}' | jq .
+  -d '{"resourceId":"telegram","method":"getUnreadSummary","params":{"priorityOnly":true}}' | jq .
 ```
 
 **Example response:**
@@ -292,10 +298,10 @@ Mark messages as read in a Telegram chat up to a specific message ID.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegram/markAsRead" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"chatId":"123456789"}' | jq .
+  -d '{"resourceId":"telegram","method":"markAsRead","params":{"chatId":"123456789"}}' | jq .
 ```
 
 **Example response:**
@@ -325,10 +331,10 @@ Get messages where the user is mentioned in Telegram chats.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegram/getMentions" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"onlyUnread":true}' | jq .
+  -d '{"resourceId":"telegram","method":"getMentions","params":{"onlyUnread":true}}' | jq .
 ```
 
 **Example response:**
@@ -369,10 +375,10 @@ Leave a Telegram group, supergroup, or channel. Removes the user from the group 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegram/leaveGroup" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"chatId":"-1001234567890"}' | jq .
+  -d '{"resourceId":"telegram","method":"leaveGroup","params":{"chatId":"-1001234567890"}}' | jq .
 ```
 
 **Example response:**

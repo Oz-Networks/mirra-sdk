@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "polymarket",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/polymarket/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -74,10 +80,10 @@ Search and list Polymarket prediction markets. Returns active and resolved marke
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/getMarkets" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"tag":"politics","active":true,"limit":3}' | jq .
+  -d '{"resourceId":"polymarket","method":"getMarkets","params":{"tag":"politics","active":true,"limit":3}}' | jq .
 ```
 
 **Example response:**
@@ -131,10 +137,10 @@ Get detailed information for a specific Polymarket prediction market. Lookup by 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/getMarket" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"conditionId":"0xabcdef1234567890"}' | jq .
+  -d '{"resourceId":"polymarket","method":"getMarket","params":{"conditionId":"0xabcdef1234567890"}}' | jq .
 ```
 
 **Example response:**
@@ -186,10 +192,10 @@ List Polymarket events, which are groups of related prediction markets. For exam
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/getEvents" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"active":true,"limit":2}' | jq .
+  -d '{"resourceId":"polymarket","method":"getEvents","params":{"active":true,"limit":2}}' | jq .
 ```
 
 **Example response:**
@@ -247,10 +253,10 @@ Get the current price for a specific market outcome token on the Polymarket CLOB
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/getPrice" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"tokenId":"71321045679252212594626385532706912750332728571942532289631379312455583992563"}' | jq .
+  -d '{"resourceId":"polymarket","method":"getPrice","params":{"tokenId":"71321045679252212594626385532706912750332728571942532289631379312455583992563"}}' | jq .
 ```
 
 **Example response:**
@@ -278,10 +284,10 @@ Get the current orderbook depth for a market outcome token on the Polymarket CLO
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/getOrderbook" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"tokenId":"71321045679252212594626385532706912750332728571942532289631379312455583992563"}' | jq .
+  -d '{"resourceId":"polymarket","method":"getOrderbook","params":{"tokenId":"71321045679252212594626385532706912750332728571942532289631379312455583992563"}}' | jq .
 ```
 
 **Example response:**
@@ -337,10 +343,10 @@ Creates an action proposal for user approval. Validates that CLOB credentials ex
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/placeOrder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"tokenId":"713210456...","price":0.55,"size":100,"side":"BUY"}' | jq .
+  -d '{"resourceId":"polymarket","method":"placeOrder","params":{"tokenId":"713210456...","price":0.55,"size":100,"side":"BUY"}}' | jq .
 ```
 
 **Example response:**
@@ -378,10 +384,10 @@ Executes a previously approved order using server-stored CLOB credentials. Calle
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/executeOrder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"orderPayload":{"tokenId":"713210456...","price":0.55,"size":100,"side":"BUY","type":"GTC"}}' | jq .
+  -d '{"resourceId":"polymarket","method":"executeOrder","params":{"orderPayload":{"tokenId":"713210456...","price":0.55,"size":100,"side":"BUY","type":"GTC"}}}' | jq .
 ```
 
 **Example response:**
@@ -416,10 +422,10 @@ Creates an action proposal to cancel an existing order. Validates that CLOB cred
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/cancelOrder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"orderId":"order_abc123"}' | jq .
+  -d '{"resourceId":"polymarket","method":"cancelOrder","params":{"orderId":"order_abc123"}}' | jq .
 ```
 
 **Example response:**
@@ -449,10 +455,10 @@ Executes a previously approved cancel using server-stored CLOB credentials. Call
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/executeCancelOrder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"orderId":"order_abc123"}' | jq .
+  -d '{"resourceId":"polymarket","method":"executeCancelOrder","params":{"orderId":"order_abc123"}}' | jq .
 ```
 
 **Example response:**
@@ -484,10 +490,10 @@ Rebuild an expired order proposal with fresh market data. Use this when a pendin
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/refreshOrder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"tokenId":"713210456...","price":0.55,"size":100,"side":"BUY"}' | jq .
+  -d '{"resourceId":"polymarket","method":"refreshOrder","params":{"tokenId":"713210456...","price":0.55,"size":100,"side":"BUY"}}' | jq .
 ```
 
 **Example response:**
@@ -525,10 +531,10 @@ Get active orders for the authenticated user on the Polymarket CLOB. Returns ope
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/getOrders" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"limit":5}' | jq .
+  -d '{"resourceId":"polymarket","method":"getOrders","params":{"limit":5}}' | jq .
 ```
 
 **Example response:**
@@ -564,10 +570,10 @@ Get current prediction market positions for the authenticated user. Shows all he
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/getPositions" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"polymarket","method":"getPositions","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -610,10 +616,10 @@ Get trade history for the authenticated user. Returns completed trades with exec
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/getTrades" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"limit":3}' | jq .
+  -d '{"resourceId":"polymarket","method":"getTrades","params":{"limit":3}}' | jq .
 ```
 
 **Example response:**
@@ -655,10 +661,10 @@ Get the Polymarket Builder program leaderboard rankings. Shows top builders by v
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/getBuilderLeaderboard" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"period":"weekly","limit":5}' | jq .
+  -d '{"resourceId":"polymarket","method":"getBuilderLeaderboard","params":{"period":"weekly","limit":5}}' | jq .
 ```
 
 **Example response:**
@@ -701,10 +707,10 @@ Get volume time-series data for the Builder program. Shows daily volume and trad
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/getBuilderVolume" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"startDate":"2024-06-01","endDate":"2024-06-07"}' | jq .
+  -d '{"resourceId":"polymarket","method":"getBuilderVolume","params":{"startDate":"2024-06-01","endDate":"2024-06-07"}}' | jq .
 ```
 
 **Example response:**
@@ -745,10 +751,10 @@ Search Polymarket API for available operations beyond core tools
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/discoverExtended" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"search term"}' | jq .
+  -d '{"resourceId":"polymarket","method":"discoverExtended","params":{"query":"search term"}}' | jq .
 ```
 
 ### `executeExtended`
@@ -769,10 +775,10 @@ Execute a Polymarket API operation by operationId
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/polymarket/executeExtended" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"operationId":"<ID>"}' | jq .
+  -d '{"resourceId":"polymarket","method":"executeExtended","params":{"operationId":"<ID>"}}' | jq .
 ```
 
 ## Response Format

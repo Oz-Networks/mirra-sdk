@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleCalendar/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "google-calendar",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/googleCalendar/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -64,10 +70,10 @@ Create a new calendar event
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleCalendar/createEvent" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"summary":"<value>","start":{},"end":{}}' | jq .
+  -d '{"resourceId":"google-calendar","method":"createEvent","params":{"summary":"<value>","start":{},"end":{}}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -90,10 +96,10 @@ List calendar events
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleCalendar/listEvents" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"google-calendar","method":"listEvents","params":{}}' | jq .
 ```
 
 ### `getEvents`
@@ -114,10 +120,10 @@ Get calendar events (alias for listEvents)
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleCalendar/getEvents" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"google-calendar","method":"getEvents","params":{}}' | jq .
 ```
 
 ### `getEvent`
@@ -135,10 +141,10 @@ Get a specific calendar event by ID
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleCalendar/getEvent" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"eventId":"<ID>"}' | jq .
+  -d '{"resourceId":"google-calendar","method":"getEvent","params":{"eventId":"<ID>"}}' | jq .
 ```
 
 ### `updateEvent`
@@ -161,10 +167,10 @@ Update an existing calendar event
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleCalendar/updateEvent" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"eventId":"<ID>"}' | jq .
+  -d '{"resourceId":"google-calendar","method":"updateEvent","params":{"eventId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -184,10 +190,10 @@ Delete a calendar event
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleCalendar/deleteEvent" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"eventId":"<ID>"}' | jq .
+  -d '{"resourceId":"google-calendar","method":"deleteEvent","params":{"eventId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -210,10 +216,10 @@ Search calendar events by text query
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleCalendar/searchEvents" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"search term"}' | jq .
+  -d '{"resourceId":"google-calendar","method":"searchEvents","params":{"query":"search term"}}' | jq .
 ```
 
 ## Response Format

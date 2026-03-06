@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "marketplace-templates",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/marketplaceTemplates/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -60,10 +66,10 @@ Create a new template
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/create" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"create","params":{}}' | jq .
 ```
 
 ### `sync`
@@ -77,10 +83,10 @@ Sync template from GitHub
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/sync" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"sync","params":{}}' | jq .
 ```
 
 ### `build`
@@ -94,10 +100,10 @@ Build a template
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/build" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"build","params":{}}' | jq .
 ```
 
 ### `publish`
@@ -111,10 +117,10 @@ Publish template to marketplace
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/publish" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"publish","params":{}}' | jq .
 ```
 
 ### `install`
@@ -128,10 +134,10 @@ Install a template
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/install" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"install","params":{}}' | jq .
 ```
 
 ### `uninstall`
@@ -145,10 +151,10 @@ Uninstall a template
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/uninstall" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"uninstall","params":{}}' | jq .
 ```
 
 ### `listInstallations`
@@ -162,10 +168,10 @@ List user template installations
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/listInstallations" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"listInstallations","params":{}}' | jq .
 ```
 
 ### `getInstallation`
@@ -179,10 +185,10 @@ Get installation details
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/getInstallation" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"getInstallation","params":{}}' | jq .
 ```
 
 ### `updateInstallation`
@@ -196,10 +202,10 @@ Update installation to new version
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/updateInstallation" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"updateInstallation","params":{}}' | jq .
 ```
 
 ### `checkRequirements`
@@ -213,10 +219,10 @@ Check installation requirements
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/checkRequirements" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"checkRequirements","params":{}}' | jq .
 ```
 
 ### `estimateCost`
@@ -230,10 +236,10 @@ Estimate installation cost
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/estimateCost" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"estimateCost","params":{}}' | jq .
 ```
 
 ### `listVersions`
@@ -247,10 +253,10 @@ List template versions
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/listVersions" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"listVersions","params":{}}' | jq .
 ```
 
 ### `createVersion`
@@ -264,10 +270,10 @@ Create new template version
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/createVersion" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"createVersion","params":{}}' | jq .
 ```
 
 ### `getBuildStatus`
@@ -281,10 +287,10 @@ Get template build status
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceTemplates/getBuildStatus" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-templates","method":"getBuildStatus","params":{}}' | jq .
 ```
 
 ## Response Format

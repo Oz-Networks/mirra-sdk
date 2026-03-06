@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jupiter/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "jupiter",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/jupiter/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -61,10 +67,10 @@ Execute a token swap on Jupiter DEX. Provide EITHER `amount` (input to spend) OR
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jupiter/swap" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"inputMint":"<value>","outputMint":"<value>"}' | jq .
+  -d '{"resourceId":"jupiter","method":"swap","params":{"inputMint":"<value>","outputMint":"<value>"}}' | jq .
 ```
 
 ### `getHoldings`
@@ -82,10 +88,10 @@ Get token holdings for a wallet with live USD prices. Returns normalized FLAT st
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jupiter/getHoldings" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"jupiter","method":"getHoldings","params":{}}' | jq .
 ```
 
 ### `getTokenSecurity`
@@ -103,10 +109,10 @@ Get token security information using Jupiter Shield. Returns normalized FLAT str
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jupiter/getTokenSecurity" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"tokenMint":"<value>"}' | jq .
+  -d '{"resourceId":"jupiter","method":"getTokenSecurity","params":{"tokenMint":"<value>"}}' | jq .
 ```
 
 ### `searchTokens`
@@ -124,10 +130,10 @@ Search for tokens by symbol, name, or mint address. Returns top 10 slim results 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jupiter/searchTokens" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"search term"}' | jq .
+  -d '{"resourceId":"jupiter","method":"searchTokens","params":{"query":"search term"}}' | jq .
 ```
 
 ### `refreshSwap`
@@ -151,10 +157,10 @@ Refresh an expired swap with a new quote. Only feedItemId and swapId are require
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jupiter/refreshSwap" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"feedItemId":"<ID>","swapId":"<ID>"}' | jq .
+  -d '{"resourceId":"jupiter","method":"refreshSwap","params":{"feedItemId":"<ID>","swapId":"<ID>"}}' | jq .
 ```
 
 ### `launchToken`
@@ -185,10 +191,10 @@ Launch a new token on Solana via Jupiter Studio. Creates a DBC (Dynamic Bonding 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jupiter/launchToken" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"tokenName":"<value>","tokenSymbol":"<value>","tokenImageUrl":"https://example.com"}' | jq .
+  -d '{"resourceId":"jupiter","method":"launchToken","params":{"tokenName":"<value>","tokenSymbol":"<value>","tokenImageUrl":"https://example.com"}}' | jq .
 ```
 
 ## Response Format

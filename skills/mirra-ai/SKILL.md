@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/ai/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "ai",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/ai/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -57,10 +63,10 @@ Have a conversation with an AI assistant. Supports multi-turn conversations with
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/ai/chat" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"message":"What is the capital of France?"}' | jq .
+  -d '{"resourceId":"ai","method":"chat","params":{"message":"What is the capital of France?"}}' | jq .
 ```
 
 ### `decide`
@@ -81,10 +87,10 @@ Use AI to make a decision from a list of options. The AI analyzes your prompt, c
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/ai/decide" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"prompt":"User sent message: \"I need to schedule a meeting next Tuesday\"","options":[{"id":"calendar","label":"Calendar/Scheduling"},{"id":"email","label":"Email Management"},{"id":"tasks","label":"Task Management"},{"id":"general","label":"General Query"}]}' | jq .
+  -d '{"resourceId":"ai","method":"decide","params":{"prompt":"User sent message: \"I need to schedule a meeting next Tuesday\"","options":[{"id":"calendar","label":"Calendar/Scheduling"},{"id":"email","label":"Email Management"},{"id":"tasks","label":"Task Management"},{"id":"general","label":"General Query"}]}}' | jq .
 ```
 
 ### `agent`
@@ -108,10 +114,10 @@ Run an AI agent that can call tools across multiple rounds. The agent receives a
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/ai/agent" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"messages":[{"role":"user","content":"Find my meetings tomorrow and summarize them"}],"tools":["googleCalendar","memory"]}' | jq .
+  -d '{"resourceId":"ai","method":"agent","params":{"messages":[{"role":"user","content":"Find my meetings tomorrow and summarize them"}],"tools":["googleCalendar","memory"]}}' | jq .
 ```
 
 ## Response Format

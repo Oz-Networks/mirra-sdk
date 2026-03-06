@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/feedItems/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "feed-items",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/feedItems/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -56,10 +62,10 @@ Create a notification for the user. Shows up in their activity feed and sends a 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/feedItems/createFeedItem" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"Email sent to john@example.com","subtitle":"Q4 Planning Discussion","category":"email","details":{"recipients":"3 people","status":"Sent"},"preview":"Hey John, wanted to touch base about the Q4 roadmap..."}' | jq .
+  -d '{"resourceId":"feed-items","method":"createFeedItem","params":{"title":"Email sent to john@example.com","subtitle":"Q4 Planning Discussion","category":"email","details":{"recipients":"3 people","status":"Sent"},"preview":"Hey John, wanted to touch base about the Q4 roadmap..."}}' | jq .
 ```
 
 **Example response:**

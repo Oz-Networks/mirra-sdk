@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/crypto/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "crypto",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/crypto/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -57,10 +63,10 @@ Get the current price of a crypto asset. Returns normalized flat structure. IMPO
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/crypto/getPrice" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"tokenAddress":"<value>"}' | jq .
+  -d '{"resourceId":"crypto","method":"getPrice","params":{"tokenAddress":"<value>"}}' | jq .
 ```
 
 ### `sendToken`
@@ -80,10 +86,10 @@ Send cryptocurrency or tokens (creates pending transaction for signing). Returns
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/crypto/sendToken" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"recipient":"<value>","token":"<value>","amount":10}' | jq .
+  -d '{"resourceId":"crypto","method":"sendToken","params":{"recipient":"<value>","token":"<value>","amount":10}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -108,10 +114,10 @@ Set up automated price monitoring with progressive alerts. Returns normalized fl
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/crypto/monitorPrice" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"tokenAddress":"<value>","direction":"<value>","targetPrice":10,"scriptId":"<ID>"}' | jq .
+  -d '{"resourceId":"crypto","method":"monitorPrice","params":{"tokenAddress":"<value>","direction":"<value>","targetPrice":10,"scriptId":"<ID>"}}' | jq .
 ```
 
 ### `listSubscriptions`
@@ -125,10 +131,10 @@ List all active crypto price monitoring assignments. Returns normalized flat str
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/crypto/listSubscriptions" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"crypto","method":"listSubscriptions","params":{}}' | jq .
 ```
 
 ### `unsubscribeAsset`
@@ -146,10 +152,10 @@ Stop monitoring a crypto asset. Returns normalized flat structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/crypto/unsubscribeAsset" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"tokenAddress":"<value>"}' | jq .
+  -d '{"resourceId":"crypto","method":"unsubscribeAsset","params":{"tokenAddress":"<value>"}}' | jq .
 ```
 
 ### `refreshTransaction`
@@ -173,10 +179,10 @@ Refresh an expired transaction with new blockhash and updated details. Returns n
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/crypto/refreshTransaction" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"feedItemId":"<ID>","transferId":"<ID>","recipient":"<value>","token":"<value>","amount":10}' | jq .
+  -d '{"resourceId":"crypto","method":"refreshTransaction","params":{"feedItemId":"<ID>","transferId":"<ID>","recipient":"<value>","token":"<value>","amount":10}}' | jq .
 ```
 
 ## Response Format

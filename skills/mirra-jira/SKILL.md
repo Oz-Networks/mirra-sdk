@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "jira",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/jira/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -71,10 +77,10 @@ Create a new Jira issue
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/createIssue" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"projectKey":"<value>","summary":"<value>"}' | jq .
+  -d '{"resourceId":"jira","method":"createIssue","params":{"projectKey":"<value>","summary":"<value>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -95,10 +101,10 @@ Search Jira issues using JQL. Returns normalized flat issue summaries.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/searchIssues" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"jql":"<value>"}' | jq .
+  -d '{"resourceId":"jira","method":"searchIssues","params":{"jql":"<value>"}}' | jq .
 ```
 
 ### `getIssue`
@@ -116,10 +122,10 @@ Get a specific Jira issue by key or ID. Returns normalized flat structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/getIssue" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"issueKey":"<value>"}' | jq .
+  -d '{"resourceId":"jira","method":"getIssue","params":{"issueKey":"<value>"}}' | jq .
 ```
 
 ### `updateIssue`
@@ -139,10 +145,10 @@ Update an existing Jira issue
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/updateIssue" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"issueKey":"<value>"}' | jq .
+  -d '{"resourceId":"jira","method":"updateIssue","params":{"issueKey":"<value>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -162,10 +168,10 @@ Delete a Jira issue
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/deleteIssue" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"issueKey":"<value>"}' | jq .
+  -d '{"resourceId":"jira","method":"deleteIssue","params":{"issueKey":"<value>"}}' | jq .
 ```
 
 ### `addComment`
@@ -184,10 +190,10 @@ Add a comment to a Jira issue
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/addComment" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"issueKey":"<value>","comment":"<value>"}' | jq .
+  -d '{"resourceId":"jira","method":"addComment","params":{"issueKey":"<value>","comment":"<value>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -208,10 +214,10 @@ Transition a Jira issue to a different status
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/transitionIssue" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"issueKey":"<value>","transitionId":"<ID>"}' | jq .
+  -d '{"resourceId":"jira","method":"transitionIssue","params":{"issueKey":"<value>","transitionId":"<ID>"}}' | jq .
 ```
 
 ### `assignIssue`
@@ -230,10 +236,10 @@ Assign a Jira issue to a user
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/assignIssue" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"issueKey":"<value>","accountId":"<ID>"}' | jq .
+  -d '{"resourceId":"jira","method":"assignIssue","params":{"issueKey":"<value>","accountId":"<ID>"}}' | jq .
 ```
 
 ### `getProjects`
@@ -247,10 +253,10 @@ Get all accessible Jira projects. Returns normalized flat project structures.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/getProjects" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"jira","method":"getProjects","params":{}}' | jq .
 ```
 
 ### `listProjects`
@@ -264,10 +270,10 @@ List all accessible Jira projects (alias for getProjects). Returns normalized fl
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/listProjects" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"jira","method":"listProjects","params":{}}' | jq .
 ```
 
 ### `getProjectMetadata`
@@ -285,10 +291,10 @@ Get metadata for a specific Jira project. Returns normalized flat structures.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/getProjectMetadata" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"projectKey":"<value>"}' | jq .
+  -d '{"resourceId":"jira","method":"getProjectMetadata","params":{"projectKey":"<value>"}}' | jq .
 ```
 
 ### `getTransitions`
@@ -306,10 +312,10 @@ Get available transitions for a Jira issue. Returns normalized flat structures.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/getTransitions" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"issueKey":"<value>"}' | jq .
+  -d '{"resourceId":"jira","method":"getTransitions","params":{"issueKey":"<value>"}}' | jq .
 ```
 
 ### `listAssignableUsers`
@@ -327,10 +333,10 @@ List users that can be assigned to issues in a project
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/listAssignableUsers" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"projectKey":"<value>"}' | jq .
+  -d '{"resourceId":"jira","method":"listAssignableUsers","params":{"projectKey":"<value>"}}' | jq .
 ```
 
 ### `getIssueTypes`
@@ -348,10 +354,10 @@ Get available issue types for a project. Returns normalized flat structures.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/getIssueTypes" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"projectKey":"<value>"}' | jq .
+  -d '{"resourceId":"jira","method":"getIssueTypes","params":{"projectKey":"<value>"}}' | jq .
 ```
 
 ### `discoverExtended`
@@ -370,10 +376,10 @@ Search Jira API for available operations beyond core tools
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/discoverExtended" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"search term"}' | jq .
+  -d '{"resourceId":"jira","method":"discoverExtended","params":{"query":"search term"}}' | jq .
 ```
 
 ### `executeExtended`
@@ -394,10 +400,10 @@ Execute a Jira API operation by operationId
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/jira/executeExtended" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"operationId":"<ID>"}' | jq .
+  -d '{"resourceId":"jira","method":"executeExtended","params":{"operationId":"<ID>"}}' | jq .
 ```
 
 ## Response Format

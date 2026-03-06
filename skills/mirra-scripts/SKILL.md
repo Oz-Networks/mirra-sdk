@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "scripts",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/scripts/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -73,10 +79,10 @@ Create a new script with initial version and API key. Returns flat structure wit
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/createScript" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"name":"Daily Report","description":"Sends a daily summary report","code":"export async function handler(event) { return { message: \"Report sent\" }; }"}' | jq .
+  -d '{"resourceId":"scripts","method":"createScript","params":{"name":"Daily Report","description":"Sends a daily summary report","code":"export async function handler(event) { return { message: \"Report sent\" }; }"}}' | jq .
 ```
 
 **Example response:**
@@ -115,10 +121,10 @@ Delete a script and all its versions. Returns flat deletion confirmation.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/deleteScript" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011"}' | jq .
+  -d '{"resourceId":"scripts","method":"deleteScript","params":{"scriptId":"507f1f77bcf86cd799439011"}}' | jq .
 ```
 
 **Example response:**
@@ -150,10 +156,10 @@ Create a new version of an existing script. Returns flat version details.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/createVersion" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011","code":"export async function handler(event) { /* fixed code */ }","commitMessage":"Fixed error handling"}' | jq .
+  -d '{"resourceId":"scripts","method":"createVersion","params":{"scriptId":"507f1f77bcf86cd799439011","code":"export async function handler(event) { /* fixed code */ }","commitMessage":"Fixed error handling"}}' | jq .
 ```
 
 **Example response:**
@@ -186,10 +192,10 @@ List all versions of a script. Returns flat version structures.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/listVersions" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011"}' | jq .
+  -d '{"resourceId":"scripts","method":"listVersions","params":{"scriptId":"507f1f77bcf86cd799439011"}}' | jq .
 ```
 
 **Example response:**
@@ -238,10 +244,10 @@ Deploy a script version to AWS Lambda. Must be called after createScript to make
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/deployScript" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011"}' | jq .
+  -d '{"resourceId":"scripts","method":"deployScript","params":{"scriptId":"507f1f77bcf86cd799439011"}}' | jq .
 ```
 
 **Example response:**
@@ -273,10 +279,10 @@ Execute a deployed script with custom data. Script must be deployed first via de
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/executeScript" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011","data":{"userId":"123","reportType":"weekly"}}' | jq .
+  -d '{"resourceId":"scripts","method":"executeScript","params":{"scriptId":"507f1f77bcf86cd799439011","data":{"userId":"123","reportType":"weekly"}}}' | jq .
 ```
 
 **Example response:**
@@ -314,10 +320,10 @@ Get details of a specific script. Returns flat normalized structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/getScript" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011"}' | jq .
+  -d '{"resourceId":"scripts","method":"getScript","params":{"scriptId":"507f1f77bcf86cd799439011"}}' | jq .
 ```
 
 **Example response:**
@@ -359,10 +365,10 @@ List all scripts owned by the user. Returns flat script summaries.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/listScripts" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"scripts","method":"listScripts","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -414,10 +420,10 @@ Get execution history for a script. Returns flat execution summaries.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/getExecutions" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011","limit":10}' | jq .
+  -d '{"resourceId":"scripts","method":"getExecutions","params":{"scriptId":"507f1f77bcf86cd799439011","limit":10}}' | jq .
 ```
 
 **Example response:**
@@ -462,10 +468,10 @@ Get details of a specific execution. Returns flat execution structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/getExecution" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"executionId":"exec_123"}' | jq .
+  -d '{"resourceId":"scripts","method":"getExecution","params":{"executionId":"exec_123"}}' | jq .
 ```
 
 **Example response:**
@@ -504,10 +510,10 @@ Publish a script to the marketplace. Returns flat publish confirmation.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/publishScript" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011","pricing":{"type":"free"}}' | jq .
+  -d '{"resourceId":"scripts","method":"publishScript","params":{"scriptId":"507f1f77bcf86cd799439011","pricing":{"type":"free"}}}' | jq .
 ```
 
 **Example response:**
@@ -536,10 +542,10 @@ Remove a script from the marketplace. Returns flat unpublish confirmation.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/unpublishScript" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011"}' | jq .
+  -d '{"resourceId":"scripts","method":"unpublishScript","params":{"scriptId":"507f1f77bcf86cd799439011"}}' | jq .
 ```
 
 **Example response:**
@@ -578,10 +584,10 @@ Search and list published scripts in the marketplace. Returns flat script summar
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/listMarketplaceScripts" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"scripts","method":"listMarketplaceScripts","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -622,10 +628,10 @@ Get execution metrics for a script. Returns flat metrics structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/getMetrics" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011"}' | jq .
+  -d '{"resourceId":"scripts","method":"getMetrics","params":{"scriptId":"507f1f77bcf86cd799439011"}}' | jq .
 ```
 
 **Example response:**
@@ -659,10 +665,10 @@ Create a webhook endpoint for the script. Returns flat webhook details.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/createWebhook" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011","name":"GitHub Deploy Hook"}' | jq .
+  -d '{"resourceId":"scripts","method":"createWebhook","params":{"scriptId":"507f1f77bcf86cd799439011","name":"GitHub Deploy Hook"}}' | jq .
 ```
 
 **Example response:**
@@ -696,10 +702,10 @@ Create a cron schedule for the script. Returns flat schedule details.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/createSchedule" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"scriptId":"507f1f77bcf86cd799439011","name":"Daily Report Schedule","cronExpression":"0 9 * * *","data":{"reportType":"daily"}}' | jq .
+  -d '{"resourceId":"scripts","method":"createSchedule","params":{"scriptId":"507f1f77bcf86cd799439011","name":"Daily Report Schedule","cronExpression":"0 9 * * *","data":{"reportType":"daily"}}}' | jq .
 ```
 
 **Example response:**
@@ -729,10 +735,10 @@ Get the script code for a specific flow. Returns flat flow script structure.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/getFlowScript" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"flowId":"507f1f77bcf86cd799439011"}' | jq .
+  -d '{"resourceId":"scripts","method":"getFlowScript","params":{"flowId":"507f1f77bcf86cd799439011"}}' | jq .
 ```
 
 **Example response:**
@@ -765,10 +771,10 @@ Modify the script code for a flow. Automatically creates a copy if user does not
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/modifyFlowScript" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"flowId":"507f1f77bcf86cd799439011","newCode":"export async function handler(event) { /* modified */ }","commitMessage":"Filter by current user only"}' | jq .
+  -d '{"resourceId":"scripts","method":"modifyFlowScript","params":{"flowId":"507f1f77bcf86cd799439011","newCode":"export async function handler(event) { /* modified */ }","commitMessage":"Filter by current user only"}}' | jq .
 ```
 
 **Example response:**
@@ -799,10 +805,10 @@ Validate script code BEFORE creating or deploying. Checks for: 1) Missing async 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/scripts/lintScript" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"code":"export async function handler(event, context, mirra) { const messages = await mirra.telegram.getChatMessages({ chatId: \"123\" }); return { messages }; }"}' | jq .
+  -d '{"resourceId":"scripts","method":"lintScript","params":{"code":"export async function handler(event, context, mirra) { const messages = await mirra.telegram.getChatMessages({ chatId: \"123\" }); return { messages }; }"}}' | jq .
 ```
 
 **Example response:**

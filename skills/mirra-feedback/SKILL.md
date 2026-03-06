@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/feedback/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "feedback",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/feedback/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -63,10 +69,10 @@ Report a bug with detailed context and reproduction steps
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/feedback/reportBug" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"App crashes on startup","description":"The app crashes immediately after login on iOS devices","severity":"critical","stepsToReproduce":["Open app","Enter credentials","Tap login"],"expectedBehavior":"Navigate to home screen","actualBehavior":"App crashes with no error message"}' | jq .
+  -d '{"resourceId":"feedback","method":"reportBug","params":{"title":"App crashes on startup","description":"The app crashes immediately after login on iOS devices","severity":"critical","stepsToReproduce":["Open app","Enter credentials","Tap login"],"expectedBehavior":"Navigate to home screen","actualBehavior":"App crashes with no error message"}}' | jq .
 ```
 
 **Example response:**
@@ -105,10 +111,10 @@ Auto-report tool or adapter failures for debugging
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/feedback/reportToolFailure" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"adapterType":"jupiter","operation":"swap","errorMessage":"Insufficient funds for swap","errorCode":"INSUFFICIENT_FUNDS"}' | jq .
+  -d '{"resourceId":"feedback","method":"reportToolFailure","params":{"adapterType":"jupiter","operation":"swap","errorMessage":"Insufficient funds for swap","errorCode":"INSUFFICIENT_FUNDS"}}' | jq .
 ```
 
 **Example response:**
@@ -144,10 +150,10 @@ Report when LLM cannot fulfill a user request
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/feedback/reportMissingCapability" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"userRequest":"Send an email with attachments","reason":"Email adapter does not support attachments yet","suggestedCapability":"Email attachment support"}' | jq .
+  -d '{"resourceId":"feedback","method":"reportMissingCapability","params":{"userRequest":"Send an email with attachments","reason":"Email adapter does not support attachments yet","suggestedCapability":"Email attachment support"}}' | jq .
 ```
 
 **Example response:**
@@ -181,10 +187,10 @@ Submit general user feedback
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/feedback/submitFeedback" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"sentiment":"positive","feedback":"The new chat interface is much faster and easier to use!","category":"ux"}' | jq .
+  -d '{"resourceId":"feedback","method":"submitFeedback","params":{"sentiment":"positive","feedback":"The new chat interface is much faster and easier to use!","category":"ux"}}' | jq .
 ```
 
 **Example response:**
@@ -218,10 +224,10 @@ Submit a feature request
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/feedback/submitFeatureRequest" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"Dark mode support","description":"Add a dark mode theme option for the app","useCase":"Better readability at night and reduced eye strain","priority":"medium"}' | jq .
+  -d '{"resourceId":"feedback","method":"submitFeatureRequest","params":{"title":"Dark mode support","description":"Add a dark mode theme option for the app","useCase":"Better readability at night and reduced eye strain","priority":"medium"}}' | jq .
 ```
 
 **Example response:**

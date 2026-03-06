@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "telegramBot",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/telegramBot/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -68,10 +74,10 @@ Send a text message to a Telegram chat via bot
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/sendMessage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"botUsername":"my_bot","chatId":"123456789","text":"Hello from Mirra!"}' | jq .
+  -d '{"resourceId":"telegramBot","method":"sendMessage","params":{"botUsername":"my_bot","chatId":"123456789","text":"Hello from Mirra!"}}' | jq .
 ```
 
 **Example response:**
@@ -103,10 +109,10 @@ Reply to a specific message in a Telegram chat
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/replyToMessage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"botUsername":"my_bot","chatId":"123456789","text":"Got it!","replyToMessageId":41}' | jq .
+  -d '{"resourceId":"telegramBot","method":"replyToMessage","params":{"botUsername":"my_bot","chatId":"123456789","text":"Got it!","replyToMessageId":41}}' | jq .
 ```
 
 **Example response:**
@@ -138,10 +144,10 @@ Respond to an inline keyboard button press (callback query)
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/answerCallbackQuery" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"botUsername":"<value>","callbackQueryId":"<ID>"}' | jq .
+  -d '{"resourceId":"telegramBot","method":"answerCallbackQuery","params":{"botUsername":"<value>","callbackQueryId":"<ID>"}}' | jq .
 ```
 
 ### `sendMessageWithButtons`
@@ -163,10 +169,10 @@ Send a message with inline keyboard buttons for user interaction
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/sendMessageWithButtons" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"botUsername":"my_bot","chatId":"123456789","text":"Do you approve?","buttons":[[{"text":"Yes","callbackData":"approve_yes"},{"text":"No","callbackData":"approve_no"}]]}' | jq .
+  -d '{"resourceId":"telegramBot","method":"sendMessageWithButtons","params":{"botUsername":"my_bot","chatId":"123456789","text":"Do you approve?","buttons":[[{"text":"Yes","callbackData":"approve_yes"},{"text":"No","callbackData":"approve_no"}]]}}' | jq .
 ```
 
 **Example response:**
@@ -196,10 +202,10 @@ Set the list of commands shown in the bot menu
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/setBotCommands" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"botUsername":"<value>","commands":[]}' | jq .
+  -d '{"resourceId":"telegramBot","method":"setBotCommands","params":{"botUsername":"<value>","commands":[]}}' | jq .
 ```
 
 ### `getBotInfo`
@@ -217,10 +223,10 @@ Get information about the bot (username, name, can_join_groups, etc.)
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/getBotInfo" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"botUsername":"<value>"}' | jq .
+  -d '{"resourceId":"telegramBot","method":"getBotInfo","params":{"botUsername":"<value>"}}' | jq .
 ```
 
 ### `listBots`
@@ -234,10 +240,10 @@ List all Telegram bots registered by the user
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/listBots" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"telegramBot","method":"listBots","params":{}}' | jq .
 ```
 
 ### `banChatMember`
@@ -259,10 +265,10 @@ Ban or kick a user from a group chat. The bot must be an admin with "Ban Users" 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/banChatMember" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"botUsername":"my_bot","chatId":"-1001234567890","userId":123456,"untilDate":1700000030}' | jq .
+  -d '{"resourceId":"telegramBot","method":"banChatMember","params":{"botUsername":"my_bot","chatId":"-1001234567890","userId":123456,"untilDate":1700000030}}' | jq .
 ```
 
 **Example response:**
@@ -294,10 +300,10 @@ Unban a previously banned user in a group chat. The bot must be an admin with "B
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/unbanChatMember" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"botUsername":"my_bot","chatId":"-1001234567890","userId":123456,"onlyIfBanned":true}' | jq .
+  -d '{"resourceId":"telegramBot","method":"unbanChatMember","params":{"botUsername":"my_bot","chatId":"-1001234567890","userId":123456,"onlyIfBanned":true}}' | jq .
 ```
 
 **Example response:**
@@ -329,10 +335,10 @@ Restrict a user's permissions in a group chat (mute, block media, etc.). The bot
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/restrictChatMember" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"botUsername":"my_bot","chatId":"-1001234567890","userId":123456,"permissions":{"canSendMessages":false},"untilDate":1700003600}' | jq .
+  -d '{"resourceId":"telegramBot","method":"restrictChatMember","params":{"botUsername":"my_bot","chatId":"-1001234567890","userId":123456,"permissions":{"canSendMessages":false},"untilDate":1700003600}}' | jq .
 ```
 
 **Example response:**
@@ -366,10 +372,10 @@ Look up a user in a group chat by their user ID or @username. Returns their memb
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/getChatMember" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"botUsername":"my_bot","chatId":"-1001234567890","userId":123456}' | jq .
+  -d '{"resourceId":"telegramBot","method":"getChatMember","params":{"botUsername":"my_bot","chatId":"-1001234567890","userId":123456}}' | jq .
 ```
 
 **Example response:**
@@ -400,10 +406,10 @@ Delete a message in a group chat. The bot must be an admin with "Delete Messages
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/telegramBot/deleteMessage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"botUsername":"my_bot","chatId":"-1001234567890","messageId":999}' | jq .
+  -d '{"resourceId":"telegramBot","method":"deleteMessage","params":{"botUsername":"my_bot","chatId":"-1001234567890","messageId":999}}' | jq .
 ```
 
 **Example response:**

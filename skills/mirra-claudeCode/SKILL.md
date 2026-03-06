@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/claudeCode/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "claudeCode",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/claudeCode/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -58,10 +64,10 @@ Start a new Claude Code session on the user's desktop. Spawns Claude Code with t
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/claudeCode/startSession" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"prompt":"List all TypeScript files and explain the project structure","groupId":"507f1f77bcf86cd799439011","cwd":"/Users/user/projects/my-app"}' | jq .
+  -d '{"resourceId":"claudeCode","method":"startSession","params":{"prompt":"List all TypeScript files and explain the project structure","groupId":"507f1f77bcf86cd799439011","cwd":"/Users/user/projects/my-app"}}' | jq .
 ```
 
 **Example response:**
@@ -93,10 +99,10 @@ Resume an existing Claude Code session with a new prompt. The session continues 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/claudeCode/resumeSession" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"claudeSessionId":"abc123-previous-session","prompt":"Now add tests for the functions you created","groupId":"507f1f77bcf86cd799439011"}' | jq .
+  -d '{"resourceId":"claudeCode","method":"resumeSession","params":{"claudeSessionId":"abc123-previous-session","prompt":"Now add tests for the functions you created","groupId":"507f1f77bcf86cd799439011"}}' | jq .
 ```
 
 **Example response:**
@@ -121,10 +127,10 @@ List all active Claude Code sessions for the user
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/claudeCode/listSessions" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"claudeCode","method":"listSessions","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -159,10 +165,10 @@ Kill a running Claude Code session and clean up associated Flows
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/claudeCode/killSession" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"sessionId":"cc_a1b2c3d4"}' | jq .
+  -d '{"resourceId":"claudeCode","method":"killSession","params":{"sessionId":"cc_a1b2c3d4"}}' | jq .
 ```
 
 **Example response:**

@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/hypertrade/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "hypertrade",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/hypertrade/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -68,10 +74,10 @@ Place an order on Hyperliquid DEX. Returns a pending order for the user to sign 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/hypertrade/placeOrder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"asset":"<value>","isBuy":true,"size":10}' | jq .
+  -d '{"resourceId":"hypertrade","method":"placeOrder","params":{"asset":"<value>","isBuy":true,"size":10}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -94,10 +100,10 @@ Cancel an open order on Hyperliquid DEX. Can cancel by orderId, clientOrderId, o
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/hypertrade/cancelOrder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"asset":"<value>"}' | jq .
+  -d '{"resourceId":"hypertrade","method":"cancelOrder","params":{"asset":"<value>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -117,10 +123,10 @@ Get current perpetual positions for a wallet. Returns normalized FLAT array of p
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/hypertrade/getPositions" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"hypertrade","method":"getPositions","params":{}}' | jq .
 ```
 
 ### `getOpenOrders`
@@ -139,10 +145,10 @@ Get open orders for a wallet. Returns normalized FLAT array of orders.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/hypertrade/getOpenOrders" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"hypertrade","method":"getOpenOrders","params":{}}' | jq .
 ```
 
 ### `getBalances`
@@ -160,10 +166,10 @@ Get account balances including perp margin and spot balances. Returns normalized
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/hypertrade/getBalances" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"hypertrade","method":"getBalances","params":{}}' | jq .
 ```
 
 ### `getMarketInfo`
@@ -181,10 +187,10 @@ Get market information for perpetual assets. Returns normalized FLAT array of ma
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/hypertrade/getMarketInfo" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"hypertrade","method":"getMarketInfo","params":{}}' | jq .
 ```
 
 ### `getOrderbook`
@@ -203,10 +209,10 @@ Get the L2 orderbook for an asset. Returns normalized FLAT structure with bids a
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/hypertrade/getOrderbook" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"asset":"<value>"}' | jq .
+  -d '{"resourceId":"hypertrade","method":"getOrderbook","params":{"asset":"<value>"}}' | jq .
 ```
 
 ### `getCandles`
@@ -228,10 +234,10 @@ Get candlestick/OHLCV data for an asset. Returns normalized FLAT array of candle
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/hypertrade/getCandles" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"asset":"<value>"}' | jq .
+  -d '{"resourceId":"hypertrade","method":"getCandles","params":{"asset":"<value>"}}' | jq .
 ```
 
 ### `setLeverage`
@@ -251,10 +257,10 @@ Set leverage for an asset on Hyperliquid. Returns a pending action for the user 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/hypertrade/setLeverage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"asset":"<value>","leverage":10}' | jq .
+  -d '{"resourceId":"hypertrade","method":"setLeverage","params":{"asset":"<value>","leverage":10}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -276,10 +282,10 @@ Get trade fill history for a wallet. Returns normalized FLAT array of trades.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/hypertrade/getTradeHistory" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"hypertrade","method":"getTradeHistory","params":{}}' | jq .
 ```
 
 ## Response Format

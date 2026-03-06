@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "spaceAgent",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/spaceAgent/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -59,10 +65,10 @@ Get current status snapshot of the space agent including cycle count, budget usa
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/getStatus" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"getStatus","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -96,10 +102,10 @@ Get recent Tier 2 (non-silent) agent episodes. Each episode contains observation
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/getRecentEpisodes" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"limit":3}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"getRecentEpisodes","params":{"limit":3}}' | jq .
 ```
 
 **Example response:**
@@ -149,10 +155,10 @@ Queue an instruction for the space agent to process on its next cycle. The agent
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/sendDirective" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"directive":"Cancel all stuck sessions immediately","urgent":true}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"sendDirective","params":{"directive":"Cancel all stuck sessions immediately","urgent":true}}' | jq .
 ```
 
 **Example response:**
@@ -176,10 +182,10 @@ Get the agent's workspace memory — the persistent scratchpad the agent uses to
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/getMemory" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"getMemory","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -201,10 +207,10 @@ Get the agent's workspace configuration including instructions, context, and hea
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/getWorkspaceConfig" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"getWorkspaceConfig","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -232,10 +238,10 @@ Respond to the space agent's attention request. Clears the attention state, stor
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/respondToAttention" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"message":"Yes, go ahead and close that position"}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"respondToAttention","params":{"message":"Yes, go ahead and close that position"}}' | jq .
 ```
 
 **Example response:**
@@ -257,10 +263,10 @@ Dismiss the agent's attention request without responding. The agent returns to a
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/dismissAttention" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"dismissAttention","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -282,10 +288,10 @@ Force an immediate agent cycle. The scheduler will pick up the agent on its next
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/triggerCycle" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"triggerCycle","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -313,10 +319,10 @@ Update the agent's workspace configuration fields. Only the provided fields are 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/updateWorkspaceConfig" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"instructions":"Monitor BTC positions closely","heartbeat":"- Check BTC price\n- Review open orders"}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"updateWorkspaceConfig","params":{"instructions":"Monitor BTC positions closely","heartbeat":"- Check BTC price\n- Review open orders"}}' | jq .
 ```
 
 **Example response:**
@@ -346,10 +352,10 @@ Append entries to the agent's workspace memory. Entries are added with a date he
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/updateMemory" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"entries":["User prefers conservative risk","BTC long opened at 95k"]}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"updateMemory","params":{"entries":["User prefers conservative risk","BTC long opened at 95k"]}}' | jq .
 ```
 
 **Example response:**
@@ -376,10 +382,10 @@ Set the agent's monthly token budget cap.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/updateBudget" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"budgetCap":1000000}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"updateBudget","params":{"budgetCap":1000000}}' | jq .
 ```
 
 **Example response:**
@@ -406,10 +412,10 @@ Pause or resume the space agent. Set to "dormant" to pause or "active" to resume
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/setStatus" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"status":"dormant"}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"setStatus","params":{"status":"dormant"}}' | jq .
 ```
 
 **Example response:**
@@ -431,10 +437,10 @@ Get a summary of workspace activity since the agent's last cycle — flow execut
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/spaceAgent/getActivitySummary" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"spaceAgent","method":"getActivitySummary","params":{}}' | jq .
 ```
 
 **Example response:**

@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "data",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/data/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -65,10 +71,10 @@ Create a new data collection (schema). Define the fields and their types. A slug
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/defineCollection" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"name":"Contacts","fields":[{"name":"firstName","type":"string","required":true,"description":"First name"},{"name":"lastName","type":"string","required":true,"description":"Last name"},{"name":"email","type":"string","required":false,"description":"Email address"},{"name":"phone","type":"string","required":false},{"name":"company","type":"string","required":false}],"description":"Customer contacts directory"}' | jq .
+  -d '{"resourceId":"data","method":"defineCollection","params":{"name":"Contacts","fields":[{"name":"firstName","type":"string","required":true,"description":"First name"},{"name":"lastName","type":"string","required":true,"description":"Last name"},{"name":"email","type":"string","required":false,"description":"Email address"},{"name":"phone","type":"string","required":false},{"name":"company","type":"string","required":false}],"description":"Customer contacts directory"}}' | jq .
 ```
 
 ### `listCollections`
@@ -86,10 +92,10 @@ List all data collections for the current context. Optionally filter by status.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/listCollections" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"data","method":"listCollections","params":{}}' | jq .
 ```
 
 ### `getCollection`
@@ -107,10 +113,10 @@ Get a single collection schema by its slug.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/getCollection" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"slug":"contacts"}' | jq .
+  -d '{"resourceId":"data","method":"getCollection","params":{"slug":"contacts"}}' | jq .
 ```
 
 ### `updateCollection`
@@ -131,10 +137,10 @@ Update a collection schema. Add new fields, remove existing fields, or update th
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/updateCollection" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"slug":"contacts","addFields":[{"name":"notes","type":"string","required":false}]}' | jq .
+  -d '{"resourceId":"data","method":"updateCollection","params":{"slug":"contacts","addFields":[{"name":"notes","type":"string","required":false}]}}' | jq .
 ```
 
 ### `dropCollection`
@@ -152,10 +158,10 @@ Archive a collection and delete all its records. The schema is marked as archive
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/dropCollection" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"slug":"sales_metrics"}' | jq .
+  -d '{"resourceId":"data","method":"dropCollection","params":{"slug":"sales_metrics"}}' | jq .
 ```
 
 ### `insertRecord`
@@ -174,10 +180,10 @@ Insert a single record into a collection. Data is validated against the collecti
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/insertRecord" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"collection":"contacts","data":{"firstName":"Jane","lastName":"Smith","email":"jane@example.com","company":"Acme Inc"}}' | jq .
+  -d '{"resourceId":"data","method":"insertRecord","params":{"collection":"contacts","data":{"firstName":"Jane","lastName":"Smith","email":"jane@example.com","company":"Acme Inc"}}}' | jq .
 ```
 
 ### `insertRecords`
@@ -196,10 +202,10 @@ Batch insert multiple records into a collection. All records are validated again
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/insertRecords" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"collection":"sales_metrics","records":[{"date":"2025-06-15","revenue":14500,"unitsSold":230,"region":"North America","product":"Widget Pro"},{"date":"2025-06-15","revenue":8200,"unitsSold":120,"region":"Europe","product":"Widget Lite"},{"date":"2025-06-16","revenue":16100,"unitsSold":250,"region":"North America","product":"Widget Pro"}]}' | jq .
+  -d '{"resourceId":"data","method":"insertRecords","params":{"collection":"sales_metrics","records":[{"date":"2025-06-15","revenue":14500,"unitsSold":230,"region":"North America","product":"Widget Pro"},{"date":"2025-06-15","revenue":8200,"unitsSold":120,"region":"Europe","product":"Widget Lite"},{"date":"2025-06-16","revenue":16100,"unitsSold":250,"region":"North America","product":"Widget Pro"}]}}' | jq .
 ```
 
 ### `queryRecords`
@@ -221,10 +227,10 @@ Query records from a collection with optional filtering, sorting, and pagination
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/queryRecords" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"collection":"contacts"}' | jq .
+  -d '{"resourceId":"data","method":"queryRecords","params":{"collection":"contacts"}}' | jq .
 ```
 
 ### `updateRecord`
@@ -244,10 +250,10 @@ Update a single record by its ID. Data is validated against the collection schem
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/updateRecord" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"collection":"contacts","recordId":"665a1b2c3d4e5f6789012345","data":{"email":"jane.smith@newdomain.com"}}' | jq .
+  -d '{"resourceId":"data","method":"updateRecord","params":{"collection":"contacts","recordId":"665a1b2c3d4e5f6789012345","data":{"email":"jane.smith@newdomain.com"}}}' | jq .
 ```
 
 ### `deleteRecord`
@@ -266,10 +272,10 @@ Delete a single record by its ID. Quota is decremented by the record size.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/deleteRecord" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"collection":"contacts","recordId":"665a1b2c3d4e5f6789012345"}' | jq .
+  -d '{"resourceId":"data","method":"deleteRecord","params":{"collection":"contacts","recordId":"665a1b2c3d4e5f6789012345"}}' | jq .
 ```
 
 ### `aggregate`
@@ -289,10 +295,10 @@ Run aggregation on a collection. Supports sum, avg, count, min, max grouped by a
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/aggregate" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"collection":"sales_metrics","groupBy":"region","metrics":[{"field":"revenue","op":"sum"},{"field":"unitsSold","op":"sum"},{"field":"revenue","op":"avg"}]}' | jq .
+  -d '{"resourceId":"data","method":"aggregate","params":{"collection":"sales_metrics","groupBy":"region","metrics":[{"field":"revenue","op":"sum"},{"field":"unitsSold","op":"sum"},{"field":"revenue","op":"avg"}]}}' | jq .
 ```
 
 ### `getQuotaUsage`
@@ -306,10 +312,10 @@ Get the current storage quota usage for this context.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/data/getQuotaUsage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"data","method":"getQuotaUsage","params":{}}' | jq .
 ```
 
 ## Response Format

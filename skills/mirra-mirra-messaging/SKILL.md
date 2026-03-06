@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/mirraMessaging/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "mirra-messaging",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/mirraMessaging/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -61,10 +67,10 @@ Send a message to a group (including direct chats). The message is sent as the a
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/mirraMessaging/sendMessage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"groupId":"<ID>","content":"<value>"}' | jq .
+  -d '{"resourceId":"mirra-messaging","method":"sendMessage","params":{"groupId":"<ID>","content":"<value>"}}' | jq .
 ```
 
 ### `updateMessage`
@@ -84,10 +90,10 @@ Update an existing message sent by the authenticated user. Returns normalized fl
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/mirraMessaging/updateMessage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"messageId":"<ID>","content":"<value>"}' | jq .
+  -d '{"resourceId":"mirra-messaging","method":"updateMessage","params":{"messageId":"<ID>","content":"<value>"}}' | jq .
 ```
 
 ### `getChats`
@@ -106,10 +112,10 @@ Get list of chat instances for the user. Returns normalized flat structures.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/mirraMessaging/getChats" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"mirra-messaging","method":"getChats","params":{}}' | jq .
 ```
 
 ### `getGroups`
@@ -128,10 +134,10 @@ Get all conversations the user is a member of, including both direct chats and g
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/mirraMessaging/getGroups" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"mirra-messaging","method":"getGroups","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -181,10 +187,10 @@ Create a new group. The authenticated user becomes the group owner. Returns norm
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/mirraMessaging/createGroup" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"name":"<value>"}' | jq .
+  -d '{"resourceId":"mirra-messaging","method":"createGroup","params":{"name":"<value>"}}' | jq .
 ```
 
 ### `searchMessages`
@@ -212,10 +218,10 @@ Search chat messages by keywords. Returns summaries by default to avoid overwhel
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/mirraMessaging/searchMessages" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"todo task","senderUsername":"Hailey","startDate":"2024-01-22"}' | jq .
+  -d '{"resourceId":"mirra-messaging","method":"searchMessages","params":{"query":"todo task","senderUsername":"Hailey","startDate":"2024-01-22"}}' | jq .
 ```
 
 **Example response:**
@@ -270,10 +276,10 @@ Browse recent messages by recency without requiring a keyword search. Returns fu
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/mirraMessaging/getRecentMessages" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"mirra-messaging","method":"getRecentMessages","params":{}}' | jq .
 ```
 
 **Example response:**

@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "google-docs",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/googleDocs/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -65,10 +71,10 @@ Create a new Google Doc
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/createDocument" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"My New Document"}' | jq .
+  -d '{"resourceId":"google-docs","method":"createDocument","params":{"title":"My New Document"}}' | jq .
 ```
 
 **Example response:**
@@ -95,10 +101,10 @@ Get a Google Doc by ID. Returns normalized flat structure with extracted fields.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/getDocument" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"1abc123XYZ"}' | jq .
+  -d '{"resourceId":"google-docs","method":"getDocument","params":{"documentId":"1abc123XYZ"}}' | jq .
 ```
 
 **Example response:**
@@ -131,10 +137,10 @@ Append text to the end of a document
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/appendText" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>","text":"<value>"}' | jq .
+  -d '{"resourceId":"google-docs","method":"appendText","params":{"documentId":"<ID>","text":"<value>"}}' | jq .
 ```
 
 ### `replaceText`
@@ -154,10 +160,10 @@ Replace text in a document
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/replaceText" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>","searchText":"<value>","replaceText":"<value>"}' | jq .
+  -d '{"resourceId":"google-docs","method":"replaceText","params":{"documentId":"<ID>","searchText":"<value>","replaceText":"<value>"}}' | jq .
 ```
 
 ### `getDocumentContent`
@@ -175,10 +181,10 @@ Get the text content of a Google Doc
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/getDocumentContent" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>"}' | jq .
+  -d '{"resourceId":"google-docs","method":"getDocumentContent","params":{"documentId":"<ID>"}}' | jq .
 ```
 
 ### `insertTextAtPosition`
@@ -198,10 +204,10 @@ Insert text at a specific position in the document
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/insertTextAtPosition" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>","text":"<value>","position":10}' | jq .
+  -d '{"resourceId":"google-docs","method":"insertTextAtPosition","params":{"documentId":"<ID>","text":"<value>","position":10}}' | jq .
 ```
 
 ### `insertTextAfter`
@@ -222,10 +228,10 @@ Insert text after a search string in the document
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/insertTextAfter" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>","searchText":"<value>","textToInsert":"<value>"}' | jq .
+  -d '{"resourceId":"google-docs","method":"insertTextAfter","params":{"documentId":"<ID>","searchText":"<value>","textToInsert":"<value>"}}' | jq .
 ```
 
 ### `insertHeading`
@@ -247,10 +253,10 @@ Insert a heading into the document
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/insertHeading" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>","text":"<value>","level":10}' | jq .
+  -d '{"resourceId":"google-docs","method":"insertHeading","params":{"documentId":"<ID>","text":"<value>","level":10}}' | jq .
 ```
 
 ### `insertList`
@@ -272,10 +278,10 @@ Insert a bulleted or numbered list into the document
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/insertList" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>","items":[],"listType":"<value>"}' | jq .
+  -d '{"resourceId":"google-docs","method":"insertList","params":{"documentId":"<ID>","items":[],"listType":"<value>"}}' | jq .
 ```
 
 ### `insertTable`
@@ -297,10 +303,10 @@ Insert a table into the document
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/insertTable" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>","data":[]}' | jq .
+  -d '{"resourceId":"google-docs","method":"insertTable","params":{"documentId":"<ID>","data":[]}}' | jq .
 ```
 
 ### `updateDocumentContent`
@@ -319,10 +325,10 @@ Replace the entire content of a document
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/updateDocumentContent" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"<ID>","newContent":"<value>"}' | jq .
+  -d '{"resourceId":"google-docs","method":"updateDocumentContent","params":{"documentId":"<ID>","newContent":"<value>"}}' | jq .
 ```
 
 ### `createSection`
@@ -342,10 +348,10 @@ Create a new section with a heading and content. Returns normalized result with 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/createSection" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"1abc123XYZ","heading":"New Section","content":"Section content here"}' | jq .
+  -d '{"resourceId":"google-docs","method":"createSection","params":{"documentId":"1abc123XYZ","heading":"New Section","content":"Section content here"}}' | jq .
 ```
 
 **Example response:**
@@ -378,10 +384,10 @@ Find the character position for insertion based on position or search text. Retu
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDocs/findInsertionPoint" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"documentId":"1abc123XYZ","position":1,"searchText":"Introduction"}' | jq .
+  -d '{"resourceId":"google-docs","method":"findInsertionPoint","params":{"documentId":"1abc123XYZ","position":1,"searchText":"Introduction"}}' | jq .
 ```
 
 **Example response:**

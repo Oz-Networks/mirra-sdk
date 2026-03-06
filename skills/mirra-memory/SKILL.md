@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/memory/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "memory",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/memory/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -65,10 +71,10 @@ Create a new memory entity in the knowledge graph. Use the type field to specify
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/memory/create" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"type":"note","name":"Product sync meeting notes","content":"Discussed Q2 roadmap priorities. Team agreed to focus on mobile performance and new onboarding flow. Follow-up meeting scheduled for next Thursday."}' | jq .
+  -d '{"resourceId":"memory","method":"create","params":{"type":"note","name":"Product sync meeting notes","content":"Discussed Q2 roadmap priorities. Team agreed to focus on mobile performance and new onboarding flow. Follow-up meeting scheduled for next Thursday."}}' | jq .
 ```
 
 **Example response:**
@@ -109,10 +115,10 @@ Create a task in the knowledge graph. Tasks are a specialized memory type with a
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/memory/createTask" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"name":"Review quarterly report","content":"Review the Q2 quarterly report and flag any discrepancies in the revenue figures before the board meeting."}' | jq .
+  -d '{"resourceId":"memory","method":"createTask","params":{"name":"Review quarterly report","content":"Review the Q2 quarterly report and flag any discrepancies in the revenue figures before the board meeting."}}' | jq .
 ```
 
 **Example response:**
@@ -157,10 +163,10 @@ Semantic search across memory entities with advanced filtering. IMPORTANT: Searc
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/memory/search" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"quarterly product review meeting"}' | jq .
+  -d '{"resourceId":"memory","method":"search","params":{"query":"quarterly product review meeting"}}' | jq .
 ```
 
 **Example response:**
@@ -217,10 +223,10 @@ Query memory entities with filters. Returns lightweight summaries with TRUNCATED
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/memory/query" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"type":"task","limit":20}' | jq .
+  -d '{"resourceId":"memory","method":"query","params":{"type":"task","limit":20}}' | jq .
 ```
 
 **Example response:**
@@ -272,10 +278,10 @@ Find a single entity by ID or name. Returns the FULL untruncated entity content.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/memory/findOne" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"filters":{"id":"note_123"}}' | jq .
+  -d '{"resourceId":"memory","method":"findOne","params":{"filters":{"id":"note_123"}}}' | jq .
 ```
 
 **Example response:**
@@ -319,10 +325,10 @@ Update an existing memory entity. Works with all memory types including tasks cr
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/memory/update" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"id":"task_123","metadata":{"status":"completed"}}' | jq .
+  -d '{"resourceId":"memory","method":"update","params":{"id":"task_123","metadata":{"status":"completed"}}}' | jq .
 ```
 
 **Example response:**
@@ -350,10 +356,10 @@ Delete a memory entity. Works with all memory types including tasks, notes, idea
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/memory/delete" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"id":"task_123"}' | jq .
+  -d '{"resourceId":"memory","method":"delete","params":{"id":"task_123"}}' | jq .
 ```
 
 **Example response:**
@@ -383,10 +389,10 @@ Share a memory entity with another graph (group or contact). Only the creator ca
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/memory/share" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"entityId":"task_123","targetGraphId":"group_456"}' | jq .
+  -d '{"resourceId":"memory","method":"share","params":{"entityId":"task_123","targetGraphId":"group_456"}}' | jq .
 ```
 
 **Example response:**
@@ -421,10 +427,10 @@ Remove sharing of a memory entity from a graph. Only the creator can unshare. Ca
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/memory/unshare" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"entityId":"task_123","graphId":"group_456"}' | jq .
+  -d '{"resourceId":"memory","method":"unshare","params":{"entityId":"task_123","graphId":"group_456"}}' | jq .
 ```
 
 **Example response:**
@@ -456,10 +462,10 @@ List all graphs a memory entity is shared with, including share history and meta
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/memory/listGraphs" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"entityId":"task_123"}' | jq .
+  -d '{"resourceId":"memory","method":"listGraphs","params":{"entityId":"task_123"}}' | jq .
 ```
 
 **Example response:**

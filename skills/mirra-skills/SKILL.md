@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/skills/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "skills",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/skills/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -58,10 +64,10 @@ List skills available to the user (built-in + user-created).
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/skills/listSkills" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"skills","method":"listSkills","params":{}}' | jq .
 ```
 
 ### `getSkill`
@@ -79,10 +85,10 @@ Get full details of a skill by ID.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/skills/getSkill" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"skillId":"<ID>"}' | jq .
+  -d '{"resourceId":"skills","method":"getSkill","params":{"skillId":"<ID>"}}' | jq .
 ```
 
 ### `createSkill`
@@ -107,10 +113,10 @@ Create a new user skill.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/skills/createSkill" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"name":"<value>","title":"<value>","description":"<value>","whenToUse":"<value>","whenNotToUse":"<value>","procedure":[],"category":"<value>"}' | jq .
+  -d '{"resourceId":"skills","method":"createSkill","params":{"name":"<value>","title":"<value>","description":"<value>","whenToUse":"<value>","whenNotToUse":"<value>","procedure":[],"category":"<value>"}}' | jq .
 ```
 
 ### `updateSkill`
@@ -129,10 +135,10 @@ Update a user skill procedure, templates, or metadata.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/skills/updateSkill" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"skillId":"<ID>","updates":{}}' | jq .
+  -d '{"resourceId":"skills","method":"updateSkill","params":{"skillId":"<ID>","updates":{}}}' | jq .
 ```
 
 ### `deleteSkill`
@@ -150,10 +156,10 @@ Delete a user skill. Cannot delete built-in skills.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/skills/deleteSkill" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"skillId":"<ID>"}' | jq .
+  -d '{"resourceId":"skills","method":"deleteSkill","params":{"skillId":"<ID>"}}' | jq .
 ```
 
 ### `selectSkills`
@@ -176,10 +182,10 @@ Select relevant skills for an agent iteration. Returns ranked skills with full p
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/skills/selectSkills" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"agentObjective":"<value>"}' | jq .
+  -d '{"resourceId":"skills","method":"selectSkills","params":{"agentObjective":"<value>"}}' | jq .
 ```
 
 ### `recordSkillUsage`
@@ -201,10 +207,10 @@ Record that a skill was used during agent execution.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/skills/recordSkillUsage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"skillId":"<ID>","flowId":"<ID>","iteration":10,"outcome":"<value>"}' | jq .
+  -d '{"resourceId":"skills","method":"recordSkillUsage","params":{"skillId":"<ID>","flowId":"<ID>","iteration":10,"outcome":"<value>"}}' | jq .
 ```
 
 ### `getSkillUsage`
@@ -224,10 +230,10 @@ Get usage records for a skill or flow.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/skills/getSkillUsage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"skills","method":"getSkillUsage","params":{}}' | jq .
 ```
 
 ## Response Format

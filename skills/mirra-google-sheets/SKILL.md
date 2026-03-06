@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "google-sheets",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/googleSheets/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -69,10 +75,10 @@ Create a new Google Sheets spreadsheet
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/createSpreadsheet" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"Q1 Budget Report"}' | jq .
+  -d '{"resourceId":"google-sheets","method":"createSpreadsheet","params":{"title":"Q1 Budget Report"}}' | jq .
 ```
 
 **Example response:**
@@ -101,10 +107,10 @@ Read data from a range in a spreadsheet
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/readRange" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"1abc123xyz","range":"Sheet1!A1:B3"}' | jq .
+  -d '{"resourceId":"google-sheets","method":"readRange","params":{"spreadsheetId":"1abc123xyz","range":"Sheet1!A1:B3"}}' | jq .
 ```
 
 **Example response:**
@@ -150,10 +156,10 @@ Write data to a range in a spreadsheet
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/writeRange" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"1abc123xyz","range":"Sheet1!A1:B2","values":[["Name","Age"],["Alice",30]]}' | jq .
+  -d '{"resourceId":"google-sheets","method":"writeRange","params":{"spreadsheetId":"1abc123xyz","range":"Sheet1!A1:B2","values":[["Name","Age"],["Alice",30]]}}' | jq .
 ```
 
 **Example response:**
@@ -185,10 +191,10 @@ Append a row to a spreadsheet
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/appendRow" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","sheetName":"<value>","values":[]}' | jq .
+  -d '{"resourceId":"google-sheets","method":"appendRow","params":{"spreadsheetId":"<ID>","sheetName":"<value>","values":[]}}' | jq .
 ```
 
 ### `getSpreadsheet`
@@ -206,10 +212,10 @@ Get spreadsheet metadata and properties
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/getSpreadsheet" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"1abc123xyz"}' | jq .
+  -d '{"resourceId":"google-sheets","method":"getSpreadsheet","params":{"spreadsheetId":"1abc123xyz"}}' | jq .
 ```
 
 **Example response:**
@@ -256,10 +262,10 @@ Insert a value at a specific cell with optional formatting
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/insertAtCell" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","cell":"<value>","value":"<value>"}' | jq .
+  -d '{"resourceId":"google-sheets","method":"insertAtCell","params":{"spreadsheetId":"<ID>","cell":"<value>","value":"<value>"}}' | jq .
 ```
 
 ### `insertFormula`
@@ -280,10 +286,10 @@ Insert a formula at a specific cell
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/insertFormula" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","cell":"<value>","formula":"<value>"}' | jq .
+  -d '{"resourceId":"google-sheets","method":"insertFormula","params":{"spreadsheetId":"<ID>","cell":"<value>","formula":"<value>"}}' | jq .
 ```
 
 ### `formatRange`
@@ -307,10 +313,10 @@ Apply formatting to a range of cells
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/formatRange" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","range":"<value>"}' | jq .
+  -d '{"resourceId":"google-sheets","method":"formatRange","params":{"spreadsheetId":"<ID>","range":"<value>"}}' | jq .
 ```
 
 ### `createChart`
@@ -333,10 +339,10 @@ Create a chart from spreadsheet data
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/createChart" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","sheetId":10,"dataRange":"<value>","chartType":"<value>","title":"<value>","position":{}}' | jq .
+  -d '{"resourceId":"google-sheets","method":"createChart","params":{"spreadsheetId":"<ID>","sheetId":10,"dataRange":"<value>","chartType":"<value>","title":"<value>","position":{}}}' | jq .
 ```
 
 ### `findAndReplace`
@@ -359,10 +365,10 @@ Find and replace text in a spreadsheet
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/findAndReplace" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","findText":"<value>","replaceText":"<value>"}' | jq .
+  -d '{"resourceId":"google-sheets","method":"findAndReplace","params":{"spreadsheetId":"<ID>","findText":"<value>","replaceText":"<value>"}}' | jq .
 ```
 
 ### `insertMultipleRows`
@@ -384,10 +390,10 @@ Insert multiple rows of data at once
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/insertMultipleRows" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","sheetName":"<value>","rowsData":[]}' | jq .
+  -d '{"resourceId":"google-sheets","method":"insertMultipleRows","params":{"spreadsheetId":"<ID>","sheetName":"<value>","rowsData":[]}}' | jq .
 ```
 
 ### `clearRange`
@@ -407,10 +413,10 @@ Clear content from a range of cells
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/clearRange" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","sheetName":"<value>","range":"<value>"}' | jq .
+  -d '{"resourceId":"google-sheets","method":"clearRange","params":{"spreadsheetId":"<ID>","sheetName":"<value>","range":"<value>"}}' | jq .
 ```
 
 ### `insertRows`
@@ -431,10 +437,10 @@ Insert empty rows at a specific position in a sheet. IMPORTANT: Requires numeric
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/insertRows" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","sheetId":10,"startRowIndex":10,"numRows":10}' | jq .
+  -d '{"resourceId":"google-sheets","method":"insertRows","params":{"spreadsheetId":"<ID>","sheetId":10,"startRowIndex":10,"numRows":10}}' | jq .
 ```
 
 ### `deleteRows`
@@ -455,10 +461,10 @@ Delete rows from a sheet. IMPORTANT: Requires numeric sheetId (get from getSprea
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/deleteRows" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","sheetId":10,"startRowIndex":10,"numRows":10}' | jq .
+  -d '{"resourceId":"google-sheets","method":"deleteRows","params":{"spreadsheetId":"<ID>","sheetId":10,"startRowIndex":10,"numRows":10}}' | jq .
 ```
 
 ### `insertColumns`
@@ -479,10 +485,10 @@ Insert empty columns at a specific position in a sheet. IMPORTANT: Requires nume
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/insertColumns" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","sheetId":10,"startColumnIndex":10,"numColumns":10}' | jq .
+  -d '{"resourceId":"google-sheets","method":"insertColumns","params":{"spreadsheetId":"<ID>","sheetId":10,"startColumnIndex":10,"numColumns":10}}' | jq .
 ```
 
 ### `deleteColumns`
@@ -503,10 +509,10 @@ Delete columns from a sheet. IMPORTANT: Requires numeric sheetId (get from getSp
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/deleteColumns" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","sheetId":10,"startColumnIndex":10,"numColumns":10}' | jq .
+  -d '{"resourceId":"google-sheets","method":"deleteColumns","params":{"spreadsheetId":"<ID>","sheetId":10,"startColumnIndex":10,"numColumns":10}}' | jq .
 ```
 
 ### `copyRange`
@@ -528,10 +534,10 @@ Copy data from one range to another location within the same spreadsheet. IMPORT
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleSheets/copyRange" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"spreadsheetId":"<ID>","sourceSheetId":10,"sourceRange":"<value>","targetSheetId":10,"targetStartCell":"<value>"}' | jq .
+  -d '{"resourceId":"google-sheets","method":"copyRange","params":{"spreadsheetId":"<ID>","sourceSheetId":10,"sourceRange":"<value>","targetSheetId":10,"targetStartCell":"<value>"}}' | jq .
 ```
 
 ## Response Format

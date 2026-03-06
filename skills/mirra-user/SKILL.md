@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/user/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "user",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/user/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -52,10 +58,10 @@ Get user profile information including username, email, timezone, phone, and usa
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/user/getProfile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"user","method":"getProfile","params":{}}' | jq .
 ```
 
 ### `updateProfile`
@@ -76,10 +82,10 @@ Update user profile fields (username, email, timezone, phone)
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/user/updateProfile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"user","method":"updateProfile","params":{}}' | jq .
 ```
 
 ### `updatePreferences`
@@ -98,10 +104,10 @@ Update user preferences (notification settings, etc)
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/user/updatePreferences" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"user","method":"updatePreferences","params":{}}' | jq .
 ```
 
 ### `getUsageStats`
@@ -115,10 +121,10 @@ Get token usage statistics, quota, and billing information
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/user/getUsageStats" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"user","method":"getUsageStats","params":{}}' | jq .
 ```
 
 ### `getSessions`
@@ -132,10 +138,10 @@ Get active sessions/devices (based on push token registrations)
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/user/getSessions" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"user","method":"getSessions","params":{}}' | jq .
 ```
 
 ### `deactivateAccount`
@@ -153,10 +159,10 @@ Soft delete user account (set inactive flag) - CAUTION: This marks the account f
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/user/deactivateAccount" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"confirm":true}' | jq .
+  -d '{"resourceId":"user","method":"deactivateAccount","params":{"confirm":true}}' | jq .
 ```
 
 ## Response Format

@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDrive/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "google-drive",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/googleDrive/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -63,10 +69,10 @@ List files in Google Drive
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDrive/listFiles" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"google-drive","method":"listFiles","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -114,10 +120,10 @@ Create a new file in Google Drive
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDrive/createFile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"name":"<value>","mimeType":"<value>"}' | jq .
+  -d '{"resourceId":"google-drive","method":"createFile","params":{"name":"<value>","mimeType":"<value>"}}' | jq .
 ```
 
 ### `createFolder`
@@ -136,10 +142,10 @@ Create a new folder in Google Drive
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDrive/createFolder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"name":"<value>"}' | jq .
+  -d '{"resourceId":"google-drive","method":"createFolder","params":{"name":"<value>"}}' | jq .
 ```
 
 ### `getFileInfo`
@@ -157,10 +163,10 @@ Get information about a file
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDrive/getFileInfo" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"fileId":"file_abc123"}' | jq .
+  -d '{"resourceId":"google-drive","method":"getFileInfo","params":{"fileId":"file_abc123"}}' | jq .
 ```
 
 **Example response:**
@@ -204,10 +210,10 @@ Share a file with others
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDrive/shareFile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"fileId":"<ID>"}' | jq .
+  -d '{"resourceId":"google-drive","method":"shareFile","params":{"fileId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -227,10 +233,10 @@ Download a file from Google Drive. For Google Docs/Sheets, exports as PDF/XLSX. 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDrive/downloadFile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"fileId":"<ID>"}' | jq .
+  -d '{"resourceId":"google-drive","method":"downloadFile","params":{"fileId":"<ID>"}}' | jq .
 ```
 
 ### `moveFile`
@@ -249,10 +255,10 @@ Move a file to a different folder
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDrive/moveFile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"fileId":"<ID>","folderId":"<ID>"}' | jq .
+  -d '{"resourceId":"google-drive","method":"moveFile","params":{"fileId":"<ID>","folderId":"<ID>"}}' | jq .
 ```
 
 ### `deleteFile`
@@ -271,10 +277,10 @@ Delete a file or folder. By default moves to trash; set permanently=true to dele
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDrive/deleteFile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"fileId":"<ID>"}' | jq .
+  -d '{"resourceId":"google-drive","method":"deleteFile","params":{"fileId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -295,10 +301,10 @@ Search for files using Google Drive query syntax
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDrive/searchFiles" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"mimeType='application/pdf'"}' | jq .
+  -d '{"resourceId":"google-drive","method":"searchFiles","params":{"query":"mimeType='application/pdf'"}}' | jq .
 ```
 
 **Example response:**
@@ -338,10 +344,10 @@ Update file metadata (name, description)
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/googleDrive/updateFile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"fileId":"<ID>"}' | jq .
+  -d '{"resourceId":"google-drive","method":"updateFile","params":{"fileId":"<ID>"}}' | jq .
 ```
 
 ## Response Format

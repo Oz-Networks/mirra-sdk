@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/contacts/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "contacts",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/contacts/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -60,10 +66,10 @@ Get a list of all accepted contacts for the user with their profile information
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/contacts/listContacts" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"limit":10}' | jq .
+  -d '{"resourceId":"contacts","method":"listContacts","params":{"limit":10}}' | jq .
 ```
 
 **Example response:**
@@ -107,10 +113,10 @@ Get detailed information about a specific contact by their ID or username
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/contacts/getContact" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"contacts","method":"getContact","params":{}}' | jq .
 ```
 
 ### `addContact`
@@ -128,10 +134,10 @@ Send a contact request to another user by their username
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/contacts/addContact" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"username":"<value>"}' | jq .
+  -d '{"resourceId":"contacts","method":"addContact","params":{"username":"<value>"}}' | jq .
 ```
 
 ### `removeContact`
@@ -150,10 +156,10 @@ Remove a user from your contacts list (unfriend)
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/contacts/removeContact" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"contacts","method":"removeContact","params":{}}' | jq .
 ```
 
 ### `searchContacts`
@@ -173,10 +179,10 @@ Search your contacts by username, email, phone, or wallet address
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/contacts/searchContacts" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"heather"}' | jq .
+  -d '{"resourceId":"contacts","method":"searchContacts","params":{"query":"heather"}}' | jq .
 ```
 
 **Example response:**
@@ -216,10 +222,10 @@ Block a user (prevents them from contacting you)
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/contacts/blockContact" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"contacts","method":"blockContact","params":{}}' | jq .
 ```
 
 ### `unblockContact`
@@ -238,10 +244,10 @@ Unblock a previously blocked user
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/contacts/unblockContact" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"contacts","method":"unblockContact","params":{}}' | jq .
 ```
 
 ### `getBlockedContacts`
@@ -260,10 +266,10 @@ Get a list of all users you have blocked
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/contacts/getBlockedContacts" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"contacts","method":"getBlockedContacts","params":{}}' | jq .
 ```
 
 ### `getContactRequests`
@@ -282,10 +288,10 @@ Get pending contact requests (sent by you or received from others)
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/contacts/getContactRequests" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"contacts","method":"getContactRequests","params":{}}' | jq .
 ```
 
 ## Response Format

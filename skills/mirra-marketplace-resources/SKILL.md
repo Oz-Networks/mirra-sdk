@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceResources/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "marketplace-resources",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/marketplaceResources/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -58,10 +64,10 @@ Call a method on an installed marketplace resource. Returns flat response with r
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceResources/call" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"<ID>","method":"<value>","parameters":{}}' | jq .
+  -d '{"resourceId":"marketplace-resources","method":"call","params":{"resourceId":"<ID>","method":"<value>","parameters":{}}}' | jq .
 ```
 
 ### `install`
@@ -79,10 +85,10 @@ Install a marketplace resource for the user. Returns flat installation details.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceResources/install" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"<ID>"}' | jq .
+  -d '{"resourceId":"marketplace-resources","method":"install","params":{"resourceId":"<ID>"}}' | jq .
 ```
 
 ### `uninstall`
@@ -100,10 +106,10 @@ Uninstall a marketplace resource. Returns confirmation.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceResources/uninstall" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"<ID>"}' | jq .
+  -d '{"resourceId":"marketplace-resources","method":"uninstall","params":{"resourceId":"<ID>"}}' | jq .
 ```
 
 ### `authenticate`
@@ -123,10 +129,10 @@ Authenticate with a marketplace resource that requires credentials.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceResources/authenticate" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"<ID>","type":"<value>","credentials":{}}' | jq .
+  -d '{"resourceId":"marketplace-resources","method":"authenticate","params":{"resourceId":"<ID>","type":"<value>","credentials":{}}}' | jq .
 ```
 
 ### `listInstalled`
@@ -140,10 +146,10 @@ List all installed marketplace resources for the user.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceResources/listInstalled" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"marketplace-resources","method":"listInstalled","params":{}}' | jq .
 ```
 
 ### `getInstallation`
@@ -161,10 +167,10 @@ Get details of a specific resource installation.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/marketplaceResources/getInstallation" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"<ID>"}' | jq .
+  -d '{"resourceId":"marketplace-resources","method":"getInstallation","params":{"resourceId":"<ID>"}}' | jq .
 ```
 
 ## Response Format

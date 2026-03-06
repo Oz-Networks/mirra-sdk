@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/twitter/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "twitter",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/twitter/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -56,10 +62,10 @@ Post a tweet
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/twitter/postTweet" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"text":"<value>"}' | jq .
+  -d '{"resourceId":"twitter","method":"postTweet","params":{"text":"<value>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -82,10 +88,10 @@ Retrieve tweets from a Twitter user. Must provide either userId OR userName (not
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/twitter/getUserTweets" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"twitter","method":"getUserTweets","params":{}}' | jq .
 ```
 
 ### `advancedSearch`
@@ -105,10 +111,10 @@ Search tweets using advanced Twitter search syntax. Supports operators like from
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/twitter/advancedSearch" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"search term"}' | jq .
+  -d '{"resourceId":"twitter","method":"advancedSearch","params":{"query":"search term"}}' | jq .
 ```
 
 ### `getTweetById`
@@ -126,10 +132,10 @@ Fetch one or more tweets by their IDs. Useful for retrieving parent/original twe
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/twitter/getTweetById" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"tweetIds":"<ID>"}' | jq .
+  -d '{"resourceId":"twitter","method":"getTweetById","params":{"tweetIds":"<ID>"}}' | jq .
 ```
 
 ## Response Format

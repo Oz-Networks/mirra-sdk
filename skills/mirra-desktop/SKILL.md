@@ -16,16 +16,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/desktop/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "desktop",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/desktop/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -62,10 +68,10 @@ Run a shell command on the user's desktop and return stdout, stderr, and exit co
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/desktop/executeCommand" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"command":"ls -la ~"}' | jq .
+  -d '{"resourceId":"desktop","method":"executeCommand","params":{"command":"ls -la ~"}}' | jq .
 ```
 
 **Example response:**
@@ -97,10 +103,10 @@ Read the text contents of a file on the user's desktop with line-based paginatio
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/desktop/readFile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"path":"~/.zshrc"}' | jq .
+  -d '{"resourceId":"desktop","method":"readFile","params":{"path":"~/.zshrc"}}' | jq .
 ```
 
 **Example response:**
@@ -135,10 +141,10 @@ Write or create a file on the user's desktop. Parent directories are created aut
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/desktop/writeFile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"path":"~/scripts/hello.sh","content":"#!/bin/bash\necho \"Hello, world!\"\n"}' | jq .
+  -d '{"resourceId":"desktop","method":"writeFile","params":{"path":"~/scripts/hello.sh","content":"#!/bin/bash\necho \"Hello, world!\"\n"}}' | jq .
 ```
 
 **Example response:**
@@ -168,10 +174,10 @@ Make a targeted text replacement in a file on the user's desktop. Read the file 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/desktop/editFile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"path":"/Users/user/projects/app/config.json","oldString":"\"port\": 3000","newString":"\"port\": 8080"}' | jq .
+  -d '{"resourceId":"desktop","method":"editFile","params":{"path":"/Users/user/projects/app/config.json","oldString":"\"port\": 3000","newString":"\"port\": 8080"}}' | jq .
 ```
 
 **Example response:**
@@ -201,10 +207,10 @@ List files and directories at a given path on the user's desktop. Returns name, 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/desktop/listDirectory" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"path":"~"}' | jq .
+  -d '{"resourceId":"desktop","method":"listDirectory","params":{"path":"~"}}' | jq .
 ```
 
 **Example response:**
@@ -241,10 +247,10 @@ Get system information from the user's desktop: hostname, OS, CPU, memory, home 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/desktop/getSystemInfo" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"desktop","method":"getSystemInfo","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -279,10 +285,10 @@ Spawn a long-running background process on the user's desktop. The process runs 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/desktop/spawnProcess" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"command":"node","args":["server.js","--sdk-url","wss://example.com/sdk"],"cwd":"/Users/user/projects/my-app"}' | jq .
+  -d '{"resourceId":"desktop","method":"spawnProcess","params":{"command":"node","args":["server.js","--sdk-url","wss://example.com/sdk"],"cwd":"/Users/user/projects/my-app"}}' | jq .
 ```
 
 **Example response:**
@@ -309,10 +315,10 @@ Kill a previously spawned background process by its process ID.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/desktop/killProcess" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"processId":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}' | jq .
+  -d '{"resourceId":"desktop","method":"killProcess","params":{"processId":"a1b2c3d4-e5f6-7890-abcd-ef1234567890"}}' | jq .
 ```
 
 **Example response:**
@@ -334,10 +340,10 @@ List all desktop machines currently connected for the user. Shows hostname, plat
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/desktop/listMachines" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"desktop","method":"listMachines","params":{}}' | jq .
 ```
 
 **Example response:**
@@ -381,10 +387,10 @@ Select a specific desktop machine to receive all subsequent operations. Required
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/desktop/selectMachine" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"deviceId":"abc-123"}' | jq .
+  -d '{"resourceId":"desktop","method":"selectMachine","params":{"deviceId":"abc-123"}}' | jq .
 ```
 
 **Example response:**

@@ -18,16 +18,22 @@ You need the user's **API key**. Ask for these if not provided:
 
 ## API Call Pattern
 
-All operations use POST requests to the Mirra SDK API:
+All operations use a single POST endpoint with the resource ID and method in the body:
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/{operation}" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{ ...args }' | jq .
+  -d '{
+    "resourceId": "shopify",
+    "method": "{operation}",
+    "params": { ...args }
+  }' | jq .
 ```
 
 Replace `{operation}` with the operation name from the table below.
+
+> **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/shopify/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
 ## Available Operations
@@ -106,10 +112,10 @@ List products in the Shopify store with optional filtering and pagination. Retur
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/listProducts" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"shopify","method":"listProducts","params":{}}' | jq .
 ```
 
 ### `getProduct`
@@ -127,10 +133,10 @@ Get a single product by its Shopify product ID. Returns full product details inc
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/getProduct" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"productId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"getProduct","params":{"productId":"<ID>"}}' | jq .
 ```
 
 ### `createProduct`
@@ -153,10 +159,10 @@ Create a new product in the Shopify store. At minimum, a title is required. Set 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/createProduct" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"<value>"}' | jq .
+  -d '{"resourceId":"shopify","method":"createProduct","params":{"title":"<value>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -182,10 +188,10 @@ Update an existing product. Only the fields you provide will be updated; omitted
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/updateProduct" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"productId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"updateProduct","params":{"productId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -205,10 +211,10 @@ Permanently delete a product from the Shopify store. This action cannot be undon
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/deleteProduct" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"productId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"deleteProduct","params":{"productId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -235,10 +241,10 @@ List orders from the Shopify store with optional filtering. Returns up to 50 ord
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/listOrders" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"shopify","method":"listOrders","params":{}}' | jq .
 ```
 
 ### `getOrder`
@@ -256,10 +262,10 @@ Get a single order by its Shopify order ID. Returns full order details including
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/getOrder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"orderId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"getOrder","params":{"orderId":"<ID>"}}' | jq .
 ```
 
 ### `createOrder`
@@ -283,10 +289,10 @@ Create a new order in the Shopify store. Requires at least one line item. Can op
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/createOrder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"lineItems":[]}' | jq .
+  -d '{"resourceId":"shopify","method":"createOrder","params":{"lineItems":[]}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -308,10 +314,10 @@ Cancel an existing order. The order must be open. Optionally specify a reason fo
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/cancelOrder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"orderId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"cancelOrder","params":{"orderId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -331,10 +337,10 @@ Close an open order. A closed order is one that has no more work to be done (e.g
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/closeOrder" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"orderId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"closeOrder","params":{"orderId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -358,10 +364,10 @@ List customers from the Shopify store with optional pagination. Returns up to 50
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/listCustomers" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"shopify","method":"listCustomers","params":{}}' | jq .
 ```
 
 ### `getCustomer`
@@ -379,10 +385,10 @@ Get a single customer by their Shopify customer ID. Returns full customer detail
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/getCustomer" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"customerId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"getCustomer","params":{"customerId":"<ID>"}}' | jq .
 ```
 
 ### `createCustomer`
@@ -406,10 +412,10 @@ Create a new customer in the Shopify store. At minimum, either an email or a pho
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/createCustomer" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"shopify","method":"createCustomer","params":{}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -435,10 +441,10 @@ Update an existing customer. Only the fields you provide will be updated.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/updateCustomer" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"customerId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"updateCustomer","params":{"customerId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -459,10 +465,10 @@ Search customers by a query string. Searches across email, name, and other field
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/searchCustomers" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"query":"search term"}' | jq .
+  -d '{"resourceId":"shopify","method":"searchCustomers","params":{"query":"search term"}}' | jq .
 ```
 
 ### `getInventoryLevels`
@@ -482,10 +488,10 @@ Get inventory levels for items at specific locations. You must provide either in
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/getInventoryLevels" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"shopify","method":"getInventoryLevels","params":{}}' | jq .
 ```
 
 ### `adjustInventory`
@@ -505,10 +511,10 @@ Adjust the available inventory quantity for an item at a specific location. The 
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/adjustInventory" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"inventoryItemId":"<ID>","locationId":"<ID>","adjustment":10}' | jq .
+  -d '{"resourceId":"shopify","method":"adjustInventory","params":{"inventoryItemId":"<ID>","locationId":"<ID>","adjustment":10}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -529,10 +535,10 @@ List collections in the Shopify store. Returns both custom collections and smart
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/listCollections" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"shopify","method":"listCollections","params":{}}' | jq .
 ```
 
 ### `listPages`
@@ -551,10 +557,10 @@ List pages in the Shopify store with optional pagination.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/listPages" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"shopify","method":"listPages","params":{}}' | jq .
 ```
 
 ### `getPage`
@@ -572,10 +578,10 @@ Get a single page by ID.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/getPage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"pageId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"getPage","params":{"pageId":"<ID>"}}' | jq .
 ```
 
 ### `createPage`
@@ -597,10 +603,10 @@ Create a new page in the Shopify store.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/createPage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"<value>"}' | jq .
+  -d '{"resourceId":"shopify","method":"createPage","params":{"title":"<value>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -625,10 +631,10 @@ Update a page.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/updatePage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"pageId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"updatePage","params":{"pageId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -648,10 +654,10 @@ Permanently delete a page.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/deletePage" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"pageId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"deletePage","params":{"pageId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -672,10 +678,10 @@ List blogs in the Shopify store.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/listBlogs" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"shopify","method":"listBlogs","params":{}}' | jq .
 ```
 
 ### `getBlog`
@@ -693,10 +699,10 @@ Get a blog by ID.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/getBlog" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"blogId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"getBlog","params":{"blogId":"<ID>"}}' | jq .
 ```
 
 ### `createBlog`
@@ -715,10 +721,10 @@ Create a blog.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/createBlog" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"<value>"}' | jq .
+  -d '{"resourceId":"shopify","method":"createBlog","params":{"title":"<value>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -740,10 +746,10 @@ Update a blog.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/updateBlog" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"blogId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"updateBlog","params":{"blogId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -763,10 +769,10 @@ Delete a blog.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/deleteBlog" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"blogId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"deleteBlog","params":{"blogId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -788,10 +794,10 @@ List articles in a blog.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/listArticles" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"blogId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"listArticles","params":{"blogId":"<ID>"}}' | jq .
 ```
 
 ### `getArticle`
@@ -809,10 +815,10 @@ Get an article by ID.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/getArticle" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"articleId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"getArticle","params":{"articleId":"<ID>"}}' | jq .
 ```
 
 ### `createArticle`
@@ -838,10 +844,10 @@ Create an article in a blog.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/createArticle" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"blogId":"<ID>","title":"<value>"}' | jq .
+  -d '{"resourceId":"shopify","method":"createArticle","params":{"blogId":"<ID>","title":"<value>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -867,10 +873,10 @@ Update an article.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/updateArticle" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"articleId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"updateArticle","params":{"articleId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -890,10 +896,10 @@ Delete an article.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/deleteArticle" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"articleId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"deleteArticle","params":{"articleId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -909,10 +915,10 @@ List all themes in the Shopify store.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/listThemes" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"shopify","method":"listThemes","params":{}}' | jq .
 ```
 
 ### `getTheme`
@@ -930,10 +936,10 @@ Get a theme by ID.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/getTheme" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"themeId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"getTheme","params":{"themeId":"<ID>"}}' | jq .
 ```
 
 ### `publishTheme`
@@ -951,10 +957,10 @@ Publish (activate) a theme as the main theme.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/publishTheme" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"themeId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"publishTheme","params":{"themeId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -975,10 +981,10 @@ List files in a theme.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/listThemeFiles" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"themeId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"listThemeFiles","params":{"themeId":"<ID>"}}' | jq .
 ```
 
 ### `getThemeFile`
@@ -997,10 +1003,10 @@ Get a single theme file with its content.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/getThemeFile" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"themeId":"<ID>","filename":"<value>"}' | jq .
+  -d '{"resourceId":"shopify","method":"getThemeFile","params":{"themeId":"<ID>","filename":"<value>"}}' | jq .
 ```
 
 ### `upsertThemeFiles`
@@ -1019,10 +1025,10 @@ Create or update theme files.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/upsertThemeFiles" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"themeId":"<ID>","files":[]}' | jq .
+  -d '{"resourceId":"shopify","method":"upsertThemeFiles","params":{"themeId":"<ID>","files":[]}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -1043,10 +1049,10 @@ Delete theme files.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/deleteThemeFiles" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"themeId":"<ID>","filenames":[]}' | jq .
+  -d '{"resourceId":"shopify","method":"deleteThemeFiles","params":{"themeId":"<ID>","filenames":[]}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -1067,10 +1073,10 @@ List navigation menus.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/listMenus" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"shopify","method":"listMenus","params":{}}' | jq .
 ```
 
 ### `getMenu`
@@ -1088,10 +1094,10 @@ Get a menu by ID.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/getMenu" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"menuId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"getMenu","params":{"menuId":"<ID>"}}' | jq .
 ```
 
 ### `createMenu`
@@ -1111,10 +1117,10 @@ Create a navigation menu.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/createMenu" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"title":"<value>"}' | jq .
+  -d '{"resourceId":"shopify","method":"createMenu","params":{"title":"<value>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -1137,10 +1143,10 @@ Update a menu.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/updateMenu" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"menuId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"updateMenu","params":{"menuId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -1160,10 +1166,10 @@ Delete a menu.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/deleteMenu" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"menuId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"deleteMenu","params":{"menuId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -1184,10 +1190,10 @@ List URL redirects.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/listRedirects" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{}' | jq .
+  -d '{"resourceId":"shopify","method":"listRedirects","params":{}}' | jq .
 ```
 
 ### `createRedirect`
@@ -1206,10 +1212,10 @@ Create a URL redirect.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/createRedirect" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"path":"<value>","target":"<value>"}' | jq .
+  -d '{"resourceId":"shopify","method":"createRedirect","params":{"path":"<value>","target":"<value>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -1231,10 +1237,10 @@ Update a redirect.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/updateRedirect" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"redirectId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"updateRedirect","params":{"redirectId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
@@ -1254,10 +1260,10 @@ Delete a redirect.
 **Example:**
 
 ```bash
-curl -s -X POST "${API_URL}/api/sdk/v1/shopify/deleteRedirect" \
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"redirectId":"<ID>"}' | jq .
+  -d '{"resourceId":"shopify","method":"deleteRedirect","params":{"redirectId":"<ID>"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
