@@ -37,7 +37,7 @@ cp -r skills/mirra-* ~/.claude/skills/
 | [`mirra-desktop`](./mirra-desktop/) | Desktop | 10 | No |
 | [`mirra-feed-items`](./mirra-feed-items/) | Feed Items | 1 | No |
 | [`mirra-feedback`](./mirra-feedback/) | Feedback | 5 | No |
-| [`mirra-flows`](./mirra-flows/) | Flows | 18 | No |
+| [`mirra-flows`](./mirra-flows/) | Flows | 19 | No |
 | [`mirra-memory`](./mirra-memory/) | Memory | 10 | No |
 | [`mirra-pages`](./mirra-pages/) | Pages | 12 | No |
 | [`mirra-skills`](./mirra-skills/) | Skills | 8 | No |
@@ -100,7 +100,7 @@ cp -r skills/mirra-* ~/.claude/skills/
 | [`mirra-marketplace-templates`](./mirra-marketplace-templates/) | Marketplace Templates | 14 | No |
 | [`mirra-shopify`](./mirra-shopify/) | Shopify | 49 | Yes (OAuth) |
 
-**Total: 34 adapters, 390 operations**
+**Total: 34 adapters, 391 operations**
 
 ## How It Works
 

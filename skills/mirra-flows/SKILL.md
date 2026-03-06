@@ -38,6 +38,7 @@ Replace `{operation}` with the operation name from the table below.
 | `getFlow` | Get a specific flow by ID. Returns normalized flat structure. Use includeScript=true to also retu... |
 | `updateFlow` | Update an existing flow. Returns normalized flat structure. |
 | `modifyFlowScript` | Modify the script code for a flow. Validates code, creates a new version (or a private copy if us... |
+| `executeFlow` | Execute a flow on-demand with custom input. The input object is merged into the flow's scriptInpu... |
 | `deleteFlow` | Delete a flow |
 | `pauseFlow` | Pause an active flow. Returns normalized flat structure. |
 | `resumeFlow` | Resume a paused flow. Returns normalized flat structure. |
@@ -247,6 +248,42 @@ curl -s -X POST "${API_URL}/api/sdk/v1/flows/modifyFlowScript" \
   "scriptId": "507f1f77bcf86cd799439015",
   "versionId": "507f1f77bcf86cd799439016",
   "version": 1
+}
+```
+
+### `executeFlow`
+
+Execute a flow on-demand with custom input. The input object is merged into the flow's scriptInput and passed to the handler as event.data fields. Returns the handler's return value along with execution metadata.
+
+**Arguments:**
+
+- `flowId` (string, **required**): Flow ID to execute (24-character hex string)
+- `input` (object, *optional*): Dynamic input object passed to the flow handler via event.data. Fields are merged with the flow's static scriptInput (dynamic input takes precedence).
+
+**Returns:**
+
+`FlowExecutionResult`: Returns { success, result (handler return value), error, duration, executionId }
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v1/flows/executeFlow" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"flowId":"507f1f77bcf86cd799439011","input":{"question":"How do I get started?","productId":"product_123"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "success": true,
+  "executionId": "exec_abc123",
+  "duration": 2340,
+  "result": {
+    "response": "To get started...",
+    "sources": []
+  }
 }
 ```
 

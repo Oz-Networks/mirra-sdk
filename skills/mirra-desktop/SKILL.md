@@ -47,7 +47,7 @@ Replace `{operation}` with the operation name from the table below.
 
 ### `executeCommand`
 
-Run a shell command on the user's desktop and return stdout, stderr, and exit code. The command runs via /bin/sh -c. Output is truncated to 1 MB.
+Run a shell command on the user's desktop and return stdout, stderr, and exit code. The command runs in the user's configured shell (e.g., zsh, bash, PowerShell, WSL). Output is truncated to 1 MB.
 
 **Arguments:**
 

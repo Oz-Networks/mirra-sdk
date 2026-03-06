@@ -1607,6 +1607,10 @@ export interface FlowsModifyFlowScriptArgs {
   newCode: string; // New handler code. Must include export async function handler(event, context, mirra) wrapper.
   commitMessage?: string; // Description of changes (optional)
 }
+export interface FlowsExecuteFlowArgs {
+  flowId: string; // Flow ID to execute (24-character hex string)
+  input?: any; // Dynamic input object passed to the flow handler via event.data. Fields are merged with the flow's static scriptInput (dynamic input takes precedence).
+}
 export interface FlowsDeleteFlowArgs {
   id: string; // Flow ID to delete (24-character hex string returned by createFlow/createEventFlow)
 }
@@ -7872,7 +7876,7 @@ function createDataAdapter(sdk: MirraSDK) {
 function createDesktopAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Run a shell command on the user's desktop and return stdout, stderr, and exit code. The command runs via /bin/sh -c. Output is truncated to 1 MB.
+     * Run a shell command on the user's desktop and return stdout, stderr, and exit code. The command runs in the user's configured shell (e.g., zsh, bash, PowerShell, WSL). Output is truncated to 1 MB.
      * @param args.command - Shell command to execute (e.g., "ls -la ~/Documents")
      * @param args.cwd - Working directory for the command (defaults to user home) (optional)
      * @param args.timeoutMs - Timeout in milliseconds (defaults to 120000) (optional)
@@ -12478,6 +12482,19 @@ function createFlowsAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'modifyFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Execute a flow on-demand with custom input. The input object is merged into the flow's scriptInput and passed to the handler as event.data fields. Returns the handler's return value along with execution metadata.
+     * @param args.flowId - Flow ID to execute (24-character hex string)
+     * @param args.input - Dynamic input object passed to the flow handler via event.data. Fields are merged with the flow's static scriptInput (dynamic input takes precedence). (optional)
+     */
+    executeFlow: async (args: FlowsExecuteFlowArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'executeFlow',
         params: args || {}
       });
     },
