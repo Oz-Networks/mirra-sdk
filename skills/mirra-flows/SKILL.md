@@ -43,7 +43,9 @@ Replace `{operation}` with the operation name from the table below.
 | `createEventFlow` | Create an event-based flow with pre-filtering conditions. NOTE: Consider using createFlow instead... |
 | `getFlow` | Get a specific flow by ID. Returns normalized flat structure. Use includeScript=true to also retu... |
 | `updateFlow` | Update an existing flow. Returns normalized flat structure. |
-| `modifyFlowScript` | Modify the script code for a flow. Validates code, creates a new version (or a private copy if us... |
+| `modifyFlowScript` | Replace the ENTIRE script code for a flow. For small changes, prefer editFlowScript instead — it ... |
+| `readFlowScript` | Read the script code for a flow with line numbers. Supports optional line range to read a portion... |
+| `editFlowScript` | Apply surgical edits to a flow's script code using oldText/newText pairs. Each edit replaces an e... |
 | `executeFlow` | Execute a flow on-demand with custom input. The input object is merged into the flow's scriptInpu... |
 | `deleteFlow` | Delete a flow |
 | `pauseFlow` | Pause an active flow. Returns normalized flat structure. |
@@ -225,7 +227,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `modifyFlowScript`
 
-Modify the script code for a flow. Validates code, creates a new version (or a private copy if user does not own the original), deploys to Lambda, and updates the flow.
+Replace the ENTIRE script code for a flow. For small changes, prefer editFlowScript instead — it only requires the changed portions. Use modifyFlowScript only when rewriting more than ~50% of the code or creating a script from scratch.
 
 **Arguments:**
 
@@ -254,6 +256,77 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "scriptId": "507f1f77bcf86cd799439015",
   "versionId": "507f1f77bcf86cd799439016",
   "version": 1
+}
+```
+
+### `readFlowScript`
+
+Read the script code for a flow with line numbers. Supports optional line range to read a portion of the script. Use this before editFlowScript to see the current code.
+
+**Arguments:**
+
+- `flowId` (string, **required**): Flow ID (24-character hex string)
+- `startLine` (number, *optional*): First line to return (1-indexed). Default: 1
+- `endLine` (number, *optional*): Last line to return (inclusive). Default: end of file
+
+**Returns:**
+
+`object`: Returns: { scriptId, version, totalLines, startLine, endLine, code (with line numbers) }
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"flows","method":"readFlowScript","params":{"flowId":"507f1f77bcf86cd799439011"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "scriptId": "507f1f77bcf86cd799439012",
+  "version": 2,
+  "totalLines": 25,
+  "startLine": 1,
+  "endLine": 25,
+  "code": " 1\texport async function handler(event, context, mirra) {\n 2\t  const data = event.data;\n..."
+}
+```
+
+### `editFlowScript`
+
+Apply surgical edits to a flow's script code using oldText/newText pairs. Each edit replaces an exact text match. Much more efficient than modifyFlowScript for small changes — avoids rewriting the entire script. Use readFlowScript first to see current code.
+
+**Arguments:**
+
+- `flowId` (string, **required**): Flow ID (24-character hex string)
+- `edits` (array, **required**): Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially. oldText must be unique in the code — include enough surrounding context.
+- `commitMessage` (string, *optional*): Description of changes
+
+**Returns:**
+
+`object`: Returns: { copied, scriptId, versionId, version, linesChanged }
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"flows","method":"editFlowScript","params":{"flowId":"507f1f77bcf86cd799439011","edits":[{"oldText":"  const data = event.data.payload;","newText":"  const data = event.data.payload;\n  if (!data) return { success: false, noOp: true, reason: 'No payload' };"}],"commitMessage":"Add null check for payload"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "copied": false,
+  "scriptId": "507f1f77bcf86cd799439012",
+  "versionId": "507f1f77bcf86cd799439016",
+  "version": 3,
+  "linesChanged": 2
 }
 ```
 

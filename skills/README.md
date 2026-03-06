@@ -37,7 +37,7 @@ cp -r skills/mirra-* ~/.claude/skills/
 | [`mirra-desktop`](./mirra-desktop/) | Desktop | 10 | No |
 | [`mirra-feed-items`](./mirra-feed-items/) | Feed Items | 1 | No |
 | [`mirra-feedback`](./mirra-feedback/) | Feedback | 5 | No |
-| [`mirra-flows`](./mirra-flows/) | Flows | 19 | No |
+| [`mirra-flows`](./mirra-flows/) | Flows | 21 | No |
 | [`mirra-memory`](./mirra-memory/) | Memory | 10 | No |
 | [`mirra-pages`](./mirra-pages/) | Pages | 12 | No |
 | [`mirra-skills`](./mirra-skills/) | Skills | 8 | No |
@@ -59,7 +59,7 @@ cp -r skills/mirra-* ~/.claude/skills/
 | [`mirra-google-calendar`](./mirra-google-calendar/) | Google Calendar | 7 | Yes (OAuth) |
 | [`mirra-google-docs`](./mirra-google-docs/) | Google Docs | 13 | Yes (OAuth) |
 | [`mirra-google-sheets`](./mirra-google-sheets/) | Google Sheets | 17 | Yes (OAuth) |
-| [`mirra-scripts`](./mirra-scripts/) | Scripts | 19 | No |
+| [`mirra-scripts`](./mirra-scripts/) | Scripts | 21 | No |
 | [`mirra-trello`](./mirra-trello/) | Trello | 15 | Yes (OAuth) |
 
 ### Storage
@@ -100,7 +100,7 @@ cp -r skills/mirra-* ~/.claude/skills/
 | [`mirra-marketplace-templates`](./mirra-marketplace-templates/) | Marketplace Templates | 14 | No |
 | [`mirra-shopify`](./mirra-shopify/) | Shopify | 49 | Yes (OAuth) |
 
-**Total: 34 adapters, 391 operations**
+**Total: 34 adapters, 395 operations**
 
 ## How It Works
 

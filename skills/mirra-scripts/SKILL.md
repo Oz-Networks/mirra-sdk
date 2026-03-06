@@ -40,7 +40,7 @@ Replace `{operation}` with the operation name from the table below.
 |-----------|-------------|
 | `createScript` | Create a new script with initial version and API key. Returns flat structure with id field for su... |
 | `deleteScript` | Delete a script and all its versions. Returns flat deletion confirmation. |
-| `createVersion` | Create a new version of an existing script. Returns flat version details. |
+| `createVersion` | Create a new version by replacing the ENTIRE script code. For small changes, prefer editScriptCod... |
 | `listVersions` | List all versions of a script. Returns flat version structures. |
 | `deployScript` | Deploy a script version to AWS Lambda. Must be called after createScript to make the script execu... |
 | `executeScript` | Execute a deployed script with custom data. Script must be deployed first via deployScript. Retur... |
@@ -55,7 +55,9 @@ Replace `{operation}` with the operation name from the table below.
 | `createWebhook` | Create a webhook endpoint for the script. Returns flat webhook details. |
 | `createSchedule` | Create a cron schedule for the script. Returns flat schedule details. |
 | `getFlowScript` | Get the script code for a specific flow. Returns flat flow script structure. |
-| `modifyFlowScript` | Modify the script code for a flow. Automatically creates a copy if user does not own the original... |
+| `modifyFlowScript` | Replace the ENTIRE script code for a flow. For small changes, prefer editScriptCode or editFlowSc... |
+| `readScriptCode` | Read the active version's code for a script with line numbers. Supports optional line range. Use ... |
+| `editScriptCode` | Apply surgical edits to a script's active code using oldText/newText pairs. Each edit replaces an... |
 | `lintScript` | Validate script code BEFORE creating or deploying. Checks for: 1) Missing async handler wrapper (... |
 
 ## Operation Details
@@ -141,7 +143,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `createVersion`
 
-Create a new version of an existing script. Returns flat version details.
+Create a new version by replacing the ENTIRE script code. For small changes, prefer editScriptCode instead — it only requires the changed portions. Returns flat version details.
 
 **Arguments:**
 
@@ -756,7 +758,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `modifyFlowScript`
 
-Modify the script code for a flow. Automatically creates a copy if user does not own the original, deploys to Lambda, and updates the flow. Returns flat modification result.
+Replace the ENTIRE script code for a flow. For small changes, prefer editScriptCode or editFlowScript instead — they only require the changed portions. Use this only when rewriting more than ~50% of the code.
 
 **Arguments:**
 
@@ -785,6 +787,75 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "scriptId": "507f1f77bcf86cd799439015",
   "versionId": "507f1f77bcf86cd799439016",
   "version": 1
+}
+```
+
+### `readScriptCode`
+
+Read the active version's code for a script with line numbers. Supports optional line range. Use this before editScriptCode to see the current code.
+
+**Arguments:**
+
+- `scriptId` (string, **required**): Script ID
+- `startLine` (number, *optional*): First line to return (1-indexed). Default: 1
+- `endLine` (number, *optional*): Last line to return (inclusive). Default: end of file
+
+**Returns:**
+
+`object`: Returns: { scriptId, version, totalLines, startLine, endLine, code (with line numbers) }
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"scripts","method":"readScriptCode","params":{"scriptId":"507f1f77bcf86cd799439011"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "scriptId": "507f1f77bcf86cd799439011",
+  "version": 2,
+  "totalLines": 30,
+  "startLine": 1,
+  "endLine": 30,
+  "code": " 1\texport async function handler(event, context, mirra) {\n 2\t  ..."
+}
+```
+
+### `editScriptCode`
+
+Apply surgical edits to a script's active code using oldText/newText pairs. Each edit replaces an exact text match. Much more efficient than createVersion for small changes. Use readScriptCode first to see current code.
+
+**Arguments:**
+
+- `scriptId` (string, **required**): Script ID
+- `edits` (array, **required**): Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially.
+- `commitMessage` (string, *optional*): Description of changes
+
+**Returns:**
+
+`object`: Returns: { versionId, version, linesChanged }
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"scripts","method":"editScriptCode","params":{"scriptId":"507f1f77bcf86cd799439011","edits":[{"oldText":"cosnt result","newText":"const result"}],"commitMessage":"Fix typo"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "versionId": "507f1f77bcf86cd799439016",
+  "version": 3,
+  "linesChanged": 1
 }
 ```
 

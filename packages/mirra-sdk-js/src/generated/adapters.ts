@@ -722,6 +722,16 @@ export interface ScriptsModifyFlowScriptArgs {
   newCode: string; // New code to deploy
   commitMessage?: string; // Description of changes
 }
+export interface ScriptsReadScriptCodeArgs {
+  scriptId: string; // Script ID
+  startLine?: number; // First line to return (1-indexed). Default: 1
+  endLine?: number; // Last line to return (inclusive). Default: end of file
+}
+export interface ScriptsEditScriptCodeArgs {
+  scriptId: string; // Script ID
+  edits: any[]; // Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially.
+  commitMessage?: string; // Description of changes
+}
 export interface ScriptsLintScriptArgs {
   code: string; // The script code to validate
   eventType?: string; // Event type for event.data field validation (e.g., "telegram.message", "call.ended"). When provided, validates that event.data.fieldName accesses match the event type schema.
@@ -1606,6 +1616,16 @@ export interface FlowsModifyFlowScriptArgs {
   flowId: string; // Flow ID to modify (24-character hex string)
   newCode: string; // New handler code. Must include export async function handler(event, context, mirra) wrapper.
   commitMessage?: string; // Description of changes (optional)
+}
+export interface FlowsReadFlowScriptArgs {
+  flowId: string; // Flow ID (24-character hex string)
+  startLine?: number; // First line to return (1-indexed). Default: 1
+  endLine?: number; // Last line to return (inclusive). Default: end of file
+}
+export interface FlowsEditFlowScriptArgs {
+  flowId: string; // Flow ID (24-character hex string)
+  edits: any[]; // Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially. oldText must be unique in the code — include enough surrounding context.
+  commitMessage?: string; // Description of changes
 }
 export interface FlowsExecuteFlowArgs {
   flowId: string; // Flow ID to execute (24-character hex string)
@@ -9247,7 +9267,7 @@ function createScriptsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Create a new version of an existing script. Returns flat version details.
+     * Create a new version by replacing the ENTIRE script code. For small changes, prefer editScriptCode instead — it only requires the changed portions. Returns flat version details.
      * @param args.scriptId - ID of the script
      * @param args.code - Updated code for the new version
      * @param args.commitMessage - Description of changes in this version (optional)
@@ -9467,7 +9487,7 @@ function createScriptsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Modify the script code for a flow. Automatically creates a copy if user does not own the original, deploys to Lambda, and updates the flow. Returns flat modification result.
+     * Replace the ENTIRE script code for a flow. For small changes, prefer editScriptCode or editFlowScript instead — they only require the changed portions. Use this only when rewriting more than ~50% of the code.
      * @param args.flowId - ID of the flow to modify
      * @param args.newCode - New code to deploy
      * @param args.commitMessage - Description of changes (optional)
@@ -9477,6 +9497,34 @@ function createScriptsAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'modifyFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read the active version's code for a script with line numbers. Supports optional line range. Use this before editScriptCode to see the current code.
+     * @param args.scriptId - Script ID
+     * @param args.startLine - First line to return (1-indexed). Default: 1 (optional)
+     * @param args.endLine - Last line to return (inclusive). Default: end of file (optional)
+     */
+    readScriptCode: async (args: ScriptsReadScriptCodeArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'readScriptCode',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Apply surgical edits to a script's active code using oldText/newText pairs. Each edit replaces an exact text match. Much more efficient than createVersion for small changes. Use readScriptCode first to see current code.
+     * @param args.scriptId - Script ID
+     * @param args.edits - Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially.
+     * @param args.commitMessage - Description of changes (optional)
+     */
+    editScriptCode: async (args: ScriptsEditScriptCodeArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'editScriptCode',
         params: args || {}
       });
     },
@@ -12473,7 +12521,7 @@ function createFlowsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Modify the script code for a flow. Validates code, creates a new version (or a private copy if user does not own the original), deploys to Lambda, and updates the flow.
+     * Replace the ENTIRE script code for a flow. For small changes, prefer editFlowScript instead — it only requires the changed portions. Use modifyFlowScript only when rewriting more than ~50% of the code or creating a script from scratch.
      * @param args.flowId - Flow ID to modify (24-character hex string)
      * @param args.newCode - New handler code. Must include export async function handler(event, context, mirra) wrapper.
      * @param args.commitMessage - Description of changes (optional) (optional)
@@ -12482,6 +12530,34 @@ function createFlowsAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'flows',
         method: 'modifyFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read the script code for a flow with line numbers. Supports optional line range to read a portion of the script. Use this before editFlowScript to see the current code.
+     * @param args.flowId - Flow ID (24-character hex string)
+     * @param args.startLine - First line to return (1-indexed). Default: 1 (optional)
+     * @param args.endLine - Last line to return (inclusive). Default: end of file (optional)
+     */
+    readFlowScript: async (args: FlowsReadFlowScriptArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'readFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Apply surgical edits to a flow's script code using oldText/newText pairs. Each edit replaces an exact text match. Much more efficient than modifyFlowScript for small changes — avoids rewriting the entire script. Use readFlowScript first to see current code.
+     * @param args.flowId - Flow ID (24-character hex string)
+     * @param args.edits - Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially. oldText must be unique in the code — include enough surrounding context.
+     * @param args.commitMessage - Description of changes (optional)
+     */
+    editFlowScript: async (args: FlowsEditFlowScriptArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'editFlowScript',
         params: args || {}
       });
     },
