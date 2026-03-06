@@ -1,0 +1,113 @@
+{
+  "id": "product-knowledge-chat-v2",
+  "name": "Product Knowledge Base Chat v2",
+  "description": "A customer-facing chat interface for product support powered by a Flow. Customers select a product and ask questions, with AI answers based on uploaded documentation. Conversations are logged for the owner to review.",
+  "version": "2.0.0",
+  "category": "support",
+  "tags": ["chat", "knowledge-base", "support", "ai", "documents", "customer-service", "flow"],
+  "icon": "./assets/icon.png",
+  "screenshots": [
+    "./assets/screenshot-1.png"
+  ],
+  "page": {
+    "type": "nextjs",
+    "entryPoint": "page.tsx"
+  },
+  "dependencies": {
+    "scripts": [],
+    "flows": [
+      {
+        "handler": "./scripts/handler.js",
+        "name": "product-knowledge-chat-flow",
+        "title": "Product Knowledge Chat",
+        "description": "RAG search, AI response, and conversation logging for product knowledge chat"
+      }
+    ],
+    "resources": []
+  },
+  "configurationSchema": [
+    {
+      "id": "pageName",
+      "type": "string",
+      "label": "Page Name",
+      "description": "The name displayed in the browser tab",
+      "default": "Product Support",
+      "required": true,
+      "placeholder": "e.g., Acme Support Center"
+    },
+    {
+      "id": "companyName",
+      "type": "string",
+      "label": "Company Name",
+      "description": "Your company or brand name",
+      "default": "Support",
+      "required": true,
+      "placeholder": "e.g., Acme Inc"
+    },
+    {
+      "id": "welcomeTitle",
+      "type": "string",
+      "label": "Welcome Title",
+      "description": "The main heading shown to customers",
+      "default": "How can we help you today?",
+      "placeholder": "e.g., Welcome to Acme Support"
+    },
+    {
+      "id": "welcomeSubtitle",
+      "type": "string",
+      "label": "Welcome Subtitle",
+      "description": "Supporting text shown below the title",
+      "default": "Select a product and ask any question about features, setup, or troubleshooting.",
+      "placeholder": "e.g., Ask us anything about our products"
+    },
+    {
+      "id": "primaryColor",
+      "type": "color",
+      "label": "Primary Color",
+      "description": "The main accent color for buttons and highlights",
+      "default": "#0891b2"
+    },
+    {
+      "id": "secondaryColor",
+      "type": "color",
+      "label": "Secondary Color",
+      "description": "A lighter variant for hover states",
+      "default": "#06b6d4"
+    },
+    {
+      "id": "colorTheme",
+      "type": "select",
+      "label": "Default Color Theme",
+      "description": "The default theme when users first visit",
+      "default": "light",
+      "options": [
+        { "value": "system", "label": "System Preference" },
+        { "value": "light", "label": "Light Mode" },
+        { "value": "dark", "label": "Dark Mode" }
+      ]
+    },
+    {
+      "id": "showSources",
+      "type": "boolean",
+      "label": "Show Sources",
+      "description": "Display source documents used to generate answers",
+      "default": true
+    },
+    {
+      "id": "suggestedQuestions",
+      "type": "string",
+      "label": "Suggested Questions",
+      "description": "Example questions to show customers (one per line)",
+      "default": "How do I get started?\nWhat are the main features?\nHow do I troubleshoot common issues?",
+      "placeholder": "How do I get started?\nWhat features are available?"
+    }
+  ],
+  "pricing": {
+    "setupFee": 0,
+    "monthlyFee": 0,
+    "estimatedUsageCost": {
+      "perUse": 0,
+      "perMonth": 0
+    }
+  }
+}

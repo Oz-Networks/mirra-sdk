@@ -957,6 +957,27 @@ export class MirraSDK {
       );
       return response.data.data!;
     },
+
+    /**
+     * Execute a flow on-demand with custom input.
+     * The input object is passed to the flow handler via event.data fields.
+     *
+     * @example
+     * ```typescript
+     * const result = await sdk.flows.execute('flow-id', {
+     *   question: 'How do I get started?',
+     *   productId: 'product_123'
+     * });
+     * console.log(result.result); // Handler's return value
+     * ```
+     */
+    execute: async (flowId: string, input?: Record<string, any>): Promise<any> => {
+      return this.resources.call({
+        resourceId: 'flows',
+        method: 'executeFlow',
+        params: { flowId, input: input || {} },
+      });
+    },
   };
 }
 
