@@ -100,6 +100,16 @@ export class MirraSDK {
   }
 
   /**
+   * Configure group context for space-scoped flow execution.
+   * Attaches X-Group-Id and X-Scope headers to all subsequent SDK requests.
+   * @internal Used by Lambda wrapper for space-scoped flows.
+   */
+  setGroupContext(groupId: string, scope: 'group'): void {
+    this.client.defaults.headers.common['X-Group-Id'] = groupId;
+    this.client.defaults.headers.common['X-Scope'] = scope;
+  }
+
+  /**
    * Initialize auto-generated adapter methods
    * This dynamically adds all adapter methods from generated code
    */
