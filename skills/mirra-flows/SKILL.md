@@ -106,10 +106,11 @@ Valid operators: equals, notEquals, contains, startsWith, endsWith, greaterThan,
 - `scriptInputSchema` (object, *optional*): Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings.
 - `enabled` (boolean, *optional*): Whether the flow is enabled (default: true)
 - `webhook` (boolean, *optional*): Set to true to create a webhook-triggered flow. Returns a webhookUrl in the response. External services POST to this URL to trigger the flow. The request body is available as event.data.body in the handler.
+- `parentSpaceId` (string, *optional*): Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. If omitted, auto-inherited from the current group context (if any).
 
 **Returns:**
 
-`NormalizedFlow`: Returns FLAT flow object with: id, title, description, status, scope, userId, triggerType, cronExpression, timezone, eventFilter, scriptId, scriptInstallationId, scriptInput, scriptInputSchema, executionCount, lastExecutedAt, createdAt, updatedAt, version, feedItemId, isActive, isTimeBased, isEventBased. For webhook flows, also includes webhookUrl and webhookId. No nested trigger object.
+`NormalizedFlow`: Returns FLAT flow object with: id, title, description, status, scope, userId, parentSpaceId, triggerType, cronExpression, timezone, eventFilter, scriptId, scriptInstallationId, scriptInput, scriptInputSchema, executionCount, lastExecutedAt, createdAt, updatedAt, version, feedItemId, isActive, isTimeBased, isEventBased. For webhook flows, also includes webhookUrl and webhookId. No nested trigger object.
 
 **Example:**
 
@@ -208,13 +209,14 @@ Update an existing flow. Returns normalized flat structure.
 - `scriptInput` (object, *optional*): New static input data for the script. Fields are spread into event.data in handler code.
 - `scriptInputSchema` (object, *optional*): Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }.
 - `status` (string, *optional*): New status: active, paused, completed, failed
+- `parentSpaceId` (string, *optional*): Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. Set to empty string to remove group scope.
 - `schedule` (string, *optional*): Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone.
 - `eventType` (string, *optional*): Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead.
 - `eventFilter` (object, *optional*): Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] }
 
 **Returns:**
 
-`NormalizedFlow`: Returns FLAT flow object with: id, title, description, status, scope, userId, triggerType, cronExpression, timezone, eventFilter, scriptId, scriptInstallationId, scriptInput, scriptInputSchema, executionCount, lastExecutedAt, createdAt, updatedAt, version, feedItemId, isActive, isTimeBased, isEventBased. No nested trigger object.
+`NormalizedFlow`: Returns FLAT flow object with: id, title, description, status, scope, userId, parentSpaceId, triggerType, cronExpression, timezone, eventFilter, scriptId, scriptInstallationId, scriptInput, scriptInputSchema, executionCount, lastExecutedAt, createdAt, updatedAt, version, feedItemId, isActive, isTimeBased, isEventBased. No nested trigger object.
 
 **Example:**
 

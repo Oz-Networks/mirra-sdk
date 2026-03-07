@@ -1578,6 +1578,7 @@ export interface FlowsCreateFlowArgs {
   scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings.
   enabled?: boolean; // Whether the flow is enabled (default: true)
   webhook?: boolean; // Set to true to create a webhook-triggered flow. Returns a webhookUrl in the response. External services POST to this URL to trigger the flow. The request body is available as event.data.body in the handler.
+  parentSpaceId?: string; // Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. If omitted, auto-inherited from the current group context (if any).
 }
 export interface FlowsCreateTimeFlowArgs {
   title: string; // Flow title
@@ -1608,6 +1609,7 @@ export interface FlowsUpdateFlowArgs {
   scriptInput?: any; // New static input data for the script. Fields are spread into event.data in handler code.
   scriptInputSchema?: any; // Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }.
   status?: string; // New status: active, paused, completed, failed
+  parentSpaceId?: string; // Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. Set to empty string to remove group scope.
   schedule?: string; // Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone.
   eventType?: string; // Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead.
   eventFilter?: any; // Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] }
@@ -12437,6 +12439,7 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings. (optional)
      * @param args.enabled - Whether the flow is enabled (default: true) (optional)
      * @param args.webhook - Set to true to create a webhook-triggered flow. Returns a webhookUrl in the response. External services POST to this URL to trigger the flow. The request body is available as event.data.body in the handler. (optional)
+     * @param args.parentSpaceId - Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. If omitted, auto-inherited from the current group context (if any). (optional)
      * @returns Promise<FlowsCreateFlowData> Typed flat response with IDE autocomplete
      */
     createFlow: async (args: FlowsCreateFlowArgs): Promise<FlowsCreateFlowData> => {
@@ -12507,6 +12510,7 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.scriptInput - New static input data for the script. Fields are spread into event.data in handler code. (optional)
      * @param args.scriptInputSchema - Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }. (optional)
      * @param args.status - New status: active, paused, completed, failed (optional)
+     * @param args.parentSpaceId - Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. Set to empty string to remove group scope. (optional)
      * @param args.schedule - Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone. (optional)
      * @param args.eventType - Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead. (optional)
      * @param args.eventFilter - Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] } (optional)
