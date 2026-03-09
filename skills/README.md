@@ -6,23 +6,23 @@ Each skill teaches Claude Code how to call Mirra SDK operations via the REST API
 ## Quick Start
 
 1. Get your API key from the Mirra app (Settings > API Keys)
-2. Copy any skill folder into your Claude Code skills directory:
+2. Install all skills with one command:
 
 ```bash
-# Install a single skill
-cp -r skills/mirra-google-gmail ~/.claude/skills/
-
-# Install all skills
-cp -r skills/mirra-* ~/.claude/skills/
+curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/install.sh | bash
 ```
 
-3. Ask Claude Code to do something with that integration:
+3. Type `/mirra-` in Claude Code to see all available skills
+4. Ask Claude Code to do something with that integration:
 
 ```
 "Send an email via Mirra to alice@example.com about the meeting tomorrow"
 "Search my Telegram chats for messages about the project"
 "Create a memory in Mirra with my meeting notes"
 ```
+
+> **Update skills:** Re-run the install command anytime to get the latest skills.
+> **Uninstall:** `curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/install.sh | bash -s -- --uninstall`
 
 ## Available Skills
 
