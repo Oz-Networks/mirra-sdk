@@ -4018,7 +4018,10 @@ export interface MemoryEntitySummary {
 
 export interface MemorySearchData {
   query: string; // Search query used
-  count: number; // Number of results
+  totalCount: number; // Total matching results
+  count: number; // Number of results returned
+  offset: number; // Pagination offset
+  limit: number; // Pagination limit
   results: any; // Search results
 }
 
