@@ -41,6 +41,7 @@ Replace `{operation}` with the operation name from the table below.
 | `chat` | Have a conversation with an AI assistant. Supports multi-turn conversations with system prompts, ... |
 | `decide` | Use AI to make a decision from a list of options. The AI analyzes your prompt, considers the cont... |
 | `agent` | Run an AI agent that can call tools across multiple rounds. The agent receives a conversation, de... |
+| `computerUse` | Proxy for the Anthropic Computer Use API. Forwards requests to Anthropic's Messages API with comp... |
 
 ## Operation Details
 
@@ -118,6 +119,32 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"ai","method":"agent","params":{"messages":[{"role":"user","content":"Find my meetings tomorrow and summarize them"}],"tools":["googleCalendar","memory"]}}' | jq .
+```
+
+### `computerUse`
+
+Proxy for the Anthropic Computer Use API. Forwards requests to Anthropic's Messages API with computer use beta headers and returns the raw response. You handle the tool execution loop (screenshots, clicks, typing) on your side — Mirra handles auth and billing.
+
+**Arguments:**
+
+- `messages` (array, **required**): Anthropic-format messages array. Include tool_result blocks with base64 screenshots when responding to tool_use requests.
+- `tools` (array, *optional*): Anthropic computer use tool definitions. Defaults to computer tool with 1024x768 display if omitted.
+- `model` (string, *optional*): Model to use. Default: claude-sonnet-4-6. Only Sonnet models are supported.
+- `maxTokens` (number, *optional*): Maximum tokens in response. Default: 4096.
+- `system` (string, *optional*): System prompt to guide computer use behavior.
+- `temperature` (number, *optional*): Temperature 0.0-1.0. Default: 1.0 (Anthropic recommended for computer use).
+
+**Returns:**
+
+`ComputerUseResponse`: Raw Anthropic response with content blocks (text + tool_use), token usage, and tokensCharged (after 6x multiplier).
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"ai","method":"computerUse","params":{"messages":[{"role":"user","content":"Open the browser and navigate to example.com"}],"tools":[{"type":"computer_20251124","name":"computer","display_width_px":1024,"display_height_px":768}]}}' | jq .
 ```
 
 ## Response Format

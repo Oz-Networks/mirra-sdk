@@ -30,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 
 | Skill | Adapter | Operations | Auth Required |
 |-------|---------|------------|---------------|
-| [`mirra-ai`](./mirra-ai/) | AI Services | 3 | No |
+| [`mirra-ai`](./mirra-ai/) | AI Services | 4 | No |
 | [`mirra-claudeCode`](./mirra-claudeCode/) | Claude Code | 4 | No |
 | [`mirra-contacts`](./mirra-contacts/) | Contacts | 9 | No |
 | [`mirra-data`](./mirra-data/) | Data | 12 | No |
@@ -100,7 +100,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-marketplace-templates`](./mirra-marketplace-templates/) | Marketplace Templates | 14 | No |
 | [`mirra-shopify`](./mirra-shopify/) | Shopify | 49 | Yes (OAuth) |
 
-**Total: 34 adapters, 395 operations**
+**Total: 34 adapters, 396 operations**
 
 ## How It Works
 

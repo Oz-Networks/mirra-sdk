@@ -71,6 +71,14 @@ export interface AiAgentArgs {
   maxTokens?: number; // Max tokens per LLM call. Default: 4096
   maxRounds?: number; // Max tool-calling rounds. Default: 10, max: 25
 }
+export interface AiComputerUseArgs {
+  messages: any[]; // Anthropic-format messages array. Include tool_result blocks with base64 screenshots when responding to tool_use requests.
+  tools?: any[]; // Anthropic computer use tool definitions. Defaults to computer tool with 1024x768 display if omitted.
+  model?: string; // Model to use. Default: claude-sonnet-4-6. Only Sonnet models are supported.
+  maxTokens?: number; // Maximum tokens in response. Default: 4096.
+  system?: string; // System prompt to guide computer use behavior.
+  temperature?: number; // Temperature 0.0-1.0. Default: 1.0 (Anthropic recommended for computer use).
+}
 
 // Jira Adapter Types
 export interface JiraCreateIssueArgs {
@@ -1981,6 +1989,18 @@ export interface AIAgentData {
 }
 
 export type AiAgentResult = AdapterResultBase<AIAgentData>;
+
+export interface AIComputerUseData {
+  content: any[]; // Raw Anthropic content blocks (text + tool_use)
+  model: string; // Model used
+  stopReason: string; // end_turn or tool_use
+  inputTokens: number; // Raw input tokens from Anthropic
+  outputTokens: number; // Raw output tokens from Anthropic
+  totalTokens: number; // Total raw tokens (input + output)
+  tokensCharged: number; // Actual tokens deducted from balance (after 6x multiplier)
+}
+
+export type AiComputerUseResult = AdapterResultBase<AIComputerUseData>;
 
 // Jira Response Types
 export interface JiraGetIssueData {
@@ -4018,10 +4038,7 @@ export interface MemoryEntitySummary {
 
 export interface MemorySearchData {
   query: string; // Search query used
-  totalCount: number; // Total matching results
-  count: number; // Number of results returned
-  offset: number; // Pagination offset
-  limit: number; // Pagination limit
+  count: number; // Number of results
   results: any; // Search results
 }
 
@@ -7417,6 +7434,24 @@ function createAiAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'ai',
         method: 'agent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Proxy for the Anthropic Computer Use API. Forwards requests to Anthropic's Messages API with computer use beta headers and returns the raw response. You handle the tool execution loop (screenshots, clicks, typing) on your side — Mirra handles auth and billing. HOW IT WORKS: 1. Send messages with computer use tool definitions 2. Receive response with tool_use blocks (screenshot, click, type, etc.) 3. Execute the actions on your machine/VM 4. Send tool_result back (including base64 screenshots) in the next request 5. Loop until stopReason is "end_turn" BILLING: - Tokens are charged at a 6x multiplier (same as Sonnet pricing tier) - Screenshots consume image input tokens (the main cost driver) - tokensCharged field shows actual tokens deducted from your balance MODEL: - Only Sonnet models are supported (claude-sonnet-4-6 default) - Opus models are not available for computer use via this endpoint TOOL TYPES: - computer_20251124: Mouse, keyboard, and screenshot actions - text_editor_20250728: File editing tool - bash_20250124: Shell command execution
+     * @param args.messages - Anthropic-format messages array. Include tool_result blocks with base64 screenshots when responding to tool_use requests.
+     * @param args.tools - Anthropic computer use tool definitions. Defaults to computer tool with 1024x768 display if omitted. (optional)
+     * @param args.model - Model to use. Default: claude-sonnet-4-6. Only Sonnet models are supported. (optional)
+     * @param args.maxTokens - Maximum tokens in response. Default: 4096. (optional)
+     * @param args.system - System prompt to guide computer use behavior. (optional)
+     * @param args.temperature - Temperature 0.0-1.0. Default: 1.0 (Anthropic recommended for computer use). (optional)
+     * @returns Promise<AIComputerUseData> Typed flat response with IDE autocomplete
+     */
+    computerUse: async (args: AiComputerUseArgs): Promise<AIComputerUseData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'ai',
+        method: 'computerUse',
         params: args || {}
       });
     }
