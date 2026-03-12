@@ -48,38 +48,6 @@ export interface AdapterResultBase<T = any> {
 // Type Definitions
 // ============================================================================
 
-// AI Services Adapter Types
-export interface AiChatArgs {
-  message?: string; // Simple string shorthand for single-turn queries. Auto-wrapped into messages array. Use "messages" for multi-turn conversations.
-  messages?: any[]; // Array of message objects with role ("system" | "user" | "assistant") and content (string). System messages set AI behavior, user messages are queries, assistant messages are previous AI responses.
-  model?: string; // Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names.
-  temperature?: number; // Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7
-  maxTokens?: number; // Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens).
-}
-export interface AiDecideArgs {
-  prompt: string; // The decision prompt - what needs to be decided and why
-  options: any[]; // Array of options to choose from. Each option must have: id (unique identifier), label (descriptive name), and optional metadata (additional data)
-  context?: string; // Additional context to help the AI make a better decision
-  model?: string; // Specific model to use. Defaults to system default.
-}
-export interface AiAgentArgs {
-  messages: any[]; // Conversation messages array with role and content
-  tools?: any[]; // Adapter names to give the agent access to. Omit for all adapters.
-  systemPrompt?: string; // System prompt to guide agent behavior
-  model?: string; // Model to use. Default: claude-sonnet-4-20250514
-  temperature?: number; // Temperature 0.0-1.0. Default: 0.5
-  maxTokens?: number; // Max tokens per LLM call. Default: 4096
-  maxRounds?: number; // Max tool-calling rounds. Default: 10, max: 25
-}
-export interface AiComputerUseArgs {
-  messages: any[]; // Anthropic-format messages array. Include tool_result blocks with base64 screenshots when responding to tool_use requests.
-  tools?: any[]; // Anthropic computer use tool definitions. Defaults to computer tool with 1024x768 display if omitted.
-  model?: string; // Model to use. Default: claude-sonnet-4-6. Only Sonnet models are supported.
-  maxTokens?: number; // Maximum tokens in response. Default: 4096.
-  system?: string; // System prompt to guide computer use behavior.
-  temperature?: number; // Temperature 0.0-1.0. Default: 1.0 (Anthropic recommended for computer use).
-}
-
 // Jira Adapter Types
 export interface JiraCreateIssueArgs {
   projectKey: string; // Jira project key (e.g., "PROJ")
@@ -291,16 +259,6 @@ export interface DocumentListArgs {
   graphId?: string; // Graph ID to list documents from (defaults to user's graph)
   limit?: number; // Maximum results (default: 50)
   offset?: number; // Pagination offset (default: 0)
-}
-
-// Feed Items Adapter Types
-export interface FeedItemsCreateFeedItemArgs {
-  title: string; // What happened - the main notification text
-  subtitle?: string; // Secondary context shown below the title
-  category: string; // Activity type - determines icon and styling (e.g. email, calendar, task, document, reminder, message, crypto, shopping, note, memory, flow, call, error, update)
-  details?: any; // Key-value pairs of relevant info to display (e.g. { "recipients": "3 people", "status": "sent" })
-  preview?: string; // Longer text content shown below details (e.g. email body preview, note content)
-  notify?: boolean; // Send push notification (default: true, set false for background updates)
 }
 
 // Feedback Adapter Types
@@ -803,56 +761,6 @@ export interface MemoryUnshareArgs {
 }
 export interface MemoryListGraphsArgs {
   entityId: string; // Entity ID to list graphs for
-}
-
-// Mirra Messaging Adapter Types
-export interface MirraMessagingSendMessageArgs {
-  groupId: string; // Group ID to send the message to (use getGroups to get the groupId)
-  content: string; // Message text content
-  replyToMessageId?: string; // ID of the message to reply to (creates a threaded reply)
-  automation?: any; // Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing.
-  structuredData?: any[]; // Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }]
-}
-export interface MirraMessagingUpdateMessageArgs {
-  messageId: string; // ID of the message to update
-  content: string; // New message text content
-  structuredData?: any[]; // Updated structured data for rich UI rendering
-}
-export interface MirraMessagingGetChatsArgs {
-  scope?: string; // Filter by scope: direct, user, group, or all (default all)
-  limit?: number; // Maximum number of chats to return (default 50)
-}
-export interface MirraMessagingGetGroupsArgs {
-  limit?: number; // Maximum number of groups to return (default 50)
-  offset?: number; // Offset for pagination (default 0)
-}
-export interface MirraMessagingCreateGroupArgs {
-  name: string; // Group name (max 100 characters)
-  description?: string; // Group description (max 500 characters)
-  category?: string; // Category for organization: "hobby", "career", "family", "health", "finance", "learning", or "social" (default: "career")
-  memberIds?: any[]; // Array of user IDs to add as initial members
-}
-export interface MirraMessagingSearchMessagesArgs {
-  query: string; // Keywords to search for
-  senderUsername?: string; // Username to filter by sender (partial match supported)
-  groupName?: string; // Group name to limit search (resolved to groupId)
-  groupId?: string; // Group ID to limit search (use groupName for name-based lookup)
-  scope?: string; // "direct", "group", or "all" (default)
-  startDate?: string; // ISO date for time range start
-  endDate?: string; // ISO date for time range end
-  includeFullText?: boolean; // Include full message text (default: false, returns snippets)
-  snippetLength?: number; // Max chars for snippet (default: 200)
-  limit?: number; // Max results (default 20, max 50)
-  offset?: number; // Pagination offset
-}
-export interface MirraMessagingGetRecentMessagesArgs {
-  groupId?: string; // Group ID to filter messages (use getGroups to get groupId)
-  groupName?: string; // Group name to filter messages (resolved to groupId)
-  scope?: string; // "direct", "group", or "all" (default)
-  startDate?: string; // ISO date for time range start
-  endDate?: string; // ISO date for time range end
-  limit?: number; // Max results (default 20, max 50)
-  offset?: number; // Pagination offset
 }
 
 // Moltbook Adapter Types
@@ -1585,6 +1493,22 @@ export interface VideoGeneratorRenderVideoArgs {
 export interface VideoGeneratorGetRenderStatusArgs {
   renderId: string; // Render ID from renderVideo response
 }
+export interface VideoGeneratorRenderCustomVideoArgs {
+  code: string; // Remotion React JSX code defining a function App() component. No imports needed — all Remotion APIs are available as globals.
+  codec?: string; // Video codec: h264 (default), h265, vp8, vp9
+  width?: number; // Video width in pixels (default: 1080)
+  height?: number; // Video height in pixels (default: 1080)
+  fps?: number; // Frames per second (default: 30)
+  durationInFrames?: number; // Total duration in frames (default: 300 = 10s at 30fps)
+}
+export interface VideoGeneratorPreviewFrameArgs {
+  code: string; // Remotion React JSX code defining a function App() component
+  frame?: number; // Which frame to preview (default: 0). Use this to check different moments in the video.
+  width?: number; // Preview width in pixels (default: 1080)
+  height?: number; // Preview height in pixels (default: 1080)
+  fps?: number; // Frames per second for timing calculations (default: 30)
+  durationInFrames?: number; // Total duration in frames for timing calculations (default: 300)
+}
 
 // Flows Adapter Types
 export interface FlowsCreateFlowArgs {
@@ -1972,49 +1896,6 @@ export interface GoogleSheetsCopyRangeArgs {
 // ============================================================================
 // Response Type Definitions
 // ============================================================================
-
-// AI Services Response Types
-export interface AIChatData {
-  content: string; // AI response text content
-  model: string; // Model used for generation
-  inputTokens: number; // Number of input tokens consumed
-  outputTokens: number; // Number of output tokens generated
-  totalTokens: number; // Total tokens (input + output)
-}
-
-export type AiChatResult = AdapterResultBase<AIChatData>;
-
-export interface AIDecideData {
-  selectedOption: string; // ID of the selected option
-  reasoning: string; // Explanation of why this option was chosen
-}
-
-export type AiDecideResult = AdapterResultBase<AIDecideData>;
-
-export interface AIAgentData {
-  content: string; // Final text from the agent
-  model: string; // Model used for generation
-  inputTokens: number; // Total input tokens across all rounds
-  outputTokens: number; // Total output tokens across all rounds
-  totalTokens: number; // Total tokens (input + output)
-  rounds: number; // Number of tool-calling rounds executed
-  toolCalls: any[]; // Full history of tool calls made
-  stopReason: string; // Why the agent stopped: end_turn, max_rounds, error, or abort
-}
-
-export type AiAgentResult = AdapterResultBase<AIAgentData>;
-
-export interface AIComputerUseData {
-  content: any[]; // Raw Anthropic content blocks (text + tool_use)
-  model: string; // Model used
-  stopReason: string; // end_turn or tool_use
-  inputTokens: number; // Raw input tokens from Anthropic
-  outputTokens: number; // Raw output tokens from Anthropic
-  totalTokens: number; // Total raw tokens (input + output)
-  tokensCharged: number; // Actual tokens deducted from balance (after 6x multiplier)
-}
-
-export type AiComputerUseResult = AdapterResultBase<AIComputerUseData>;
 
 // Jira Response Types
 export interface JiraGetIssueData {
@@ -2608,21 +2489,6 @@ export interface DocumentListData {
 }
 
 export type DocumentListResult = AdapterResultBase<DocumentListData>;
-
-// Feed Items Response Types
-export interface FeedItemCreateData {
-  feedItemId: string; // Unique ID of the created feed item
-  title: string; // Title of the feed item
-  itemType: any; // Type of feed item
-  subType: string; // Subtype of the feed item
-  status: string; // Status of the feed item (pending, completed)
-  graphId: string; // Graph ID where feed item was created
-  createdAt: string; // Creation timestamp (ISO 8601)
-  hasActions: boolean; // Whether feed item has action buttons
-  blockCount: number; // Number of content blocks
-}
-
-export type FeedItemsCreateFeedItemResult = AdapterResultBase<FeedItemCreateData>;
 
 // Feedback Response Types
 export interface FeedbackReportBugData {
@@ -4179,143 +4045,6 @@ export interface MemoryStatsData {
 }
 
 export type MemoryGetMemoryStatsResult = AdapterResultBase<MemoryStatsData>;
-
-// Mirra Messaging Response Types
-export interface MirraMessagingSendMessageData {
-  messageId: string; // Sent message ID
-  chatInstanceId: string; // Chat instance ID
-  groupId: string; // Group ID
-  content: string; // Message content
-  timestamp: string; // Sent timestamp (ISO 8601)
-  automationSource: any; // Automation source identifier
-  automationSessionId: any; // Automation session ID
-  automationFlowId: any; // Automation flow ID
-  linkUrl: string; // Deep link URL to chat
-  linkLabel: string; // Display label for link
-}
-
-export type MirraMessagingSendMessageResult = AdapterResultBase<MirraMessagingSendMessageData>;
-
-export interface MirraMessagingUpdateMessageData {
-  messageId: string; // Updated message ID
-  chatInstanceId: string; // Chat instance ID
-  groupId: string; // Group ID
-  content: string; // Updated message content
-  editedAt: string; // Edit timestamp (ISO 8601)
-  editCount: number; // Total edit count
-}
-
-export type MirraMessagingUpdateMessageResult = AdapterResultBase<MirraMessagingUpdateMessageData>;
-
-export interface MirraMessagingChat {
-  chatInstanceId: string; // Chat instance ID
-  title: string; // Chat title
-  scope: any; // Chat scope type
-  lastMessageAt: any; // Last message timestamp (ISO 8601)
-  lastMessagePreview: any; // Last message preview text
-  messageCount: number; // Total message count
-  peerUserId: any; // Peer user ID (for direct chats)
-  peerUsername: any; // Peer username
-  peerProfilePhoto: any; // Peer profile photo URL
-  groupId: any; // Group ID (for group chats)
-  groupName: any; // Group name
-  groupProfileImage: any; // Group profile image URL
-}
-
-export interface MirraMessagingGetChatsData {
-  chats: any; // List of chat instances
-  count: number; // Number of chats returned
-}
-
-export type MirraMessagingGetChatsResult = AdapterResultBase<MirraMessagingGetChatsData>;
-
-export interface MirraMessagingGroup {
-  groupId: string; // Group ID
-  name: string; // Group name (direct chats: "You & {peerUsername}")
-  type: any; // Conversation type
-  memberCount: number; // Number of active members
-  role: string; // User role in group
-  joinedAt: string; // Join timestamp (ISO 8601)
-}
-
-export interface MirraMessagingGetGroupsData {
-  groups: any; // List of conversations (direct chats and group chats)
-  totalCount: number; // Total available conversations
-  limit: number; // Items per page
-  offset: number; // Current offset
-  hasMore: boolean; // Whether more conversations exist
-}
-
-export type MirraMessagingGetGroupsResult = AdapterResultBase<MirraMessagingGetGroupsData>;
-
-export interface MirraMessagingCreateGroupData {
-  groupId: string; // Created group ID
-  chatInstanceId: string; // Chat instance ID
-  name: string; // Group name
-  description: any; // Group description
-  category: string; // Group category
-  createdBy: string; // Creator user ID
-  memberCount: number; // Initial member count
-  createdAt: string; // Creation timestamp (ISO 8601)
-  linkUrl: string; // Deep link URL to group chat
-  linkLabel: string; // Display label for link
-}
-
-export type MirraMessagingCreateGroupResult = AdapterResultBase<MirraMessagingCreateGroupData>;
-
-export interface MirraMessagingSearchMessage {
-  messageId: string; // Message ID
-  chatInstanceId: string; // Chat instance ID
-  groupId: any; // Group ID
-  groupName: any; // Group name
-  senderId: string; // Sender user ID
-  senderUsername: string; // Sender username
-  snippet: string; // Message snippet around matched keywords
-  text: any; // Full message text (if includeFullText=true)
-  timestamp: string; // Message timestamp (ISO 8601)
-  scope: any; // Message scope
-  relevanceScore: number; // Search relevance score
-  isFromMe: boolean; // Whether message is from authenticated user
-  chatType: any; // Chat type
-  messageLength: number; // Full message length in characters
-}
-
-export interface MirraMessagingSearchMessagesData {
-  messages: any; // Matching messages
-  totalCount: number; // Total matching messages
-  limit: number; // Items per page
-  offset: number; // Current offset
-  hasMore: boolean; // Whether more results exist
-  query: string; // Search query used
-  summaryMode: boolean; // Whether results are in summary mode
-}
-
-export type MirraMessagingSearchMessagesResult = AdapterResultBase<MirraMessagingSearchMessagesData>;
-
-export interface MirraMessagingRecentMessage {
-  messageId: string; // Message ID
-  chatInstanceId: string; // Chat instance ID
-  groupId: any; // Group ID
-  groupName: any; // Group name
-  senderId: string; // Sender user ID
-  senderUsername: string; // Sender username
-  text: string; // Full message text
-  timestamp: string; // Message timestamp (ISO 8601)
-  scope: any; // Message scope
-  isFromMe: boolean; // Whether message is from authenticated user
-  chatType: any; // Chat type
-  messageLength: number; // Full message length in characters
-}
-
-export interface MirraMessagingGetRecentMessagesData {
-  messages: any; // Recent messages sorted newest first
-  totalCount: number; // Total available messages
-  limit: number; // Items per page
-  offset: number; // Current offset
-  hasMore: boolean; // Whether more messages exist
-}
-
-export type MirraMessagingGetRecentMessagesResult = AdapterResultBase<MirraMessagingGetRecentMessagesData>;
 
 // Moltbook Response Types
 export interface MoltbookRegisterAgentData {
@@ -6394,6 +6123,23 @@ export interface VideoRenderStatusData {
 
 export type VideoGeneratorGetRenderStatusResult = AdapterResultBase<VideoRenderStatusData>;
 
+export interface VideoCustomRenderData {
+  renderId: string; // Unique render identifier for polling
+  status: string; // Always "rendering" on success
+  message: string; // Instructions for polling
+}
+
+export type VideoGeneratorRenderCustomVideoResult = AdapterResultBase<VideoCustomRenderData>;
+
+export interface VideoPreviewFrameData {
+  imageUrl: string; // Public URL of the rendered preview frame
+  frame: number; // Frame number that was rendered
+  width: number; // Image width in pixels
+  height: number; // Image height in pixels
+}
+
+export type VideoGeneratorPreviewFrameResult = AdapterResultBase<VideoPreviewFrameData>;
+
 // Flows Response Types
 export interface FlowsCreateFlowData {
   id: string; // Flow ID
@@ -7432,84 +7178,6 @@ export type GoogleSheetsCopyRangeResult = AdapterResultBase<GoogleSheetsCopyRang
 // ============================================================================
 
 /**
- * AI Services Adapter
- * Category: internal
- */
-function createAiAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Have a conversation with an AI assistant. Supports multi-turn conversations with system prompts, user messages, and assistant responses. PROVIDER: Uses Anthropic (Claude) as the AI provider. BEST PRACTICES: - Use system messages to set AI behavior and constraints - Keep conversations focused - avoid unnecessary context MESSAGE STRUCTURE: Each message has: - role: "system" | "user" | "assistant" - content: string (the message text) TYPICAL PATTERNS: 1. Simple query: [{ role: "user", content: "question" }] 2. With system prompt: [{ role: "system", content: "instructions" }, { role: "user", content: "question" }] 3. Multi-turn: [system, user, assistant, user, assistant, ...]
-     * @param args.message - Simple string shorthand for single-turn queries. Auto-wrapped into messages array. Use "messages" for multi-turn conversations. (optional)
-     * @param args.messages - Array of message objects with role ("system" | "user" | "assistant") and content (string). System messages set AI behavior, user messages are queries, assistant messages are previous AI responses. (optional)
-     * @param args.model - Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names. (optional)
-     * @param args.temperature - Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7 (optional)
-     * @param args.maxTokens - Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens). (optional)
-     * @returns Promise<AIChatData> Typed flat response with IDE autocomplete
-     */
-    chat: async (args: AiChatArgs): Promise<AIChatData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'ai',
-        method: 'chat',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Use AI to make a decision from a list of options. The AI analyzes your prompt, considers the context, and selects the most appropriate option with reasoning. USE CASES: - Route messages to correct handlers - Classify user intents - Select appropriate tools or actions - Prioritize tasks - Choose templates or responses - Determine sentiment or category HOW IT WORKS: 1. Provide a prompt (the decision context) 2. List available options (each with id and label) 3. Optionally add extra context 4. AI returns selected option ID and reasoning BEST PRACTICES: - Make option labels clear and descriptive - Use unique IDs for options - Add context when decision needs background info - Keep prompt focused on the decision criteria - Use metadata field for additional option data
-     * @param args.prompt - The decision prompt - what needs to be decided and why
-     * @param args.options - Array of options to choose from. Each option must have: id (unique identifier), label (descriptive name), and optional metadata (additional data)
-     * @param args.context - Additional context to help the AI make a better decision (optional)
-     * @param args.model - Specific model to use. Defaults to system default. (optional)
-     * @returns Promise<AIDecideData> Typed flat response with IDE autocomplete
-     */
-    decide: async (args: AiDecideArgs): Promise<AIDecideData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'ai',
-        method: 'decide',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Run an AI agent that can call tools across multiple rounds. The agent receives a conversation, decides which tools to use, executes them, and continues until the task is complete or max rounds are reached. TOOL ACCESS: - Specify adapter names in "tools" array to limit which adapters the agent can use - Omit "tools" to give the agent access to ALL connected adapters - Tools are referenced by camelCase SDK name (e.g., "memory", "googleCalendar", "telegram") USE CASES: - Multi-step research: agent searches memory, reads documents, synthesizes answer - Automated workflows: agent creates calendar events, sends messages, updates records - Data processing: agent queries data, analyzes results, stores findings
-     * @param args.messages - Conversation messages array with role and content
-     * @param args.tools - Adapter names to give the agent access to. Omit for all adapters. (optional)
-     * @param args.systemPrompt - System prompt to guide agent behavior (optional)
-     * @param args.model - Model to use. Default: claude-sonnet-4-20250514 (optional)
-     * @param args.temperature - Temperature 0.0-1.0. Default: 0.5 (optional)
-     * @param args.maxTokens - Max tokens per LLM call. Default: 4096 (optional)
-     * @param args.maxRounds - Max tool-calling rounds. Default: 10, max: 25 (optional)
-     * @returns Promise<AIAgentData> Typed flat response with IDE autocomplete
-     */
-    agent: async (args: AiAgentArgs): Promise<AIAgentData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'ai',
-        method: 'agent',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Proxy for the Anthropic Computer Use API. Forwards requests to Anthropic's Messages API with computer use beta headers and returns the raw response. You handle the tool execution loop (screenshots, clicks, typing) on your side — Mirra handles auth and billing. HOW IT WORKS: 1. Send messages with computer use tool definitions 2. Receive response with tool_use blocks (screenshot, click, type, etc.) 3. Execute the actions on your machine/VM 4. Send tool_result back (including base64 screenshots) in the next request 5. Loop until stopReason is "end_turn" BILLING: - Tokens are charged at a 6x multiplier (same as Sonnet pricing tier) - Screenshots consume image input tokens (the main cost driver) - tokensCharged field shows actual tokens deducted from your balance MODEL: - Only Sonnet models are supported (claude-sonnet-4-6 default) - Opus models are not available for computer use via this endpoint TOOL TYPES: - computer_20251124: Mouse, keyboard, and screenshot actions - text_editor_20250728: File editing tool - bash_20250124: Shell command execution
-     * @param args.messages - Anthropic-format messages array. Include tool_result blocks with base64 screenshots when responding to tool_use requests.
-     * @param args.tools - Anthropic computer use tool definitions. Defaults to computer tool with 1024x768 display if omitted. (optional)
-     * @param args.model - Model to use. Default: claude-sonnet-4-6. Only Sonnet models are supported. (optional)
-     * @param args.maxTokens - Maximum tokens in response. Default: 4096. (optional)
-     * @param args.system - System prompt to guide computer use behavior. (optional)
-     * @param args.temperature - Temperature 0.0-1.0. Default: 1.0 (Anthropic recommended for computer use). (optional)
-     * @returns Promise<AIComputerUseData> Typed flat response with IDE autocomplete
-     */
-    computerUse: async (args: AiComputerUseArgs): Promise<AIComputerUseData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'ai',
-        method: 'computerUse',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
  * Jira Adapter
  * Category: project
  */
@@ -8276,32 +7944,6 @@ function createDocumentAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'document',
         method: 'list',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Feed Items Adapter
- * Category: internal
- */
-function createFeedItemsAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Create a notification for the user. Shows up in their activity feed and sends a push notification. The feed item appears in the current conversation context (group chat, DM, or personal feed).
-     * @param args.title - What happened - the main notification text
-     * @param args.subtitle - Secondary context shown below the title (optional)
-     * @param args.category - Activity type - determines icon and styling (e.g. email, calendar, task, document, reminder, message, crypto, shopping, note, memory, flow, call, error, update)
-     * @param args.details - Key-value pairs of relevant info to display (e.g. { "recipients": "3 people", "status": "sent" }) (optional)
-     * @param args.preview - Longer text content shown below details (e.g. email body preview, note content) (optional)
-     * @param args.notify - Send push notification (default: true, set false for background updates) (optional)
-     * @returns Promise<FeedItemCreateData> Typed flat response with IDE autocomplete
-     */
-    createFeedItem: async (args: FeedItemsCreateFeedItemArgs): Promise<FeedItemCreateData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'feed-items',
-        method: 'createFeedItem',
         params: args || {}
       });
     }
@@ -9970,132 +9612,6 @@ function createMemoryAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'memory',
         method: 'listGraphs',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Mirra Messaging Adapter
- * Category: communication
- */
-function createMirraMessagingAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Send a message to a group (including direct chats). The message is sent as the authenticated user with optional automation metadata. Returns normalized flat structure.
-     * @param args.groupId - Group ID to send the message to (use getGroups to get the groupId)
-     * @param args.content - Message text content
-     * @param args.replyToMessageId - ID of the message to reply to (creates a threaded reply) (optional)
-     * @param args.automation - Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing. (optional)
-     * @param args.structuredData - Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }] (optional)
-     * @returns Promise<MirraMessagingSendMessageData> Typed flat response with IDE autocomplete
-     */
-    sendMessage: async (args: MirraMessagingSendMessageArgs): Promise<MirraMessagingSendMessageData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'mirra-messaging',
-        method: 'sendMessage',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update an existing message sent by the authenticated user. Returns normalized flat structure.
-     * @param args.messageId - ID of the message to update
-     * @param args.content - New message text content
-     * @param args.structuredData - Updated structured data for rich UI rendering (optional)
-     * @returns Promise<MirraMessagingUpdateMessageData> Typed flat response with IDE autocomplete
-     */
-    updateMessage: async (args: MirraMessagingUpdateMessageArgs): Promise<MirraMessagingUpdateMessageData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'mirra-messaging',
-        method: 'updateMessage',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get list of chat instances for the user. Returns normalized flat structures.
-     * @param args.scope - Filter by scope: direct, user, group, or all (default all) (optional)
-     * @param args.limit - Maximum number of chats to return (default 50) (optional)
-     * @returns Promise<MirraMessagingGetChatsData> Typed flat response with IDE autocomplete
-     */
-    getChats: async (args: MirraMessagingGetChatsArgs): Promise<MirraMessagingGetChatsData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'mirra-messaging',
-        method: 'getChats',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get all conversations the user is a member of, including both direct chats and group chats. Direct chats are named "You & {peerUsername}". Use the groupId from results to send messages or browse history.
-     * @param args.limit - Maximum number of groups to return (default 50) (optional)
-     * @param args.offset - Offset for pagination (default 0) (optional)
-     * @returns Promise<MirraMessagingGetGroupsData> Typed flat response with IDE autocomplete
-     */
-    getGroups: async (args: MirraMessagingGetGroupsArgs): Promise<MirraMessagingGetGroupsData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'mirra-messaging',
-        method: 'getGroups',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create a new group. The authenticated user becomes the group owner. Returns normalized flat structure.
-     * @param args.name - Group name (max 100 characters)
-     * @param args.description - Group description (max 500 characters) (optional)
-     * @param args.category - Category for organization: "hobby", "career", "family", "health", "finance", "learning", or "social" (default: "career") (optional)
-     * @param args.memberIds - Array of user IDs to add as initial members (optional)
-     * @returns Promise<MirraMessagingCreateGroupData> Typed flat response with IDE autocomplete
-     */
-    createGroup: async (args: MirraMessagingCreateGroupArgs): Promise<MirraMessagingCreateGroupData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'mirra-messaging',
-        method: 'createGroup',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Search chat messages by keywords. Returns summaries by default to avoid overwhelming context. Use includeFullText for complete messages.
-     * @param args.query - Keywords to search for
-     * @param args.senderUsername - Username to filter by sender (partial match supported) (optional)
-     * @param args.groupName - Group name to limit search (resolved to groupId) (optional)
-     * @param args.groupId - Group ID to limit search (use groupName for name-based lookup) (optional)
-     * @param args.scope - "direct", "group", or "all" (default) (optional)
-     * @param args.startDate - ISO date for time range start (optional)
-     * @param args.endDate - ISO date for time range end (optional)
-     * @param args.includeFullText - Include full message text (default: false, returns snippets) (optional)
-     * @param args.snippetLength - Max chars for snippet (default: 200) (optional)
-     * @param args.limit - Max results (default 20, max 50) (optional)
-     * @param args.offset - Pagination offset (optional)
-     * @returns Promise<MirraMessagingSearchMessagesData> Typed flat response with IDE autocomplete
-     */
-    searchMessages: async (args: MirraMessagingSearchMessagesArgs): Promise<MirraMessagingSearchMessagesData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'mirra-messaging',
-        method: 'searchMessages',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Browse recent messages by recency without requiring a keyword search. Returns full message text sorted newest first. Use this to review recent conversation history.
-     * @param args.groupId - Group ID to filter messages (use getGroups to get groupId) (optional)
-     * @param args.groupName - Group name to filter messages (resolved to groupId) (optional)
-     * @param args.scope - "direct", "group", or "all" (default) (optional)
-     * @param args.startDate - ISO date for time range start (optional)
-     * @param args.endDate - ISO date for time range end (optional)
-     * @param args.limit - Max results (default 20, max 50) (optional)
-     * @param args.offset - Pagination offset (optional)
-     * @returns Promise<MirraMessagingGetRecentMessagesData> Typed flat response with IDE autocomplete
-     */
-    getRecentMessages: async (args: MirraMessagingGetRecentMessagesArgs): Promise<MirraMessagingGetRecentMessagesData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'mirra-messaging',
-        method: 'getRecentMessages',
         params: args || {}
       });
     }
@@ -12556,6 +12072,42 @@ function createVideoGeneratorAdapter(sdk: MirraSDK) {
         method: 'getRenderStatus',
         params: args || {}
       });
+    },
+
+    /**
+     * Render a video from custom Remotion React code. Write a React component using Remotion APIs (useCurrentFrame, interpolate, spring, AbsoluteFill, Sequence, etc.) and this operation compiles and renders it. Returns a renderId — poll getRenderStatus for completion. Available APIs: useCurrentFrame(), useVideoConfig(), interpolate(), interpolateColors(), spring(), Easing, random(), AbsoluteFill, Img, Sequence, Series, Loop, Audio, Video, IFrame. Code must define a function App() that returns JSX. No imports needed — all APIs are pre-injected.
+     * @param args.code - Remotion React JSX code defining a function App() component. No imports needed — all Remotion APIs are available as globals.
+     * @param args.codec - Video codec: h264 (default), h265, vp8, vp9 (optional)
+     * @param args.width - Video width in pixels (default: 1080) (optional)
+     * @param args.height - Video height in pixels (default: 1080) (optional)
+     * @param args.fps - Frames per second (default: 30) (optional)
+     * @param args.durationInFrames - Total duration in frames (default: 300 = 10s at 30fps) (optional)
+     * @returns Promise<VideoCustomRenderData> Typed flat response with IDE autocomplete
+     */
+    renderCustomVideo: async (args: VideoGeneratorRenderCustomVideoArgs): Promise<VideoCustomRenderData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'video-generator',
+        method: 'renderCustomVideo',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Render a single preview frame from custom Remotion React code. Returns almost instantly (~2-3s) with an image URL. Use this to iterate on video design before committing to a full render. Same code format as renderCustomVideo.
+     * @param args.code - Remotion React JSX code defining a function App() component
+     * @param args.frame - Which frame to preview (default: 0). Use this to check different moments in the video. (optional)
+     * @param args.width - Preview width in pixels (default: 1080) (optional)
+     * @param args.height - Preview height in pixels (default: 1080) (optional)
+     * @param args.fps - Frames per second for timing calculations (default: 30) (optional)
+     * @param args.durationInFrames - Total duration in frames for timing calculations (default: 300) (optional)
+     * @returns Promise<VideoPreviewFrameData> Typed flat response with IDE autocomplete
+     */
+    previewFrame: async (args: VideoGeneratorPreviewFrameArgs): Promise<VideoPreviewFrameData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'video-generator',
+        method: 'previewFrame',
+        params: args || {}
+      });
     }
   };
 }
@@ -13708,13 +13260,11 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
 // ============================================================================
 
 export const generatedAdapters = {
-  ai: createAiAdapter,
   jira: createJiraAdapter,
   claudeCode: createClaudeCodeAdapter,
   data: createDataAdapter,
   desktop: createDesktopAdapter,
   document: createDocumentAdapter,
-  feedItems: createFeedItemsAdapter,
   feedback: createFeedbackAdapter,
   googleCalendar: createGoogleCalendarAdapter,
   googleDrive: createGoogleDriveAdapter,
@@ -13726,7 +13276,6 @@ export const generatedAdapters = {
   scripts: createScriptsAdapter,
   marketplaceTemplates: createMarketplaceTemplatesAdapter,
   memory: createMemoryAdapter,
-  mirraMessaging: createMirraMessagingAdapter,
   moltbook: createMoltbookAdapter,
   pages: createPagesAdapter,
   polymarket: createPolymarketAdapter,
