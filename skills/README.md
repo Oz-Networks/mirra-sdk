@@ -43,6 +43,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-skills`](./mirra-skills/) | Skills | 8 | No |
 | [`mirra-spaceAgent`](./mirra-spaceAgent/) | Space Agent | 13 | No |
 | [`mirra-user`](./mirra-user/) | User | 6 | No |
+| [`mirra-video-generator`](./mirra-video-generator/) | Video Generator | 3 | No |
 
 ### Communication
 
@@ -100,7 +101,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-marketplace-templates`](./mirra-marketplace-templates/) | Marketplace Templates | 14 | No |
 | [`mirra-shopify`](./mirra-shopify/) | Shopify | 49 | Yes (OAuth) |
 
-**Total: 34 adapters, 396 operations**
+**Total: 35 adapters, 399 operations**
 
 ## How It Works
 

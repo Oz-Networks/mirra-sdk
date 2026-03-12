@@ -1572,6 +1572,20 @@ export interface TwitterGetTweetByIdArgs {
   tweetIds: string; // One or more tweet IDs, comma-separated. Example: "1846987139428634858" or "1846987139428634858,1866332309399781537"
 }
 
+// Video Generator Adapter Types
+export interface VideoGeneratorRenderVideoArgs {
+  templateId: string; // Template ID from listTemplates
+  inputProps: any; // Dynamic props matching the template inputSchema (text, image URLs, colors, etc.)
+  codec?: string; // Video codec: h264 (default), h265, vp8, vp9
+  width?: number; // Override template default width in pixels
+  height?: number; // Override template default height in pixels
+  fps?: number; // Override template default frames per second
+  durationInFrames?: number; // Override template default duration in frames
+}
+export interface VideoGeneratorGetRenderStatusArgs {
+  renderId: string; // Render ID from renderVideo response
+}
+
 // Flows Adapter Types
 export interface FlowsCreateFlowArgs {
   title?: string; // Flow title. Required if providing inline code.
@@ -6342,6 +6356,43 @@ export interface TwitterGetTweetByIdData {
 }
 
 export type TwitterGetTweetByIdResult = AdapterResultBase<TwitterGetTweetByIdData>;
+
+// Video Generator Response Types
+export interface VideoTemplateSummary {
+  templateId: string; // Unique template identifier
+  name: string; // Display name
+  description: string; // What this template creates
+  previewUrl?: string; // Preview image URL
+  inputSchema: any; // Schema defining accepted inputProps
+  defaults: any; // Default width, height, fps, durationInFrames, codec
+}
+
+export interface VideoTemplateListData {
+  count: number; // Number of templates
+  templates: any; // Available video templates
+}
+
+export type VideoGeneratorListTemplatesResult = AdapterResultBase<VideoTemplateListData>;
+
+export interface VideoRenderData {
+  renderId: string; // Unique render identifier for polling
+  status: string; // Always "rendering" on success
+  templateId: string; // Template used
+  message: string; // Instructions for polling
+}
+
+export type VideoGeneratorRenderVideoResult = AdapterResultBase<VideoRenderData>;
+
+export interface VideoRenderStatusData {
+  renderId: string; // Render identifier
+  status: string; // rendering | completed | failed
+  progress: number; // Progress from 0 to 1
+  videoUrl?: string; // S3 URL of completed video
+  error?: string; // Human-readable error message
+  errorDetails?: string; // Additional technical context
+}
+
+export type VideoGeneratorGetRenderStatusResult = AdapterResultBase<VideoRenderStatusData>;
 
 // Flows Response Types
 export interface FlowsCreateFlowData {
@@ -12458,6 +12509,58 @@ function createTwitterAdapter(sdk: MirraSDK) {
 }
 
 /**
+ * Video Generator Adapter
+ * Category: internal
+ */
+function createVideoGeneratorAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * List available video composition templates. Returns template IDs, descriptions, input schemas, and default settings. Use this first to see what templates are available before rendering.
+     * @returns Promise<VideoTemplateListData> Typed flat response with IDE autocomplete
+     */
+    listTemplates: async (args?: {}): Promise<VideoTemplateListData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'video-generator',
+        method: 'listTemplates',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Start rendering a video using a template and input props. Returns immediately with a renderId — use getRenderStatus to poll for completion. Input props must match the template's inputSchema. Props with type "media_url" should be CDN URLs from the user's uploaded files.
+     * @param args.templateId - Template ID from listTemplates
+     * @param args.inputProps - Dynamic props matching the template inputSchema (text, image URLs, colors, etc.)
+     * @param args.codec - Video codec: h264 (default), h265, vp8, vp9 (optional)
+     * @param args.width - Override template default width in pixels (optional)
+     * @param args.height - Override template default height in pixels (optional)
+     * @param args.fps - Override template default frames per second (optional)
+     * @param args.durationInFrames - Override template default duration in frames (optional)
+     * @returns Promise<VideoRenderData> Typed flat response with IDE autocomplete
+     */
+    renderVideo: async (args: VideoGeneratorRenderVideoArgs): Promise<VideoRenderData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'video-generator',
+        method: 'renderVideo',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Check the progress of a video render. Returns status (rendering/completed/failed), progress (0-1), and videoUrl when complete. If failed, returns an error message with recovery suggestions.
+     * @param args.renderId - Render ID from renderVideo response
+     * @returns Promise<VideoRenderStatusData> Typed flat response with IDE autocomplete
+     */
+    getRenderStatus: async (args: VideoGeneratorGetRenderStatusArgs): Promise<VideoRenderStatusData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'video-generator',
+        method: 'getRenderStatus',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
  * Flows Adapter
  * Category: internal
  */
@@ -13635,6 +13738,7 @@ export const generatedAdapters = {
   trello: createTrelloAdapter,
   tunnel: createTunnelAdapter,
   twitter: createTwitterAdapter,
+  videoGenerator: createVideoGeneratorAdapter,
   flows: createFlowsAdapter,
   user: createUserAdapter,
   contacts: createContactsAdapter,
