@@ -30,10 +30,12 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 
 | Skill | Adapter | Operations | Auth Required |
 |-------|---------|------------|---------------|
+| [`mirra-ai`](./mirra-ai/) | AI Services | 4 | No |
 | [`mirra-claudeCode`](./mirra-claudeCode/) | Claude Code | 4 | No |
 | [`mirra-contacts`](./mirra-contacts/) | Contacts | 9 | No |
 | [`mirra-data`](./mirra-data/) | Data | 12 | No |
 | [`mirra-desktop`](./mirra-desktop/) | Desktop | 10 | No |
+| [`mirra-feed-items`](./mirra-feed-items/) | Feed Items | 1 | No |
 | [`mirra-feedback`](./mirra-feedback/) | Feedback | 5 | No |
 | [`mirra-flows`](./mirra-flows/) | Flows | 21 | No |
 | [`mirra-memory`](./mirra-memory/) | Memory | 10 | No |
@@ -48,6 +50,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | Skill | Adapter | Operations | Auth Required |
 |-------|---------|------------|---------------|
 | [`mirra-google-gmail`](./mirra-google-gmail/) | Gmail | 10 | Yes (OAuth) |
+| [`mirra-mirra-messaging`](./mirra-mirra-messaging/) | Mirra Messaging | 7 | No |
 | [`mirra-telegramBot`](./mirra-telegramBot/) | Telegram Bot | 12 | Yes (OAuth) |
 
 ### Productivity
@@ -98,7 +101,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-marketplace-templates`](./mirra-marketplace-templates/) | Marketplace Templates | 14 | No |
 | [`mirra-shopify`](./mirra-shopify/) | Shopify | 49 | Yes (OAuth) |
 
-**Total: 32 adapters, 389 operations**
+**Total: 35 adapters, 401 operations**
 
 ## How It Works
 
