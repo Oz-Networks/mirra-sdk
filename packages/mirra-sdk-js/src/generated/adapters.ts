@@ -144,6 +144,7 @@ export interface ClaudeCodeStartSessionArgs {
   cwd?: string; // Working directory for Claude Code (defaults to system default)
   model?: string; // Claude model to use (e.g., "claude-sonnet-4-6")
   allowUnsupervisedMode?: boolean; // Run Claude Code in unsupervised mode, skipping all permission prompts. Only use for autonomous agent-driven sessions where no human is monitoring. Sessions still run in worktree isolation.
+  agentMode?: boolean; // If true, persist session output to DataAdapter on completion for queryable audit trail. Currently supported via delegate_to_claude_code tool.
 }
 export interface ClaudeCodeResumeSessionArgs {
   claudeSessionId: string; // The Claude Code session ID to resume (from a previous session)
@@ -926,6 +927,23 @@ export interface MoltbookGetFeedArgs {
 }
 export interface MoltbookSearchArgs {
   query: string; // Search query
+}
+
+// Observability Adapter Types
+export interface ObservabilityQueryEventsArgs {
+  timeRange?: any; // Time range filter with start/end ISO 8601 strings. Defaults to last 24 hours.
+  adapter?: string; // Filter by adapter service ID (e.g. "data", "flows", "claudeCode", "desktop")
+  operation?: string; // Filter by exact operation name (e.g. "insertRecord", "executeFlow")
+  outcome?: string; // Filter by outcome: "success", "failure", or "pending"
+  severity?: string; // Filter by severity: "debug", "info", "warn", or "error"
+  actorType?: string; // Filter by actor type: "user", "llm", "flow", "agent", or "system"
+  traceId?: string; // Filter to a single trace ID
+  search?: string; // Text search across action, error.message, and target.name fields
+  limit?: number; // Max results to return (default 50, max 200)
+  offset?: number; // Pagination offset (default 0)
+}
+export interface ObservabilityGetTraceArgs {
+  traceId: string; // The trace ID to look up
 }
 
 // Pages Adapter Types
@@ -7780,6 +7798,7 @@ function createClaudeCodeAdapter(sdk: MirraSDK) {
      * @param args.cwd - Working directory for Claude Code (defaults to system default) (optional)
      * @param args.model - Claude model to use (e.g., "claude-sonnet-4-6") (optional)
      * @param args.allowUnsupervisedMode - Run Claude Code in unsupervised mode, skipping all permission prompts. Only use for autonomous agent-driven sessions where no human is monitoring. Sessions still run in worktree isolation. (optional)
+     * @param args.agentMode - If true, persist session output to DataAdapter on completion for queryable audit trail. Currently supported via delegate_to_claude_code tool. (optional)
      * @returns Promise<ClaudeCodeStartSessionData> Typed flat response with IDE autocomplete
      */
     startSession: async (args: ClaudeCodeStartSessionArgs): Promise<ClaudeCodeStartSessionData> => {
@@ -10451,6 +10470,47 @@ function createMoltbookAdapter(sdk: MirraSDK) {
 }
 
 /**
+ * Observability Adapter
+ * Category: internal
+ */
+function createObservabilityAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Query audit events with flexible filters. Returns structured audit events for adapter operations, LLM tool calls, and desktop operations. Use this to investigate errors, see what happened recently, or trace a specific operation chain.
+     * @param args.timeRange - Time range filter with start/end ISO 8601 strings. Defaults to last 24 hours. (optional)
+     * @param args.adapter - Filter by adapter service ID (e.g. "data", "flows", "claudeCode", "desktop") (optional)
+     * @param args.operation - Filter by exact operation name (e.g. "insertRecord", "executeFlow") (optional)
+     * @param args.outcome - Filter by outcome: "success", "failure", or "pending" (optional)
+     * @param args.severity - Filter by severity: "debug", "info", "warn", or "error" (optional)
+     * @param args.actorType - Filter by actor type: "user", "llm", "flow", "agent", or "system" (optional)
+     * @param args.traceId - Filter to a single trace ID (optional)
+     * @param args.search - Text search across action, error.message, and target.name fields (optional)
+     * @param args.limit - Max results to return (default 50, max 200) (optional)
+     * @param args.offset - Pagination offset (default 0) (optional)
+     */
+    queryEvents: async (args: ObservabilityQueryEventsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'observability',
+        method: 'queryEvents',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Reconstruct the full operation chain for a given trace ID. Returns all events in chronological order with a summary of the trace outcome.
+     * @param args.traceId - The trace ID to look up
+     */
+    getTrace: async (args: ObservabilityGetTraceArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'observability',
+        method: 'getTrace',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
  * Pages Adapter
  * Category: internal
  */
@@ -12560,7 +12620,7 @@ function createVideoGeneratorAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Start rendering a video using a template and input props. Returns immediately with a renderId — use getRenderStatus to poll for completion. Input props must match the template's inputSchema. Props with type "media_url" should be CDN URLs from the user's uploaded files.
+     * Start rendering a video using a template and input props. Returns immediately with a renderId — use getRenderStatus to poll for completion. Input props must match the template's inputSchema. Props with type "media_url" should be CDN URLs from the user's uploaded files (images, audio, etc.).
      * @param args.templateId - Template ID from listTemplates
      * @param args.inputProps - Dynamic props matching the template inputSchema (text, image URLs, colors, etc.)
      * @param args.codec - Video codec: h264 (default), h265, vp8, vp9 (optional)
@@ -12592,7 +12652,7 @@ function createVideoGeneratorAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Render a video from custom Remotion React code. Write a React component using Remotion APIs (useCurrentFrame, interpolate, spring, AbsoluteFill, Sequence, etc.) and this operation compiles and renders it. Returns a renderId — poll getRenderStatus for completion. Available APIs: useCurrentFrame(), useVideoConfig(), interpolate(), interpolateColors(), spring(), Easing, random(), AbsoluteFill, Img, Sequence, Series, Loop, Audio, Video, IFrame. Code must define a function App() that returns JSX. No imports needed — all APIs are pre-injected.
+     * Render a video from custom Remotion React code. Write a React component using Remotion APIs (useCurrentFrame, interpolate, spring, AbsoluteFill, Sequence, etc.) and this operation compiles and renders it. Returns a renderId — poll getRenderStatus for completion. Available APIs: useCurrentFrame(), useVideoConfig(), interpolate(), interpolateColors(), spring(), Easing, random(), AbsoluteFill, Img, Sequence, Series, Loop, Audio, Video, IFrame. Code must define a function App() that returns JSX. No imports needed — all APIs are pre-injected. To add audio/music, use <Audio src="cdn_url" /> inside the component. To start audio at a specific point in the video, wrap it in <Sequence from={frameNumber}>. To skip the beginning of an audio file, use <Audio startFrom={frameNumber} />. The user can upload audio files (mp3, m4a, wav) and you will see the CDN URL as [Uploaded audio file: url] in the conversation.
      * @param args.code - Remotion React JSX code defining a function App() component. No imports needed — all Remotion APIs are available as globals.
      * @param args.codec - Video codec: h264 (default), h265, vp8, vp9 (optional)
      * @param args.width - Video width in pixels (default: 1080) (optional)
@@ -13797,6 +13857,7 @@ export const generatedAdapters = {
   memory: createMemoryAdapter,
   mirraMessaging: createMirraMessagingAdapter,
   moltbook: createMoltbookAdapter,
+  observability: createObservabilityAdapter,
   pages: createPagesAdapter,
   polymarket: createPolymarketAdapter,
   shopify: createShopifyAdapter,

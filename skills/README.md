@@ -39,6 +39,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-feedback`](./mirra-feedback/) | Feedback | 5 | No |
 | [`mirra-flows`](./mirra-flows/) | Flows | 21 | No |
 | [`mirra-memory`](./mirra-memory/) | Memory | 10 | No |
+| [`mirra-observability`](./mirra-observability/) | Observability | 2 | No |
 | [`mirra-pages`](./mirra-pages/) | Pages | 12 | No |
 | [`mirra-skills`](./mirra-skills/) | Skills | 8 | No |
 | [`mirra-spaceAgent`](./mirra-spaceAgent/) | Space Agent | 13 | No |
@@ -101,7 +102,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-marketplace-templates`](./mirra-marketplace-templates/) | Marketplace Templates | 14 | No |
 | [`mirra-shopify`](./mirra-shopify/) | Shopify | 49 | Yes (OAuth) |
 
-**Total: 35 adapters, 401 operations**
+**Total: 36 adapters, 403 operations**
 
 ## How It Works
 

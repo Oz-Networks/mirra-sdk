@@ -56,6 +56,7 @@ Start a new Claude Code session on the user's desktop. Spawns Claude Code with t
 - `cwd` (string, *optional*): Working directory for Claude Code (defaults to system default)
 - `model` (string, *optional*): Claude model to use (e.g., "claude-sonnet-4-6")
 - `allowUnsupervisedMode` (boolean, *optional*): Run Claude Code in unsupervised mode, skipping all permission prompts. Only use for autonomous agent-driven sessions where no human is monitoring. Sessions still run in worktree isolation.
+- `agentMode` (boolean, *optional*): If true, persist session output to DataAdapter on completion for queryable audit trail. Currently supported via delegate_to_claude_code tool.
 
 **Returns:**
 

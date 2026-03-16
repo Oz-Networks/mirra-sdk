@@ -99,7 +99,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `renderVideo`
 
-Start rendering a video using a template and input props. Returns immediately with a renderId — use getRenderStatus to poll for completion. Input props must match the template's inputSchema. Props with type "media_url" should be CDN URLs from the user's uploaded files.
+Start rendering a video using a template and input props. Returns immediately with a renderId — use getRenderStatus to poll for completion. Input props must match the template's inputSchema. Props with type "media_url" should be CDN URLs from the user's uploaded files (images, audio, etc.).
 
 **Arguments:**
 
@@ -169,7 +169,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `renderCustomVideo`
 
-Render a video from custom Remotion React code. Write a React component using Remotion APIs (useCurrentFrame, interpolate, spring, AbsoluteFill, Sequence, etc.) and this operation compiles and renders it. Returns a renderId — poll getRenderStatus for completion. Available APIs: useCurrentFrame(), useVideoConfig(), interpolate(), interpolateColors(), spring(), Easing, random(), AbsoluteFill, Img, Sequence, Series, Loop, Audio, Video, IFrame. Code must define a function App() that returns JSX. No imports needed — all APIs are pre-injected.
+Render a video from custom Remotion React code. Write a React component using Remotion APIs (useCurrentFrame, interpolate, spring, AbsoluteFill, Sequence, etc.) and this operation compiles and renders it. Returns a renderId — poll getRenderStatus for completion. Available APIs: useCurrentFrame(), useVideoConfig(), interpolate(), interpolateColors(), spring(), Easing, random(), AbsoluteFill, Img, Sequence, Series, Loop, Audio, Video, IFrame. Code must define a function App() that returns JSX. No imports needed — all APIs are pre-injected. To add audio/music, use <Audio src="cdn_url" /> inside the component. To start audio at a specific point in the video, wrap it in <Sequence from={frameNumber}>. To skip the beginning of an audio file, use <Audio startFrom={frameNumber} />. The user can upload audio files (mp3, m4a, wav) and you will see the CDN URL as [Uploaded audio file: url] in the conversation.
 
 **Arguments:**
 
