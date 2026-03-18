@@ -58,6 +58,10 @@ Replace `{operation}` with the operation name from the table below.
 
 Get current status snapshot of the space agent including cycle count, budget usage, last observation, and pending directive count.
 
+**Arguments:**
+
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
+
 **Returns:**
 
 `AdapterOperationResult`: Agent status object with status, cycleCount, lastCycleAt, lastTier2At, budgetCap, tokensUsedThisMonth, pendingDirectiveCount, lastObservation, attentionMessage
@@ -93,6 +97,7 @@ Get recent Tier 2 (non-silent) agent episodes. Each episode contains observation
 
 **Arguments:**
 
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 - `limit` (number, *optional*): Number of episodes to return (default 5, max 20)
 
 **Returns:**
@@ -145,6 +150,7 @@ Queue an instruction for the space agent to process on its next cycle. The agent
 
 **Arguments:**
 
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 - `directive` (string, **required**): The instruction text for the agent (max 2000 characters)
 - `urgent` (boolean, *optional*): If true, forces an immediate cycle by resetting lastCycleAt so the scheduler picks it up right away
 
@@ -175,6 +181,10 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 Get the agent's workspace memory — the persistent scratchpad the agent uses to track state across cycles.
 
+**Arguments:**
+
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
+
 **Returns:**
 
 `AdapterOperationResult`: Agent memory string
@@ -199,6 +209,10 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 ### `getWorkspaceConfig`
 
 Get the agent's workspace configuration including instructions, context, and heartbeat checklist.
+
+**Arguments:**
+
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 
 **Returns:**
 
@@ -229,6 +243,7 @@ Respond to the space agent's attention request. Clears the attention state, stor
 
 **Arguments:**
 
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 - `message` (string, **required**): Your response to the agent's attention request
 
 **Returns:**
@@ -256,6 +271,10 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 Dismiss the agent's attention request without responding. The agent returns to active status but does not immediately cycle.
 
+**Arguments:**
+
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
+
 **Returns:**
 
 `AdapterOperationResult`: Confirmation that the attention was dismissed
@@ -280,6 +299,10 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 ### `triggerCycle`
 
 Force an immediate agent cycle. The scheduler will pick up the agent on its next pass.
+
+**Arguments:**
+
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 
 **Returns:**
 
@@ -308,6 +331,7 @@ Update the agent's workspace configuration fields. Only the provided fields are 
 
 **Arguments:**
 
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 - `instructions` (string, *optional*): Agent instructions (max 20,000 characters)
 - `context` (string, *optional*): Agent context (max 20,000 characters)
 - `heartbeat` (string, *optional*): Agent heartbeat checklist (max 20,000 characters)
@@ -343,6 +367,7 @@ Append entries to the agent's workspace memory. Entries are added with a date he
 
 **Arguments:**
 
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 - `entries` (array, **required**): Array of memory entries to append (non-empty strings)
 
 **Returns:**
@@ -373,6 +398,7 @@ Set the agent's monthly token budget cap.
 
 **Arguments:**
 
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 - `budgetCap` (number, **required**): Monthly token budget cap (positive number)
 
 **Returns:**
@@ -403,6 +429,7 @@ Pause or resume the space agent. Set to "dormant" to pause or "active" to resume
 
 **Arguments:**
 
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 - `status` (string, **required**): Target status: "active" or "dormant"
 
 **Returns:**
@@ -429,6 +456,10 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 ### `getActivitySummary`
 
 Get a summary of workspace activity since the agent's last cycle — flow executions, chat messages, voice recordings, and transcripts.
+
+**Arguments:**
+
+- `groupId` (string, **required**): Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 
 **Returns:**
 

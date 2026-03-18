@@ -57,6 +57,8 @@ Start a new Claude Code session on the user's desktop. Spawns Claude Code with t
 - `model` (string, *optional*): Claude model to use (e.g., "claude-sonnet-4-6")
 - `allowUnsupervisedMode` (boolean, *optional*): Run Claude Code in unsupervised mode, skipping all permission prompts. Only use for autonomous agent-driven sessions where no human is monitoring. Sessions still run in worktree isolation.
 - `agentMode` (boolean, *optional*): If true, persist session output to DataAdapter on completion for queryable audit trail. Currently supported via delegate_to_claude_code tool.
+- `async` (boolean, *optional*): If true, return immediately after spawning the process without waiting for CC to connect via WebSocket. The session runs independently and writes results to ~/.claude/results/<sessionId>.json. Use for long-running autonomous tasks.
+- `taskType` (string, *optional*): Type of task for the result file metadata: "implementation", "research", or "analysis". Only used when async=true. Defaults to "implementation".
 
 **Returns:**
 

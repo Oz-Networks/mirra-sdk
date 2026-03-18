@@ -102,7 +102,13 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-marketplace-templates`](./mirra-marketplace-templates/) | Marketplace Templates | 14 | No |
 | [`mirra-shopify`](./mirra-shopify/) | Shopify | 49 | Yes (OAuth) |
 
-**Total: 36 adapters, 403 operations**
+### Other
+
+| Skill | Adapter | Operations | Auth Required |
+|-------|---------|------------|---------------|
+| [`mirra-google-ads`](./mirra-google-ads/) | Google Ads | 25 | Yes (OAuth) |
+
+**Total: 37 adapters, 428 operations**
 
 ## How It Works
 

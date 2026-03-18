@@ -145,6 +145,8 @@ export interface ClaudeCodeStartSessionArgs {
   model?: string; // Claude model to use (e.g., "claude-sonnet-4-6")
   allowUnsupervisedMode?: boolean; // Run Claude Code in unsupervised mode, skipping all permission prompts. Only use for autonomous agent-driven sessions where no human is monitoring. Sessions still run in worktree isolation.
   agentMode?: boolean; // If true, persist session output to DataAdapter on completion for queryable audit trail. Currently supported via delegate_to_claude_code tool.
+  async?: boolean; // If true, return immediately after spawning the process without waiting for CC to connect via WebSocket. The session runs independently and writes results to ~/.claude/results/<sessionId>.json. Use for long-running autonomous tasks.
+  taskType?: string; // Type of task for the result file metadata: "implementation", "research", or "analysis". Only used when async=true. Defaults to "implementation".
 }
 export interface ClaudeCodeResumeSessionArgs {
   claudeSessionId: string; // The Claude Code session ID to resume (from a previous session)
@@ -345,6 +347,158 @@ export interface FeedbackSubmitFeatureRequestArgs {
   description: string; // Feature description
   useCase?: string; // Why the user needs this feature
   priority?: string; // Priority: high, medium, or low
+}
+
+// Google Ads Adapter Types
+export interface GoogleAdsGetAccountOverviewArgs {
+  customerId: string; // Google Ads account ID (e.g., '123-456-7890')
+  dateRange?: string; // Named date range (e.g., LAST_30_DAYS, LAST_7_DAYS, THIS_MONTH) or custom range YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS
+}
+export interface GoogleAdsListCampaignsArgs {
+  customerId: string; // Google Ads account ID
+  dateRange?: string; // Named range or custom YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS
+  status?: string; // Filter by status: ENABLED, PAUSED, or ALL. Default: ALL
+  limit?: number; // Max campaigns to return. Default: 200, max: 200
+  orderBy?: string; // Sort field: cost, conversions, roas, cpa, impressions, clicks. Default: cost
+}
+export interface GoogleAdsGetCampaignDetailsArgs {
+  customerId: string; // Google Ads account ID
+  campaignId: string; // Campaign ID from listCampaigns
+  dateRange?: string; // Named range or custom. Default: LAST_30_DAYS
+}
+export interface GoogleAdsUpdateCampaignStatusArgs {
+  customerId: string; // Google Ads account ID
+  campaignId: string; // Campaign ID to modify
+  status: string; // New status: PAUSED or ENABLED (not REMOVED)
+  reason?: string; // Optional reason for the change (stored in adapter audit log, not sent to Google)
+}
+export interface GoogleAdsUpdateCampaignBudgetArgs {
+  customerId: string; // Google Ads account ID
+  campaignId: string; // Campaign ID (used to look up the associated budget)
+  dailyBudgetAmount: number; // New daily budget in account currency (e.g., 150.00 for $150/day)
+}
+export interface GoogleAdsListAdGroupsArgs {
+  customerId: string; // Google Ads account ID
+  campaignId: string; // Filter to ad groups within this campaign
+  dateRange?: string; // Default: LAST_30_DAYS
+  status?: string; // ENABLED, PAUSED, or ALL. Default: ALL
+}
+export interface GoogleAdsGetAdGroupDetailsArgs {
+  customerId: string; // Google Ads account ID
+  adGroupId: string; // Ad group ID
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsUpdateAdGroupStatusArgs {
+  customerId: string; // Google Ads account ID
+  adGroupId: string; // Ad group ID
+  status: string; // PAUSED or ENABLED
+}
+export interface GoogleAdsUpdateAdGroupBidArgs {
+  customerId: string; // Google Ads account ID
+  adGroupId: string; // Ad group ID
+  cpcBidAmount: number; // New default CPC bid in account currency
+}
+export interface GoogleAdsListKeywordsArgs {
+  customerId: string; // Google Ads account ID
+  adGroupId?: string; // Filter to one ad group. If omitted, scope to campaignId
+  campaignId?: string; // Filter to all ad groups within a campaign. One of adGroupId or campaignId required
+  dateRange?: string; // Default: LAST_30_DAYS
+  status?: string; // ENABLED, PAUSED, or ALL. Default: ENABLED
+  limit?: number; // Default: 200, max: 500
+  orderBy?: string; // cost, conversions, cpa, impressions. Default: cost
+}
+export interface GoogleAdsGetKeywordDetailsArgs {
+  customerId: string; // Google Ads account ID
+  keywordId: string; // Keyword criterion ID
+  adGroupId: string; // Ad group containing the keyword (required by GAQL scoping)
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsUpdateKeywordStatusArgs {
+  customerId: string; // Google Ads account ID
+  keywordId: string; // Keyword criterion ID
+  adGroupId: string; // Ad group containing the keyword
+  status: string; // PAUSED or ENABLED
+}
+export interface GoogleAdsGetSearchTermReportArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign
+  adGroupId?: string; // Filter to a specific ad group
+  dateRange?: string; // Default: LAST_30_DAYS
+  minImpressions?: number; // Filter out terms with fewer impressions. Default: 0
+  limit?: number; // Default: 200, max: 500
+  orderBy?: string; // cost, conversions, impressions, cpa. Default: cost
+}
+export interface GoogleAdsGetKeywordIdeasArgs {
+  customerId: string; // Google Ads account ID
+  seedKeywords?: any[]; // Array of seed keyword strings (max 20). One of seedKeywords or pageUrl required
+  pageUrl?: string; // Landing page URL to generate ideas from. One of seedKeywords or pageUrl required
+  language?: string; // Language resource name (default: English — languageConstants/1000)
+  geoTargets?: any[]; // Array of geo target constant resource names. Default: all locations
+  limit?: number; // Max ideas to return. Default: 100, max: 1000
+}
+export interface GoogleAdsListAdsArgs {
+  customerId: string; // Google Ads account ID
+  adGroupId: string; // Ad group to list ads from
+  dateRange?: string; // Default: LAST_30_DAYS
+  status?: string; // ENABLED, PAUSED, or ALL. Default: ALL
+}
+export interface GoogleAdsGetAdDetailsArgs {
+  customerId: string; // Google Ads account ID
+  adId: string; // Ad ID
+  adGroupId: string; // Ad group containing the ad
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsGetPerformanceReportArgs {
+  customerId: string; // Google Ads account ID
+  dimensions: any[]; // Dimensions to segment by: campaign, adGroup, keyword, device, network, date, dayOfWeek, hour, geo, matchType. At least one required
+  metrics?: any[]; // Metrics to include: impressions, clicks, cost, conversions, conversionsValue, ctr, avgCpc, cpa, roas. Default: all standard metrics
+  dateRange?: string; // Default: LAST_30_DAYS
+  campaignId?: string; // Filter to a specific campaign
+  filters?: any; // Additional GAQL WHERE conditions as key-value pairs
+  orderBy?: string; // Metric to sort by (descending). Default: cost
+  limit?: number; // Default: 200, max: 500
+}
+export interface GoogleAdsGetAuctionInsightsArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Scope to a campaign. One of campaignId or adGroupId required
+  adGroupId?: string; // Scope to an ad group
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsGetChangeHistoryArgs {
+  customerId: string; // Google Ads account ID
+  dateRange?: string; // Default: LAST_7_DAYS. Max lookback: 90 days
+  resourceTypes?: any[]; // Filter to specific types: CAMPAIGN, AD_GROUP, AD, AD_GROUP_CRITERION. Default: all
+  limit?: number; // Default: 100, max: 500
+}
+export interface GoogleAdsGetConversionReportArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsGetGeographicReportArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign
+  granularity?: string; // COUNTRY, REGION, or CITY. Default: REGION
+  dateRange?: string; // Default: LAST_30_DAYS
+  limit?: number; // Default: 100
+}
+export interface GoogleAdsGetDeviceReportArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign. Default: account-level
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsGetHourOfDayReportArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign
+  dateRange?: string; // Recommend at least LAST_30_DAYS for meaningful hourly data. Default: LAST_30_DAYS
+}
+export interface GoogleAdsListBudgetsArgs {
+  customerId: string; // Google Ads account ID
+  includeRemoved?: boolean; // Include removed budgets. Default: false
+}
+export interface GoogleAdsGetBudgetRecommendationsArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign
 }
 
 // Google Calendar Adapter Types
@@ -1353,29 +1507,54 @@ export interface SocketNotifySubscriberArgs {
 }
 
 // Space Agent Adapter Types
+export interface SpaceAgentGetStatusArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
+}
 export interface SpaceAgentGetRecentEpisodesArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
   limit?: number; // Number of episodes to return (default 5, max 20)
 }
 export interface SpaceAgentSendDirectiveArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
   directive: string; // The instruction text for the agent (max 2000 characters)
   urgent?: boolean; // If true, forces an immediate cycle by resetting lastCycleAt so the scheduler picks it up right away
 }
+export interface SpaceAgentGetMemoryArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
+}
+export interface SpaceAgentGetWorkspaceConfigArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
+}
 export interface SpaceAgentRespondToAttentionArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
   message: string; // Your response to the agent's attention request
 }
+export interface SpaceAgentDismissAttentionArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
+}
+export interface SpaceAgentTriggerCycleArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
+}
 export interface SpaceAgentUpdateWorkspaceConfigArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
   instructions?: string; // Agent instructions (max 20,000 characters)
   context?: string; // Agent context (max 20,000 characters)
   heartbeat?: string; // Agent heartbeat checklist (max 20,000 characters)
 }
 export interface SpaceAgentUpdateMemoryArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
   entries: any[]; // Array of memory entries to append (non-empty strings)
 }
 export interface SpaceAgentUpdateBudgetArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
   budgetCap: number; // Monthly token budget cap (positive number)
 }
 export interface SpaceAgentSetStatusArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
   status: string; // Target status: "active" or "dormant"
+}
+export interface SpaceAgentGetActivitySummaryArgs {
+  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 }
 
 // Telegram Adapter Types
@@ -2243,6 +2422,7 @@ export interface ClaudeCodeStartSessionData {
   channelId: string; // WebSocket channel ID for the session
   processId?: string; // Desktop process identifier
   pid?: number; // OS process ID of the Claude Code process
+  async?: boolean; // True when session was started in async mode (fire-and-forget)
 }
 
 export type ClaudeCodeStartSessionResult = AdapterResultBase<ClaudeCodeStartSessionData>;
@@ -7799,6 +7979,8 @@ function createClaudeCodeAdapter(sdk: MirraSDK) {
      * @param args.model - Claude model to use (e.g., "claude-sonnet-4-6") (optional)
      * @param args.allowUnsupervisedMode - Run Claude Code in unsupervised mode, skipping all permission prompts. Only use for autonomous agent-driven sessions where no human is monitoring. Sessions still run in worktree isolation. (optional)
      * @param args.agentMode - If true, persist session output to DataAdapter on completion for queryable audit trail. Currently supported via delegate_to_claude_code tool. (optional)
+     * @param args.async - If true, return immediately after spawning the process without waiting for CC to connect via WebSocket. The session runs independently and writes results to ~/.claude/results/<sessionId>.json. Use for long-running autonomous tasks. (optional)
+     * @param args.taskType - Type of task for the result file metadata: "implementation", "research", or "analysis". Only used when async=true. Defaults to "implementation". (optional)
      * @returns Promise<ClaudeCodeStartSessionData> Typed flat response with IDE autocomplete
      */
     startSession: async (args: ClaudeCodeStartSessionArgs): Promise<ClaudeCodeStartSessionData> => {
@@ -8453,6 +8635,389 @@ function createFeedbackAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'feedback',
         method: 'submitFeatureRequest',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Google Ads Adapter
+ * Category: advertising
+ */
+function createGoogleAdsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Returns high-level account metrics and a quick snapshot of account health for a given date range. Use this as the entry point for any account-level analysis — it gives you total spend, overall ROAS/CPA, and surfaces top/bottom campaigns so you know where to drill in. Start here when the user asks something like "how are my ads doing?" or "give me a summary of my Google Ads account."
+     * @param args.customerId - Google Ads account ID (e.g., '123-456-7890')
+     * @param args.dateRange - Named date range (e.g., LAST_30_DAYS, LAST_7_DAYS, THIS_MONTH) or custom range YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS (optional)
+     */
+    getAccountOverview: async (args: GoogleAdsGetAccountOverviewArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getAccountOverview',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Lists all non-removed campaigns with their performance metrics for the given date range. Use this to rank campaigns by ROAS, CPA, spend, or conversion volume and quickly identify which are performing and which are bleeding budget. Returns up to 200 campaigns sorted by spend descending by default. Each campaign includes a metrics object — check roas, cpa, and searchImpressionShare to understand performance gaps.
+     * @param args.customerId - Google Ads account ID
+     * @param args.dateRange - Named range or custom YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS (optional)
+     * @param args.status - Filter by status: ENABLED, PAUSED, or ALL. Default: ALL (optional)
+     * @param args.limit - Max campaigns to return. Default: 200, max: 200 (optional)
+     * @param args.orderBy - Sort field: cost, conversions, roas, cpa, impressions, clicks. Default: cost (optional)
+     */
+    listCampaigns: async (args: GoogleAdsListCampaignsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'listCampaigns',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Returns detailed metrics for a single campaign, including a day-by-day breakdown for the date range. Use this after listCampaigns to drill into a specific campaign — check the daily trend to spot when performance changed. The dailyMetrics array shows exactly which days had high CPA or low ROAS, helping attribute changes to external events, bid changes, or budget issues.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Campaign ID from listCampaigns
+     * @param args.dateRange - Named range or custom. Default: LAST_30_DAYS (optional)
+     */
+    getCampaignDetails: async (args: GoogleAdsGetCampaignDetailsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getCampaignDetails',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Pauses or enables a campaign. Pausing immediately stops all ads in the campaign from serving. Enabling resumes delivery (subject to budget and bid eligibility). Always show the user the campaign name and current budget before confirming. This change is reversible but takes effect within minutes. RISKY — requires explicit user confirmation before calling.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Campaign ID to modify
+     * @param args.status - New status: PAUSED or ENABLED (not REMOVED)
+     * @param args.reason - Optional reason for the change (stored in adapter audit log, not sent to Google) (optional)
+     */
+    updateCampaignStatus: async (args: GoogleAdsUpdateCampaignStatusArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'updateCampaignStatus',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Modifies the daily budget for a campaign's associated budget. Note: if multiple campaigns share a budget (shared budget), this will affect all of them — the response includes sharedWithCampaigns to warn the user. Always confirm the exact dollar amount and, if shared, which other campaigns will be affected. RISKY — requires explicit user confirmation.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Campaign ID (used to look up the associated budget)
+     * @param args.dailyBudgetAmount - New daily budget in account currency (e.g., 150.00 for $150/day)
+     */
+    updateCampaignBudget: async (args: GoogleAdsUpdateCampaignBudgetArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'updateCampaignBudget',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Lists all ad groups within a campaign with performance metrics. Use this after identifying an underperforming campaign to understand which ad groups are dragging down the campaign's numbers. An ad group's metrics aggregate all keywords and ads within it. Check defaultCpcBid vs actual avgCpc — a large gap may indicate the auto-bidding is diverging from manual intent.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to ad groups within this campaign
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.status - ENABLED, PAUSED, or ALL. Default: ALL (optional)
+     */
+    listAdGroups: async (args: GoogleAdsListAdGroupsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'listAdGroups',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Detailed metrics for a single ad group with daily breakdown. Use this when an ad group's aggregate metrics look problematic — the daily trend will show whether the issue is recent or chronic.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adGroupId - Ad group ID
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getAdGroupDetails: async (args: GoogleAdsGetAdGroupDetailsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getAdGroupDetails',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Pauses or enables an ad group. Pausing stops all ads and keywords within it from serving. Same semantics as updateCampaignStatus but scoped to an ad group. RISKY — requires explicit user confirmation.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adGroupId - Ad group ID
+     * @param args.status - PAUSED or ENABLED
+     */
+    updateAdGroupStatus: async (args: GoogleAdsUpdateAdGroupStatusArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'updateAdGroupStatus',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Modifies the default CPC bid for an ad group. This affects all keywords in the ad group that don't have individual keyword-level bids. Verify bidding strategy before calling — this only applies to manual CPC campaigns or campaigns with bidding strategies that respect manual bid overrides. RISKY — requires explicit user confirmation.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adGroupId - Ad group ID
+     * @param args.cpcBidAmount - New default CPC bid in account currency
+     */
+    updateAdGroupBid: async (args: GoogleAdsUpdateAdGroupBidArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'updateAdGroupBid',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Lists all keywords in an ad group (or across a campaign) with performance metrics and quality scores. This is one of the most informative operations — quality score components (expectedCtr, adRelevance, landingPageExperience) reveal structural issues in the account. Keywords with high cost and zero conversions are the primary target for the wasteful-spend-detection skill. Note: quality score is only available when there is sufficient impression volume.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adGroupId - Filter to one ad group. If omitted, scope to campaignId (optional)
+     * @param args.campaignId - Filter to all ad groups within a campaign. One of adGroupId or campaignId required (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.status - ENABLED, PAUSED, or ALL. Default: ENABLED (optional)
+     * @param args.limit - Default: 200, max: 500 (optional)
+     * @param args.orderBy - cost, conversions, cpa, impressions. Default: cost (optional)
+     */
+    listKeywords: async (args: GoogleAdsListKeywordsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'listKeywords',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Detailed metrics for a single keyword with daily breakdown. Use this to understand the performance trend for a specific keyword — especially useful when a keyword's cost is spiking or conversion rate is dropping.
+     * @param args.customerId - Google Ads account ID
+     * @param args.keywordId - Keyword criterion ID
+     * @param args.adGroupId - Ad group containing the keyword (required by GAQL scoping)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getKeywordDetails: async (args: GoogleAdsGetKeywordDetailsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getKeywordDetails',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Pauses or enables a specific keyword. Use this to stop a specific keyword from spending without touching the ad group. Always confirm the keyword text, match type, and current cost before pausing. RISKY — requires explicit user confirmation.
+     * @param args.customerId - Google Ads account ID
+     * @param args.keywordId - Keyword criterion ID
+     * @param args.adGroupId - Ad group containing the keyword
+     * @param args.status - PAUSED or ENABLED
+     */
+    updateKeywordStatus: async (args: GoogleAdsUpdateKeywordStatusArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'updateKeywordStatus',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Returns the actual search queries that users typed which triggered your ads. This is the single most actionable report in Google Ads — it shows you what you're actually paying for. Look for: (1) irrelevant queries that should become negative keywords, (2) high-performing queries not yet added as exact-match keywords, (3) expensive queries with no conversions. The status field shows whether a term has already been added as a keyword (ADDED) or excluded as a negative (EXCLUDED).
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     * @param args.adGroupId - Filter to a specific ad group (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.minImpressions - Filter out terms with fewer impressions. Default: 0 (optional)
+     * @param args.limit - Default: 200, max: 500 (optional)
+     * @param args.orderBy - cost, conversions, impressions, cpa. Default: cost (optional)
+     */
+    getSearchTermReport: async (args: GoogleAdsGetSearchTermReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getSearchTermReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Uses the Google Keyword Planner API to generate keyword ideas from seed keywords or a landing page URL. Returns estimated monthly search volume, competition level, and bid estimates for each idea. Use this to find untapped keyword opportunities — compare lowTopOfPageBid vs your current avgCpc to find underpriced opportunities. Rate limited to 100 requests/day — use sparingly.
+     * @param args.customerId - Google Ads account ID
+     * @param args.seedKeywords - Array of seed keyword strings (max 20). One of seedKeywords or pageUrl required (optional)
+     * @param args.pageUrl - Landing page URL to generate ideas from. One of seedKeywords or pageUrl required (optional)
+     * @param args.language - Language resource name (default: English — languageConstants/1000) (optional)
+     * @param args.geoTargets - Array of geo target constant resource names. Default: all locations (optional)
+     * @param args.limit - Max ideas to return. Default: 100, max: 1000 (optional)
+     */
+    getKeywordIdeas: async (args: GoogleAdsGetKeywordIdeasArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getKeywordIdeas',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Lists all ads within an ad group with performance metrics and quality signals. For Responsive Search Ads (RSA), includes the headlines and descriptions as arrays. Use this to identify top-performing ad copy — compare CTR and conversion rate across variants to understand what messaging resonates. adStrength (EXCELLENT/GOOD/POOR) is Google's own quality signal for RSA.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adGroupId - Ad group to list ads from
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.status - ENABLED, PAUSED, or ALL. Default: ALL (optional)
+     */
+    listAds: async (args: GoogleAdsListAdsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'listAds',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Detailed metrics for a single ad with daily breakdown. Most useful for spotting when an ad's CTR or conversion rate changed — the daily trend reveals if a recent landing page change or ad copy edit correlated with a performance shift.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adId - Ad ID
+     * @param args.adGroupId - Ad group containing the ad
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getAdDetails: async (args: GoogleAdsGetAdDetailsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getAdDetails',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Flexible performance report with custom dimension and metric selection. Use this for custom analyses not covered by the dedicated reports — e.g., performance by network, by day of week, or a combined campaign+device breakdown. Returns a flat array of rows with whatever dimensions/metrics were requested. Prefer the dedicated reports (getDeviceReport, getHourOfDayReport, etc.) for their respective use cases.
+     * @param args.customerId - Google Ads account ID
+     * @param args.dimensions - Dimensions to segment by: campaign, adGroup, keyword, device, network, date, dayOfWeek, hour, geo, matchType. At least one required
+     * @param args.metrics - Metrics to include: impressions, clicks, cost, conversions, conversionsValue, ctr, avgCpc, cpa, roas. Default: all standard metrics (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     * @param args.filters - Additional GAQL WHERE conditions as key-value pairs (optional)
+     * @param args.orderBy - Metric to sort by (descending). Default: cost (optional)
+     * @param args.limit - Default: 200, max: 500 (optional)
+     */
+    getPerformanceReport: async (args: GoogleAdsGetPerformanceReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getPerformanceReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Returns auction insights showing how your ads compete against other advertisers in the same auctions. This is your window into the competitive landscape. Key metrics: impressionShare (your slice), overlapRate (how often you compete directly), outRankingShare (how often you beat them). Scoped to a campaign or ad group.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Scope to a campaign. One of campaignId or adGroupId required (optional)
+     * @param args.adGroupId - Scope to an ad group (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getAuctionInsights: async (args: GoogleAdsGetAuctionInsightsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getAuctionInsights',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Returns a log of changes made to the account within the date range. Essential for diagnosing sudden performance shifts — check change history for that date to see if someone adjusted bids, paused keywords, or changed budget. Also useful for governance: knowing who changed what and when. Max lookback: 90 days.
+     * @param args.customerId - Google Ads account ID
+     * @param args.dateRange - Default: LAST_7_DAYS. Max lookback: 90 days (optional)
+     * @param args.resourceTypes - Filter to specific types: CAMPAIGN, AD_GROUP, AD, AD_GROUP_CRITERION. Default: all (optional)
+     * @param args.limit - Default: 100, max: 500 (optional)
+     */
+    getChangeHistory: async (args: GoogleAdsGetChangeHistoryArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getChangeHistory',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Reports on conversion performance broken down by conversion action (e.g., "Purchase", "Lead Form Submit", "Phone Call"). Use this to understand which types of conversions your campaigns are driving and whether your conversion tracking is set up correctly. Missing conversion actions with zero data can indicate tracking gaps.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getConversionReport: async (args: GoogleAdsGetConversionReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getConversionReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Performance broken down by country, region, or city. Use this to find geographic concentrations of conversions or waste. A campaign running nationally but converting only in two metros is a candidate for geo-targeting refinement.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     * @param args.granularity - COUNTRY, REGION, or CITY. Default: REGION (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.limit - Default: 100 (optional)
+     */
+    getGeographicReport: async (args: GoogleAdsGetGeographicReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getGeographicReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Performance broken down by device type (desktop, mobile, tablet). Use this to identify device-specific performance gaps — a campaign with 80% of spend on mobile but 90% of conversions on desktop has a misaligned device bid modifier. Check if searchImpressionShare varies significantly by device — that indicates a bidding opportunity.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign. Default: account-level (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getDeviceReport: async (args: GoogleAdsGetDeviceReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getDeviceReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Performance segmented by hour of day AND day of week. Use this to identify optimal ad scheduling windows and discover hours with high spend but low conversion rates. A peak-hour analysis often reveals that campaigns running 24/7 are wasting budget between midnight and 6am with no conversions.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     * @param args.dateRange - Recommend at least LAST_30_DAYS for meaningful hourly data. Default: LAST_30_DAYS (optional)
+     */
+    getHourOfDayReport: async (args: GoogleAdsGetHourOfDayReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getHourOfDayReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Lists all campaign budgets in the account, including shared budgets and how many campaigns are using each budget. Shared budgets are often a source of unexpected spend distribution — if three campaigns share one budget, Google will allocate it across all three based on predicted performance, not evenly. Returns current utilization for each budget.
+     * @param args.customerId - Google Ads account ID
+     * @param args.includeRemoved - Include removed budgets. Default: false (optional)
+     */
+    listBudgets: async (args: GoogleAdsListBudgetsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'listBudgets',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Returns Google's automated budget recommendations for campaigns that are budget-constrained. Google identifies campaigns where impression share loss due to budget would improve if budget were increased, and estimates the incremental conversions/clicks from the recommended increase. Use this to inform budget reallocation decisions — but always verify with your own ROAS analysis rather than relying solely on Google's estimates.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     */
+    getBudgetRecommendations: async (args: GoogleAdsGetBudgetRecommendationsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getBudgetRecommendations',
         params: args || {}
       });
     }
@@ -11782,8 +12347,9 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
   return {
     /**
      * Get current status snapshot of the space agent including cycle count, budget usage, last observation, and pending directive count.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      */
-    getStatus: async (args?: {}): Promise<any> => {
+    getStatus: async (args: SpaceAgentGetStatusArgs): Promise<any> => {
       return sdk.resources.callDirect({
         resourceId: 'spaceAgent',
         method: 'getStatus',
@@ -11793,6 +12359,7 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Get recent Tier 2 (non-silent) agent episodes. Each episode contains observations, actions taken, deltas, next steps, and token usage from a full agent cycle.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      * @param args.limit - Number of episodes to return (default 5, max 20) (optional)
      */
     getRecentEpisodes: async (args: SpaceAgentGetRecentEpisodesArgs): Promise<any> => {
@@ -11805,6 +12372,7 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Queue an instruction for the space agent to process on its next cycle. The agent will address the directive during Tier 2 processing. Use urgent=true to force an immediate cycle.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      * @param args.directive - The instruction text for the agent (max 2000 characters)
      * @param args.urgent - If true, forces an immediate cycle by resetting lastCycleAt so the scheduler picks it up right away (optional)
      */
@@ -11818,8 +12386,9 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Get the agent's workspace memory — the persistent scratchpad the agent uses to track state across cycles.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      */
-    getMemory: async (args?: {}): Promise<any> => {
+    getMemory: async (args: SpaceAgentGetMemoryArgs): Promise<any> => {
       return sdk.resources.callDirect({
         resourceId: 'spaceAgent',
         method: 'getMemory',
@@ -11829,8 +12398,9 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Get the agent's workspace configuration including instructions, context, and heartbeat checklist.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      */
-    getWorkspaceConfig: async (args?: {}): Promise<any> => {
+    getWorkspaceConfig: async (args: SpaceAgentGetWorkspaceConfigArgs): Promise<any> => {
       return sdk.resources.callDirect({
         resourceId: 'spaceAgent',
         method: 'getWorkspaceConfig',
@@ -11840,6 +12410,7 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Respond to the space agent's attention request. Clears the attention state, stores your response, and forces an immediate cycle so the agent can process it.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      * @param args.message - Your response to the agent's attention request
      */
     respondToAttention: async (args: SpaceAgentRespondToAttentionArgs): Promise<any> => {
@@ -11852,8 +12423,9 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Dismiss the agent's attention request without responding. The agent returns to active status but does not immediately cycle.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      */
-    dismissAttention: async (args?: {}): Promise<any> => {
+    dismissAttention: async (args: SpaceAgentDismissAttentionArgs): Promise<any> => {
       return sdk.resources.callDirect({
         resourceId: 'spaceAgent',
         method: 'dismissAttention',
@@ -11863,8 +12435,9 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Force an immediate agent cycle. The scheduler will pick up the agent on its next pass.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      */
-    triggerCycle: async (args?: {}): Promise<any> => {
+    triggerCycle: async (args: SpaceAgentTriggerCycleArgs): Promise<any> => {
       return sdk.resources.callDirect({
         resourceId: 'spaceAgent',
         method: 'triggerCycle',
@@ -11874,6 +12447,7 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Update the agent's workspace configuration fields. Only the provided fields are updated; omitted fields remain unchanged.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      * @param args.instructions - Agent instructions (max 20,000 characters) (optional)
      * @param args.context - Agent context (max 20,000 characters) (optional)
      * @param args.heartbeat - Agent heartbeat checklist (max 20,000 characters) (optional)
@@ -11888,6 +12462,7 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Append entries to the agent's workspace memory. Entries are added with a date header. Memory is truncated at 20,000 characters (oldest entries trimmed).
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      * @param args.entries - Array of memory entries to append (non-empty strings)
      */
     updateMemory: async (args: SpaceAgentUpdateMemoryArgs): Promise<any> => {
@@ -11900,6 +12475,7 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Set the agent's monthly token budget cap.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      * @param args.budgetCap - Monthly token budget cap (positive number)
      */
     updateBudget: async (args: SpaceAgentUpdateBudgetArgs): Promise<any> => {
@@ -11912,6 +12488,7 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Pause or resume the space agent. Set to "dormant" to pause or "active" to resume. Cannot pause while agent is processing.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      * @param args.status - Target status: "active" or "dormant"
      */
     setStatus: async (args: SpaceAgentSetStatusArgs): Promise<any> => {
@@ -11924,8 +12501,9 @@ function createSpaceAgentAdapter(sdk: MirraSDK) {
 
     /**
      * Get a summary of workspace activity since the agent's last cycle — flow executions, chat messages, voice recordings, and transcripts.
+     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
      */
-    getActivitySummary: async (args?: {}): Promise<any> => {
+    getActivitySummary: async (args: SpaceAgentGetActivitySummaryArgs): Promise<any> => {
       return sdk.resources.callDirect({
         resourceId: 'spaceAgent',
         method: 'getActivitySummary',
@@ -13845,6 +14423,7 @@ export const generatedAdapters = {
   document: createDocumentAdapter,
   feedItems: createFeedItemsAdapter,
   feedback: createFeedbackAdapter,
+  googleAds: createGoogleAdsAdapter,
   googleCalendar: createGoogleCalendarAdapter,
   googleDrive: createGoogleDriveAdapter,
   googleGmail: createGoogleGmailAdapter,
