@@ -1,19 +1,19 @@
 {
-  "version": "0.2.38",
-  "notes": "Mirra Desktop v0.2.38",
-  "pub_date": "2026-03-17T17:09:27.319Z",
+  "version": "0.2.40",
+  "notes": "Mirra Desktop v0.2.40",
+  "pub_date": "2026-03-18T03:52:02.760Z",
   "platforms": {
     "darwin-aarch64": {
-      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.38/Mirra.app.tar.gz",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFk3blcxSGhDWnBsUkRUZmJmdkY1UWY2dVJmNU1WU2RMa1FadmVjYVZvdmp1bnQ4RXorSmNMU0hvblJLY0F3RXRjK3pOVnBMcWw5VUlkN002KzN6VkFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNzY1MjgwCWZpbGU6TWlycmEuYXBwLnRhci5negpHM2MxLzRNMmRXLzZXSEtURUdTSStsNjRaZ3Y0T0x0aER2V0MxcUtQTlFJcjR3VmtEYUxOc2tGNTdKa0tWVkQ2Rm1oZGhEaDh5UEZzVDhFUE94cERCUT09Cg=="
+      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.40/Mirra.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFhTM3pVd3JkQWhYNktxd2pydUNMSVFodzVhOEZkRG5QOTZOWlorNzAxQVdENUFXSnJPb0R5RFBUa3JHNUdrUzdITUZkazVxSU55bGs4cUpoWHAyV1E4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczODAxOTA5CWZpbGU6TWlycmEuYXBwLnRhci5negpQcGlGdEhFWld5VkdUYmJWZjNCSTdMNS9NZGhzSUU2dy80MXhVNGhxeWZOTHM5QWNOeC9WN3BTVTJ3ai8vcVpkVkNFT0tZd0lLaEs5enpnZzZxalhEdz09Cg=="
     },
     "windows-x86_64": {
-      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.38/Mirra_0.2.38_x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFUzYmhyYktXUk1HVWV5QXhSOHRoK3VqYUxSRjhDVHE0MGZ4aSt5SUl3OFFIVDZGSXpoVVhLbUJvN2NEdGVUMFNBWnBnVnVHSXRhQzdkVWo5Tk55K1E4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNzY3MzMzCWZpbGU6TWlycmFfMC4yLjM4X3g2NC1zZXR1cC5leGUKTXdQZS80SWp5Wmx4VU8vcGdQZEQ2RFdLUmdNQWtBVEJ6RjZYREVKZVI4MDJlVkNORlFOdXNkc2Uyekk3OGJoT3dlbGZTQytRQ0ZjQlUwN3lyVUxsREE9PQo="
+      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.40/Mirra_0.2.40_x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFpqVmljdnd6TzBlRGRCRFpFRTZ3cWhLYTZpVHRZbGNjNDBreG1jV1lrczd5dE1pN1dmR1FEa3NDdXA0UGJvZk1qUjdPVjRGbGkvRC9WN3NNMktCMkFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczODA0ODM1CWZpbGU6TWlycmFfMC4yLjQwX3g2NC1zZXR1cC5leGUKdXhqbzRmMG5GcUJ6U21QVFBQeWZGWWs4cjhMUEhlWCtqd0tYZjRFTUxJM3JCa2NnTTJsRU1HZm5vbmU0azRsN3M2cmY4NFVwMlpYNXFsVVo0UFlFQmc9PQo="
     },
     "linux-x86_64": {
-      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.38/Mirra_0.2.38_amd64.AppImage",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFd1eFFpYTQxNnZuSFpQSWE5WmlLMlVKcHN4NTUzdUdOSmE1VDhyUEVxcWxsdEZpQWFOSjF2dmMxbnl4K2E0cTl0N0MvR0E2eGFSN3doL0ZhVVpFaXcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczNzY2MTkxCWZpbGU6TWlycmFfMC4yLjM4X2FtZDY0LkFwcEltYWdlCnlHdFRDdFpmTjMycFQ0akwrbW42cjFWenBBY1BBNDZsajl5cEZ0VHVEZ28zZlVySy9PdW1lUk1COXI1WlMwS0FCcURkbnd0VndpUVBWUmpTVUJNTUNnPT0K"
+      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.40/Mirra_0.2.40_amd64.AppImage",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMGJxMXp0VFMyYWxVbVhjeXYwVDJwelhFdnJuRkRyR1UySlNCZ1QwQmhNSXllcUVtbU14NXl0QzJER0ljWEN0TGFtbG80c3ZMRE1OS1ZDRFF3Nllpb2dBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzczODAyNDczCWZpbGU6TWlycmFfMC4yLjQwX2FtZDY0LkFwcEltYWdlCm5CWTBKdGNvVHlMNWlod0dTdGJteUp2aFpUNVZTS0Z4OEdBS0tQNDhIUnpCTWwremRLbWE0M09WaG9QWmdRUDdZdG45U1BESWRlR05JL3dTMjdkUkJRPT0K"
     }
   }
 }
