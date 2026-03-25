@@ -1564,7 +1564,7 @@ export interface TelegramSendMessageArgs {
 }
 export interface TelegramSearchChatsArgs {
   query?: string; // Text to search in chat names/usernames. Supports fuzzy matching with relevance scoring.
-  type?: string; // Filter by chat type: "private", "group", "channel", or "all" (default: "all")
+  type?: string; // Filter by chat type: "private", "group", "channel", or "all" (default: "all"). IMPORTANT: Telegram community chats and supergroups are type "group", NOT "channel". Only broadcast-only channels are type "channel". When unsure, omit this filter or use "all".
   inactiveSince?: string; // Find chats with no activity since date. Accepts ISO date or relative like "30 days ago", "1 week ago"
   activeSince?: string; // Find chats with activity since date. Accepts ISO date or relative like "7 days ago"
   hasUnread?: boolean; // Filter by unread status: true = only unread, false = only read
@@ -1578,7 +1578,7 @@ export interface TelegramSearchChatsArgs {
 export interface TelegramSearchMessagesArgs {
   query: string; // Text query to search for in messages
   chatIds?: any[]; // Array of chat IDs to search within. Omit for global search across all chats.
-  chatType?: string; // Filter by chat type (for global search): "private", "group", or "channel"
+  chatType?: string; // Filter by chat type (for global search): "private", "group", or "channel". IMPORTANT: Community chats and supergroups are "group", NOT "channel".
   fromDate?: string; // ISO date string for start of date range
   toDate?: string; // ISO date string for end of date range
   limit?: number; // Maximum number of messages to return (default: 100, max: 100)
@@ -12534,9 +12534,9 @@ function createTelegramAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Powerful unified chat search with filtering, sorting, and activity tracking. Replaces getChats, findChatByName, and getRecentContacts. Use with no filters to list all chats.
+     * Powerful unified chat search with filtering, sorting, and activity tracking. Replaces getChats, findChatByName, and getRecentContacts. Use with no filters to list all chats. NOTE: Community chats and supergroups are type "group", not "channel" — avoid filtering by type unless you are sure of the exact type.
      * @param args.query - Text to search in chat names/usernames. Supports fuzzy matching with relevance scoring. (optional)
-     * @param args.type - Filter by chat type: "private", "group", "channel", or "all" (default: "all") (optional)
+     * @param args.type - Filter by chat type: "private", "group", "channel", or "all" (default: "all"). IMPORTANT: Telegram community chats and supergroups are type "group", NOT "channel". Only broadcast-only channels are type "channel". When unsure, omit this filter or use "all". (optional)
      * @param args.inactiveSince - Find chats with no activity since date. Accepts ISO date or relative like "30 days ago", "1 week ago" (optional)
      * @param args.activeSince - Find chats with activity since date. Accepts ISO date or relative like "7 days ago" (optional)
      * @param args.hasUnread - Filter by unread status: true = only unread, false = only read (optional)
@@ -12560,7 +12560,7 @@ function createTelegramAdapter(sdk: MirraSDK) {
      * Search for messages across Telegram chats. When chatIds is omitted, performs global search across all chats (replaces globalSearch operation).
      * @param args.query - Text query to search for in messages
      * @param args.chatIds - Array of chat IDs to search within. Omit for global search across all chats. (optional)
-     * @param args.chatType - Filter by chat type (for global search): "private", "group", or "channel" (optional)
+     * @param args.chatType - Filter by chat type (for global search): "private", "group", or "channel". IMPORTANT: Community chats and supergroups are "group", NOT "channel". (optional)
      * @param args.fromDate - ISO date string for start of date range (optional)
      * @param args.toDate - ISO date string for end of date range (optional)
      * @param args.limit - Maximum number of messages to return (default: 100, max: 100) (optional)

@@ -88,12 +88,12 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `searchChats`
 
-Powerful unified chat search with filtering, sorting, and activity tracking. Replaces getChats, findChatByName, and getRecentContacts. Use with no filters to list all chats.
+Powerful unified chat search with filtering, sorting, and activity tracking. Replaces getChats, findChatByName, and getRecentContacts. Use with no filters to list all chats. NOTE: Community chats and supergroups are type "group", not "channel" — avoid filtering by type unless you are sure of the exact type.
 
 **Arguments:**
 
 - `query` (string, *optional*): Text to search in chat names/usernames. Supports fuzzy matching with relevance scoring.
-- `type` (string, *optional*): Filter by chat type: "private", "group", "channel", or "all" (default: "all")
+- `type` (string, *optional*): Filter by chat type: "private", "group", "channel", or "all" (default: "all"). IMPORTANT: Telegram community chats and supergroups are type "group", NOT "channel". Only broadcast-only channels are type "channel". When unsure, omit this filter or use "all".
 - `inactiveSince` (string, *optional*): Find chats with no activity since date. Accepts ISO date or relative like "30 days ago", "1 week ago"
 - `activeSince` (string, *optional*): Find chats with activity since date. Accepts ISO date or relative like "7 days ago"
 - `hasUnread` (boolean, *optional*): Filter by unread status: true = only unread, false = only read
@@ -147,7 +147,7 @@ Search for messages across Telegram chats. When chatIds is omitted, performs glo
 
 - `query` (string, **required**): Text query to search for in messages
 - `chatIds` (array, *optional*): Array of chat IDs to search within. Omit for global search across all chats.
-- `chatType` (string, *optional*): Filter by chat type (for global search): "private", "group", or "channel"
+- `chatType` (string, *optional*): Filter by chat type (for global search): "private", "group", or "channel". IMPORTANT: Community chats and supergroups are "group", NOT "channel".
 - `fromDate` (string, *optional*): ISO date string for start of date range
 - `toDate` (string, *optional*): ISO date string for end of date range
 - `limit` (number, *optional*): Maximum number of messages to return (default: 100, max: 100)
