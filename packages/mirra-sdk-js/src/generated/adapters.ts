@@ -967,6 +967,7 @@ export interface MirraMessagingSendMessageArgs {
   replyToMessageId?: string; // ID of the message to reply to (creates a threaded reply)
   automation?: any; // Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing.
   structuredData?: any[]; // Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }]
+  mentionedAgentIds?: any[]; // Array of agent user IDs to @mention in this message. Triggers webhook delivery to each listed agent. Only works when sender is a human (agents cannot trigger other agents by default).
 }
 export interface MirraMessagingUpdateMessageArgs {
   messageId: string; // ID of the message to update
@@ -1504,57 +1505,6 @@ export interface SocketNotifySubscriberArgs {
   channelId: string; // Channel ID of the task session
   messageType: string; // Message type: assistant, result, or error
   text?: string; // Text content for assistant/error messages
-}
-
-// Space Agent Adapter Types
-export interface SpaceAgentGetStatusArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-}
-export interface SpaceAgentGetRecentEpisodesArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-  limit?: number; // Number of episodes to return (default 5, max 20)
-}
-export interface SpaceAgentSendDirectiveArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-  directive: string; // The instruction text for the agent (max 2000 characters)
-  urgent?: boolean; // If true, forces an immediate cycle by resetting lastCycleAt so the scheduler picks it up right away
-}
-export interface SpaceAgentGetMemoryArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-}
-export interface SpaceAgentGetWorkspaceConfigArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-}
-export interface SpaceAgentRespondToAttentionArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-  message: string; // Your response to the agent's attention request
-}
-export interface SpaceAgentDismissAttentionArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-}
-export interface SpaceAgentTriggerCycleArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-}
-export interface SpaceAgentUpdateWorkspaceConfigArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-  instructions?: string; // Agent instructions (max 20,000 characters)
-  context?: string; // Agent context (max 20,000 characters)
-  heartbeat?: string; // Agent heartbeat checklist (max 20,000 characters)
-}
-export interface SpaceAgentUpdateMemoryArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-  entries: any[]; // Array of memory entries to append (non-empty strings)
-}
-export interface SpaceAgentUpdateBudgetArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-  budgetCap: number; // Monthly token budget cap (positive number)
-}
-export interface SpaceAgentSetStatusArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-  status: string; // Target status: "active" or "dormant"
-}
-export interface SpaceAgentGetActivitySummaryArgs {
-  groupId: string; // Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
 }
 
 // Telegram Adapter Types
@@ -10606,6 +10556,7 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
      * @param args.replyToMessageId - ID of the message to reply to (creates a threaded reply) (optional)
      * @param args.automation - Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing. (optional)
      * @param args.structuredData - Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }] (optional)
+     * @param args.mentionedAgentIds - Array of agent user IDs to @mention in this message. Triggers webhook delivery to each listed agent. Only works when sender is a human (agents cannot trigger other agents by default). (optional)
      * @returns Promise<MirraMessagingSendMessageData> Typed flat response with IDE autocomplete
      */
     sendMessage: async (args: MirraMessagingSendMessageArgs): Promise<MirraMessagingSendMessageData> => {
@@ -12333,180 +12284,6 @@ function createSocketAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'socket',
         method: 'notifySubscriber',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Space Agent Adapter
- * Category: internal
- */
-function createSpaceAgentAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Get current status snapshot of the space agent including cycle count, budget usage, last observation, and pending directive count.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     */
-    getStatus: async (args: SpaceAgentGetStatusArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'getStatus',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get recent Tier 2 (non-silent) agent episodes. Each episode contains observations, actions taken, deltas, next steps, and token usage from a full agent cycle.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     * @param args.limit - Number of episodes to return (default 5, max 20) (optional)
-     */
-    getRecentEpisodes: async (args: SpaceAgentGetRecentEpisodesArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'getRecentEpisodes',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Queue an instruction for the space agent to process on its next cycle. The agent will address the directive during Tier 2 processing. Use urgent=true to force an immediate cycle.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     * @param args.directive - The instruction text for the agent (max 2000 characters)
-     * @param args.urgent - If true, forces an immediate cycle by resetting lastCycleAt so the scheduler picks it up right away (optional)
-     */
-    sendDirective: async (args: SpaceAgentSendDirectiveArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'sendDirective',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get the agent's workspace memory — the persistent scratchpad the agent uses to track state across cycles.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     */
-    getMemory: async (args: SpaceAgentGetMemoryArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'getMemory',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get the agent's workspace configuration including instructions, context, and heartbeat checklist.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     */
-    getWorkspaceConfig: async (args: SpaceAgentGetWorkspaceConfigArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'getWorkspaceConfig',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Respond to the space agent's attention request. Clears the attention state, stores your response, and forces an immediate cycle so the agent can process it.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     * @param args.message - Your response to the agent's attention request
-     */
-    respondToAttention: async (args: SpaceAgentRespondToAttentionArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'respondToAttention',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Dismiss the agent's attention request without responding. The agent returns to active status but does not immediately cycle.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     */
-    dismissAttention: async (args: SpaceAgentDismissAttentionArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'dismissAttention',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Force an immediate agent cycle. The scheduler will pick up the agent on its next pass.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     */
-    triggerCycle: async (args: SpaceAgentTriggerCycleArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'triggerCycle',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update the agent's workspace configuration fields. Only the provided fields are updated; omitted fields remain unchanged.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     * @param args.instructions - Agent instructions (max 20,000 characters) (optional)
-     * @param args.context - Agent context (max 20,000 characters) (optional)
-     * @param args.heartbeat - Agent heartbeat checklist (max 20,000 characters) (optional)
-     */
-    updateWorkspaceConfig: async (args: SpaceAgentUpdateWorkspaceConfigArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'updateWorkspaceConfig',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Append entries to the agent's workspace memory. Entries are added with a date header. Memory is truncated at 20,000 characters (oldest entries trimmed).
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     * @param args.entries - Array of memory entries to append (non-empty strings)
-     */
-    updateMemory: async (args: SpaceAgentUpdateMemoryArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'updateMemory',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Set the agent's monthly token budget cap.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     * @param args.budgetCap - Monthly token budget cap (positive number)
-     */
-    updateBudget: async (args: SpaceAgentUpdateBudgetArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'updateBudget',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Pause or resume the space agent. Set to "dormant" to pause or "active" to resume. Cannot pause while agent is processing.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     * @param args.status - Target status: "active" or "dormant"
-     */
-    setStatus: async (args: SpaceAgentSetStatusArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'setStatus',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get a summary of workspace activity since the agent's last cycle — flow executions, chat messages, voice recordings, and transcripts.
-     * @param args.groupId - Group ID for the space agent. Use mirraMessaging.getGroups() to discover available groups.
-     */
-    getActivitySummary: async (args: SpaceAgentGetActivitySummaryArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'spaceAgent',
-        method: 'getActivitySummary',
         params: args || {}
       });
     }
@@ -14441,7 +14218,6 @@ export const generatedAdapters = {
   polymarket: createPolymarketAdapter,
   shopify: createShopifyAdapter,
   socket: createSocketAdapter,
-  spaceAgent: createSpaceAgentAdapter,
   telegram: createTelegramAdapter,
   telegramBot: createTelegramBotAdapter,
   trello: createTrelloAdapter,

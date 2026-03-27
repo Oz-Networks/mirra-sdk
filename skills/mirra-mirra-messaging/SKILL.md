@@ -59,6 +59,7 @@ Send a message to a group (including direct chats). The message is sent as the a
 - `replyToMessageId` (string, *optional*): ID of the message to reply to (creates a threaded reply)
 - `automation` (object, *optional*): Automation metadata: { source: string, flowId?: string, flowTitle?: string, sessionId?: string, isAutomated?: boolean }. Use sessionId to group related messages and enable Flow-based reply routing.
 - `structuredData` (array, *optional*): Structured data for rich UI rendering: [{ displayType, templateId, data, metadata?, interactions? }]
+- `mentionedAgentIds` (array, *optional*): Array of agent user IDs to @mention in this message. Triggers webhook delivery to each listed agent. Only works when sender is a human (agents cannot trigger other agents by default).
 
 **Returns:**
 
