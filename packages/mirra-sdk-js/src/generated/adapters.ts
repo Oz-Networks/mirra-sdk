@@ -1749,6 +1749,43 @@ export interface VideoGeneratorPreviewFrameArgs {
   durationInFrames?: number; // Total duration in frames for timing calculations (default: 300)
 }
 
+// Voice Adapter Types
+export interface VoiceGetCallHistoryArgs {
+  scope?: string; // Filter by call scope: "direct" (1-on-1 with AI), "group", "user" (user-to-user), or "meeting" (public shareable). Omit to return all scopes.
+  status?: string; // Filter by call status: "active", "ended", "cancelled". Defaults to all statuses.
+  groupId?: string; // Filter calls to a specific group by group ID.
+  startDate?: string; // Filter calls created on or after this date (ISO 8601, e.g. "2025-01-15T00:00:00Z").
+  endDate?: string; // Filter calls created on or before this date (ISO 8601).
+  limit?: number; // Maximum number of calls to return (default: 20, max: 100).
+  offset?: number; // Number of results to skip for pagination (default: 0).
+}
+export interface VoiceGetCallDetailsArgs {
+  callId: string; // The agoraCallId or MongoDB _id of the call.
+}
+export interface VoiceGetCallTranscriptArgs {
+  callId: string; // The agoraCallId or MongoDB _id of the call.
+  mirraTriggeredOnly?: boolean; // If true, return only segments where a Mirra voice command was detected. Default: false.
+  limit?: number; // Maximum segments to return (default: 50, max: 200).
+  offset?: number; // Number of segments to skip for pagination (default: 0).
+}
+export interface VoiceGetCallSummaryArgs {
+  callId: string; // The agoraCallId or MongoDB _id of the call.
+  maxLength?: number; // Maximum character length of the summary (default: 2000). Transcript is truncated with "[Transcript truncated...]" if it exceeds this.
+  startMs?: number; // Only include segments starting at or after this millisecond offset from call start.
+  endMs?: number; // Only include segments ending at or before this millisecond offset from call start.
+}
+export interface VoiceSearchTranscriptsArgs {
+  query: string; // Text to search for in transcript content (case-insensitive substring match).
+  groupId?: string; // Limit search to transcripts from calls in a specific group.
+  startDate?: string; // Only search transcripts from calls created on or after this date (ISO 8601).
+  endDate?: string; // Only search transcripts from calls created on or before this date (ISO 8601).
+  limit?: number; // Maximum number of matching segments to return (default: 20, max: 100).
+}
+export interface VoiceGetActiveCallArgs {
+  chatInstanceId?: string; // Check for an active call in a specific chat instance.
+  groupId?: string; // Check for an active call in a specific group. Provide either chatInstanceId or groupId.
+}
+
 // Flows Adapter Types
 export interface FlowsCreateFlowArgs {
   title?: string; // Flow title. Required if providing inline code.
@@ -13045,6 +13082,103 @@ function createVideoGeneratorAdapter(sdk: MirraSDK) {
 }
 
 /**
+ * Voice Adapter
+ * Category: internal
+ */
+function createVoiceAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * List voice calls the user participated in, with filters for scope, status, and date range. Returns call metadata (no transcript content). Use getCallTranscript or getCallSummary to retrieve transcript text for a specific call.
+     * @param args.scope - Filter by call scope: "direct" (1-on-1 with AI), "group", "user" (user-to-user), or "meeting" (public shareable). Omit to return all scopes. (optional)
+     * @param args.status - Filter by call status: "active", "ended", "cancelled". Defaults to all statuses. (optional)
+     * @param args.groupId - Filter calls to a specific group by group ID. (optional)
+     * @param args.startDate - Filter calls created on or after this date (ISO 8601, e.g. "2025-01-15T00:00:00Z"). (optional)
+     * @param args.endDate - Filter calls created on or before this date (ISO 8601). (optional)
+     * @param args.limit - Maximum number of calls to return (default: 20, max: 100). (optional)
+     * @param args.offset - Number of results to skip for pagination (default: 0). (optional)
+     */
+    getCallHistory: async (args: VoiceGetCallHistoryArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'getCallHistory',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get full metadata and participant list for a specific call. Use the call's agoraCallId (from getCallHistory) or the MongoDB _id.
+     * @param args.callId - The agoraCallId or MongoDB _id of the call.
+     */
+    getCallDetails: async (args: VoiceGetCallDetailsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'getCallDetails',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get transcript segments for a voice call. Each segment contains the speaker, text, timing, and confidence. Results are sorted by time. For a human-readable summary instead of raw segments, use getCallSummary.
+     * @param args.callId - The agoraCallId or MongoDB _id of the call.
+     * @param args.mirraTriggeredOnly - If true, return only segments where a Mirra voice command was detected. Default: false. (optional)
+     * @param args.limit - Maximum segments to return (default: 50, max: 200). (optional)
+     * @param args.offset - Number of segments to skip for pagination (default: 0). (optional)
+     */
+    getCallTranscript: async (args: VoiceGetCallTranscriptArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'getCallTranscript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a human-readable formatted transcript summary for a voice call. Returns speaker-attributed text in "Speaker: text" format. Useful for AI context, summaries, and recaps. For raw segment data, use getCallTranscript instead.
+     * @param args.callId - The agoraCallId or MongoDB _id of the call.
+     * @param args.maxLength - Maximum character length of the summary (default: 2000). Transcript is truncated with "[Transcript truncated...]" if it exceeds this. (optional)
+     * @param args.startMs - Only include segments starting at or after this millisecond offset from call start. (optional)
+     * @param args.endMs - Only include segments ending at or before this millisecond offset from call start. (optional)
+     */
+    getCallSummary: async (args: VoiceGetCallSummaryArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'getCallSummary',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Full-text search across transcript segments. Searches the text content of all transcripts the user has access to. Results include the call context and matching segments.
+     * @param args.query - Text to search for in transcript content (case-insensitive substring match).
+     * @param args.groupId - Limit search to transcripts from calls in a specific group. (optional)
+     * @param args.startDate - Only search transcripts from calls created on or after this date (ISO 8601). (optional)
+     * @param args.endDate - Only search transcripts from calls created on or before this date (ISO 8601). (optional)
+     * @param args.limit - Maximum number of matching segments to return (default: 20, max: 100). (optional)
+     */
+    searchTranscripts: async (args: VoiceSearchTranscriptsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'searchTranscripts',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Check if there is an active (in-progress) voice call in a specific chat or group. Returns call details if active, or an empty result if no call is in progress.
+     * @param args.chatInstanceId - Check for an active call in a specific chat instance. (optional)
+     * @param args.groupId - Check for an active call in a specific group. Provide either chatInstanceId or groupId. (optional)
+     */
+    getActiveCall: async (args: VoiceGetActiveCallArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'getActiveCall',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
  * Flows Adapter
  * Category: internal
  */
@@ -14224,6 +14358,7 @@ export const generatedAdapters = {
   tunnel: createTunnelAdapter,
   twitter: createTwitterAdapter,
   videoGenerator: createVideoGeneratorAdapter,
+  voice: createVoiceAdapter,
   flows: createFlowsAdapter,
   user: createUserAdapter,
   contacts: createContactsAdapter,

@@ -44,6 +44,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-skills`](./mirra-skills/) | Skills | 8 | No |
 | [`mirra-user`](./mirra-user/) | User | 6 | No |
 | [`mirra-video-generator`](./mirra-video-generator/) | Video Generator | 5 | No |
+| [`mirra-voice`](./mirra-voice/) | Voice | 6 | No |
 
 ### Communication
 
@@ -107,7 +108,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 |-------|---------|------------|---------------|
 | [`mirra-google-ads`](./mirra-google-ads/) | Google Ads | 25 | Yes (OAuth) |
 
-**Total: 36 adapters, 415 operations**
+**Total: 37 adapters, 421 operations**
 
 ## How It Works
 
