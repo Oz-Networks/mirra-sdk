@@ -155,6 +155,7 @@ Semantic search across memory entities with advanced filtering. IMPORTANT: Searc
 - `endTime` (number, *optional*): Filter entities created before this timestamp (Unix milliseconds)
 - `propertyFilters` (object, *optional*): Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] }
 - `limit` (number, *optional*): Maximum number of results (default: 20, max: 100)
+- `groupId` (string, *optional*): Optional group ID to scope search to a specific group's memory graph. If omitted, searches across your personal graph and all groups you belong to. Each result includes a graphId field showing which graph it came from.
 
 **Returns:**
 
@@ -215,6 +216,7 @@ Query memory entities with filters. Returns lightweight summaries with TRUNCATED
 - `filters` (object, *optional*): Additional filters (not yet implemented)
 - `limit` (number, *optional*): Maximum results (default: 20, max: 100)
 - `offset` (number, *optional*): Pagination offset for fetching more results (default: 0)
+- `groupId` (string, *optional*): Optional group ID to scope query to a specific group's memory graph. If omitted, queries across your personal graph and all groups you belong to. Each result includes a graphId field showing which graph it came from.
 
 **Returns:**
 

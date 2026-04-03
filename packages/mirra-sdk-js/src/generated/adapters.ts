@@ -927,12 +927,14 @@ export interface MemorySearchArgs {
   endTime?: number; // Filter entities created before this timestamp (Unix milliseconds)
   propertyFilters?: any; // Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] }
   limit?: number; // Maximum number of results (default: 20, max: 100)
+  groupId?: string; // Optional group ID to scope search to a specific group's memory graph. If omitted, searches across your personal graph and all groups you belong to. Each result includes a graphId field showing which graph it came from.
 }
 export interface MemoryQueryArgs {
   type?: string; // Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against entityType, meta_item_type, subType, or semantic_roles
   filters?: any; // Additional filters (not yet implemented)
   limit?: number; // Maximum results (default: 20, max: 100)
   offset?: number; // Pagination offset for fetching more results (default: 0)
+  groupId?: string; // Optional group ID to scope query to a specific group's memory graph. If omitted, queries across your personal graph and all groups you belong to. Each result includes a graphId field showing which graph it came from.
 }
 export interface MemoryFindOneArgs {
   filters: any; // Filter criteria. Use { id: "entity_id" } to find by ID (recommended), or { name: "entity name" } to find by name.
@@ -10552,6 +10554,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * @param args.endTime - Filter entities created before this timestamp (Unix milliseconds) (optional)
      * @param args.propertyFilters - Filter by entity properties: { status: ["completed"], tags: ["urgent"], priority: ["high"], roles: ["task"], contexts: ["work"] } (optional)
      * @param args.limit - Maximum number of results (default: 20, max: 100) (optional)
+     * @param args.groupId - Optional group ID to scope search to a specific group's memory graph. If omitted, searches across your personal graph and all groups you belong to. Each result includes a graphId field showing which graph it came from. (optional)
      * @returns Promise<MemorySearchData> Typed flat response with IDE autocomplete
      */
     search: async (args: MemorySearchArgs): Promise<MemorySearchData> => {
@@ -10568,6 +10571,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
      * @param args.filters - Additional filters (not yet implemented) (optional)
      * @param args.limit - Maximum results (default: 20, max: 100) (optional)
      * @param args.offset - Pagination offset for fetching more results (default: 0) (optional)
+     * @param args.groupId - Optional group ID to scope query to a specific group's memory graph. If omitted, queries across your personal graph and all groups you belong to. Each result includes a graphId field showing which graph it came from. (optional)
      * @returns Promise<MemoryQueryData> Typed flat response with IDE autocomplete
      */
     query: async (args: MemoryQueryArgs): Promise<MemoryQueryData> => {
