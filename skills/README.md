@@ -51,7 +51,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | Skill | Adapter | Operations | Auth Required |
 |-------|---------|------------|---------------|
 | [`mirra-google-gmail`](./mirra-google-gmail/) | Gmail | 10 | Yes (OAuth) |
-| [`mirra-mirra-messaging`](./mirra-mirra-messaging/) | Mirra Messaging | 7 | No |
+| [`mirra-mirra-messaging`](./mirra-mirra-messaging/) | Mirra Messaging | 12 | No |
 | [`mirra-telegramBot`](./mirra-telegramBot/) | Telegram Bot | 12 | Yes (OAuth) |
 
 ### Productivity
@@ -108,7 +108,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 |-------|---------|------------|---------------|
 | [`mirra-google-ads`](./mirra-google-ads/) | Google Ads | 25 | Yes (OAuth) |
 
-**Total: 37 adapters, 421 operations**
+**Total: 37 adapters, 426 operations**
 
 ## How It Works
 

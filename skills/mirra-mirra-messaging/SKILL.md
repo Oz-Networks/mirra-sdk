@@ -43,6 +43,11 @@ Replace `{operation}` with the operation name from the table below.
 | `getChats` | Get list of chat instances for the user. Returns normalized flat structures. |
 | `getGroups` | Get all conversations the user is a member of, including both direct chats and group chats. Direc... |
 | `createGroup` | Create a new group. The authenticated user becomes the group owner. Returns normalized flat struc... |
+| `discoverGroups` | Search public groups available to join. Returns groups sorted by member count. Use joinGroup to j... |
+| `joinGroup` | Join a public open group. Only works for groups with joinMode "open". For all other groups, ask t... |
+| `leaveGroup` | Leave a group the user is currently a member of. Cannot leave if the user is the sole owner — tra... |
+| `addMembers` | Add one or more users to a group. Requires the authenticated user to be the group owner or admin. |
+| `getGroupMembers` | Get the list of members in a group. Requires the authenticated user to be a member of the group. |
 | `searchMessages` | Search chat messages by keywords. Returns summaries by default to avoid overwhelming context. Use... |
 | `getRecentMessages` | Browse recent messages by recency without requiring a keyword search. Returns full message text s... |
 
@@ -192,6 +197,115 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"mirra-messaging","method":"createGroup","params":{"name":"<value>"}}' | jq .
+```
+
+### `discoverGroups`
+
+Search public groups available to join. Returns groups sorted by member count. Use joinGroup to join a discovered group.
+
+**Arguments:**
+
+- `query` (string, *optional*): Text search query to match group names and descriptions
+- `category` (string, *optional*): Filter by category: "hobby", "career", "family", "health", "finance", "learning", or "social"
+- `page` (number, *optional*): Page number for pagination (default 1)
+- `limit` (number, *optional*): Results per page (default 20, max 50)
+
+**Returns:**
+
+`AdapterOperationResult`: Returns { groups[], total, page, hasMore }. Each group has FLAT fields: groupId, name, description, category, memberCount, joinMode ("open", "approval", or "invite_only"), isMember, isPendingApproval, chatInstanceId (if already a member), createdAt. No nested objects.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"mirra-messaging","method":"discoverGroups","params":{}}' | jq .
+```
+
+### `joinGroup`
+
+Join a public open group. Only works for groups with joinMode "open". For all other groups, ask the group owner to add you using addMembers. Use discoverGroups to find joinable groups.
+
+**Arguments:**
+
+- `groupId` (string, **required**): ID of the group to join (from discoverGroups or getGroups)
+
+**Returns:**
+
+`AdapterOperationResult`: Returns FLAT structure with: groupId, status ("joined"), role, chatInstanceId, message. No nested objects.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"mirra-messaging","method":"joinGroup","params":{"groupId":"<ID>"}}' | jq .
+```
+
+### `leaveGroup`
+
+Leave a group the user is currently a member of. Cannot leave if the user is the sole owner — transfer ownership first.
+
+**Arguments:**
+
+- `groupId` (string, **required**): ID of the group to leave
+
+**Returns:**
+
+`AdapterOperationResult`: Returns FLAT structure with: groupId, status ("left"), message. No nested objects.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"mirra-messaging","method":"leaveGroup","params":{"groupId":"<ID>"}}' | jq .
+```
+
+### `addMembers`
+
+Add one or more users to a group. Requires the authenticated user to be the group owner or admin.
+
+**Arguments:**
+
+- `groupId` (string, **required**): ID of the group to add members to
+- `userIds` (array, **required**): Array of user IDs to add as members
+
+**Returns:**
+
+`AdapterOperationResult`: Returns FLAT structure with: groupId, added (array of successfully added user IDs), failed (array of { userId, reason }), totalAdded, totalFailed. No nested objects.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"mirra-messaging","method":"addMembers","params":{"groupId":"<ID>","userIds":[]}}' | jq .
+```
+
+### `getGroupMembers`
+
+Get the list of members in a group. Requires the authenticated user to be a member of the group.
+
+**Arguments:**
+
+- `groupId` (string, **required**): ID of the group to list members for
+
+**Returns:**
+
+`AdapterOperationResult`: Returns { groupId, members[], totalCount }. Each member has FLAT fields: userId, username, role, joinedAt, accountType. No nested objects.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"mirra-messaging","method":"getGroupMembers","params":{"groupId":"<ID>"}}' | jq .
 ```
 
 ### `searchMessages`

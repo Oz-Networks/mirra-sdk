@@ -988,6 +988,25 @@ export interface MirraMessagingCreateGroupArgs {
   category?: string; // Category for organization: "hobby", "career", "family", "health", "finance", "learning", or "social" (default: "career")
   memberIds?: any[]; // Array of user IDs to add as initial members
 }
+export interface MirraMessagingDiscoverGroupsArgs {
+  query?: string; // Text search query to match group names and descriptions
+  category?: string; // Filter by category: "hobby", "career", "family", "health", "finance", "learning", or "social"
+  page?: number; // Page number for pagination (default 1)
+  limit?: number; // Results per page (default 20, max 50)
+}
+export interface MirraMessagingJoinGroupArgs {
+  groupId: string; // ID of the group to join (from discoverGroups or getGroups)
+}
+export interface MirraMessagingLeaveGroupArgs {
+  groupId: string; // ID of the group to leave
+}
+export interface MirraMessagingAddMembersArgs {
+  groupId: string; // ID of the group to add members to
+  userIds: any[]; // Array of user IDs to add as members
+}
+export interface MirraMessagingGetGroupMembersArgs {
+  groupId: string; // ID of the group to list members for
+}
 export interface MirraMessagingSearchMessagesArgs {
   query: string; // Keywords to search for
   senderUsername?: string; // Username to filter by sender (partial match supported)
@@ -4463,6 +4482,72 @@ export interface MirraMessagingCreateGroupData {
 }
 
 export type MirraMessagingCreateGroupResult = AdapterResultBase<MirraMessagingCreateGroupData>;
+
+export interface MirraMessagingDiscoveredGroup {
+  groupId: string; // Group ID
+  name: string; // Group name
+  description: any; // Group description
+  category: any; // Group category
+  memberCount: number; // Number of members
+  joinMode: any; // How to join
+  isMember: boolean; // Whether you are already a member
+  isPendingApproval: boolean; // Whether you have a pending join request
+  chatInstanceId: any; // Chat instance ID (if member)
+  createdAt: string; // Creation timestamp (ISO 8601)
+}
+
+export interface MirraMessagingDiscoverGroupsData {
+  groups: any; // Discovered public groups
+  total: number; // Total matching groups
+  page: number; // Current page
+  hasMore: boolean; // Whether more pages exist
+}
+
+export type MirraMessagingDiscoverGroupsResult = AdapterResultBase<MirraMessagingDiscoverGroupsData>;
+
+export interface MirraMessagingJoinGroupData {
+  groupId: string; // Group ID
+  status: any; // Join result status
+  role: string; // Assigned role
+  chatInstanceId: any; // Chat instance ID
+  message: string; // Human-readable result message
+}
+
+export type MirraMessagingJoinGroupResult = AdapterResultBase<MirraMessagingJoinGroupData>;
+
+export interface MirraMessagingLeaveGroupData {
+  groupId: string; // Group ID
+  status: any; // Leave status
+  message: string; // Human-readable result message
+}
+
+export type MirraMessagingLeaveGroupResult = AdapterResultBase<MirraMessagingLeaveGroupData>;
+
+export interface MirraMessagingAddMembersData {
+  groupId: string; // Group ID
+  added: any; // Successfully added user IDs
+  failed: any; // Failed additions with reasons
+  totalAdded: number; // Count of successfully added members
+  totalFailed: number; // Count of failed additions
+}
+
+export type MirraMessagingAddMembersResult = AdapterResultBase<MirraMessagingAddMembersData>;
+
+export interface MirraMessagingGroupMember {
+  userId: string; // User ID
+  username: string; // Username
+  role: string; // Role in group (owner, admin, member)
+  joinedAt: string; // Join timestamp (ISO 8601)
+  accountType: string; // Account type (human or agent)
+}
+
+export interface MirraMessagingGetGroupMembersData {
+  groupId: string; // Group ID
+  members: any; // Group members
+  totalCount: number; // Total number of members
+}
+
+export type MirraMessagingGetGroupMembersResult = AdapterResultBase<MirraMessagingGetGroupMembersData>;
 
 export interface MirraMessagingSearchMessage {
   messageId: string; // Message ID
@@ -10659,6 +10744,75 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'mirra-messaging',
         method: 'createGroup',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search public groups available to join. Returns groups sorted by member count. Use joinGroup to join a discovered group.
+     * @param args.query - Text search query to match group names and descriptions (optional)
+     * @param args.category - Filter by category: "hobby", "career", "family", "health", "finance", "learning", or "social" (optional)
+     * @param args.page - Page number for pagination (default 1) (optional)
+     * @param args.limit - Results per page (default 20, max 50) (optional)
+     * @returns Promise<MirraMessagingDiscoverGroupsData> Typed flat response with IDE autocomplete
+     */
+    discoverGroups: async (args: MirraMessagingDiscoverGroupsArgs): Promise<MirraMessagingDiscoverGroupsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'mirra-messaging',
+        method: 'discoverGroups',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Join a public open group. Only works for groups with joinMode "open". For all other groups, ask the group owner to add you using addMembers. Use discoverGroups to find joinable groups.
+     * @param args.groupId - ID of the group to join (from discoverGroups or getGroups)
+     * @returns Promise<MirraMessagingJoinGroupData> Typed flat response with IDE autocomplete
+     */
+    joinGroup: async (args: MirraMessagingJoinGroupArgs): Promise<MirraMessagingJoinGroupData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'mirra-messaging',
+        method: 'joinGroup',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Leave a group the user is currently a member of. Cannot leave if the user is the sole owner — transfer ownership first.
+     * @param args.groupId - ID of the group to leave
+     * @returns Promise<MirraMessagingLeaveGroupData> Typed flat response with IDE autocomplete
+     */
+    leaveGroup: async (args: MirraMessagingLeaveGroupArgs): Promise<MirraMessagingLeaveGroupData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'mirra-messaging',
+        method: 'leaveGroup',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Add one or more users to a group. Requires the authenticated user to be the group owner or admin.
+     * @param args.groupId - ID of the group to add members to
+     * @param args.userIds - Array of user IDs to add as members
+     * @returns Promise<MirraMessagingAddMembersData> Typed flat response with IDE autocomplete
+     */
+    addMembers: async (args: MirraMessagingAddMembersArgs): Promise<MirraMessagingAddMembersData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'mirra-messaging',
+        method: 'addMembers',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the list of members in a group. Requires the authenticated user to be a member of the group.
+     * @param args.groupId - ID of the group to list members for
+     * @returns Promise<MirraMessagingGetGroupMembersData> Typed flat response with IDE autocomplete
+     */
+    getGroupMembers: async (args: MirraMessagingGetGroupMembersArgs): Promise<MirraMessagingGetGroupMembersData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'mirra-messaging',
+        method: 'getGroupMembers',
         params: args || {}
       });
     },
