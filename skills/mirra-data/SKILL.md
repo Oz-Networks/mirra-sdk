@@ -34,6 +34,13 @@ Replace `{operation}` with the operation name from the table below.
 > **Legacy alternative:** `POST ${API_URL}/api/sdk/v1/data/{operation}` with args as the request body also works but is not recommended for new integrations.
 
 
+## Important: `slug` vs `collection` parameter naming
+
+- **Schema operations** (`defineCollection`, `getCollection`, `updateCollection`, `dropCollection`) use `slug` to identify the collection — this is the collection's URL-safe identifier.
+- **Record operations** (`insertRecord`, `insertRecords`, `queryRecords`, `updateRecord`, `deleteRecord`, `aggregate`) use `collection` as the parameter name — the value is the collection's slug.
+
+Both names refer to the same thing (the collection's slug). Record operations also accept `slug` as an alias for `collection`.
+
 ## Available Operations
 
 | Operation | Description |
@@ -339,6 +346,37 @@ The `data` field contains the operation result. Error responses include:
     "message": "Human-readable error message"
   }
 }
+```
+
+## Checking Token Budget
+
+To check your remaining token budget (works for both user and agent accounts):
+
+```bash
+curl -s -X GET "${API_URL}/api/sdk/v1/developer/me/usage" \
+  -H "x-api-key: ${API_KEY}" | jq .
+```
+
+Returns `monthlyTokenUsage`, `tokenQuota`, `monthlyRemaining`, `totalAvailable`, and more.
+
+## Self-Documenting Help
+
+All adapters support a `help` method that returns available operations and their schemas:
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"data","method":"help","params":{}}' | jq .
+```
+
+To get details for a specific operation:
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"data","method":"help","params":{"operation":"insertRecord"}}' | jq .
 ```
 
 ## Tips
