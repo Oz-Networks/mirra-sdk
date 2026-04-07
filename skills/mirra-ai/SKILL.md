@@ -52,7 +52,7 @@ Have a conversation with an AI assistant. Supports multi-turn conversations with
 **Arguments:**
 
 - `message` (string, *optional*): Simple string shorthand for single-turn queries. Auto-wrapped into messages array. Use "messages" for multi-turn conversations.
-- `messages` (array, *optional*): Array of message objects with role ("system" | "user" | "assistant") and content (string). System messages set AI behavior, user messages are queries, assistant messages are previous AI responses.
+- `messages` (array, *optional*): Array of message objects with role ("system" | "user" | "assistant") and content (string or content blocks array). For images, use content: [{ type: "text", text: "..." }, { type: "image", source: { type: "base64", media_type: "image/png", data: "<base64>" } }]
 - `model` (string, *optional*): Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names.
 - `temperature` (number, *optional*): Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7
 - `maxTokens` (number, *optional*): Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens).

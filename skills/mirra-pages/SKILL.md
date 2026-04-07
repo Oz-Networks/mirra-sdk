@@ -49,6 +49,7 @@ Replace `{operation}` with the operation name from the table below.
 | `deletePage` | Soft-delete a page by setting its status to "deleted". |
 | `publishPage` | Publish a page, making it publicly accessible. Generates an API key for the page. |
 | `unpublishPage` | Unpublish a page, making it private. |
+| `sharePage` | Share a private page with another graph (group). Members of the target graph will be able to view... |
 | `getPageUrl` | Get the public URL for a page. |
 
 ## Operation Details
@@ -356,6 +357,28 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"pages","method":"unpublishPage","params":{"pageId":"6650abcd1234ef5678901234"}}' | jq .
+```
+
+### `sharePage`
+
+Share a private page with another graph (group). Members of the target graph will be able to view the page after signing in. The page must belong to your current graph.
+
+**Arguments:**
+
+- `pageId` (string, **required**): The page ID to share
+- `graphId` (string, **required**): The graph ID (group ID) to share the page with
+
+**Returns:**
+
+`object`: Updated page with id, title, visibility, sharedWithGraphIds, and accessInfo
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"pages","method":"sharePage","params":{"pageId":"6650abcd1234ef5678901234","graphId":"6650abcd1234ef5678905678"}}' | jq .
 ```
 
 ### `getPageUrl`

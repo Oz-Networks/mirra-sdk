@@ -51,7 +51,7 @@ export interface AdapterResultBase<T = any> {
 // AI Services Adapter Types
 export interface AiChatArgs {
   message?: string; // Simple string shorthand for single-turn queries. Auto-wrapped into messages array. Use "messages" for multi-turn conversations.
-  messages?: any[]; // Array of message objects with role ("system" | "user" | "assistant") and content (string). System messages set AI behavior, user messages are queries, assistant messages are previous AI responses.
+  messages?: any[]; // Array of message objects with role ("system" | "user" | "assistant") and content (string or content blocks array). For images, use content: [{ type: "text", text: "..." }, { type: "image", source: { type: "base64", media_type: "image/png", data: "<base64>" } }]
   model?: string; // Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names.
   temperature?: number; // Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7
   maxTokens?: number; // Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens).
@@ -1180,6 +1180,10 @@ export interface PagesPublishPageArgs {
 }
 export interface PagesUnpublishPageArgs {
   pageId: string; // The page ID to unpublish
+}
+export interface PagesSharePageArgs {
+  pageId: string; // The page ID to share
+  graphId: string; // The graph ID (group ID) to share the page with
 }
 export interface PagesGetPageUrlArgs {
   pageId: string; // The page ID
@@ -4891,6 +4895,7 @@ export interface PagesCreatePageData {
   codeHash: string; // Hash of the compiled code
   visibility: string; // Page visibility: "private" or "public"
   url: string; // Public URL for the page
+  accessInfo: string; // Human-readable description of who can access the page
   lintWarnings?: string; // Lint warnings from code validation
   apiKey?: string; // API key for public pages (only shown once)
 }
@@ -4905,6 +4910,7 @@ export interface PagesCreateReportPageData {
   codeHash: string; // Hash of the compiled code
   visibility: string; // Page visibility: "private" or "public"
   url: string; // Public URL for the page
+  accessInfo: string; // Human-readable description of who can access the page
   lintWarnings?: string; // Lint warnings from code validation
   apiKey?: string; // API key for public pages (only shown once)
 }
@@ -4920,6 +4926,7 @@ export interface PagesUpsertReportPageData {
   action: any; // Whether the page was created or updated
   url: string; // Public URL for the page
   visibility?: string; // Page visibility (present on create)
+  accessInfo: string; // Human-readable description of who can access the page
   lintWarnings?: string; // Lint warnings from code validation
   apiKey?: string; // API key for public pages (only shown once)
 }
@@ -5029,6 +5036,16 @@ export interface PagesUnpublishPageData {
 }
 
 export type PagesUnpublishPageResult = AdapterResultBase<PagesUnpublishPageData>;
+
+export interface PagesSharePageData {
+  id: string; // Page identifier
+  title: string; // Display title of the page
+  visibility: string; // Page visibility
+  sharedWithGraphIds: any; // Graph IDs the page is shared with
+  accessInfo: string; // Human-readable access description
+}
+
+export type PagesSharePageResult = AdapterResultBase<PagesSharePageData>;
 
 export interface PagesGetPageUrlData {
   id: string; // Page identifier
@@ -7743,9 +7760,9 @@ export type GoogleSheetsCopyRangeResult = AdapterResultBase<GoogleSheetsCopyRang
 function createAiAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Have a conversation with an AI assistant. Supports multi-turn conversations with system prompts, user messages, and assistant responses. PROVIDER: Uses Anthropic (Claude) as the AI provider. BEST PRACTICES: - Use system messages to set AI behavior and constraints - Keep conversations focused - avoid unnecessary context MESSAGE STRUCTURE: Each message has: - role: "system" | "user" | "assistant" - content: string (the message text) TYPICAL PATTERNS: 1. Simple query: [{ role: "user", content: "question" }] 2. With system prompt: [{ role: "system", content: "instructions" }, { role: "user", content: "question" }] 3. Multi-turn: [system, user, assistant, user, assistant, ...]
+     * Have a conversation with an AI assistant. Supports multi-turn conversations with system prompts, user messages, and assistant responses. PROVIDER: Uses Anthropic (Claude) as the AI provider. BEST PRACTICES: - Use system messages to set AI behavior and constraints - Keep conversations focused - avoid unnecessary context MESSAGE STRUCTURE: Each message has: - role: "system" | "user" | "assistant" - content: string OR array of content blocks for multimodal (text + images) IMAGE SUPPORT: To send images, use content blocks array instead of a string: content: [ { type: "text", text: "What's in this image?" }, { type: "image", source: { type: "base64", media_type: "image/png", data: "<base64-data>" } } ] Supported media types: image/jpeg, image/png, image/gif, image/webp TYPICAL PATTERNS: 1. Simple query: [{ role: "user", content: "question" }] 2. With system prompt: [{ role: "system", content: "instructions" }, { role: "user", content: "question" }] 3. Multi-turn: [system, user, assistant, user, assistant, ...]
      * @param args.message - Simple string shorthand for single-turn queries. Auto-wrapped into messages array. Use "messages" for multi-turn conversations. (optional)
-     * @param args.messages - Array of message objects with role ("system" | "user" | "assistant") and content (string). System messages set AI behavior, user messages are queries, assistant messages are previous AI responses. (optional)
+     * @param args.messages - Array of message objects with role ("system" | "user" | "assistant") and content (string or content blocks array). For images, use content: [{ type: "text", text: "..." }, { type: "image", source: { type: "base64", media_type: "image/png", data: "<base64>" } }] (optional)
      * @param args.model - Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names. (optional)
      * @param args.temperature - Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7 (optional)
      * @param args.maxTokens - Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens). (optional)
@@ -11391,6 +11408,20 @@ function createPagesAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'unpublishPage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Share a private page with another graph (group). Members of the target graph will be able to view the page after signing in. The page must belong to your current graph.
+     * @param args.pageId - The page ID to share
+     * @param args.graphId - The graph ID (group ID) to share the page with
+     * @returns Promise<PagesSharePageData> Typed flat response with IDE autocomplete
+     */
+    sharePage: async (args: PagesSharePageArgs): Promise<PagesSharePageData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'pages',
+        method: 'sharePage',
         params: args || {}
       });
     },
