@@ -63,6 +63,7 @@ Create a new data collection (schema). Define the fields and their types. A slug
 - `slug` (string, *optional*): URL-safe identifier (lowercase, underscores). Auto-generated from name if omitted.
 - `fields` (array, **required**): Array of field definitions. Each field has: name (string), type ("string"|"number"|"boolean"|"date"|"array"|"object"), required (boolean), description (optional string).
 - `description` (string, *optional*): Optional description of what this collection stores
+- `path` (string, *optional*): Path to a JSON file in the workspace container (e.g., "/workspace/data/collections/contacts.schema.json"). If provided, reads { name, fields, description } from the file. Explicit args override file values.
 
 **Returns:**
 
@@ -222,7 +223,7 @@ Query records from a collection with optional filtering, sorting, and pagination
 
 **Returns:**
 
-`AdapterOperationResult`: Array of matching records with pagination info
+`AdapterOperationResult`: Object with `records` (array of { id, data, createdAt, updatedAt }) and `pagination` ({ totalCount, limit, offset, hasMore }). Each record's `data` field contains the flat object with your collection fields (e.g. { firstName: "Jane", email: "jane@example.com" })
 
 **Example:**
 
@@ -231,6 +232,39 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"data","method":"queryRecords","params":{"collection":"contacts"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "records": [
+    {
+      "id": "rec_abc123",
+      "data": {
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "email": "jane@example.com"
+      },
+      "createdAt": "2026-01-15T10:30:00Z"
+    },
+    {
+      "id": "rec_def456",
+      "data": {
+        "firstName": "John",
+        "lastName": "Smith",
+        "email": "john@example.com"
+      },
+      "createdAt": "2026-01-16T14:00:00Z"
+    }
+  ],
+  "pagination": {
+    "totalCount": 2,
+    "limit": 50,
+    "offset": 0,
+    "hasMore": false
+  }
+}
 ```
 
 ### `updateRecord`

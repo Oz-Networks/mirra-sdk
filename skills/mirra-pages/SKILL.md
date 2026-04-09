@@ -62,7 +62,8 @@ Create a new page with JSX code. The code is compiled to HTML with React, Tailwi
 
 - `path` (string, **required**): URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
 - `title` (string, **required**): Display title for the page
-- `code` (string, **required**): JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
+- `code` (string, *optional*): JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals. Required unless codePath is provided.
+- `codePath` (string, *optional*): Path to a JSX file in the workspace container (e.g., "/workspace/pages/dashboard.jsx"). If provided, code is read from this file. Optionally reads .meta.json from the same directory for title/visibility.
 - `description` (string, *optional*): Optional description of the page
 - `visibility` (string, *optional*): Page visibility: "private" (default) or "public"
 - `graphId` (string, *optional*): Optional graph ID for the page's data source (e.g. a group graph for memory queries). The page URL stays under the caller's personal subdomain. The caller must be a member of the target graph.
@@ -214,6 +215,7 @@ Replace the entire page code. Use editPage instead for small changes — it is m
 
 - `pageId` (string, **required**): The page ID to update
 - `code` (string, *optional*): New JSX source code
+- `codePath` (string, *optional*): Path to a JSX file in the workspace container. If provided, code is read from this file.
 - `title` (string, *optional*): New title
 - `description` (string, *optional*): New description
 

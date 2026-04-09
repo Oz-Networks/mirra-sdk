@@ -70,8 +70,9 @@ Create a flow (event-triggered or time-scheduled). This is the unified, simplifi
 
 - `title` (string, *optional*): Flow title. Required if providing inline code.
 - `description` (string, *optional*): Detailed description of what the flow does
-- `code` (string, *optional*): Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId.
-- `scriptId` (string, *optional*): ID of existing deployed script. Cannot use with code.
+- `code` (string, *optional*): Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId or path.
+- `path` (string, *optional*): Path to a script file in the workspace container (e.g., "/workspace/flows/handler.js"). If provided, code is read from this file. Optionally reads flow.json from the same directory for trigger config. Cannot use with code or scriptId.
+- `scriptId` (string, *optional*): ID of existing deployed script. Cannot use with code or path.
 - `schedule` (string, *optional*): Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone.
 - `eventType` (string, *optional*): Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead.
 - `eventFilter` (object, *optional*): Event filter for pre-filtering events before the script runs (evaluated in-memory, free).

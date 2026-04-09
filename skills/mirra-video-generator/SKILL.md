@@ -173,7 +173,8 @@ Render a video from custom Remotion React code. Write a React component using Re
 
 **Arguments:**
 
-- `code` (string, **required**): Remotion React JSX code defining a function App() component. No imports needed — all Remotion APIs are available as globals.
+- `code` (string, *optional*): Remotion React JSX code defining a function App() component. No imports needed — all Remotion APIs are available as globals. Required unless path is provided.
+- `path` (string, *optional*): Path to a JSX file in the workspace container (e.g., "/workspace/videos/my-video/App.jsx"). If provided, code is read from this file instead of the code parameter.
 - `codec` (string, *optional*): Video codec: h264 (default), h265, vp8, vp9
 - `width` (number, *optional*): Video width in pixels (default: 1080)
 - `height` (number, *optional*): Video height in pixels (default: 1080)
@@ -209,7 +210,8 @@ Render a single preview frame from custom Remotion React code. Returns almost in
 
 **Arguments:**
 
-- `code` (string, **required**): Remotion React JSX code defining a function App() component
+- `code` (string, *optional*): Remotion React JSX code defining a function App() component. Required unless path is provided.
+- `path` (string, *optional*): Path to a JSX file in the workspace container. If provided, code is read from this file instead of the code parameter.
 - `frame` (number, *optional*): Which frame to preview (default: 0). Use this to check different moments in the video.
 - `width` (number, *optional*): Preview width in pixels (default: 1080)
 - `height` (number, *optional*): Preview height in pixels (default: 1080)

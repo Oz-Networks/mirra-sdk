@@ -164,6 +164,7 @@ export interface DataDefineCollectionArgs {
   slug?: string; // URL-safe identifier (lowercase, underscores). Auto-generated from name if omitted.
   fields: any[]; // Array of field definitions. Each field has: name (string), type ("string"|"number"|"boolean"|"date"|"array"|"object"), required (boolean), description (optional string).
   description?: string; // Optional description of what this collection stores
+  path?: string; // Path to a JSON file in the workspace container (e.g., "/workspace/data/collections/contacts.schema.json"). If provided, reads { name, fields, description } from the file. Explicit args override file values.
 }
 export interface DataListCollectionsArgs {
   status?: string; // Filter by status: "active" (default) or "archived"
@@ -807,7 +808,8 @@ export interface ScriptsCreateScriptArgs {
   description?: string; // Description of what the script does
   runtime?: string; // Lambda runtime (default: nodejs18)
   config?: any; // Script configuration (timeout, memory, maxCostPerExecution, etc.)
-  code: string; // Initial JavaScript/TypeScript code for the script
+  code?: string; // Initial JavaScript/TypeScript code for the script. Required unless path is provided.
+  path?: string; // Path to a script file in the workspace container (e.g., "/workspace/scripts/handler.js"). If provided, code is read from this file. Optionally reads mirra.json from the same directory for config.
 }
 export interface ScriptsDeleteScriptArgs {
   scriptId: string; // ID of the script to delete
@@ -1126,7 +1128,8 @@ export interface ObservabilityGetTraceArgs {
 export interface PagesCreatePageArgs {
   path: string; // URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
   title: string; // Display title for the page
-  code: string; // JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
+  code?: string; // JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals. Required unless codePath is provided.
+  codePath?: string; // Path to a JSX file in the workspace container (e.g., "/workspace/pages/dashboard.jsx"). If provided, code is read from this file. Optionally reads .meta.json from the same directory for title/visibility.
   description?: string; // Optional description of the page
   visibility?: string; // Page visibility: "private" (default) or "public"
   graphId?: string; // Optional graph ID for the page's data source (e.g. a group graph for memory queries). The page URL stays under the caller's personal subdomain. The caller must be a member of the target graph.
@@ -1157,6 +1160,7 @@ export interface PagesEditPageArgs {
 export interface PagesUpdatePageArgs {
   pageId: string; // The page ID to update
   code?: string; // New JSX source code
+  codePath?: string; // Path to a JSX file in the workspace container. If provided, code is read from this file.
   title?: string; // New title
   description?: string; // New description
 }
@@ -1758,7 +1762,8 @@ export interface VideoGeneratorGetRenderStatusArgs {
   renderId: string; // Render ID from renderVideo response
 }
 export interface VideoGeneratorRenderCustomVideoArgs {
-  code: string; // Remotion React JSX code defining a function App() component. No imports needed — all Remotion APIs are available as globals.
+  code?: string; // Remotion React JSX code defining a function App() component. No imports needed — all Remotion APIs are available as globals. Required unless path is provided.
+  path?: string; // Path to a JSX file in the workspace container (e.g., "/workspace/videos/my-video/App.jsx"). If provided, code is read from this file instead of the code parameter.
   codec?: string; // Video codec: h264 (default), h265, vp8, vp9
   width?: number; // Video width in pixels (default: 1080)
   height?: number; // Video height in pixels (default: 1080)
@@ -1766,7 +1771,8 @@ export interface VideoGeneratorRenderCustomVideoArgs {
   durationInFrames?: number; // Total duration in frames (default: 300 = 10s at 30fps)
 }
 export interface VideoGeneratorPreviewFrameArgs {
-  code: string; // Remotion React JSX code defining a function App() component
+  code?: string; // Remotion React JSX code defining a function App() component. Required unless path is provided.
+  path?: string; // Path to a JSX file in the workspace container. If provided, code is read from this file instead of the code parameter.
   frame?: number; // Which frame to preview (default: 0). Use this to check different moments in the video.
   width?: number; // Preview width in pixels (default: 1080)
   height?: number; // Preview height in pixels (default: 1080)
@@ -1811,12 +1817,20 @@ export interface VoiceGetActiveCallArgs {
   groupId?: string; // Check for an active call in a specific group. Provide either chatInstanceId or groupId.
 }
 
+// Workspace Adapter Types
+export interface WorkspaceExecArgs {
+  command: string; // Bash command to execute (e.g., "ls /workspace/scripts", "cat > /workspace/scripts/handler.js << 'EOF'\n...\nEOF")
+  timeout?: number; // Timeout in milliseconds (default: 60000, max: 300000)
+  cwd?: string; // Working directory inside the container (default: /workspace)
+}
+
 // Flows Adapter Types
 export interface FlowsCreateFlowArgs {
   title?: string; // Flow title. Required if providing inline code.
   description?: string; // Detailed description of what the flow does
-  code?: string; // Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId.
-  scriptId?: string; // ID of existing deployed script. Cannot use with code.
+  code?: string; // Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId or path.
+  path?: string; // Path to a script file in the workspace container (e.g., "/workspace/flows/handler.js"). If provided, code is read from this file. Optionally reads flow.json from the same directory for trigger config. Cannot use with code or scriptId.
+  scriptId?: string; // ID of existing deployed script. Cannot use with code or path.
   schedule?: string; // Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone.
   eventType?: string; // Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead.
   eventFilter?: any; // Event filter for pre-filtering events before the script runs (evaluated in-memory, free). SIMPLE FORMAT (recommended): Pass a flat object with "when" set to the event type, then field aliases as keys. { "when": "telegram.bot_message", "chat_id": "-1001234567890", "message_text_contains": "urgent" } Add _contains, _gt, _lt, _not, _starts_with, _ends_with, _matches, _in suffixes for non-equals operators. Default operator is equals when no suffix is given. Arrays auto-detect as "in" operator. VALID FIELD ALIASES per event type (use these — do NOT use event.data.* paths here): telegram.bot_message: chat_id, chat_type, sender_username, sender_user_id, message_text, bot_username, has_media, media_type telegram.bot_command: command, chat_id, chat_type, sender_username, sender_user_id, bot_username telegram.bot_callback_query: chat_id, callback_data, sender_username, bot_username telegram.message: chat_id, is_group_chat, has_media, message_text gmail.email_received: from_email, from_name, subject, has_attachments, is_unread, body_text call.ended: duration_seconds, was_recorded, scope crypto_price_update: price_usd, token_address, chain recording.transcribed: duration_seconds, speaker_count, transcript_text flow.complete: flow_title, flow_success, flow_type All event types: event_type, sender_name, sender_id, content_text, channel_id, channel_name ADVANCED FORMAT (full condition tree — for OR logic, regex, or nested conditions): { "operator": "or", "conditions": [ { "operator": "equals", "field": "bot.chatId", "value": "123" }, { "operator": "equals", "field": "bot.chatId", "value": "456" } ]} Valid operators: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, in, notIn, exists, notExists, matchesRegex, and, or, not
@@ -6716,6 +6730,16 @@ export interface VideoPreviewFrameData {
 
 export type VideoGeneratorPreviewFrameResult = AdapterResultBase<VideoPreviewFrameData>;
 
+// Workspace Response Types
+export interface WorkspaceExecData {
+  stdout: string; // Standard output from the command (max 1MB, truncated if larger)
+  stderr: string; // Standard error from the command (max 100KB, truncated if larger)
+  exitCode: number; // Exit code of the command (0 = success)
+  durationMs: number; // Execution time in milliseconds
+}
+
+export type WorkspaceExecResult = AdapterResultBase<WorkspaceExecData>;
+
 // Flows Response Types
 export interface FlowsCreateFlowData {
   id: string; // Flow ID
@@ -8137,6 +8161,7 @@ function createDataAdapter(sdk: MirraSDK) {
      * @param args.slug - URL-safe identifier (lowercase, underscores). Auto-generated from name if omitted. (optional)
      * @param args.fields - Array of field definitions. Each field has: name (string), type ("string"|"number"|"boolean"|"date"|"array"|"object"), required (boolean), description (optional string).
      * @param args.description - Optional description of what this collection stores (optional)
+     * @param args.path - Path to a JSON file in the workspace container (e.g., "/workspace/data/collections/contacts.schema.json"). If provided, reads { name, fields, description } from the file. Explicit args override file values. (optional)
      * @returns Promise<DataDefineCollectionData> Typed flat response with IDE autocomplete
      */
     defineCollection: async (args: DataDefineCollectionArgs): Promise<DataDefineCollectionData> => {
@@ -10041,7 +10066,8 @@ function createScriptsAdapter(sdk: MirraSDK) {
      * @param args.description - Description of what the script does (optional)
      * @param args.runtime - Lambda runtime (default: nodejs18) (optional)
      * @param args.config - Script configuration (timeout, memory, maxCostPerExecution, etc.) (optional)
-     * @param args.code - Initial JavaScript/TypeScript code for the script
+     * @param args.code - Initial JavaScript/TypeScript code for the script. Required unless path is provided. (optional)
+     * @param args.path - Path to a script file in the workspace container (e.g., "/workspace/scripts/handler.js"). If provided, code is read from this file. Optionally reads mirra.json from the same directory for config. (optional)
      * @returns Promise<ScriptCreateData> Typed flat response with IDE autocomplete
      */
     createScript: async (args: ScriptsCreateScriptArgs): Promise<ScriptCreateData> => {
@@ -11248,7 +11274,8 @@ function createPagesAdapter(sdk: MirraSDK) {
      * Create a new page with JSX code. The code is compiled to HTML with React, Tailwind CSS, Recharts, and Lucide icons available as globals. Define a top-level `function App()` component as the entry point. Do NOT use import/require statements — all libraries are pre-loaded via CDN. Use Recharts components directly (e.g. `<BarChart>`, `<ResponsiveContainer>`) and Lucide icons via `lucide.IconName`. STYLE — Every page includes the Mirra design system with pre-configured Tailwind theme. Use semantic theme tokens for automatic dark/light support: - Backgrounds: bg-m-bg (page), bg-m-surface (cards), bg-m-surface-alt (nested elements) - Text: text-m-text (primary), text-m-text-secondary, text-m-text-muted - Borders: border-m-border - Accent: text-m-accent-text, bg-m-accent, bg-m-accent-soft - Brand purple scale: bg-mirra-50 through bg-mirra-950 - Fonts: font-display (Syne — headings), font-body (Inter — content), font-mono (numbers/data) - Charts: use MIRRA_COLORS array for fills/strokes (8 brand-derived colors) Dark mode is the default. For light pages, add data-theme="light" to the root wrapper div. DO: Use generous padding (p-8 md:p-12), consistent gaps (gap-4 gap-6), subtle borders (border border-m-border) over heavy shadows, font-mono for numbers/stats, the m-* theme tokens for all colors. DO NOT: Use emoji as bullet points, add hover:scale on cards, use bg-slate/bg-gray (use m-* tokens), use multiple flashy gradients.
      * @param args.path - URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
      * @param args.title - Display title for the page
-     * @param args.code - JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals.
+     * @param args.code - JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals. Required unless codePath is provided. (optional)
+     * @param args.codePath - Path to a JSX file in the workspace container (e.g., "/workspace/pages/dashboard.jsx"). If provided, code is read from this file. Optionally reads .meta.json from the same directory for title/visibility. (optional)
      * @param args.description - Optional description of the page (optional)
      * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
      * @param args.graphId - Optional graph ID for the page's data source (e.g. a group graph for memory queries). The page URL stays under the caller's personal subdomain. The caller must be a member of the target graph. (optional)
@@ -11319,6 +11346,7 @@ function createPagesAdapter(sdk: MirraSDK) {
      * Replace the entire page code. Use editPage instead for small changes — it is more efficient. Only use updatePage when rewriting most of the page.
      * @param args.pageId - The page ID to update
      * @param args.code - New JSX source code (optional)
+     * @param args.codePath - Path to a JSX file in the workspace container. If provided, code is read from this file. (optional)
      * @param args.title - New title (optional)
      * @param args.description - New description (optional)
      * @returns Promise<PagesUpdatePageData> Typed flat response with IDE autocomplete
@@ -13234,7 +13262,8 @@ function createVideoGeneratorAdapter(sdk: MirraSDK) {
 
     /**
      * Render a video from custom Remotion React code. Write a React component using Remotion APIs (useCurrentFrame, interpolate, spring, AbsoluteFill, Sequence, etc.) and this operation compiles and renders it. Returns a renderId — poll getRenderStatus for completion. Available APIs: useCurrentFrame(), useVideoConfig(), interpolate(), interpolateColors(), spring(), Easing, random(), AbsoluteFill, Img, Sequence, Series, Loop, Audio, Video, IFrame. Code must define a function App() that returns JSX. No imports needed — all APIs are pre-injected. To add audio/music, use <Audio src="cdn_url" /> inside the component. To start audio at a specific point in the video, wrap it in <Sequence from={frameNumber}>. To skip the beginning of an audio file, use <Audio startFrom={frameNumber} />. The user can upload audio files (mp3, m4a, wav) and you will see the CDN URL as [Uploaded audio file: url] in the conversation.
-     * @param args.code - Remotion React JSX code defining a function App() component. No imports needed — all Remotion APIs are available as globals.
+     * @param args.code - Remotion React JSX code defining a function App() component. No imports needed — all Remotion APIs are available as globals. Required unless path is provided. (optional)
+     * @param args.path - Path to a JSX file in the workspace container (e.g., "/workspace/videos/my-video/App.jsx"). If provided, code is read from this file instead of the code parameter. (optional)
      * @param args.codec - Video codec: h264 (default), h265, vp8, vp9 (optional)
      * @param args.width - Video width in pixels (default: 1080) (optional)
      * @param args.height - Video height in pixels (default: 1080) (optional)
@@ -13252,7 +13281,8 @@ function createVideoGeneratorAdapter(sdk: MirraSDK) {
 
     /**
      * Render a single preview frame from custom Remotion React code. Returns almost instantly (~2-3s) with an image URL. Use this to iterate on video design before committing to a full render. Same code format as renderCustomVideo.
-     * @param args.code - Remotion React JSX code defining a function App() component
+     * @param args.code - Remotion React JSX code defining a function App() component. Required unless path is provided. (optional)
+     * @param args.path - Path to a JSX file in the workspace container. If provided, code is read from this file instead of the code parameter. (optional)
      * @param args.frame - Which frame to preview (default: 0). Use this to check different moments in the video. (optional)
      * @param args.width - Preview width in pixels (default: 1080) (optional)
      * @param args.height - Preview height in pixels (default: 1080) (optional)
@@ -13368,6 +13398,29 @@ function createVoiceAdapter(sdk: MirraSDK) {
 }
 
 /**
+ * Workspace Adapter
+ * Category: internal
+ */
+function createWorkspaceAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Execute a bash command in the group workspace container. The workspace is a persistent Docker container with a volume mounted at /workspace. Use this for file operations (read, write, list), installing packages, running builds, and preparing content for deployment via other adapters.
+     * @param args.command - Bash command to execute (e.g., "ls /workspace/scripts", "cat > /workspace/scripts/handler.js << 'EOF'\n...\nEOF")
+     * @param args.timeout - Timeout in milliseconds (default: 60000, max: 300000) (optional)
+     * @param args.cwd - Working directory inside the container (default: /workspace) (optional)
+     * @returns Promise<WorkspaceExecData> Typed flat response with IDE autocomplete
+     */
+    exec: async (args: WorkspaceExecArgs): Promise<WorkspaceExecData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'workspace',
+        method: 'exec',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
  * Flows Adapter
  * Category: internal
  */
@@ -13377,8 +13430,9 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * Create a flow (event-triggered or time-scheduled). This is the unified, simplified interface for flow creation. TRIGGER TYPE (provide exactly one): - schedule: Cron expression for time-based flows (e.g., "0 9 * * *"). Times are automatically in the user's local timezone. - eventType: Event type shorthand for event flows that process ALL events of that type (e.g., "telegram.message") - eventFilter: Full filter object for event flows that need pre-filtering (RECOMMENDED for most event flows) - webhook: Set to true to create a webhook-triggered flow. Returns a webhookUrl that external services POST to. - trigger: Legacy nested structure (still supported) EFFICIENCY RULE FOR EVENT FLOWS: Always filter in eventFilter conditions, NEVER in the script. - eventFilter conditions: FREE (evaluated in-memory before script runs) - Script filtering: EXPENSIVE (invokes Lambda for every single event, even ones you discard) BAD — triggers Lambda for every Telegram message, script checks if it's a command: { eventType: "telegram.message", code: "...if (!text.startsWith('/')) return { success: false, noOp: true, reason: 'Not a command' }..." } GOOD — only triggers Lambda when matching events (flat format): { eventFilter: { when: "telegram.bot_command", command: "/weather" }, code: "...handle the command..." } GOOD — condition tree format (for advanced OR/regex logic): { eventFilter: { operator: "and", conditions: [ { operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" } ]}, code: "...handle the command..." } Use eventType ONLY when you want to process every single event of that type. Use eventFilter when you need to react to a subset of events (specific sender, content pattern, etc.). VALID FILTER OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, in, notIn, exists, notExists, matchesRegex, and, or, not SCRIPT (provide exactly one): - code: Inline script code - will auto-create, deploy, and link the script - scriptId: ID of an existing deployed script EXAMPLES: Time flow with inline code: { title: "Daily Report", schedule: "0 9 * * *", code: "export async function handler(event, context, mirra) { await mirra.telegram.sendMessage({...}); return { done: true }; }" } Event flow — process ALL messages (only if you truly need every message): { title: "Message Logger", eventType: "telegram.message", code: "export async function handler(event, context, mirra) { console.log(event.fields.content_text); return { logged: true }; }" } Event flow — flat format (PREFERRED for most event flows): { title: "Bot Command Handler", eventFilter: { when: "telegram.bot_command", command: "/start" }, code: "export async function handler(event, context, mirra) { const chatId = event.fields.chat_id; await mirra.telegramBot.replyToMessage({ chatId, text: 'Welcome!' }); return { handled: true }; }" } Event flow — condition tree format (for OR logic, regex, nested conditions): { title: "Command Handler", eventFilter: { operator: "and", conditions: [ { operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" } ]}, code: "export async function handler(event, context, mirra) { const cmd = event.fields.message_text.split(' ')[0]; return { command: cmd }; }" } Event flow with existing script: { eventType: "gmail.email_received", scriptId: "existing-script-id" } HANDLER RETURN VALUES: The handler's return object controls how the flow executor records the result: Success — work was done: return { success: true, ...data } No-Op — nothing to do (not an error): return { success: false, noOp: true, reason: "No transcript available" } Use for unavoidable cases where the handler has no work (e.g., time-based flow finds no new data, external API returned empty results). No-ops are recorded as successful executions and do NOT count toward the 3-consecutive-failure auto-pause threshold. WARNING: If your event flow returns noOp frequently, your eventFilter is too broad. Move the filtering logic into eventFilter conditions instead of checking inside the script. Failure — something went wrong: return { success: false, reason: "What went wrong" } Use for actual errors. 3 consecutive failures will auto-pause the flow. HANDLER EVENT DATA ACCESS: PREFERRED — event.fields.* (same alias names as eventFilter): Scripts can access event.fields.* using the SAME names as eventFilter conditions. This means the LLM uses one vocabulary for both filters and handler code. Examples: event.fields.chat_id, event.fields.message_text, event.fields.sender_username, event.fields.content_text, event.fields.subject, event.fields.price_usd ADVANCED — event.data.* (normalized fields, all event types): - event.data.text (string) — message/content text - event.data.sender (string) — sender name - event.data.senderId (string) — sender ID - event.data.timestamp (Date) — event timestamp - event.data.event (IntegrationEvent) — full event for fields without aliases For fields with NO alias (e.g., messageId, callbackQueryId, entities), use event.data.bot.* or event.data.event.*: - Telegram Bot: event.data.bot.messageId, .callbackQueryId, .entities - Calls: event.data.event.call.participants, .recentTranscripts DO NOT use "event.data.*" paths in eventFilter — those are script-only. DO NOT access platform fields at top level — event.data.chat, event.data.botUsername DO NOT exist. LOOP PREVENTION: Flows have built-in loop prevention. When a flow sends a message (e.g. via Telegram), the resulting event is tagged with the originating flow ID so it won't re-trigger the same flow. A circuit breaker also auto-pauses flows that fire too rapidly (10+ times in 60s).
      * @param args.title - Flow title. Required if providing inline code. (optional)
      * @param args.description - Detailed description of what the flow does (optional)
-     * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId. (optional)
-     * @param args.scriptId - ID of existing deployed script. Cannot use with code. (optional)
+     * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId or path. (optional)
+     * @param args.path - Path to a script file in the workspace container (e.g., "/workspace/flows/handler.js"). If provided, code is read from this file. Optionally reads flow.json from the same directory for trigger config. Cannot use with code or scriptId. (optional)
+     * @param args.scriptId - ID of existing deployed script. Cannot use with code or path. (optional)
      * @param args.schedule - Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone. (optional)
      * @param args.eventType - Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead. (optional)
      * @param args.eventFilter - Event filter for pre-filtering events before the script runs (evaluated in-memory, free). SIMPLE FORMAT (recommended): Pass a flat object with "when" set to the event type, then field aliases as keys. { "when": "telegram.bot_message", "chat_id": "-1001234567890", "message_text_contains": "urgent" } Add _contains, _gt, _lt, _not, _starts_with, _ends_with, _matches, _in suffixes for non-equals operators. Default operator is equals when no suffix is given. Arrays auto-detect as "in" operator. VALID FIELD ALIASES per event type (use these — do NOT use event.data.* paths here): telegram.bot_message: chat_id, chat_type, sender_username, sender_user_id, message_text, bot_username, has_media, media_type telegram.bot_command: command, chat_id, chat_type, sender_username, sender_user_id, bot_username telegram.bot_callback_query: chat_id, callback_data, sender_username, bot_username telegram.message: chat_id, is_group_chat, has_media, message_text gmail.email_received: from_email, from_name, subject, has_attachments, is_unread, body_text call.ended: duration_seconds, was_recorded, scope crypto_price_update: price_usd, token_address, chain recording.transcribed: duration_seconds, speaker_count, transcript_text flow.complete: flow_title, flow_success, flow_type All event types: event_type, sender_name, sender_id, content_text, channel_id, channel_name ADVANCED FORMAT (full condition tree — for OR logic, regex, or nested conditions): { "operator": "or", "conditions": [ { "operator": "equals", "field": "bot.chatId", "value": "123" }, { "operator": "equals", "field": "bot.chatId", "value": "456" } ]} Valid operators: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, in, notIn, exists, notExists, matchesRegex, and, or, not (optional)
@@ -14548,6 +14602,7 @@ export const generatedAdapters = {
   twitter: createTwitterAdapter,
   videoGenerator: createVideoGeneratorAdapter,
   voice: createVoiceAdapter,
+  workspace: createWorkspaceAdapter,
   flows: createFlowsAdapter,
   user: createUserAdapter,
   contacts: createContactsAdapter,

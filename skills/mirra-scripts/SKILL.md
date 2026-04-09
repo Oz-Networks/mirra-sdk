@@ -72,7 +72,8 @@ Create a new script with initial version and API key. Returns flat structure wit
 - `description` (string, *optional*): Description of what the script does
 - `runtime` (string, *optional*): Lambda runtime (default: nodejs18)
 - `config` (object, *optional*): Script configuration (timeout, memory, maxCostPerExecution, etc.)
-- `code` (string, **required**): Initial JavaScript/TypeScript code for the script
+- `code` (string, *optional*): Initial JavaScript/TypeScript code for the script. Required unless path is provided.
+- `path` (string, *optional*): Path to a script file in the workspace container (e.g., "/workspace/scripts/handler.js"). If provided, code is read from this file. Optionally reads mirra.json from the same directory for config.
 
 **Returns:**
 

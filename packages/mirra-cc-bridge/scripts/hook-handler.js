@@ -12240,14 +12240,38 @@ var require_axios = __commonJS({
       return parsed;
     };
     var $internals = Symbol("internals");
+    var isValidHeaderValue = (value) => !/[\r\n]/.test(value);
+    function assertValidHeaderValue(value, header) {
+      if (value === false || value == null) {
+        return;
+      }
+      if (utils$1.isArray(value)) {
+        value.forEach((v) => assertValidHeaderValue(v, header));
+        return;
+      }
+      if (!isValidHeaderValue(String(value))) {
+        throw new Error(`Invalid character in header content ["${header}"]`);
+      }
+    }
     function normalizeHeader(header) {
       return header && String(header).trim().toLowerCase();
+    }
+    function stripTrailingCRLF(str) {
+      let end = str.length;
+      while (end > 0) {
+        const charCode = str.charCodeAt(end - 1);
+        if (charCode !== 10 && charCode !== 13) {
+          break;
+        }
+        end -= 1;
+      }
+      return end === str.length ? str : str.slice(0, end);
     }
     function normalizeValue(value) {
       if (value === false || value == null) {
         return value;
       }
-      return utils$1.isArray(value) ? value.map(normalizeValue) : String(value).replace(/[\r\n]+$/, "");
+      return utils$1.isArray(value) ? value.map(normalizeValue) : stripTrailingCRLF(String(value));
     }
     function parseTokens(str) {
       const tokens = /* @__PURE__ */ Object.create(null);
@@ -12303,6 +12327,7 @@ var require_axios = __commonJS({
           }
           const key = utils$1.findKey(self2, lHeader);
           if (!key || self2[key] === void 0 || _rewrite === true || _rewrite === void 0 && self2[key] !== false) {
+            assertValidHeaderValue(_value, _header);
             self2[key || _header] = normalizeValue(_value);
           }
         }
@@ -12521,7 +12546,7 @@ var require_axios = __commonJS({
       }
       return requestedURL;
     }
-    var DEFAULT_PORTS = {
+    var DEFAULT_PORTS$1 = {
       ftp: 21,
       gopher: 70,
       http: 80,
@@ -12546,7 +12571,7 @@ var require_axios = __commonJS({
       }
       proto = proto.split(":", 1)[0];
       hostname = hostname.replace(/:\d*$/, "");
-      port = parseInt(port) || DEFAULT_PORTS[proto] || 0;
+      port = parseInt(port) || DEFAULT_PORTS$1[proto] || 0;
       if (!shouldProxy(hostname, port)) {
         return "";
       }
@@ -12586,7 +12611,7 @@ var require_axios = __commonJS({
     function getEnv(key) {
       return process.env[key.toLowerCase()] || process.env[key.toUpperCase()] || "";
     }
-    var VERSION = "1.14.0";
+    var VERSION = "1.15.0";
     function parseProtocol(url2) {
       const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url2);
       return match && match[1] || "";
@@ -12855,6 +12880,81 @@ var require_axios = __commonJS({
         }, cb);
       } : fn;
     };
+    var DEFAULT_PORTS = {
+      http: 80,
+      https: 443,
+      ws: 80,
+      wss: 443,
+      ftp: 21
+    };
+    var parseNoProxyEntry = (entry) => {
+      let entryHost = entry;
+      let entryPort = 0;
+      if (entryHost.charAt(0) === "[") {
+        const bracketIndex = entryHost.indexOf("]");
+        if (bracketIndex !== -1) {
+          const host = entryHost.slice(1, bracketIndex);
+          const rest = entryHost.slice(bracketIndex + 1);
+          if (rest.charAt(0) === ":" && /^\d+$/.test(rest.slice(1))) {
+            entryPort = Number.parseInt(rest.slice(1), 10);
+          }
+          return [host, entryPort];
+        }
+      }
+      const firstColon = entryHost.indexOf(":");
+      const lastColon = entryHost.lastIndexOf(":");
+      if (firstColon !== -1 && firstColon === lastColon && /^\d+$/.test(entryHost.slice(lastColon + 1))) {
+        entryPort = Number.parseInt(entryHost.slice(lastColon + 1), 10);
+        entryHost = entryHost.slice(0, lastColon);
+      }
+      return [entryHost, entryPort];
+    };
+    var normalizeNoProxyHost = (hostname) => {
+      if (!hostname) {
+        return hostname;
+      }
+      if (hostname.charAt(0) === "[" && hostname.charAt(hostname.length - 1) === "]") {
+        hostname = hostname.slice(1, -1);
+      }
+      return hostname.replace(/\.+$/, "");
+    };
+    function shouldBypassProxy(location) {
+      let parsed;
+      try {
+        parsed = new URL(location);
+      } catch (_err) {
+        return false;
+      }
+      const noProxy = (process.env.no_proxy || process.env.NO_PROXY || "").toLowerCase();
+      if (!noProxy) {
+        return false;
+      }
+      if (noProxy === "*") {
+        return true;
+      }
+      const port = Number.parseInt(parsed.port, 10) || DEFAULT_PORTS[parsed.protocol.split(":", 1)[0]] || 0;
+      const hostname = normalizeNoProxyHost(parsed.hostname.toLowerCase());
+      return noProxy.split(/[\s,]+/).some((entry) => {
+        if (!entry) {
+          return false;
+        }
+        let [entryHost, entryPort] = parseNoProxyEntry(entry);
+        entryHost = normalizeNoProxyHost(entryHost);
+        if (!entryHost) {
+          return false;
+        }
+        if (entryPort && entryPort !== port) {
+          return false;
+        }
+        if (entryHost.charAt(0) === "*") {
+          entryHost = entryHost.slice(1);
+        }
+        if (entryHost.charAt(0) === ".") {
+          return hostname.endsWith(entryHost);
+        }
+        return hostname === entryHost;
+      });
+    }
     function speedometer(samplesCount, min) {
       samplesCount = samplesCount || 10;
       const bytes = new Array(samplesCount);
@@ -13108,7 +13208,9 @@ var require_axios = __commonJS({
       if (!proxy && proxy !== false) {
         const proxyUrl = getProxyForUrl(location);
         if (proxyUrl) {
-          proxy = new URL(proxyUrl);
+          if (!shouldBypassProxy(location)) {
+            proxy = new URL(proxyUrl);
+          }
         }
       }
       if (proxy) {
@@ -14420,12 +14522,23 @@ var require_axios = __commonJS({
           if (err instanceof Error) {
             let dummy = {};
             Error.captureStackTrace ? Error.captureStackTrace(dummy) : dummy = new Error();
-            const stack = dummy.stack ? dummy.stack.replace(/^.+\n/, "") : "";
+            const stack = (() => {
+              if (!dummy.stack) {
+                return "";
+              }
+              const firstNewlineIndex = dummy.stack.indexOf("\n");
+              return firstNewlineIndex === -1 ? "" : dummy.stack.slice(firstNewlineIndex + 1);
+            })();
             try {
               if (!err.stack) {
                 err.stack = stack;
-              } else if (stack && !String(err.stack).endsWith(stack.replace(/^.+\n.+\n/, ""))) {
-                err.stack += "\n" + stack;
+              } else if (stack) {
+                const firstNewlineIndex = stack.indexOf("\n");
+                const secondNewlineIndex = firstNewlineIndex === -1 ? -1 : stack.indexOf("\n", firstNewlineIndex + 1);
+                const stackWithoutTwoTopLines = secondNewlineIndex === -1 ? "" : stack.slice(secondNewlineIndex + 1);
+                if (!String(err.stack).endsWith(stackWithoutTwoTopLines)) {
+                  err.stack += "\n" + stack;
+                }
               }
             } catch (e) {
             }
@@ -18823,5 +18936,5 @@ mime-types/index.js:
    *)
 
 axios/dist/node/axios.cjs:
-  (*! Axios v1.14.0 Copyright (c) 2026 Matt Zabriskie and contributors *)
+  (*! Axios v1.15.0 Copyright (c) 2026 Matt Zabriskie and contributors *)
 */
