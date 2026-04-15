@@ -61,7 +61,7 @@ Create a new page with JSX code. The code is compiled to HTML with React, Tailwi
 **Arguments:**
 
 - `path` (string, **required**): URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
-- `title` (string, **required**): Display title for the page
+- `title` (string, *optional*): Display title for the page. Required unless codePath is provided (can be read from .meta.json).
 - `code` (string, *optional*): JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals. Required unless codePath is provided.
 - `codePath` (string, *optional*): Path to a JSX file in the workspace container (e.g., "/workspace/pages/dashboard.jsx"). If provided, code is read from this file. Optionally reads .meta.json from the same directory for title/visibility.
 - `description` (string, *optional*): Optional description of the page

@@ -113,7 +113,7 @@ Start rendering a video using a template and input props. Returns immediately wi
 
 **Returns:**
 
-`AdapterOperationResult`: Returns { renderId, status: "rendering", templateId, message }. Poll getRenderStatus with the renderId to check progress.
+`AdapterOperationResult`: Returns ONLY { renderId, status: "rendering", templateId, message }. There is NO videoUrl on this response — videoUrl only appears on the getRenderStatus response once status === "completed". Poll by calling getRenderStatus({ renderId }) as a separate tool call between turns; do not poll inside execute_code (sandbox has no setTimeout and a 30s cap).
 
 **Example:**
 
@@ -183,7 +183,7 @@ Render a video from custom Remotion React code. Write a React component using Re
 
 **Returns:**
 
-`AdapterOperationResult`: Returns { renderId, status: "rendering", message }. Poll getRenderStatus with the renderId to check progress.
+`AdapterOperationResult`: Returns ONLY { renderId, status: "rendering", message }. There is NO videoUrl and NO sizeInBytes on this response — videoUrl only appears on the getRenderStatus response once status === "completed". Poll by calling getRenderStatus({ renderId }) as a separate tool call between turns; do not poll inside execute_code (sandbox has no setTimeout and a 30s cap, while renders take 2-3 minutes).
 
 **Example:**
 
@@ -220,7 +220,7 @@ Render a single preview frame from custom Remotion React code. Returns almost in
 
 **Returns:**
 
-`AdapterOperationResult`: Returns { imageUrl, frame, width, height }. Show the image to the user for feedback before rendering the full video.
+`AdapterOperationResult`: Returns { imageUrl, frame, width, height }. The image field is imageUrl (NOT url). Show response.imageUrl to the user for feedback before rendering the full video.
 
 **Example:**
 
