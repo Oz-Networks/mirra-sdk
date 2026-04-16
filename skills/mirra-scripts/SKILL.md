@@ -85,7 +85,7 @@ Create a new script with initial version and API key. Returns flat structure wit
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"scripts","method":"createScript","params":{"name":"Daily Report","description":"Sends a daily summary report","code":"export async function handler(event) { return { message: \"Report sent\" }; }"}}' | jq .
+  -d '{"resourceId":"scripts","method":"createScript","params":{"name":"Daily Report","description":"Sends a daily summary report","path":"/workspace/scripts/daily-report.js"}}' | jq .
 ```
 
 **Example response:**

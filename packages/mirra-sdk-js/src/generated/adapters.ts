@@ -1877,7 +1877,8 @@ export interface FlowsUpdateFlowArgs {
 }
 export interface FlowsModifyFlowScriptArgs {
   flowId: string; // Flow ID to modify (24-character hex string)
-  newCode: string; // New handler code. Must include export async function handler(event, context, mirra) wrapper.
+  newCode?: string; // New handler code. Must include export async function handler(event, context, mirra) wrapper. Required unless path is provided.
+  path?: string; // Path to a script file in the workspace container (e.g., "/workspace/flows/my-handler/handler.js"). If provided, code is read from this file instead of newCode.
   commitMessage?: string; // Description of changes (optional)
 }
 export interface FlowsReadFlowScriptArgs {
@@ -13529,7 +13530,8 @@ function createFlowsAdapter(sdk: MirraSDK) {
     /**
      * Replace the ENTIRE script code for a flow. For small changes, prefer editFlowScript instead — it only requires the changed portions. Use modifyFlowScript only when rewriting more than ~50% of the code or creating a script from scratch.
      * @param args.flowId - Flow ID to modify (24-character hex string)
-     * @param args.newCode - New handler code. Must include export async function handler(event, context, mirra) wrapper.
+     * @param args.newCode - New handler code. Must include export async function handler(event, context, mirra) wrapper. Required unless path is provided. (optional)
+     * @param args.path - Path to a script file in the workspace container (e.g., "/workspace/flows/my-handler/handler.js"). If provided, code is read from this file instead of newCode. (optional)
      * @param args.commitMessage - Description of changes (optional) (optional)
      */
     modifyFlowScript: async (args: FlowsModifyFlowScriptArgs): Promise<any> => {

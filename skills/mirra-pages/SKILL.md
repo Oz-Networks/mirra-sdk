@@ -78,7 +78,7 @@ Create a new page with JSX code. The code is compiled to HTML with React, Tailwi
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"pages","method":"createPage","params":{"path":"/sales-dashboard","title":"Sales Dashboard","code":"function App() {\n  const data = [\n    { month: 'Jan', revenue: 4000, orders: 240 },\n    { month: 'Feb', revenue: 3000, orders: 198 },\n    { month: 'Mar', revenue: 5000, orders: 305 },\n    { month: 'Apr', revenue: 4500, orders: 278 },\n    { month: 'May', revenue: 6000, orders: 389 },\n    { month: 'Jun', revenue: 5500, orders: 342 }\n  ];\n\n  return (\n    <div className=\"min-h-screen p-8 md:p-12\">\n      <h1 className=\"mb-2\">Sales Dashboard</h1>\n      <p className=\"text-m-text-secondary mb-8\">Revenue and order tracking</p>\n      <div className=\"bg-m-surface border border-m-border rounded-xl p-6\">\n        <h3 className=\"mb-4\">Monthly Revenue</h3>\n        <ResponsiveContainer width=\"100%\" height={400}>\n          <LineChart data={data}>\n            <CartesianGrid strokeDasharray=\"3 3\" stroke=\"var(--m-border)\" />\n            <XAxis dataKey=\"month\" stroke=\"var(--m-text-muted)\" />\n            <YAxis stroke=\"var(--m-text-muted)\" />\n            <Tooltip />\n            <Line type=\"monotone\" dataKey=\"revenue\" stroke={MIRRA_COLORS[0]} strokeWidth={2} dot={false} />\n            <Line type=\"monotone\" dataKey=\"orders\" stroke={MIRRA_COLORS[1]} strokeWidth={2} dot={false} />\n          </LineChart>\n        </ResponsiveContainer>\n      </div>\n    </div>\n  );\n}"}}' | jq .
+  -d '{"resourceId":"pages","method":"createPage","params":{"path":"/sales-dashboard","codePath":"/workspace/pages/sales-dashboard.jsx"}}' | jq .
 ```
 
 ### `createReportPage`
@@ -229,7 +229,7 @@ Replace the entire page code. Use editPage instead for small changes — it is m
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"pages","method":"updatePage","params":{"pageId":"6650abcd1234ef5678901234","code":"function App() {\n  return <div className=\"p-8\"><h1 className=\"text-2xl font-bold\">Updated Page</h1></div>;\n}"}}' | jq .
+  -d '{"resourceId":"pages","method":"updatePage","params":{"pageId":"6650abcd1234ef5678901234","codePath":"/workspace/pages/my-page.jsx"}}' | jq .
 ```
 
 ### `revertPage`

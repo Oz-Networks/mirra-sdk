@@ -119,7 +119,7 @@ Valid operators: equals, notEquals, contains, startsWith, endsWith, greaterThan,
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"flows","method":"createFlow","params":{"title":"Weather Command","eventFilter":{"when":"telegram.bot_command","command":"/weather"},"code":"export async function handler(event, context, mirra) { const chatId = event.fields.chat_id; const messageId = event.data.bot.messageId; await mirra.telegramBot.replyToMessage({ chatId, replyToMessageId: messageId, text: \"Checking weather...\" }); return { handled: true }; }"}}' | jq .
+  -d '{"resourceId":"flows","method":"createFlow","params":{"path":"/workspace/flows/weather-bot/handler.js"}}' | jq .
 ```
 
 ### `createTimeFlow`
@@ -235,7 +235,8 @@ Replace the ENTIRE script code for a flow. For small changes, prefer editFlowScr
 **Arguments:**
 
 - `flowId` (string, **required**): Flow ID to modify (24-character hex string)
-- `newCode` (string, **required**): New handler code. Must include export async function handler(event, context, mirra) wrapper.
+- `newCode` (string, *optional*): New handler code. Must include export async function handler(event, context, mirra) wrapper. Required unless path is provided.
+- `path` (string, *optional*): Path to a script file in the workspace container (e.g., "/workspace/flows/my-handler/handler.js"). If provided, code is read from this file instead of newCode.
 - `commitMessage` (string, *optional*): Description of changes (optional)
 
 **Returns:**
@@ -248,7 +249,7 @@ Replace the ENTIRE script code for a flow. For small changes, prefer editFlowScr
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"flows","method":"modifyFlowScript","params":{"flowId":"507f1f77bcf86cd799439011","newCode":"export async function handler(event, context, mirra) { /* modified */ }","commitMessage":"Filter by current user only"}}' | jq .
+  -d '{"resourceId":"flows","method":"modifyFlowScript","params":{"flowId":"507f1f77bcf86cd799439011","path":"/workspace/flows/my-handler/handler.js","commitMessage":"Rewrite handler to filter by current user only"}}' | jq .
 ```
 
 **Example response:**

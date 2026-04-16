@@ -191,7 +191,7 @@ Render a video from custom Remotion React code. Write a React component using Re
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"video-generator","method":"renderCustomVideo","params":{"code":"function App() {\n  const frame = useCurrentFrame();\n  const { fps } = useVideoConfig();\n  const opacity = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: 'clamp' });\n  const scale = spring({ frame, fps, config: { damping: 12 } });\n  return (\n    <AbsoluteFill style={{ backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' }}>\n      <h1 style={{ color: 'white', fontSize: 72, opacity, transform: `scale(${scale})` }}>\n        Hello World\n      </h1>\n    </AbsoluteFill>\n  );\n}","width":1920,"height":1080,"durationInFrames":150}}' | jq .
+  -d '{"resourceId":"video-generator","method":"renderCustomVideo","params":{"path":"/workspace/videos/animated-title/App.jsx","width":1920,"height":1080,"durationInFrames":150}}' | jq .
 ```
 
 **Example response:**
@@ -228,7 +228,7 @@ Render a single preview frame from custom Remotion React code. Returns almost in
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"video-generator","method":"previewFrame","params":{"code":"function App() {\n  const frame = useCurrentFrame();\n  const opacity = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: 'clamp' });\n  return (\n    <AbsoluteFill style={{ backgroundColor: '#1a1a2e', justifyContent: 'center', alignItems: 'center' }}>\n      <h1 style={{ color: 'white', fontSize: 64, opacity }}>Preview Test</h1>\n    </AbsoluteFill>\n  );\n}","frame":45}}' | jq .
+  -d '{"resourceId":"video-generator","method":"previewFrame","params":{"path":"/workspace/videos/my-video/App.jsx","frame":45}}' | jq .
 ```
 
 **Example response:**
