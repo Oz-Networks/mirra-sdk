@@ -48,6 +48,8 @@ Replace `{operation}` with the operation name from the table below.
 | `queryRecords` | Query records from a collection with optional filtering, sorting, and pagination. Filters use Mon... |
 | `updateRecord` | Update a single record by its ID. Data is validated against the collection schema. |
 | `deleteRecord` | Delete a single record by its ID. Quota is decremented by the record size. |
+| `deleteRecords` | Bulk delete records by a list of IDs. Returns the count deleted, bytes freed, and any IDs that we... |
+| `deleteWhere` | Delete all records in a collection that match a filter. Filter must be non-empty — to clear an en... |
 | `aggregate` | Run aggregation on a collection. Supports sum, avg, count, min, max grouped by a field. |
 | `getQuotaUsage` | Get the current storage quota usage for this context. |
 
@@ -310,6 +312,50 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"data","method":"deleteRecord","params":{"collection":"contacts","recordId":"665a1b2c3d4e5f6789012345"}}' | jq .
+```
+
+### `deleteRecords`
+
+Bulk delete records by a list of IDs. Returns the count deleted, bytes freed, and any IDs that were not found. Prefer this over looping deleteRecord when removing multiple known records.
+
+**Arguments:**
+
+- `collection` (string, **required**): The collection slug
+- `recordIds` (array, **required**): Array of record _id values to delete (max 1000 per call)
+
+**Returns:**
+
+`AdapterOperationResult`: Deletion summary: deletedCount, freedBytes, missingIds
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"data","method":"deleteRecords","params":{"collection":"contacts","recordIds":["665a1b2c3d4e5f6789012345","665a1b2c3d4e5f6789012346","665a1b2c3d4e5f6789012347"]}}' | jq .
+```
+
+### `deleteWhere`
+
+Delete all records in a collection that match a filter. Filter must be non-empty — to clear an entire collection, use dropCollection instead. Supports the same filter syntax as queryRecords.
+
+**Arguments:**
+
+- `collection` (string, **required**): The collection slug
+- `filter` (object, **required**): Non-empty filter object. Same syntax as queryRecords.filter (e.g. { status: "archived" } or { createdAt: { $lt: "2025-01-01" } }).
+
+**Returns:**
+
+`AdapterOperationResult`: Deletion summary: deletedCount, freedBytes
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"data","method":"deleteWhere","params":{"collection":"tasks","filter":{"status":"archived"}}}' | jq .
 ```
 
 ### `aggregate`

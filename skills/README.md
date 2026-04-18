@@ -33,7 +33,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-ai`](./mirra-ai/) | AI Services | 4 | No |
 | [`mirra-claudeCode`](./mirra-claudeCode/) | Claude Code | 4 | No |
 | [`mirra-contacts`](./mirra-contacts/) | Contacts | 9 | No |
-| [`mirra-data`](./mirra-data/) | Data | 12 | No |
+| [`mirra-data`](./mirra-data/) | Data | 14 | No |
 | [`mirra-desktop`](./mirra-desktop/) | Desktop | 10 | No |
 | [`mirra-feed-items`](./mirra-feed-items/) | Feed Items | 1 | No |
 | [`mirra-feedback`](./mirra-feedback/) | Feedback | 5 | No |
@@ -109,7 +109,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 |-------|---------|------------|---------------|
 | [`mirra-google-ads`](./mirra-google-ads/) | Google Ads | 25 | Yes (OAuth) |
 
-**Total: 38 adapters, 428 operations**
+**Total: 38 adapters, 430 operations**
 
 ## How It Works
 

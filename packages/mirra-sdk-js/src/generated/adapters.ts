@@ -205,6 +205,14 @@ export interface DataDeleteRecordArgs {
   collection: string; // The collection slug
   recordId: string; // The record _id to delete
 }
+export interface DataDeleteRecordsArgs {
+  collection: string; // The collection slug
+  recordIds: any[]; // Array of record _id values to delete (max 1000 per call)
+}
+export interface DataDeleteWhereArgs {
+  collection: string; // The collection slug
+  filter: any; // Non-empty filter object. Same syntax as queryRecords.filter (e.g. { status: "archived" } or { createdAt: { $lt: "2025-01-01" } }).
+}
 export interface DataAggregateArgs {
   collection: string; // The collection slug
   groupBy?: string; // Field name to group by. Omit for overall aggregation.
@@ -2593,6 +2601,24 @@ export interface DataDeleteRecordData {
 }
 
 export type DataDeleteRecordResult = AdapterResultBase<DataDeleteRecordData>;
+
+export interface DataDeleteRecordsData {
+  deletedCount: number; // Number of records actually deleted
+  requestedCount: number; // Number of record IDs supplied
+  collection: string; // Collection slug
+  freedBytes: number; // Total bytes freed from quota
+  missingIds: any; // IDs that were not found (belong to another collection or already deleted)
+}
+
+export type DataDeleteRecordsResult = AdapterResultBase<DataDeleteRecordsData>;
+
+export interface DataDeleteWhereData {
+  deletedCount: number; // Number of records deleted by the filter
+  collection: string; // Collection slug
+  freedBytes: number; // Total bytes freed from quota
+}
+
+export type DataDeleteWhereResult = AdapterResultBase<DataDeleteWhereData>;
 
 export interface DataAggregateData {
   results: any; // Aggregation result rows, each containing groupBy key (if grouped) and metric values
@@ -8298,6 +8324,34 @@ function createDataAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'deleteRecord',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Bulk delete records by a list of IDs. Returns the count deleted, bytes freed, and any IDs that were not found. Prefer this over looping deleteRecord when removing multiple known records.
+     * @param args.collection - The collection slug
+     * @param args.recordIds - Array of record _id values to delete (max 1000 per call)
+     * @returns Promise<DataDeleteRecordsData> Typed flat response with IDE autocomplete
+     */
+    deleteRecords: async (args: DataDeleteRecordsArgs): Promise<DataDeleteRecordsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'data',
+        method: 'deleteRecords',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete all records in a collection that match a filter. Filter must be non-empty — to clear an entire collection, use dropCollection instead. Supports the same filter syntax as queryRecords.
+     * @param args.collection - The collection slug
+     * @param args.filter - Non-empty filter object. Same syntax as queryRecords.filter (e.g. { status: "archived" } or { createdAt: { $lt: "2025-01-01" } }).
+     * @returns Promise<DataDeleteWhereData> Typed flat response with IDE autocomplete
+     */
+    deleteWhere: async (args: DataDeleteWhereArgs): Promise<DataDeleteWhereData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'data',
+        method: 'deleteWhere',
         params: args || {}
       });
     },
