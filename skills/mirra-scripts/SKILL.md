@@ -272,7 +272,7 @@ Execute a deployed script with custom data. Script must be deployed first via de
 **Arguments:**
 
 - `scriptId` (string, **required**): ID of the script to execute (from createScript response at data.id)
-- `data` (object, *optional*): Input data to pass to the script
+- `data` (object, *optional*): Input data to pass to the script. Available inside the handler as `event.data` (also aliased to `event.input`, `event.body`, `event.payload`).
 - `trigger` (object, *optional*): Trigger information (type, source, event)
 
 **Returns:**

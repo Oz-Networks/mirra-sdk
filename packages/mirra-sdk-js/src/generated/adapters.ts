@@ -836,7 +836,7 @@ export interface ScriptsDeployScriptArgs {
 }
 export interface ScriptsExecuteScriptArgs {
   scriptId: string; // ID of the script to execute (from createScript response at data.id)
-  data?: any; // Input data to pass to the script
+  data?: any; // Input data to pass to the script. Available inside the handler as `event.data` (also aliased to `event.input`, `event.body`, `event.payload`).
   trigger?: any; // Trigger information (type, source, event)
 }
 export interface ScriptsGetScriptArgs {
@@ -10116,7 +10116,7 @@ function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
 function createScriptsAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new script with initial version and API key. Returns flat structure with id field for subsequent operations. HANDLER RETURN VALUES (when script is used in a flow): The handler's return object controls how the flow executor records the result: - Success: return { success: true, ...data } - No-Op (nothing to do, not an error): return { success: false, noOp: true, reason: "No input data" } No-ops are recorded as successful executions and do NOT count toward the auto-pause threshold. - Failure: return { success: false, reason: "What went wrong" } 3 consecutive failures will auto-pause the flow.
+     * Create a new script with initial version and API key. Returns flat structure with id field for subsequent operations. HANDLER SIGNATURE: export async function handler(event, context, mirra) { ... } READING INPUT (from executeScript's `data` arg, flow triggers, or webhooks): The caller's payload lands on `event.data`. Prefer that — e.g. `const { email } = event.data`. For compatibility, `event.input`, `event.body`, and `event.payload` are also aliased to the same object. The full event shape is: { data, fields, trigger, executionId, userId, scriptId, apiKey, groupId, scope, remainingBudget }. Example handler reading input: export async function handler(event, context, mirra) { const { email, name } = event.data; const user = await mirra.user.getByEmail({ email }); return { success: true, userId: user.id }; } HANDLER RETURN VALUES (when script is used in a flow): The handler's return object controls how the flow executor records the result: - Success: return { success: true, ...data } - No-Op (nothing to do, not an error): return { success: false, noOp: true, reason: "No input data" } No-ops are recorded as successful executions and do NOT count toward the auto-pause threshold. - Failure: return { success: false, reason: "What went wrong" } 3 consecutive failures will auto-pause the flow.
      * @param args.name - Name of the script
      * @param args.description - Description of what the script does (optional)
      * @param args.runtime - Lambda runtime (default: nodejs18) (optional)
@@ -10191,7 +10191,7 @@ function createScriptsAdapter(sdk: MirraSDK) {
     /**
      * Execute a deployed script with custom data. Script must be deployed first via deployScript. Returns flat execution result.
      * @param args.scriptId - ID of the script to execute (from createScript response at data.id)
-     * @param args.data - Input data to pass to the script (optional)
+     * @param args.data - Input data to pass to the script. Available inside the handler as `event.data` (also aliased to `event.input`, `event.body`, `event.payload`). (optional)
      * @param args.trigger - Trigger information (type, source, event) (optional)
      * @returns Promise<ScriptExecuteData> Typed flat response with IDE autocomplete
      */
