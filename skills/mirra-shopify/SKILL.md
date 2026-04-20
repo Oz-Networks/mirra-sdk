@@ -14,7 +14,7 @@ You need the user's **API key**. Ask for these if not provided:
 - `API_KEY`: Mirra API key (generated in Mirra app > Settings > API Keys)
 - `API_URL`: Defaults to `https://api.fxn.world` (only ask if they mention a custom server)
 
-> **Note:** Shopify requires OAuth authentication. The user must have connected their Shopify account in the Mirra app before these operations will work.
+> **Note:** Shopify requires a Mirra-connected store. In Mirra, open Settings → Integrations → Shopify and enter the shop domain plus the Client ID and Client Secret from a custom app built in the Shopify Dev Dashboard (dashboard.shopify.com). Mirra exchanges those credentials for a 24h Admin API token and refreshes automatically.
 
 ## API Call Pattern
 
