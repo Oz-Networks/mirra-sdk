@@ -25511,6 +25511,7 @@ var require_axios = __commonJS({
     var https = require("https");
     var http2 = require("http2");
     var util = require("util");
+    var path3 = require("path");
     var followRedirects = require_follow_redirects();
     var zlib = require("zlib");
     var stream = require("stream");
@@ -26039,9 +26040,9 @@ var require_axios = __commonJS({
     function removeBrackets(key) {
       return utils$1.endsWith(key, "[]") ? key.slice(0, -2) : key;
     }
-    function renderKey(path3, key, dots) {
-      if (!path3) return key;
-      return path3.concat(key).map(function each(token, i) {
+    function renderKey(path4, key, dots) {
+      if (!path4) return key;
+      return path4.concat(key).map(function each(token, i) {
         token = removeBrackets(token);
         return !dots && i ? "[" + token + "]" : token;
       }).join(dots ? "." : "");
@@ -26090,13 +26091,13 @@ var require_axios = __commonJS({
         }
         return value;
       }
-      function defaultVisitor(value, key, path3) {
+      function defaultVisitor(value, key, path4) {
         let arr = value;
         if (utils$1.isReactNative(formData) && utils$1.isReactNativeBlob(value)) {
-          formData.append(renderKey(path3, key, dots), convertValue(value));
+          formData.append(renderKey(path4, key, dots), convertValue(value));
           return false;
         }
-        if (value && !path3 && typeof value === "object") {
+        if (value && !path4 && typeof value === "object") {
           if (utils$1.endsWith(key, "{}")) {
             key = metaTokens ? key : key.slice(0, -2);
             value = JSON.stringify(value);
@@ -26115,7 +26116,7 @@ var require_axios = __commonJS({
         if (isVisitable(value)) {
           return true;
         }
-        formData.append(renderKey(path3, key, dots), convertValue(value));
+        formData.append(renderKey(path4, key, dots), convertValue(value));
         return false;
       }
       const stack = [];
@@ -26124,19 +26125,19 @@ var require_axios = __commonJS({
         convertValue,
         isVisitable
       });
-      function build(value, path3, depth = 0) {
+      function build(value, path4, depth = 0) {
         if (utils$1.isUndefined(value)) return;
         if (depth > maxDepth) {
           throw new AxiosError("Object is too deeply nested (" + depth + " levels). Max depth: " + maxDepth, AxiosError.ERR_FORM_DATA_DEPTH_EXCEEDED);
         }
         if (stack.indexOf(value) !== -1) {
-          throw Error("Circular reference detected in " + path3.join("."));
+          throw Error("Circular reference detected in " + path4.join("."));
         }
         stack.push(value);
         utils$1.forEach(value, function each(el, key) {
-          const result = !(utils$1.isUndefined(el) || el === null) && visitor.call(formData, el, utils$1.isString(key) ? key.trim() : key, path3, exposedHelpers);
+          const result = !(utils$1.isUndefined(el) || el === null) && visitor.call(formData, el, utils$1.isString(key) ? key.trim() : key, path4, exposedHelpers);
           if (result === true) {
-            build(el, path3 ? path3.concat(key) : [key], depth + 1);
+            build(el, path4 ? path4.concat(key) : [key], depth + 1);
           }
         });
         stack.pop();
@@ -26324,7 +26325,7 @@ var require_axios = __commonJS({
     };
     function toURLEncodedForm(data, options) {
       return toFormData(data, new platform.classes.URLSearchParams(), {
-        visitor: function(value, key, path3, helpers) {
+        visitor: function(value, key, path4, helpers) {
           if (platform.isNode && utils$1.isBuffer(value)) {
             this.append(key, value.toString("base64"));
             return false;
@@ -26352,11 +26353,11 @@ var require_axios = __commonJS({
       return obj;
     }
     function formDataToJSON(formData) {
-      function buildPath(path3, value, target, index) {
-        let name = path3[index++];
+      function buildPath(path4, value, target, index) {
+        let name = path4[index++];
         if (name === "__proto__") return true;
         const isNumericKey = Number.isFinite(+name);
-        const isLast = index >= path3.length;
+        const isLast = index >= path4.length;
         name = !name && utils$1.isArray(target) ? target.length : name;
         if (isLast) {
           if (utils$1.hasOwnProp(target, name)) {
@@ -26369,7 +26370,7 @@ var require_axios = __commonJS({
         if (!target[name] || !utils$1.isObject(target[name])) {
           target[name] = [];
         }
-        const result = buildPath(path3, value, target[name], index);
+        const result = buildPath(path4, value, target[name], index);
         if (result && utils$1.isArray(target[name])) {
           target[name] = arrayToObject(target[name]);
         }
@@ -26887,7 +26888,7 @@ var require_axios = __commonJS({
     function getEnv(key) {
       return process.env[key.toLowerCase()] || process.env[key.toUpperCase()] || "";
     }
-    var VERSION = "1.15.1";
+    var VERSION = "1.15.2";
     function parseProtocol(url2) {
       const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url2);
       return match && match[1] || "";
@@ -27424,6 +27425,8 @@ var require_axios = __commonJS({
       https: httpsFollow
     } = followRedirects;
     var isHttps = /https:?/;
+    var kAxiosSocketListener = Symbol("axios.http.socketListener");
+    var kAxiosCurrentReq = Symbol("axios.http.currentReq");
     var supportedProtocols = platform.protocols.map((protocol) => {
       return protocol + ":";
     });
@@ -27810,9 +27813,10 @@ var require_axios = __commonJS({
           onUploadProgress && data.on("progress", flushOnFinish(data, progressEventDecorator(contentLength, progressEventReducer(asyncDecorator(onUploadProgress), false, 3))));
         }
         let auth = void 0;
-        if (config.auth) {
-          const username = config.auth.username || "";
-          const password = config.auth.password || "";
+        const configAuth = own2("auth");
+        if (configAuth) {
+          const username = configAuth.username || "";
+          const password = configAuth.password || "";
           auth = username + ":" + password;
         }
         if (!auth && parsed.username) {
@@ -27821,9 +27825,9 @@ var require_axios = __commonJS({
           auth = urlUsername + ":" + urlPassword;
         }
         auth && headers.delete("authorization");
-        let path3;
+        let path$1;
         try {
-          path3 = buildURL(parsed.pathname + parsed.search, config.params, config.paramsSerializer).replace(/^\?/, "");
+          path$1 = buildURL(parsed.pathname + parsed.search, config.params, config.paramsSerializer).replace(/^\?/, "");
         } catch (err) {
           const customErr = new Error(err.message);
           customErr.config = config;
@@ -27832,8 +27836,8 @@ var require_axios = __commonJS({
           return reject(customErr);
         }
         headers.set("Accept-Encoding", "gzip, compress, deflate" + (isBrotliSupported ? ", br" : ""), false);
-        const options = {
-          path: path3,
+        const options = Object.assign(/* @__PURE__ */ Object.create(null), {
+          path: path$1,
           method,
           headers: headers.toJSON(),
           agents: {
@@ -27844,11 +27848,22 @@ var require_axios = __commonJS({
           protocol,
           family,
           beforeRedirect: dispatchBeforeRedirect,
-          beforeRedirects: {},
+          beforeRedirects: /* @__PURE__ */ Object.create(null),
           http2Options
-        };
+        });
         !utils$1.isUndefined(lookup) && (options.lookup = lookup);
         if (config.socketPath) {
+          if (typeof config.socketPath !== "string") {
+            return reject(new AxiosError("socketPath must be a string", AxiosError.ERR_BAD_OPTION_VALUE, config));
+          }
+          if (config.allowedSocketPaths != null) {
+            const allowed = Array.isArray(config.allowedSocketPaths) ? config.allowedSocketPaths : [config.allowedSocketPaths];
+            const resolvedSocket = path3.resolve(config.socketPath);
+            const isAllowed = allowed.some((entry) => typeof entry === "string" && path3.resolve(entry) === resolvedSocket);
+            if (!isAllowed) {
+              return reject(new AxiosError(`socketPath "${config.socketPath}" is not permitted by allowedSocketPaths`, AxiosError.ERR_BAD_OPTION_VALUE, config));
+            }
+          }
           options.socketPath = config.socketPath;
         } else {
           options.hostname = parsed.hostname.startsWith("[") ? parsed.hostname.slice(1, -1) : parsed.hostname;
@@ -27870,8 +27885,9 @@ var require_axios = __commonJS({
             if (config.maxRedirects) {
               options.maxRedirects = config.maxRedirects;
             }
-            if (config.beforeRedirect) {
-              options.beforeRedirects.config = config.beforeRedirect;
+            const configBeforeRedirect = own2("beforeRedirect");
+            if (configBeforeRedirect) {
+              options.beforeRedirects.config = configBeforeRedirect;
             }
             transport = isHttpsRequest ? httpsFollow : httpFollow;
           }
@@ -27881,9 +27897,7 @@ var require_axios = __commonJS({
         } else {
           options.maxBodyLength = Infinity;
         }
-        if (config.insecureHTTPParser) {
-          options.insecureHTTPParser = config.insecureHTTPParser;
-        }
+        options.insecureHTTPParser = Boolean(own2("insecureHTTPParser"));
         req = transport.request(options, function handleResponse(res) {
           if (req.destroyed) return;
           const streams = [res];
@@ -28009,17 +28023,21 @@ var require_axios = __commonJS({
         });
         req.on("socket", function handleRequestSocket(socket) {
           socket.setKeepAlive(true, 1e3 * 60);
-          const removeSocketErrorListener = () => {
-            socket.removeListener("error", handleRequestSocketError);
-          };
-          function handleRequestSocketError(err) {
-            removeSocketErrorListener();
-            if (!req.destroyed) {
-              req.destroy(err);
-            }
+          if (!socket[kAxiosSocketListener]) {
+            socket.on("error", function handleSocketError(err) {
+              const current = socket[kAxiosCurrentReq];
+              if (current && !current.destroyed) {
+                current.destroy(err);
+              }
+            });
+            socket[kAxiosSocketListener] = true;
           }
-          socket.on("error", handleRequestSocketError);
-          req.once("close", removeSocketErrorListener);
+          socket[kAxiosCurrentReq] = req;
+          req.once("close", function clearCurrentReq() {
+            if (socket[kAxiosCurrentReq] === req) {
+              socket[kAxiosCurrentReq] = null;
+            }
+          });
         });
         if (config.timeout) {
           const timeout = parseInt(config.timeout, 10);
@@ -28085,14 +28103,14 @@ var require_axios = __commonJS({
     var cookies = platform.hasStandardBrowserEnv ? (
       // Standard browser envs support document.cookie
       {
-        write(name, value, expires, path3, domain, secure, sameSite) {
+        write(name, value, expires, path4, domain, secure, sameSite) {
           if (typeof document === "undefined") return;
           const cookie = [`${name}=${encodeURIComponent(value)}`];
           if (utils$1.isNumber(expires)) {
             cookie.push(`expires=${new Date(expires).toUTCString()}`);
           }
-          if (utils$1.isString(path3)) {
-            cookie.push(`path=${path3}`);
+          if (utils$1.isString(path4)) {
+            cookie.push(`path=${path4}`);
           }
           if (utils$1.isString(domain)) {
             cookie.push(`domain=${domain}`);
@@ -28131,7 +28149,13 @@ var require_axios = __commonJS({
     } : thing;
     function mergeConfig(config1, config2) {
       config2 = config2 || {};
-      const config = {};
+      const config = /* @__PURE__ */ Object.create(null);
+      Object.defineProperty(config, "hasOwnProperty", {
+        value: Object.prototype.hasOwnProperty,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      });
       function getMergedValue(target, source, prop, caseless) {
         if (utils$1.isPlainObject(target) && utils$1.isPlainObject(source)) {
           return utils$1.merge.call({
@@ -28197,6 +28221,7 @@ var require_axios = __commonJS({
         httpsAgent: defaultToConfig2,
         cancelToken: defaultToConfig2,
         socketPath: defaultToConfig2,
+        allowedSocketPaths: defaultToConfig2,
         responseEncoding: defaultToConfig2,
         validateStatus: mergeDirectKeys,
         headers: (a, b, prop) => mergeDeepProperties(headersToObject(a), headersToObject(b), prop, true)
@@ -28216,16 +28241,18 @@ var require_axios = __commonJS({
     }
     var resolveConfig = (config) => {
       const newConfig = mergeConfig({}, config);
-      let {
-        data,
-        withXSRFToken,
-        xsrfHeaderName,
-        xsrfCookieName,
-        headers,
-        auth
-      } = newConfig;
+      const own2 = (key) => utils$1.hasOwnProp(newConfig, key) ? newConfig[key] : void 0;
+      const data = own2("data");
+      let withXSRFToken = own2("withXSRFToken");
+      const xsrfHeaderName = own2("xsrfHeaderName");
+      const xsrfCookieName = own2("xsrfCookieName");
+      let headers = own2("headers");
+      const auth = own2("auth");
+      const baseURL = own2("baseURL");
+      const allowAbsoluteUrls = own2("allowAbsoluteUrls");
+      const url2 = own2("url");
       newConfig.headers = headers = AxiosHeaders.from(headers);
-      newConfig.url = buildURL(buildFullPath(newConfig.baseURL, newConfig.url, newConfig.allowAbsoluteUrls), config.params, config.paramsSerializer);
+      newConfig.url = buildURL(buildFullPath(baseURL, url2, allowAbsoluteUrls), config.params, config.paramsSerializer);
       if (auth) {
         headers.set("Authorization", "Basic " + btoa((auth.username || "") + ":" + (auth.password ? unescape(encodeURIComponent(auth.password)) : "")));
       }
@@ -28845,7 +28872,7 @@ var require_axios = __commonJS({
       let i = keys.length;
       while (i-- > 0) {
         const opt = keys[i];
-        const validator2 = schema[opt];
+        const validator2 = Object.prototype.hasOwnProperty.call(schema, opt) ? schema[opt] : void 0;
         if (validator2) {
           const value = options[opt];
           const result = value === void 0 || validator2(value, opt, options);
@@ -39168,5 +39195,5 @@ express/index.js:
    *)
 
 axios/dist/node/axios.cjs:
-  (*! Axios v1.15.1 Copyright (c) 2026 Matt Zabriskie and contributors *)
+  (*! Axios v1.15.2 Copyright (c) 2026 Matt Zabriskie and contributors *)
 */

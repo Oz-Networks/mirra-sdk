@@ -1611,6 +1611,13 @@ export interface TelegramBotReplyToMessageArgs {
   replyToMessageId: number; // Message ID to reply to
   parseMode?: string; // Parse mode: Markdown, MarkdownV2, or HTML
 }
+export interface TelegramBotEditMessageTextArgs {
+  botUsername: string; // Username of the bot (without @). Must be the same bot that sent the original message.
+  chatId: string; // Telegram chat ID of the message to edit
+  messageId: number; // ID of the message to edit (returned by sendMessage / replyToMessage / sendMessageWithButtons)
+  text: string; // New message text (supports Markdown)
+  parseMode?: string; // Parse mode: Markdown, MarkdownV2, or HTML
+}
 export interface TelegramBotAnswerCallbackQueryArgs {
   botUsername: string; // Username of the bot
   callbackQueryId: string; // Callback query ID from the button press event
@@ -6353,6 +6360,15 @@ export interface TelegramBotReplyToMessageData {
 }
 
 export type TelegramBotReplyToMessageResult = AdapterResultBase<TelegramBotReplyToMessageData>;
+
+export interface TelegramBotEditMessageTextData {
+  messageId: number; // ID of the edited message
+  chatId: string; // Chat ID where the message was edited
+  text: string; // New text that replaced the previous content
+  edited: boolean; // Whether the message was successfully edited
+}
+
+export type TelegramBotEditMessageTextResult = AdapterResultBase<TelegramBotEditMessageTextData>;
 
 export interface TelegramBotAnswerCallbackQueryData {
   callbackQueryId: string; // Callback query ID that was answered
@@ -12773,6 +12789,23 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'replyToMessage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Replace the text of a previously sent bot message. Use this for the "placeholder + edit" pattern: send an immediate placeholder (e.g. "🤔 Thinking…"), run a slow operation like mirra.ai.agent(...), then edit the placeholder with the final answer. The bot can only edit its own messages.
+     * @param args.botUsername - Username of the bot (without @). Must be the same bot that sent the original message.
+     * @param args.chatId - Telegram chat ID of the message to edit
+     * @param args.messageId - ID of the message to edit (returned by sendMessage / replyToMessage / sendMessageWithButtons)
+     * @param args.text - New message text (supports Markdown)
+     * @param args.parseMode - Parse mode: Markdown, MarkdownV2, or HTML (optional)
+     * @returns Promise<TelegramBotEditMessageTextData> Typed flat response with IDE autocomplete
+     */
+    editMessageText: async (args: TelegramBotEditMessageTextArgs): Promise<TelegramBotEditMessageTextData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'telegramBot',
+        method: 'editMessageText',
         params: args || {}
       });
     },

@@ -42,6 +42,7 @@ Replace `{operation}` with the operation name from the table below.
 |-----------|-------------|
 | `sendMessage` | Send a text message to a Telegram chat via bot |
 | `replyToMessage` | Reply to a specific message in a Telegram chat |
+| `editMessageText` | Replace the text of a previously sent bot message. Use this for the "placeholder + edit" pattern:... |
 | `answerCallbackQuery` | Respond to an inline keyboard button press (callback query) |
 | `sendMessageWithButtons` | Send a message with inline keyboard buttons for user interaction |
 | `setBotCommands` | Set the list of commands shown in the bot menu |
@@ -123,6 +124,42 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "chatId": "123456789",
   "text": "Got it!",
   "replyToMessageId": 41
+}
+```
+
+### `editMessageText`
+
+Replace the text of a previously sent bot message. Use this for the "placeholder + edit" pattern: send an immediate placeholder (e.g. "🤔 Thinking…"), run a slow operation like mirra.ai.agent(...), then edit the placeholder with the final answer. The bot can only edit its own messages.
+
+**Arguments:**
+
+- `botUsername` (string, **required**): Username of the bot (without @). Must be the same bot that sent the original message.
+- `chatId` (string, **required**): Telegram chat ID of the message to edit
+- `messageId` (number, **required**): ID of the message to edit (returned by sendMessage / replyToMessage / sendMessageWithButtons)
+- `text` (string, **required**): New message text (supports Markdown)
+- `parseMode` (string, *optional*): Parse mode: Markdown, MarkdownV2, or HTML
+
+**Returns:**
+
+`AdapterOperationResult`: Edited message details including messageId and new text
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"telegramBot","method":"editMessageText","params":{"botUsername":"my_bot","chatId":"123456789","messageId":42,"text":"Here is the answer from the AI…"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "messageId": 42,
+  "chatId": "123456789",
+  "text": "Here is the answer from the AI…",
+  "edited": true
 }
 ```
 
