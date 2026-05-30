@@ -1,19 +1,11 @@
 {
-  "version": "0.2.60",
-  "notes": "Mirra Desktop v0.2.60",
-  "pub_date": "2026-04-26T02:23:10.187Z",
+  "version": "0.2.62",
+  "notes": "Mirra Desktop v0.2.62",
+  "pub_date": "2026-05-30T05:38:01.615Z",
   "platforms": {
     "darwin-aarch64": {
-      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.60/Mirra.app.tar.gz",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFZwa2NxZXdyUEJTVVVscklPeldDYkUvVjJHdEVha1duWkZNR3duQjVGMnN0Nkd6SGt6NEhBRUJSU1ZzVU1NZ2RFYWVVWndhSWduUk84RjdTRll3Tmc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTcwMTM3CWZpbGU6TWlycmEuYXBwLnRhci5negpMQXBpWFFVbVZmczFmYmxSbUNxVmhVR1cybTN3K2dEaXA5ZTU0QkNEYWxBRm9PT0xHcHRkcVBqZ2R2bXFFbnVNaWF3Zlpqc1ZWTEZFMkhFc2dIOUtCZz09Cg=="
-    },
-    "linux-x86_64": {
-      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.60/Mirra_0.2.60_amd64.AppImage",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFFuWmlWdXVYUGFHS1RUVytxM0ZEaXpmYTNjVzYvbDU3a1dLUkE4OUF6THpsNnVKcGtnejdCRUVGK0J5VnFNWWZTRzVHZUNtVDQvQkFqZFNTcnBpNFFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTcwNzkwCWZpbGU6TWlycmFfMC4yLjYwX2FtZDY0LkFwcEltYWdlClFTdVc3R2xkbGZ1RzYwbmw0Q0pQT203d3hvVnhnczFudmE0RFBqeWJuWFlIQU9RYnhCdXFlVDY0amFWbllnV21QQVZJRmM4OUFXb3lwZThsSmpDY0NBPT0K"
-    },
-    "windows-x86_64": {
-      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.60/Mirra_0.2.60_x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMGZWTWEveXZXc0R5dTl0NVlVMmJaNHkrMFdHVzJZbUdLQTQ5ekZQQ0lwaFlEZnk2U01QU1JtU3N0cSs2QXpBOXpEZytiQ24ya3NTTE9GaU5ING5Wc1FJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3MTcxNjEwCWZpbGU6TWlycmFfMC4yLjYwX3g2NC1zZXR1cC5leGUKekZLV3MrSElDR0RFR1Bqa05lY05nMGc3dnc4ZU5lZXM0T095MGRvNkt2K0RWUUluM1hKVVlFbUM2SXRMc3Vpay9CTWh4eGcrc1dmdnhiRVREQ05QQ1E9PQo="
+      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.62/Mirra.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMGFGNVBlUEZDZHRJQ2YrVTYyRmV6dnhCczlpcUt4WWJhQjdYWjY5QnhmazVvMFFuN1FIZ0QxR3piSVBPSitsL215Y3RaZ3U4NWw0MUpYWlFDU0lJWkE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwMTE5NDI1CWZpbGU6TWlycmEuYXBwLnRhci5negoxeEVrZzN5MFE2Rk9yT1l1WlZzeXg4VmNidHF4cWoyWldNM1hmTXU1ZlovQUJpaFBsNWxja01BN3ZyU1lvTjlwN1pUdnJJU0NvQ0VtNG16cmdtOWVBZz09Cg=="
     }
   }
 }
