@@ -79,6 +79,13 @@ export interface AiComputerUseArgs {
   system?: string; // System prompt to guide computer use behavior.
   temperature?: number; // Temperature 0.0-1.0. Default: 1.0 (Anthropic recommended for computer use).
 }
+export interface AiTranscribeAudioArgs {
+  url?: string; // Public URL to an audio file to download and transcribe. Provide either "url" or "base64".
+  base64?: string; // Base64-encoded audio bytes to transcribe (optionally a data URI). Provide either "url" or "base64".
+  mimeType?: string; // MIME type of the audio (e.g. "audio/ogg", "audio/mpeg", "audio/mp4"). Helps Whisper detect the format. Defaults to "audio/mpeg".
+  language?: string; // Optional ISO-639-1 language code (e.g. "en", "es") to improve accuracy when the language is known.
+  prompt?: string; // Optional text prompt to bias the transcription (e.g. expected vocabulary, names, or prior context).
+}
 
 // Jira Adapter Types
 export interface JiraCreateIssueArgs {
@@ -1284,6 +1291,70 @@ export interface PolymarketExecuteExtendedArgs {
 }
 
 // Shopify Adapter Types
+export interface ShopifyUpdateVariantArgs {
+  productId: string; // The ID of the product the variant belongs to.
+  variantId: string; // The ID of the variant to update.
+  price?: string; // New price as a decimal string (e.g. "19.99").
+  compareAtPrice?: string; // New compare-at ("was") price as a decimal string. Pass an empty string to clear it.
+  sku?: string; // New SKU (stock keeping unit) for the variant.
+  barcode?: string; // New barcode (ISBN, UPC, GTIN, etc.) for the variant.
+  taxable?: boolean; // Whether the variant is subject to tax.
+  inventoryPolicy?: string; // Inventory policy: "continue" to keep selling when out of stock, or "deny" to stop selling when out of stock.
+  options?: any[]; // New variant option values in order (e.g. ["Large", "Red"]) to replace the variant's current option values. Must match the number of product options.
+}
+export interface ShopifyRefundOrderArgs {
+  orderId: string; // The ID of the order to refund.
+  lineItems?: any[]; // Line items to refund, each an object { lineItemId: string, quantity: number }. Omit to refund all remaining refundable items on the order.
+  refundShipping?: boolean; // Whether to also refund the full remaining shipping amount. Defaults to false.
+  note?: string; // An optional note describing the reason for the refund (shown in the Shopify admin).
+  notify?: boolean; // Whether to send the customer a refund notification email. Defaults to false.
+  restock?: boolean; // Whether to restock the refunded items back into inventory. Defaults to true.
+}
+export interface ShopifyFulfillOrderArgs {
+  orderId: string; // The ID of the order to fulfill.
+  lineItems?: any[]; // Line items to fulfill, each an object { lineItemId: string, quantity: number }. Omit to fulfill all remaining unfulfilled items.
+  trackingNumber?: string; // Tracking number for the shipment.
+  trackingCompany?: string; // Shipping carrier name (e.g. "UPS", "USPS", "FedEx").
+  trackingUrl?: string; // A URL where the customer can track the shipment.
+  notifyCustomer?: boolean; // Whether to send the customer a shipping notification email. Defaults to false.
+}
+export interface ShopifyUpdateFulfillmentTrackingArgs {
+  fulfillmentId: string; // The ID of the fulfillment to update.
+  trackingNumber?: string; // The tracking number to set on the fulfillment.
+  trackingCompany?: string; // Shipping carrier name (e.g. "UPS", "USPS", "FedEx").
+  trackingUrl?: string; // A URL where the customer can track the shipment.
+  notifyCustomer?: boolean; // Whether to send the customer an updated-tracking notification email. Defaults to false.
+}
+export interface ShopifyCreateCollectionArgs {
+  title: string; // The collection title.
+  descriptionHtml?: string; // The collection description as HTML.
+  templateSuffix?: string; // Theme template suffix to render the collection with a custom template, e.g. "preview" renders templates/collection.preview.liquid. Omit for the default template.
+  published?: boolean; // Whether the collection is visible on the Online Store sales channel. true publishes it, false hides it. Defaults to false.
+  sortOrder?: string; // How products are ordered within the collection (e.g. "MANUAL", "BEST_SELLING", "ALPHA_ASC", "PRICE_DESC", "CREATED").
+  imageUrl?: string; // URL of an image to use as the collection image.
+  imageAlt?: string; // Alt text for the collection image.
+}
+export interface ShopifyUpdateCollectionArgs {
+  collectionId: string; // The ID of the collection to update.
+  title?: string; // New collection title.
+  descriptionHtml?: string; // New collection description as HTML.
+  templateSuffix?: string; // New theme template suffix (e.g. "preview" / "landing"). Pass an empty string to reset to the default template.
+  published?: boolean; // Whether the collection is visible on the Online Store sales channel. true publishes it, false hides it.
+  sortOrder?: string; // How products are ordered within the collection (e.g. "MANUAL", "BEST_SELLING", "ALPHA_ASC", "PRICE_DESC", "CREATED").
+  imageUrl?: string; // New collection image URL.
+  imageAlt?: string; // New alt text for the collection image.
+}
+export interface ShopifyDeleteCollectionArgs {
+  collectionId: string; // The ID of the collection to delete.
+}
+export interface ShopifyAddProductsToCollectionArgs {
+  collectionId: string; // The ID of the collection to add products to.
+  productIds: any[]; // Array of product IDs to add to the collection.
+}
+export interface ShopifyRemoveProductsFromCollectionArgs {
+  collectionId: string; // The ID of the collection to remove products from.
+  productIds: any[]; // Array of product IDs to remove from the collection.
+}
 export interface ShopifyListProductsArgs {
   limit?: number; // Number of products to return per page (1-250). Defaults to 50.
   pageInfo?: string; // Cursor for pagination. Use the nextPageInfo value from a previous response to get the next page.
@@ -1378,8 +1449,8 @@ export interface ShopifySearchCustomersArgs {
   limit?: number; // Number of results to return (1-250). Defaults to 50.
 }
 export interface ShopifyGetInventoryLevelsArgs {
-  inventoryItemIds?: string; // Comma-separated list of inventory item IDs to query.
-  locationIds?: string; // Comma-separated list of location IDs to query.
+  inventoryItemIds?: string; // Comma-separated list of inventory item IDs to query. Omit to return levels for all items.
+  locationIds?: string; // Comma-separated list of location IDs to filter results to. Omit to return levels at all locations.
   limit?: number; // Number of results to return (1-250). Defaults to 50.
 }
 export interface ShopifyAdjustInventoryArgs {
@@ -1525,6 +1596,17 @@ export interface ShopifyUpdateRedirectArgs {
 export interface ShopifyDeleteRedirectArgs {
   redirectId: string; // The Shopify redirect ID to delete.
 }
+export interface ShopifyCreateCouponArgs {
+  code: string; // The coupon code customers type at checkout, e.g. "SUMMER20". Case-insensitive at checkout.
+  valueType: string; // The discount type: "percentage" for a percent off, or "fixed_amount" for a flat currency amount off.
+  value: number; // The discount amount. For valueType "percentage", a percent from 1-100 (e.g. 20 = 20% off). For valueType "fixed_amount", the currency amount off the order (e.g. 10 = $10 off in the store currency).
+  title?: string; // Admin-facing title for the discount shown in the Shopify dashboard. Defaults to the code if omitted.
+  startsAt?: string; // When the coupon becomes active (ISO 8601). Defaults to now.
+  endsAt?: string; // When the coupon expires (ISO 8601). Omit for no expiry. Must be after startsAt.
+  usageLimit?: number; // Maximum total number of times this coupon can be used across all customers. Omit for unlimited.
+  appliesOncePerCustomer?: boolean; // If true, each customer can use the coupon only once. Defaults to false.
+  minimumSubtotal?: number; // Minimum order subtotal (in the store currency) required to use the coupon. Omit for no minimum.
+}
 
 // Socket Adapter Types
 export interface SocketSendArgs {
@@ -1667,6 +1749,10 @@ export interface TelegramBotDeleteMessageArgs {
   botUsername: string; // Username of the bot (without @)
   chatId: string; // Group chat ID
   messageId: number; // ID of the message to delete
+}
+export interface TelegramBotDownloadFileArgs {
+  botUsername: string; // Username of the bot that received the file (without @). Must be the bot that the file_id was issued to — file_ids are bot-scoped.
+  fileId: string; // Telegram file_id from an incoming media event (event.data.bot.fileId). For photos with multiple sizes, the event already contains the largest size.
 }
 
 // Trello Adapter Types
@@ -2270,6 +2356,15 @@ export interface AIComputerUseData {
 }
 
 export type AiComputerUseResult = AdapterResultBase<AIComputerUseData>;
+
+export interface AITranscribeAudioData {
+  text: string; // The transcribed text
+  language?: string; // Detected or specified language (ISO code), or null
+  durationSeconds?: number; // Duration of the audio in seconds, or null
+  model: string; // Transcription model used (whisper-1)
+}
+
+export type AiTranscribeAudioResult = AdapterResultBase<AITranscribeAudioData>;
 
 // Jira Response Types
 export interface JiraGetIssueData {
@@ -5385,6 +5480,7 @@ export interface ShopifyVariant {
   option3?: string; // Option 3 value
   barcode?: string; // Barcode
   taxable: boolean; // Is taxable
+  inventoryPolicy?: string; // Inventory policy: "continue" (keep selling when out of stock) or "deny" (stop selling when out of stock)
 }
 
 export interface ShopifyImage {
@@ -6189,6 +6285,130 @@ export interface ShopifyDeleteRedirectData {
 
 export type ShopifyDeleteRedirectResult = AdapterResultBase<ShopifyDeleteRedirectData>;
 
+export interface ShopifyCouponData {
+  id: string; // Discount code node ID
+  code: string; // The coupon code customers enter at checkout
+  title: string; // Admin-facing discount title
+  status: string; // Discount status (active, scheduled, expired)
+  valueType: string; // Discount type (percentage or fixed_amount)
+  value: string; // Discount value — the percent for percentage coupons, or currency amount for fixed_amount coupons
+  startsAt?: string; // Activation timestamp (ISO 8601)
+  endsAt?: string; // Expiry timestamp (ISO 8601)
+  usageLimit?: number; // Maximum total redemptions, or null for unlimited
+  appliesOncePerCustomer: boolean; // Whether each customer can use it only once
+  minimumSubtotal?: string; // Minimum order subtotal required, or null for none
+}
+
+export type ShopifyCreateCouponResult = AdapterResultBase<ShopifyCouponData>;
+
+export interface ShopifyVariantData {
+  id: string; // Variant ID
+  title: string; // Variant title
+  price: string; // Price
+  compareAtPrice?: string; // Compare-at price
+  sku: string; // SKU
+  inventoryQuantity: number; // Inventory quantity
+  inventoryItemId?: string; // Inventory item ID (for inventory operations)
+  option1?: string; // Option 1 value
+  option2?: string; // Option 2 value
+  option3?: string; // Option 3 value
+  barcode?: string; // Barcode
+  taxable: boolean; // Is taxable
+  inventoryPolicy?: string; // Inventory policy: "continue" (keep selling when out of stock) or "deny" (stop selling when out of stock)
+}
+
+export type ShopifyUpdateVariantResult = AdapterResultBase<ShopifyVariantData>;
+
+export interface ShopifyRefundData {
+  id: string; // Refund ID
+  orderId: string; // ID of the refunded order
+  note?: string; // Refund note, or null
+  totalRefunded: string; // Total amount refunded
+  currency?: string; // Currency code of the refund, or null
+  createdAt: string; // Refund creation timestamp (ISO 8601)
+}
+
+export type ShopifyRefundOrderResult = AdapterResultBase<ShopifyRefundData>;
+
+export interface ShopifyFulfillmentData {
+  id: string; // Fulfillment ID
+  orderId: string; // ID of the fulfilled order
+  status: string; // Fulfillment status (e.g. success, cancelled)
+  trackingNumber?: string; // Tracking number, or null
+  trackingCompany?: string; // Shipping carrier, or null
+  trackingUrl?: string; // Tracking URL, or null
+  createdAt: string; // Fulfillment creation timestamp (ISO 8601)
+}
+
+export type ShopifyFulfillOrderResult = AdapterResultBase<ShopifyFulfillmentData>;
+
+export interface ShopifyFulfillmentData {
+  id: string; // Fulfillment ID
+  orderId: string; // ID of the fulfilled order
+  status: string; // Fulfillment status (e.g. success, cancelled)
+  trackingNumber?: string; // Tracking number, or null
+  trackingCompany?: string; // Shipping carrier, or null
+  trackingUrl?: string; // Tracking URL, or null
+  createdAt: string; // Fulfillment creation timestamp (ISO 8601)
+}
+
+export type ShopifyUpdateFulfillmentTrackingResult = AdapterResultBase<ShopifyFulfillmentData>;
+
+export interface ShopifyCollectionData {
+  id: string; // Collection ID
+  title: string; // Collection title
+  bodyHtml: string; // HTML description
+  handle: string; // URL handle
+  sortOrder: string; // Sort order
+  publishedAt?: string; // Published timestamp
+  updatedAt: string; // Last update timestamp
+  collectionType: string; // Type: "custom" or "smart"
+  imageUrl?: string; // Collection image URL
+  imageAlt?: string; // Image alt text
+  productsCount?: number; // Number of products in collection
+}
+
+export type ShopifyCreateCollectionResult = AdapterResultBase<ShopifyCollectionData>;
+
+export interface ShopifyCollectionData {
+  id: string; // Collection ID
+  title: string; // Collection title
+  bodyHtml: string; // HTML description
+  handle: string; // URL handle
+  sortOrder: string; // Sort order
+  publishedAt?: string; // Published timestamp
+  updatedAt: string; // Last update timestamp
+  collectionType: string; // Type: "custom" or "smart"
+  imageUrl?: string; // Collection image URL
+  imageAlt?: string; // Image alt text
+  productsCount?: number; // Number of products in collection
+}
+
+export type ShopifyUpdateCollectionResult = AdapterResultBase<ShopifyCollectionData>;
+
+export interface ShopifyDeleteCollectionData {
+  deleted: boolean; // Whether deletion was successful
+  collectionId: string; // Deleted collection ID
+}
+
+export type ShopifyDeleteCollectionResult = AdapterResultBase<ShopifyDeleteCollectionData>;
+
+export interface ShopifyCollectionMembershipData {
+  collectionId: string; // Collection ID
+  productIds: any[]; // Product IDs added to the collection
+  added: boolean; // Whether the products were added
+}
+
+export type ShopifyAddProductsToCollectionResult = AdapterResultBase<ShopifyCollectionMembershipData>;
+
+export interface ShopifyCollectionMembershipData {
+  collectionId: string; // Collection ID
+  productIds: any[]; // Product IDs removed from the collection
+  removed: boolean; // Whether the products were removed
+}
+
+export type ShopifyRemoveProductsFromCollectionResult = AdapterResultBase<ShopifyCollectionMembershipData>;
+
 // Socket Response Types
 export interface SocketSendData {
   channelId: string; // Channel ID the message was sent to
@@ -6471,6 +6691,15 @@ export interface TelegramBotDeleteMessageData {
 }
 
 export type TelegramBotDeleteMessageResult = AdapterResultBase<TelegramBotDeleteMessageData>;
+
+export interface TelegramBotDownloadFileData {
+  base64: string; // File contents as base64. Pass as the `data` field of an ai.chat image content block.
+  mimeType: string; // MIME type (e.g. image/jpeg, application/pdf). Use as `media_type` in ai.chat image blocks.
+  fileSize: number; // File size in bytes (pre-base64).
+  fileName: string; // Telegram-provided filename, or a derived name for photos.
+}
+
+export type TelegramBotDownloadFileResult = AdapterResultBase<TelegramBotDownloadFileData>;
 
 // Trello Response Types
 export interface TrelloBoard {
@@ -7827,7 +8056,7 @@ export type GoogleSheetsCopyRangeResult = AdapterResultBase<GoogleSheetsCopyRang
 function createAiAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Have a conversation with an AI assistant. Supports multi-turn conversations with system prompts, user messages, and assistant responses. PROVIDER: Uses Anthropic (Claude) as the AI provider. BEST PRACTICES: - Use system messages to set AI behavior and constraints - Keep conversations focused - avoid unnecessary context MESSAGE STRUCTURE: Each message has: - role: "system" | "user" | "assistant" - content: string OR array of content blocks for multimodal (text + images) IMAGE SUPPORT: To send images, use content blocks array instead of a string: content: [ { type: "text", text: "What's in this image?" }, { type: "image", source: { type: "base64", media_type: "image/png", data: "<base64-data>" } } ] Supported media types: image/jpeg, image/png, image/gif, image/webp TYPICAL PATTERNS: 1. Simple query: [{ role: "user", content: "question" }] 2. With system prompt: [{ role: "system", content: "instructions" }, { role: "user", content: "question" }] 3. Multi-turn: [system, user, assistant, user, assistant, ...]
+     * Have a conversation with an AI assistant. Supports multi-turn conversations with system prompts, user messages, and assistant responses. PROVIDER: Uses Anthropic (Claude) as the AI provider. BEST PRACTICES: - Use system messages to set AI behavior and constraints - Keep conversations focused - avoid unnecessary context MESSAGE STRUCTURE: Each message has: - role: "system" | "user" | "assistant" - content: string OR array of content blocks for multimodal (text + images) IMAGE SUPPORT (VISION): To send images, use a content blocks array instead of a string: content: [ { type: "text", text: "What's in this image?" }, { type: "image", source: { type: "base64", media_type: "image/png", data: "<base64-data>" } } ] Supported media types: image/jpeg, image/png, image/gif, image/webp For vision, use a Sonnet-class model (e.g. "claude-sonnet-4-20250514"). KILLER PATTERN — TELEGRAM BOT VISION: Pair with mirra.telegramBot.downloadFile to OCR / understand user-uploaded media: const { base64, mimeType } = await mirra.telegramBot.downloadFile({ botUsername, fileId: event.data.bot.fileId }); await mirra.ai.chat({ model: "claude-sonnet-4-20250514", messages: [{ role: "user", content: [ { type: "text", text: "Extract the invoice total and vendor." }, { type: "image", source: { type: "base64", media_type: mimeType, data: base64 } } ] }] }); TYPICAL PATTERNS: 1. Simple query: [{ role: "user", content: "question" }] 2. With system prompt: [{ role: "system", content: "instructions" }, { role: "user", content: "question" }] 3. Multi-turn: [system, user, assistant, user, assistant, ...] 4. Vision: [{ role: "user", content: [{ type: "text", ... }, { type: "image", source: { ... } }] }]
      * @param args.message - Simple string shorthand for single-turn queries. Auto-wrapped into messages array. Use "messages" for multi-turn conversations. (optional)
      * @param args.messages - Array of message objects with role ("system" | "user" | "assistant") and content (string or content blocks array). For images, use content: [{ type: "text", text: "..." }, { type: "image", source: { type: "base64", media_type: "image/png", data: "<base64>" } }] (optional)
      * @param args.model - Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names. (optional)
@@ -7892,6 +8121,23 @@ function createAiAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'ai',
         method: 'computerUse',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Transcribe an audio file to text (speech-to-text) using OpenAI Whisper. Accepts either a public URL to an audio file or base64-encoded audio bytes, and returns the transcript. USE CASE — TELEGRAM VOICE NOTES: Pair with mirra.telegramBot.downloadFile to transcribe a user's voice message, then feed the transcript to an extractor or another step: const { base64, mimeType } = await mirra.telegramBot.downloadFile({ botUsername, fileId: event.data.bot.fileId }); const { text } = await mirra.ai.transcribeAudio({ base64, mimeType }); SUPPORTED FORMATS: mp3, mp4, m4a, wav, webm, ogg, flac (Whisper-supported). Max ~25MB per file.
+     * @param args.url - Public URL to an audio file to download and transcribe. Provide either "url" or "base64". (optional)
+     * @param args.base64 - Base64-encoded audio bytes to transcribe (optionally a data URI). Provide either "url" or "base64". (optional)
+     * @param args.mimeType - MIME type of the audio (e.g. "audio/ogg", "audio/mpeg", "audio/mp4"). Helps Whisper detect the format. Defaults to "audio/mpeg". (optional)
+     * @param args.language - Optional ISO-639-1 language code (e.g. "en", "es") to improve accuracy when the language is known. (optional)
+     * @param args.prompt - Optional text prompt to bias the transcription (e.g. expected vocabulary, names, or prior context). (optional)
+     * @returns Promise<AITranscribeAudioData> Typed flat response with IDE autocomplete
+     */
+    transcribeAudio: async (args: AiTranscribeAudioArgs): Promise<AITranscribeAudioData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'ai',
+        method: 'transcribeAudio',
         params: args || {}
       });
     }
@@ -11805,6 +12051,160 @@ function createPolymarketAdapter(sdk: MirraSDK) {
 function createShopifyAdapter(sdk: MirraSDK) {
   return {
     /**
+     * Update a single product variant — price, compare-at price, SKU, barcode, taxability, inventory policy, and variant option values. Variant edits are product-scoped in the Shopify Admin API, so both productId and variantId are required. Use inventoryPolicy "continue" to keep selling a variant when it is out of stock, or "deny" to stop selling it when inventory reaches zero.
+     * @param args.productId - The ID of the product the variant belongs to.
+     * @param args.variantId - The ID of the variant to update.
+     * @param args.price - New price as a decimal string (e.g. "19.99"). (optional)
+     * @param args.compareAtPrice - New compare-at ("was") price as a decimal string. Pass an empty string to clear it. (optional)
+     * @param args.sku - New SKU (stock keeping unit) for the variant. (optional)
+     * @param args.barcode - New barcode (ISBN, UPC, GTIN, etc.) for the variant. (optional)
+     * @param args.taxable - Whether the variant is subject to tax. (optional)
+     * @param args.inventoryPolicy - Inventory policy: "continue" to keep selling when out of stock, or "deny" to stop selling when out of stock. (optional)
+     * @param args.options - New variant option values in order (e.g. ["Large", "Red"]) to replace the variant's current option values. Must match the number of product options. (optional)
+     * @returns Promise<ShopifyVariantData> Typed flat response with IDE autocomplete
+     */
+    updateVariant: async (args: ShopifyUpdateVariantArgs): Promise<ShopifyVariantData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'updateVariant',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Refund an order — either specific line items (partial refund) or all refundable items. Money is actually returned to the customer: the operation computes the suggested refund (transactions, taxes, and amounts) for the requested items, then creates the refund against the original payment. Optionally restock the refunded items and refund shipping.
+     * @param args.orderId - The ID of the order to refund.
+     * @param args.lineItems - Line items to refund, each an object { lineItemId: string, quantity: number }. Omit to refund all remaining refundable items on the order. (optional)
+     * @param args.refundShipping - Whether to also refund the full remaining shipping amount. Defaults to false. (optional)
+     * @param args.note - An optional note describing the reason for the refund (shown in the Shopify admin). (optional)
+     * @param args.notify - Whether to send the customer a refund notification email. Defaults to false. (optional)
+     * @param args.restock - Whether to restock the refunded items back into inventory. Defaults to true. (optional)
+     * @returns Promise<ShopifyRefundData> Typed flat response with IDE autocomplete
+     */
+    refundOrder: async (args: ShopifyRefundOrderArgs): Promise<ShopifyRefundData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'refundOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Fulfill an order (mark items as shipped) and optionally attach tracking. Fulfills either specific line items (split/partial fulfillment) or all remaining unfulfilled items. Resolves the order's fulfillment orders automatically. Tracking number, carrier, and URL are optional; set notifyCustomer to email the customer a shipping confirmation.
+     * @param args.orderId - The ID of the order to fulfill.
+     * @param args.lineItems - Line items to fulfill, each an object { lineItemId: string, quantity: number }. Omit to fulfill all remaining unfulfilled items. (optional)
+     * @param args.trackingNumber - Tracking number for the shipment. (optional)
+     * @param args.trackingCompany - Shipping carrier name (e.g. "UPS", "USPS", "FedEx"). (optional)
+     * @param args.trackingUrl - A URL where the customer can track the shipment. (optional)
+     * @param args.notifyCustomer - Whether to send the customer a shipping notification email. Defaults to false. (optional)
+     * @returns Promise<ShopifyFulfillmentData> Typed flat response with IDE autocomplete
+     */
+    fulfillOrder: async (args: ShopifyFulfillOrderArgs): Promise<ShopifyFulfillmentData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'fulfillOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update the tracking information on an existing fulfillment (for example to add a tracking number after the fact, correct the carrier, or replace the tracking URL). Optionally notify the customer of the updated tracking.
+     * @param args.fulfillmentId - The ID of the fulfillment to update.
+     * @param args.trackingNumber - The tracking number to set on the fulfillment. (optional)
+     * @param args.trackingCompany - Shipping carrier name (e.g. "UPS", "USPS", "FedEx"). (optional)
+     * @param args.trackingUrl - A URL where the customer can track the shipment. (optional)
+     * @param args.notifyCustomer - Whether to send the customer an updated-tracking notification email. Defaults to false. (optional)
+     * @returns Promise<ShopifyFulfillmentData> Typed flat response with IDE autocomplete
+     */
+    updateFulfillmentTracking: async (args: ShopifyUpdateFulfillmentTrackingArgs): Promise<ShopifyFulfillmentData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'updateFulfillmentTracking',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a manual (custom) collection — a hand-picked grouping of products. Supports a theme template suffix (e.g. "preview" or "landing") so the collection can render with a custom theme template, and a visibility flag that publishes (or hides) the collection on the Online Store sales channel. Products are added separately via addProductsToCollection; a product can belong to multiple collections at once.
+     * @param args.title - The collection title.
+     * @param args.descriptionHtml - The collection description as HTML. (optional)
+     * @param args.templateSuffix - Theme template suffix to render the collection with a custom template, e.g. "preview" renders templates/collection.preview.liquid. Omit for the default template. (optional)
+     * @param args.published - Whether the collection is visible on the Online Store sales channel. true publishes it, false hides it. Defaults to false. (optional)
+     * @param args.sortOrder - How products are ordered within the collection (e.g. "MANUAL", "BEST_SELLING", "ALPHA_ASC", "PRICE_DESC", "CREATED"). (optional)
+     * @param args.imageUrl - URL of an image to use as the collection image. (optional)
+     * @param args.imageAlt - Alt text for the collection image. (optional)
+     * @returns Promise<ShopifyCollectionData> Typed flat response with IDE autocomplete
+     */
+    createCollection: async (args: ShopifyCreateCollectionArgs): Promise<ShopifyCollectionData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'createCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a manual (custom) collection — title, description, theme template suffix, sort order, image, and visibility on the Online Store sales channel. Only the provided fields are changed.
+     * @param args.collectionId - The ID of the collection to update.
+     * @param args.title - New collection title. (optional)
+     * @param args.descriptionHtml - New collection description as HTML. (optional)
+     * @param args.templateSuffix - New theme template suffix (e.g. "preview" / "landing"). Pass an empty string to reset to the default template. (optional)
+     * @param args.published - Whether the collection is visible on the Online Store sales channel. true publishes it, false hides it. (optional)
+     * @param args.sortOrder - How products are ordered within the collection (e.g. "MANUAL", "BEST_SELLING", "ALPHA_ASC", "PRICE_DESC", "CREATED"). (optional)
+     * @param args.imageUrl - New collection image URL. (optional)
+     * @param args.imageAlt - New alt text for the collection image. (optional)
+     * @returns Promise<ShopifyCollectionData> Typed flat response with IDE autocomplete
+     */
+    updateCollection: async (args: ShopifyUpdateCollectionArgs): Promise<ShopifyCollectionData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'updateCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a collection. This removes the collection grouping only — the products that belonged to it are not deleted.
+     * @param args.collectionId - The ID of the collection to delete.
+     * @returns Promise<ShopifyDeleteCollectionData> Typed flat response with IDE autocomplete
+     */
+    deleteCollection: async (args: ShopifyDeleteCollectionArgs): Promise<ShopifyDeleteCollectionData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'deleteCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Add one or more products to a manual (custom) collection. This is additive — a product keeps its membership in any other collections (e.g. its category collection) and also joins this one, so the same product can appear in multiple collections at once.
+     * @param args.collectionId - The ID of the collection to add products to.
+     * @param args.productIds - Array of product IDs to add to the collection.
+     * @returns Promise<ShopifyCollectionMembershipData> Typed flat response with IDE autocomplete
+     */
+    addProductsToCollection: async (args: ShopifyAddProductsToCollectionArgs): Promise<ShopifyCollectionMembershipData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'addProductsToCollection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Remove one or more products from a manual (custom) collection. The products themselves are not deleted and remain in any other collections they belong to.
+     * @param args.collectionId - The ID of the collection to remove products from.
+     * @param args.productIds - Array of product IDs to remove from the collection.
+     * @returns Promise<ShopifyCollectionMembershipData> Typed flat response with IDE autocomplete
+     */
+    removeProductsFromCollection: async (args: ShopifyRemoveProductsFromCollectionArgs): Promise<ShopifyCollectionMembershipData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'removeProductsFromCollection',
+        params: args || {}
+      });
+    },
+
+    /**
      * List products in the Shopify store with optional filtering and pagination. Returns up to 50 products per page. Use the nextPageInfo cursor from the response to fetch subsequent pages.
      * @param args.limit - Number of products to return per page (1-250). Defaults to 50. (optional)
      * @param args.pageInfo - Cursor for pagination. Use the nextPageInfo value from a previous response to get the next page. (optional)
@@ -12048,9 +12448,9 @@ function createShopifyAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get inventory levels for items at specific locations. You must provide either inventoryItemIds or locationIds (at least one is required).
-     * @param args.inventoryItemIds - Comma-separated list of inventory item IDs to query. (optional)
-     * @param args.locationIds - Comma-separated list of location IDs to query. (optional)
+     * Get inventory levels. With no arguments, returns levels for all inventory items (up to limit). Optionally narrow by inventoryItemIds and/or filter by locationIds. Each returned level includes the locationId needed for adjustInventory.
+     * @param args.inventoryItemIds - Comma-separated list of inventory item IDs to query. Omit to return levels for all items. (optional)
+     * @param args.locationIds - Comma-separated list of location IDs to filter results to. Omit to return levels at all locations. (optional)
      * @param args.limit - Number of results to return (1-250). Defaults to 50. (optional)
      * @returns Promise<ShopifyInventoryLevelsData> Typed flat response with IDE autocomplete
      */
@@ -12535,6 +12935,27 @@ function createShopifyAdapter(sdk: MirraSDK) {
         method: 'deleteRedirect',
         params: args || {}
       });
+    },
+
+    /**
+     * Create a discount code (coupon) that customers can enter at checkout for a percentage or fixed-amount discount off their entire order. The coupon is active immediately unless startsAt is provided.
+     * @param args.code - The coupon code customers type at checkout, e.g. "SUMMER20". Case-insensitive at checkout.
+     * @param args.valueType - The discount type: "percentage" for a percent off, or "fixed_amount" for a flat currency amount off.
+     * @param args.value - The discount amount. For valueType "percentage", a percent from 1-100 (e.g. 20 = 20% off). For valueType "fixed_amount", the currency amount off the order (e.g. 10 = $10 off in the store currency).
+     * @param args.title - Admin-facing title for the discount shown in the Shopify dashboard. Defaults to the code if omitted. (optional)
+     * @param args.startsAt - When the coupon becomes active (ISO 8601). Defaults to now. (optional)
+     * @param args.endsAt - When the coupon expires (ISO 8601). Omit for no expiry. Must be after startsAt. (optional)
+     * @param args.usageLimit - Maximum total number of times this coupon can be used across all customers. Omit for unlimited. (optional)
+     * @param args.appliesOncePerCustomer - If true, each customer can use the coupon only once. Defaults to false. (optional)
+     * @param args.minimumSubtotal - Minimum order subtotal (in the store currency) required to use the coupon. Omit for no minimum. (optional)
+     * @returns Promise<ShopifyCouponData> Typed flat response with IDE autocomplete
+     */
+    createCoupon: async (args: ShopifyCreateCouponArgs): Promise<ShopifyCouponData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'createCoupon',
+        params: args || {}
+      });
     }
   };
 }
@@ -12958,6 +13379,20 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'deleteMessage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Download a file from Telegram (photo, document, video, audio, voice, sticker) as base64. Use this to feed user-uploaded media into mirra.ai.chat for vision/OCR/document understanding. USAGE PATTERN (vision): // 1. Read fileId from the incoming bot event const fileId = event.data.bot.fileId; const { base64, mimeType } = await mirra.telegramBot.downloadFile({ botUsername, fileId }); // 2. Pipe into ai.chat as a multimodal content block await mirra.ai.chat({ messages: [{ role: 'user', content: [ { type: 'text', text: 'Extract the invoice details' }, { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64 } } ] }] }); LIMITS: - Telegram caps file downloads at 20 MB via the Bot API. Larger files (sent by users to bots) will fail with a Telegram error. - Base64 inflates payload size by ~33%; for very large files prefer document IDs over inline base64.
+     * @param args.botUsername - Username of the bot that received the file (without @). Must be the bot that the file_id was issued to — file_ids are bot-scoped.
+     * @param args.fileId - Telegram file_id from an incoming media event (event.data.bot.fileId). For photos with multiple sizes, the event already contains the largest size.
+     * @returns Promise<TelegramBotDownloadFileData> Typed flat response with IDE autocomplete
+     */
+    downloadFile: async (args: TelegramBotDownloadFileArgs): Promise<TelegramBotDownloadFileData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'telegramBot',
+        method: 'downloadFile',
         params: args || {}
       });
     }

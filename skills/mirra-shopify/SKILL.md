@@ -1,12 +1,12 @@
 ---
 name: mirra-shopify
-description: "Use Mirra to shopify store management — products, orders, customers, inventory, collections, pages, blogs, articles, themes, menus, and redirects. Covers all Shopify SDK operations via REST API."
+description: "Use Mirra to shopify store management — products, orders, customers, inventory, collections, pages, blogs, articles, themes, menus, redirects, and discount codes. Covers all Shopify SDK operations via REST API."
 allowed-tools: Read, Bash(curl:*, jq:*)
 ---
 
 # Mirra Shopify
 
-Shopify store management — products, orders, customers, inventory, collections, pages, blogs, articles, themes, menus, and redirects
+Shopify store management — products, orders, customers, inventory, collections, pages, blogs, articles, themes, menus, redirects, and discount codes
 
 ## Prerequisites
 
@@ -40,6 +40,15 @@ Replace `{operation}` with the operation name from the table below.
 
 | Operation | Description |
 |-----------|-------------|
+| `updateVariant` | Update a single product variant — price, compare-at price, SKU, barcode, taxability, inventory po... |
+| `refundOrder` | Refund an order — either specific line items (partial refund) or all refundable items. Money is a... |
+| `fulfillOrder` | Fulfill an order (mark items as shipped) and optionally attach tracking. Fulfills either specific... |
+| `updateFulfillmentTracking` | Update the tracking information on an existing fulfillment (for example to add a tracking number ... |
+| `createCollection` | Create a manual (custom) collection — a hand-picked grouping of products. Supports a theme templa... |
+| `updateCollection` | Update a manual (custom) collection — title, description, theme template suffix, sort order, imag... |
+| `deleteCollection` | Delete a collection. This removes the collection grouping only — the products that belonged to it... |
+| `addProductsToCollection` | Add one or more products to a manual (custom) collection. This is additive — a product keeps its ... |
+| `removeProductsFromCollection` | Remove one or more products from a manual (custom) collection. The products themselves are not de... |
 | `listProducts` | List products in the Shopify store with optional filtering and pagination. Returns up to 50 produ... |
 | `getProduct` | Get a single product by its Shopify product ID. Returns full product details including all varian... |
 | `createProduct` | Create a new product in the Shopify store. At minimum, a title is required. Set status to "draft"... |
@@ -55,7 +64,7 @@ Replace `{operation}` with the operation name from the table below.
 | `createCustomer` | Create a new customer in the Shopify store. At minimum, either an email or a phone number is requ... |
 | `updateCustomer` | Update an existing customer. Only the fields you provide will be updated. |
 | `searchCustomers` | Search customers by a query string. Searches across email, name, and other fields. Returns up to ... |
-| `getInventoryLevels` | Get inventory levels for items at specific locations. You must provide either inventoryItemIds or... |
+| `getInventoryLevels` | Get inventory levels. With no arguments, returns levels for all inventory items (up to limit). Op... |
 | `adjustInventory` | Adjust the available inventory quantity for an item at a specific location. The adjustment is rel... |
 | `listCollections` | List collections in the Shopify store. Returns both custom collections and smart collections comb... |
 | `listPages` | List pages in the Shopify store with optional pagination. |
@@ -89,8 +98,235 @@ Replace `{operation}` with the operation name from the table below.
 | `createRedirect` | Create a URL redirect. |
 | `updateRedirect` | Update a redirect. |
 | `deleteRedirect` | Delete a redirect. |
+| `createCoupon` | Create a discount code (coupon) that customers can enter at checkout for a percentage or fixed-am... |
 
 ## Operation Details
+
+### `updateVariant`
+
+Update a single product variant — price, compare-at price, SKU, barcode, taxability, inventory policy, and variant option values. Variant edits are product-scoped in the Shopify Admin API, so both productId and variantId are required. Use inventoryPolicy "continue" to keep selling a variant when it is out of stock, or "deny" to stop selling it when inventory reaches zero.
+
+**Arguments:**
+
+- `productId` (string, **required**): The ID of the product the variant belongs to.
+- `variantId` (string, **required**): The ID of the variant to update.
+- `price` (string, *optional*): New price as a decimal string (e.g. "19.99").
+- `compareAtPrice` (string, *optional*): New compare-at ("was") price as a decimal string. Pass an empty string to clear it.
+- `sku` (string, *optional*): New SKU (stock keeping unit) for the variant.
+- `barcode` (string, *optional*): New barcode (ISBN, UPC, GTIN, etc.) for the variant.
+- `taxable` (boolean, *optional*): Whether the variant is subject to tax.
+- `inventoryPolicy` (string, *optional*): Inventory policy: "continue" to keep selling when out of stock, or "deny" to stop selling when out of stock.
+- `options` (array, *optional*): New variant option values in order (e.g. ["Large", "Red"]) to replace the variant's current option values. Must match the number of product options.
+
+**Returns:**
+
+`ShopifyVariant`: Returns the updated variant with id, title, price, compareAtPrice, sku, inventoryQuantity, inventoryPolicy, option values, barcode, and taxable.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"updateVariant","params":{"productId":"1234567890","variantId":"9876543210","price":"24.99","inventoryPolicy":"continue"}}' | jq .
+```
+
+### `refundOrder`
+
+Refund an order — either specific line items (partial refund) or all refundable items. Money is actually returned to the customer: the operation computes the suggested refund (transactions, taxes, and amounts) for the requested items, then creates the refund against the original payment. Optionally restock the refunded items and refund shipping.
+
+**Arguments:**
+
+- `orderId` (string, **required**): The ID of the order to refund.
+- `lineItems` (array, *optional*): Line items to refund, each an object { lineItemId: string, quantity: number }. Omit to refund all remaining refundable items on the order.
+- `refundShipping` (boolean, *optional*): Whether to also refund the full remaining shipping amount. Defaults to false.
+- `note` (string, *optional*): An optional note describing the reason for the refund (shown in the Shopify admin).
+- `notify` (boolean, *optional*): Whether to send the customer a refund notification email. Defaults to false.
+- `restock` (boolean, *optional*): Whether to restock the refunded items back into inventory. Defaults to true.
+
+**Returns:**
+
+`ShopifyRefund`: Returns the created refund: { id, orderId, note, totalRefunded, currency, createdAt }.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"refundOrder","params":{"orderId":"450789469","lineItems":[{"lineItemId":"518995019","quantity":2}],"restock":true,"notify":true}}' | jq .
+```
+
+### `fulfillOrder`
+
+Fulfill an order (mark items as shipped) and optionally attach tracking. Fulfills either specific line items (split/partial fulfillment) or all remaining unfulfilled items. Resolves the order's fulfillment orders automatically. Tracking number, carrier, and URL are optional; set notifyCustomer to email the customer a shipping confirmation.
+
+**Arguments:**
+
+- `orderId` (string, **required**): The ID of the order to fulfill.
+- `lineItems` (array, *optional*): Line items to fulfill, each an object { lineItemId: string, quantity: number }. Omit to fulfill all remaining unfulfilled items.
+- `trackingNumber` (string, *optional*): Tracking number for the shipment.
+- `trackingCompany` (string, *optional*): Shipping carrier name (e.g. "UPS", "USPS", "FedEx").
+- `trackingUrl` (string, *optional*): A URL where the customer can track the shipment.
+- `notifyCustomer` (boolean, *optional*): Whether to send the customer a shipping notification email. Defaults to false.
+
+**Returns:**
+
+`ShopifyFulfillment`: Returns the created fulfillment: { id, orderId, status, trackingNumber, trackingCompany, trackingUrl, createdAt }.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"fulfillOrder","params":{"orderId":"450789469","trackingNumber":"1Z999AA10123456784","trackingCompany":"UPS","notifyCustomer":true}}' | jq .
+```
+
+### `updateFulfillmentTracking`
+
+Update the tracking information on an existing fulfillment (for example to add a tracking number after the fact, correct the carrier, or replace the tracking URL). Optionally notify the customer of the updated tracking.
+
+**Arguments:**
+
+- `fulfillmentId` (string, **required**): The ID of the fulfillment to update.
+- `trackingNumber` (string, *optional*): The tracking number to set on the fulfillment.
+- `trackingCompany` (string, *optional*): Shipping carrier name (e.g. "UPS", "USPS", "FedEx").
+- `trackingUrl` (string, *optional*): A URL where the customer can track the shipment.
+- `notifyCustomer` (boolean, *optional*): Whether to send the customer an updated-tracking notification email. Defaults to false.
+
+**Returns:**
+
+`ShopifyFulfillment`: Returns the updated fulfillment: { id, orderId, status, trackingNumber, trackingCompany, trackingUrl, createdAt }.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"updateFulfillmentTracking","params":{"fulfillmentId":"255858046","trackingNumber":"1Z999AA10123456784","trackingCompany":"UPS","notifyCustomer":true}}' | jq .
+```
+
+### `createCollection`
+
+Create a manual (custom) collection — a hand-picked grouping of products. Supports a theme template suffix (e.g. "preview" or "landing") so the collection can render with a custom theme template, and a visibility flag that publishes (or hides) the collection on the Online Store sales channel. Products are added separately via addProductsToCollection; a product can belong to multiple collections at once.
+
+**Arguments:**
+
+- `title` (string, **required**): The collection title.
+- `descriptionHtml` (string, *optional*): The collection description as HTML.
+- `templateSuffix` (string, *optional*): Theme template suffix to render the collection with a custom template, e.g. "preview" renders templates/collection.preview.liquid. Omit for the default template.
+- `published` (boolean, *optional*): Whether the collection is visible on the Online Store sales channel. true publishes it, false hides it. Defaults to false.
+- `sortOrder` (string, *optional*): How products are ordered within the collection (e.g. "MANUAL", "BEST_SELLING", "ALPHA_ASC", "PRICE_DESC", "CREATED").
+- `imageUrl` (string, *optional*): URL of an image to use as the collection image.
+- `imageAlt` (string, *optional*): Alt text for the collection image.
+
+**Returns:**
+
+`ShopifyCollection`: Returns the created collection with id, title, bodyHtml, handle, sortOrder, collectionType ("custom"), imageUrl, and productsCount.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"createCollection","params":{"title":"Summer Launch","descriptionHtml":"<p>Our summer collection</p>","templateSuffix":"landing","published":false}}' | jq .
+```
+
+### `updateCollection`
+
+Update a manual (custom) collection — title, description, theme template suffix, sort order, image, and visibility on the Online Store sales channel. Only the provided fields are changed.
+
+**Arguments:**
+
+- `collectionId` (string, **required**): The ID of the collection to update.
+- `title` (string, *optional*): New collection title.
+- `descriptionHtml` (string, *optional*): New collection description as HTML.
+- `templateSuffix` (string, *optional*): New theme template suffix (e.g. "preview" / "landing"). Pass an empty string to reset to the default template.
+- `published` (boolean, *optional*): Whether the collection is visible on the Online Store sales channel. true publishes it, false hides it.
+- `sortOrder` (string, *optional*): How products are ordered within the collection (e.g. "MANUAL", "BEST_SELLING", "ALPHA_ASC", "PRICE_DESC", "CREATED").
+- `imageUrl` (string, *optional*): New collection image URL.
+- `imageAlt` (string, *optional*): New alt text for the collection image.
+
+**Returns:**
+
+`ShopifyCollection`: Returns the updated collection with id, title, bodyHtml, handle, sortOrder, collectionType, imageUrl, and productsCount.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"updateCollection","params":{"collectionId":"841564295","published":true,"templateSuffix":"preview"}}' | jq .
+```
+
+### `deleteCollection`
+
+Delete a collection. This removes the collection grouping only — the products that belonged to it are not deleted.
+
+**Arguments:**
+
+- `collectionId` (string, **required**): The ID of the collection to delete.
+
+**Returns:**
+
+`object`: Returns { deleted: true, collectionId }.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"deleteCollection","params":{"collectionId":"841564295"}}' | jq .
+```
+
+### `addProductsToCollection`
+
+Add one or more products to a manual (custom) collection. This is additive — a product keeps its membership in any other collections (e.g. its category collection) and also joins this one, so the same product can appear in multiple collections at once.
+
+**Arguments:**
+
+- `collectionId` (string, **required**): The ID of the collection to add products to.
+- `productIds` (array, **required**): Array of product IDs to add to the collection.
+
+**Returns:**
+
+`object`: Returns { collectionId, productIds, added: true }.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"addProductsToCollection","params":{"collectionId":"841564295","productIds":["1234567890","1234567891"]}}' | jq .
+```
+
+### `removeProductsFromCollection`
+
+Remove one or more products from a manual (custom) collection. The products themselves are not deleted and remain in any other collections they belong to.
+
+**Arguments:**
+
+- `collectionId` (string, **required**): The ID of the collection to remove products from.
+- `productIds` (array, **required**): Array of product IDs to remove from the collection.
+
+**Returns:**
+
+`object`: Returns { collectionId, productIds, removed: true }.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"removeProductsFromCollection","params":{"collectionId":"841564295","productIds":["1234567890"]}}' | jq .
+```
 
 ### `listProducts`
 
@@ -473,12 +709,12 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `getInventoryLevels`
 
-Get inventory levels for items at specific locations. You must provide either inventoryItemIds or locationIds (at least one is required).
+Get inventory levels. With no arguments, returns levels for all inventory items (up to limit). Optionally narrow by inventoryItemIds and/or filter by locationIds. Each returned level includes the locationId needed for adjustInventory.
 
 **Arguments:**
 
-- `inventoryItemIds` (string, *optional*): Comma-separated list of inventory item IDs to query.
-- `locationIds` (string, *optional*): Comma-separated list of location IDs to query.
+- `inventoryItemIds` (string, *optional*): Comma-separated list of inventory item IDs to query. Omit to return levels for all items.
+- `locationIds` (string, *optional*): Comma-separated list of location IDs to filter results to. Omit to return levels at all locations.
 - `limit` (number, *optional*): Number of results to return (1-250). Defaults to 50.
 
 **Returns:**
@@ -1264,6 +1500,37 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"shopify","method":"deleteRedirect","params":{"redirectId":"<ID>"}}' | jq .
+```
+
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
+
+### `createCoupon`
+
+Create a discount code (coupon) that customers can enter at checkout for a percentage or fixed-amount discount off their entire order. The coupon is active immediately unless startsAt is provided.
+
+**Arguments:**
+
+- `code` (string, **required**): The coupon code customers type at checkout, e.g. "SUMMER20". Case-insensitive at checkout.
+- `valueType` (string, **required**): The discount type: "percentage" for a percent off, or "fixed_amount" for a flat currency amount off.
+- `value` (number, **required**): The discount amount. For valueType "percentage", a percent from 1-100 (e.g. 20 = 20% off). For valueType "fixed_amount", the currency amount off the order (e.g. 10 = $10 off in the store currency).
+- `title` (string, *optional*): Admin-facing title for the discount shown in the Shopify dashboard. Defaults to the code if omitted.
+- `startsAt` (string, *optional*): When the coupon becomes active (ISO 8601). Defaults to now.
+- `endsAt` (string, *optional*): When the coupon expires (ISO 8601). Omit for no expiry. Must be after startsAt.
+- `usageLimit` (number, *optional*): Maximum total number of times this coupon can be used across all customers. Omit for unlimited.
+- `appliesOncePerCustomer` (boolean, *optional*): If true, each customer can use the coupon only once. Defaults to false.
+- `minimumSubtotal` (number, *optional*): Minimum order subtotal (in the store currency) required to use the coupon. Omit for no minimum.
+
+**Returns:**
+
+`AdapterOperationResult`: Returns the created discount code: { id, code, title, status, valueType, value, startsAt, endsAt, usageLimit, appliesOncePerCustomer, minimumSubtotal }.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"createCoupon","params":{"code":"<value>","valueType":"<value>","value":10}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.

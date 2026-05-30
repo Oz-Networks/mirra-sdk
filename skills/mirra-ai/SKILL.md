@@ -42,6 +42,7 @@ Replace `{operation}` with the operation name from the table below.
 | `decide` | Use AI to make a decision from a list of options. The AI analyzes your prompt, considers the cont... |
 | `agent` | Run an AI agent that can call tools across multiple rounds. The agent receives a conversation, de... |
 | `computerUse` | Proxy for the Anthropic Computer Use API. Forwards requests to Anthropic's Messages API with comp... |
+| `transcribeAudio` | Transcribe an audio file to text (speech-to-text) using OpenAI Whisper. Accepts either a public U... |
 
 ## Operation Details
 
@@ -145,6 +146,31 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"ai","method":"computerUse","params":{"messages":[{"role":"user","content":"Open the browser and navigate to example.com"}],"tools":[{"type":"computer_20251124","name":"computer","display_width_px":1024,"display_height_px":768}]}}' | jq .
+```
+
+### `transcribeAudio`
+
+Transcribe an audio file to text (speech-to-text) using OpenAI Whisper. Accepts either a public URL to an audio file or base64-encoded audio bytes, and returns the transcript.
+
+**Arguments:**
+
+- `url` (string, *optional*): Public URL to an audio file to download and transcribe. Provide either "url" or "base64".
+- `base64` (string, *optional*): Base64-encoded audio bytes to transcribe (optionally a data URI). Provide either "url" or "base64".
+- `mimeType` (string, *optional*): MIME type of the audio (e.g. "audio/ogg", "audio/mpeg", "audio/mp4"). Helps Whisper detect the format. Defaults to "audio/mpeg".
+- `language` (string, *optional*): Optional ISO-639-1 language code (e.g. "en", "es") to improve accuracy when the language is known.
+- `prompt` (string, *optional*): Optional text prompt to bias the transcription (e.g. expected vocabulary, names, or prior context).
+
+**Returns:**
+
+`NormalizedTranscription`: Returns FLAT structure with: text (the transcript), language (detected/specified ISO code or null), durationSeconds (audio length or null), model (transcription model used).
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"ai","method":"transcribeAudio","params":{"base64":"<base64-audio>","mimeType":"audio/ogg"}}' | jq .
 ```
 
 ## Response Format

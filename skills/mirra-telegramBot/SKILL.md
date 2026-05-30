@@ -53,6 +53,7 @@ Replace `{operation}` with the operation name from the table below.
 | `restrictChatMember` | Restrict a user's permissions in a group chat (mute, block media, etc.). The bot must be an admin... |
 | `getChatMember` | Look up a user in a group chat by their user ID or @username. Returns their membership status (cr... |
 | `deleteMessage` | Delete a message in a group chat. The bot must be an admin with "Delete Messages" permission, or ... |
+| `downloadFile` | Download a file from Telegram (photo, document, video, audio, voice, sticker) as base64. Use this... |
 
 ## Operation Details
 
@@ -456,6 +457,39 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "messageId": 999,
   "chatId": "-1001234567890",
   "deleted": true
+}
+```
+
+### `downloadFile`
+
+Download a file from Telegram (photo, document, video, audio, voice, sticker) as base64. Use this to feed user-uploaded media into mirra.ai.chat for vision/OCR/document understanding.
+
+**Arguments:**
+
+- `botUsername` (string, **required**): Username of the bot that received the file (without @). Must be the bot that the file_id was issued to — file_ids are bot-scoped.
+- `fileId` (string, **required**): Telegram file_id from an incoming media event (event.data.bot.fileId). For photos with multiple sizes, the event already contains the largest size.
+
+**Returns:**
+
+`AdapterOperationResult`: Downloaded file with base64 data, MIME type, file size, and Telegram-provided filename when available
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"telegramBot","method":"downloadFile","params":{"botUsername":"my_bot","fileId":"AgACAgIAAxkBAAI..."}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "base64": "iVBORw0KGgoAAAANSUhEUgAA...",
+  "mimeType": "image/jpeg",
+  "fileSize": 45230,
+  "fileName": "photo.jpg"
 }
 ```
 
