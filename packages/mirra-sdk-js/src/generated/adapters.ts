@@ -1355,6 +1355,10 @@ export interface ShopifyRemoveProductsFromCollectionArgs {
   collectionId: string; // The ID of the collection to remove products from.
   productIds: any[]; // Array of product IDs to remove from the collection.
 }
+export interface ShopifyPublishCollectionArgs {
+  collectionId: string; // The ID of the collection to publish or unpublish.
+  published?: boolean; // true (the default) publishes the collection on the Online Store sales channel; false unpublishes (hides) it from the storefront.
+}
 export interface ShopifyListProductsArgs {
   limit?: number; // Number of products to return per page (1-250). Defaults to 50.
   pageInfo?: string; // Cursor for pagination. Use the nextPageInfo value from a previous response to get the next page.
@@ -1398,6 +1402,9 @@ export interface ShopifyListOrdersArgs {
 }
 export interface ShopifyGetOrderArgs {
   orderId: string; // The Shopify order ID.
+}
+export interface ShopifyGetPaymentsBalanceArgs {
+  limit?: number; // Number of recent payouts to return, most recent first (1-50). Defaults to 10.
 }
 export interface ShopifyCreateOrderArgs {
   lineItems: any[]; // Array of line items. Each item needs either variant_id or title+price+quantity. Example: [{ variant_id: "123", quantity: 2 }] or [{ title: "Custom Item", price: "10.00", quantity: 1 }].
@@ -5612,6 +5619,7 @@ export interface ShopifyNormalizedOrder {
   subtotalPrice: string; // Subtotal price
   totalTax: string; // Total tax
   totalDiscounts: string; // Total discounts
+  totalShipping: string; // Total shipping charged to the customer (shipping revenue, not the merchant's carrier cost)
   currency: string; // Currency code (e.g., USD)
   financialStatus: string; // Financial status (paid, pending, etc.)
   fulfillmentStatus?: string; // Fulfillment status
@@ -5649,6 +5657,7 @@ export interface ShopifyOrderData {
   subtotalPrice: string; // Subtotal price
   totalTax: string; // Total tax
   totalDiscounts: string; // Total discounts
+  totalShipping: string; // Total shipping charged to the customer (shipping revenue, not the merchant's carrier cost)
   currency: string; // Currency code (e.g., USD)
   financialStatus: string; // Financial status (paid, pending, etc.)
   fulfillmentStatus?: string; // Fulfillment status
@@ -5670,6 +5679,33 @@ export interface ShopifyOrderData {
 
 export type ShopifyGetOrderResult = AdapterResultBase<ShopifyOrderData>;
 
+export interface ShopifyBalance {
+  amount: string; // Balance amount not yet paid out
+  currency: string; // Currency code (e.g., USD)
+}
+
+export interface ShopifyPayout {
+  id: string; // Payout ID
+  status: string; // Payout status (scheduled, in_transit, paid, failed, canceled)
+  issuedAt: string; // When the payout was issued (ISO 8601)
+  amount: string; // Net amount deposited to the bank account
+  currency: string; // Currency code (e.g., USD)
+  chargesGross: string; // Gross sales from charges included in this payout
+  chargesFee: string; // Processing fees on those charges
+  refundsFee: string; // Fees on refunds in this payout
+  adjustmentsGross: string; // Gross from adjustments (e.g. chargeback reversals)
+  adjustmentsFee: string; // Fees on adjustments
+}
+
+export interface ShopifyPaymentsBalanceData {
+  balance: any; // Per-currency balances not yet paid out
+  payouts: any; // Recent payouts, most recent first
+  totalRetrieved: number; // Number of payouts retrieved
+  note?: string; // Present only when the store does not use Shopify Payments
+}
+
+export type ShopifyGetPaymentsBalanceResult = AdapterResultBase<ShopifyPaymentsBalanceData>;
+
 export interface ShopifyOrderData {
   id: string; // Order ID
   orderNumber: number; // Human-readable order number
@@ -5679,6 +5715,7 @@ export interface ShopifyOrderData {
   subtotalPrice: string; // Subtotal price
   totalTax: string; // Total tax
   totalDiscounts: string; // Total discounts
+  totalShipping: string; // Total shipping charged to the customer (shipping revenue, not the merchant's carrier cost)
   currency: string; // Currency code (e.g., USD)
   financialStatus: string; // Financial status (paid, pending, etc.)
   fulfillmentStatus?: string; // Fulfillment status
@@ -5709,6 +5746,7 @@ export interface ShopifyOrderData {
   subtotalPrice: string; // Subtotal price
   totalTax: string; // Total tax
   totalDiscounts: string; // Total discounts
+  totalShipping: string; // Total shipping charged to the customer (shipping revenue, not the merchant's carrier cost)
   currency: string; // Currency code (e.g., USD)
   financialStatus: string; // Financial status (paid, pending, etc.)
   fulfillmentStatus?: string; // Fulfillment status
@@ -5739,6 +5777,7 @@ export interface ShopifyOrderData {
   subtotalPrice: string; // Subtotal price
   totalTax: string; // Total tax
   totalDiscounts: string; // Total discounts
+  totalShipping: string; // Total shipping charged to the customer (shipping revenue, not the merchant's carrier cost)
   currency: string; // Currency code (e.g., USD)
   financialStatus: string; // Financial status (paid, pending, etc.)
   fulfillmentStatus?: string; // Fulfillment status
@@ -12046,7 +12085,7 @@ function createPolymarketAdapter(sdk: MirraSDK) {
 
 /**
  * Shopify Adapter
- * Category: marketplace
+ * Category: commerce
  */
 function createShopifyAdapter(sdk: MirraSDK) {
   return {
@@ -12205,6 +12244,19 @@ function createShopifyAdapter(sdk: MirraSDK) {
     },
 
     /**
+     * Publish or unpublish an existing collection on the Online Store sales channel, making it visible (or hidden) on the storefront. Use this to make a collection live after creating it, or to retry publishing a collection that was created but not yet published (e.g. when createCollection succeeded but its publish step was skipped). Requires the read_publications and write_publications scopes — if the store has not granted them, the merchant must reconnect Shopify and approve the expanded permissions before publishing will work.
+     * @param args.collectionId - The ID of the collection to publish or unpublish.
+     * @param args.published - true (the default) publishes the collection on the Online Store sales channel; false unpublishes (hides) it from the storefront. (optional)
+     */
+    publishCollection: async (args: ShopifyPublishCollectionArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'publishCollection',
+        params: args || {}
+      });
+    },
+
+    /**
      * List products in the Shopify store with optional filtering and pagination. Returns up to 50 products per page. Use the nextPageInfo cursor from the response to fetch subsequent pages.
      * @param args.limit - Number of products to return per page (1-250). Defaults to 50. (optional)
      * @param args.pageInfo - Cursor for pagination. Use the nextPageInfo value from a previous response to get the next page. (optional)
@@ -12314,6 +12366,19 @@ function createShopifyAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'getOrder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the store's Shopify Payments balance and recent payouts (bank deposits). Useful for profit/cashflow tracking: the balance is funds not yet paid out, and each payout breaks down gross charges vs. processing fees. Requires the read_shopify_payments_payouts scope — if the store has not granted it, the merchant must reconnect Shopify and approve the expanded permissions. NOTE: this only works for stores that use Shopify Payments; stores on an external gateway (PayPal, Stripe, etc.) have no Shopify Payments account and the operation returns empty balance/payouts with an explanatory note.
+     * @param args.limit - Number of recent payouts to return, most recent first (1-50). Defaults to 10. (optional)
+     * @returns Promise<ShopifyPaymentsBalanceData> Typed flat response with IDE autocomplete
+     */
+    getPaymentsBalance: async (args: ShopifyGetPaymentsBalanceArgs): Promise<ShopifyPaymentsBalanceData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'getPaymentsBalance',
         params: args || {}
       });
     },
