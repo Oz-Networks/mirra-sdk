@@ -39,6 +39,7 @@ Replace `{operation}` with the operation name from the table below.
 | Operation | Description |
 |-----------|-------------|
 | `createFeedItem` | Create a notification for the user. Shows up in their activity feed and sends a push notification... |
+| `hideFeedItem` | Clear a previously-sent feed item notification from the user's device notification tray, by feedI... |
 
 ## Operation Details
 
@@ -81,6 +82,36 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "createdAt": "2024-01-15T09:00:00Z",
   "hasActions": false,
   "blockCount": 3
+}
+```
+
+### `hideFeedItem`
+
+Clear a previously-sent feed item notification from the user's device notification tray, by feedItemId. Use this to keep at most one live notification of a kind (e.g. dismiss the previous alert before sending a new one). Sends a silent signal to the device — it does not show a new notification and does not delete the item from the activity feed. No-op if the notification was already dismissed or the app is not reachable.
+
+**Arguments:**
+
+- `feedItemId` (string, **required**): The feedItemId returned by a prior createFeedItem call — identifies which device notification to clear
+
+**Returns:**
+
+`AdapterOperationResult`: Returns: feedItemId, status ('dismissed')
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"feed-items","method":"hideFeedItem","params":{"feedItemId":"feed_123"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "feedItemId": "feed_123",
+  "status": "dismissed"
 }
 ```
 

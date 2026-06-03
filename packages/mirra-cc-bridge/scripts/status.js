@@ -14715,7 +14715,7 @@ var require_axios = __commonJS({
         if (key === "__proto__" || key === "constructor" || key === "prototype") {
           return;
         }
-        const targetKey = caseless && findKey(result, key) || key;
+        const targetKey = caseless && typeof key === "string" && findKey(result, key) || key;
         const existing = hasOwnProperty(result, targetKey) ? result[targetKey] : void 0;
         if (isPlainObject(existing) && isPlainObject(val)) {
           result[targetKey] = merge(existing, val);
@@ -14728,7 +14728,21 @@ var require_axios = __commonJS({
         }
       };
       for (let i = 0, l = objs.length; i < l; i++) {
-        objs[i] && forEach(objs[i], assignValue);
+        const source = objs[i];
+        if (!source || isBuffer(source)) {
+          continue;
+        }
+        forEach(source, assignValue);
+        if (typeof source !== "object" || isArray(source)) {
+          continue;
+        }
+        const symbols = Object.getOwnPropertySymbols(source);
+        for (let j = 0; j < symbols.length; j++) {
+          const symbol = symbols[j];
+          if (propertyIsEnumerable.call(source, symbol)) {
+            assignValue(source[symbol], symbol);
+          }
+        }
       }
       return result;
     }
@@ -14853,6 +14867,9 @@ var require_axios = __commonJS({
     var hasOwnProperty = (({
       hasOwnProperty: hasOwnProperty2
     }) => (obj, prop) => hasOwnProperty2.call(obj, prop))(Object.prototype);
+    var {
+      propertyIsEnumerable
+    } = Object.prototype;
     var isRegExp = kindOfTest("RegExp");
     var reduceDescriptors = (obj, reducer) => {
       const descriptors = Object.getOwnPropertyDescriptors(obj);
@@ -15136,7 +15153,7 @@ var require_axios = __commonJS({
         function setHeader(_value, _header, _rewrite) {
           const lHeader = normalizeHeader(_header);
           if (!lHeader) {
-            throw new Error("header name must be a non-empty string");
+            return;
           }
           const key = utils$1.findKey(self2, lHeader);
           if (!key || self2[key] === void 0 || _rewrite === true || _rewrite === void 0 && self2[key] !== false) {
@@ -15152,7 +15169,7 @@ var require_axios = __commonJS({
           let obj = {}, dest, key;
           for (const entry of header) {
             if (!utils$1.isArray(entry)) {
-              throw TypeError("Object iterator must return a key-value pair");
+              throw new TypeError("Object iterator must return a key-value pair");
             }
             obj[key = entry[0]] = (dest = obj[key]) ? utils$1.isArray(dest) ? [...dest, entry[1]] : [dest, entry[1]] : entry[1];
           }
@@ -15533,7 +15550,7 @@ var require_axios = __commonJS({
           throw new AxiosError("Object is too deeply nested (" + depth + " levels). Max depth: " + maxDepth, AxiosError.ERR_FORM_DATA_DEPTH_EXCEEDED);
         }
         if (stack.indexOf(value) !== -1) {
-          throw Error("Circular reference detected in " + path2.join("."));
+          throw new Error("Circular reference detected in " + path2.join("."));
         }
         stack.push(value);
         utils$1.forEach(value, function each(el, key) {
@@ -15672,7 +15689,8 @@ var require_axios = __commonJS({
       silentJSONParsing: true,
       forcedJSONParsing: true,
       clarifyTimeoutError: false,
-      legacyInterceptorReqResOrdering: true
+      legacyInterceptorReqResOrdering: true,
+      advertiseZstdAcceptEncoding: false
     };
     var URLSearchParams = url.URLSearchParams;
     var ALPHA = "abcdefghijklmnopqrstuvwxyz";
@@ -16014,7 +16032,7 @@ var require_axios = __commonJS({
     function getEnv(key) {
       return process.env[key.toLowerCase()] || process.env[key.toUpperCase()] || "";
     }
-    var VERSION = "1.16.1";
+    var VERSION = "1.17.0";
     function parseProtocol(url2) {
       const match = /^([-+\w]{1,25}):(?:\/\/)?/.exec(url2);
       return match && match[1] || "";
@@ -16231,10 +16249,10 @@ var require_axios = __commonJS({
         boundary = tag + "-" + platform.generateString(size, BOUNDARY_ALPHABET)
       } = options || {};
       if (!utils$1.isFormData(form)) {
-        throw TypeError("FormData instance required");
+        throw new TypeError("FormData instance required");
       }
       if (boundary.length < 1 || boundary.length > 70) {
-        throw Error("boundary must be 1-70 characters long");
+        throw new Error("boundary must be 1-70 characters long");
       }
       const boundaryBytes = textEncoder.encode("--" + boundary + CRLF);
       const footerBytes = textEncoder.encode("--" + boundary + "--" + CRLF);
@@ -16277,6 +16295,81 @@ var require_axios = __commonJS({
           }
         }
         this.__transform(chunk, encoding, callback);
+      }
+    };
+    var Http2Sessions = class {
+      constructor() {
+        this.sessions = /* @__PURE__ */ Object.create(null);
+      }
+      getSession(authority, options) {
+        options = Object.assign({
+          sessionTimeout: 1e3
+        }, options);
+        let authoritySessions = this.sessions[authority];
+        if (authoritySessions) {
+          let len = authoritySessions.length;
+          for (let i = 0; i < len; i++) {
+            const [sessionHandle, sessionOptions] = authoritySessions[i];
+            if (!sessionHandle.destroyed && !sessionHandle.closed && util.isDeepStrictEqual(sessionOptions, options)) {
+              return sessionHandle;
+            }
+          }
+        }
+        const session = http2.connect(authority, options);
+        let removed;
+        let timer;
+        const removeSession = () => {
+          if (removed) {
+            return;
+          }
+          removed = true;
+          if (timer) {
+            clearTimeout(timer);
+            timer = null;
+          }
+          let entries = authoritySessions, len = entries.length, i = len;
+          while (i--) {
+            if (entries[i][0] === session) {
+              if (len === 1) {
+                delete this.sessions[authority];
+              } else {
+                entries.splice(i, 1);
+              }
+              if (!session.closed) {
+                session.close();
+              }
+              return;
+            }
+          }
+        };
+        const originalRequestFn = session.request;
+        const {
+          sessionTimeout
+        } = options;
+        if (sessionTimeout != null) {
+          let streamsCount = 0;
+          session.request = function() {
+            const stream2 = originalRequestFn.apply(this, arguments);
+            streamsCount++;
+            if (timer) {
+              clearTimeout(timer);
+              timer = null;
+            }
+            stream2.once("close", () => {
+              if (!--streamsCount) {
+                timer = setTimeout(() => {
+                  timer = null;
+                  removeSession();
+                }, sessionTimeout);
+              }
+            });
+            return stream2;
+          };
+        }
+        session.once("close", removeSession);
+        let entry = [session, options];
+        authoritySessions ? authoritySessions.push(entry) : authoritySessions = this.sessions[authority] = [entry];
+        return session;
       }
     };
     var callbackify = (fn, reducer) => {
@@ -16591,7 +16684,14 @@ var require_axios = __commonJS({
       flush: zlib.constants.BROTLI_OPERATION_FLUSH,
       finishFlush: zlib.constants.BROTLI_OPERATION_FLUSH
     };
+    var zstdOptions = {
+      flush: zlib.constants.ZSTD_e_flush,
+      finishFlush: zlib.constants.ZSTD_e_flush
+    };
     var isBrotliSupported = utils$1.isFunction(zlib.createBrotliDecompress);
+    var isZstdSupported = utils$1.isFunction(zlib.createZstdDecompress);
+    var ACCEPT_ENCODING = "gzip, compress, deflate" + (isBrotliSupported ? ", br" : "");
+    var ACCEPT_ENCODING_WITH_ZSTD = ACCEPT_ENCODING + (isZstdSupported ? ", zstd" : "");
     var {
       http: httpFollow,
       https: httpsFollow
@@ -16624,6 +16724,18 @@ var require_axios = __commonJS({
         ...agentOptions
       } : agentOptions;
       agent = new HttpsProxyAgent(merged);
+      if (userHttpsAgent && userHttpsAgent.options) {
+        const originTLSOptions = {
+          ...userHttpsAgent.options
+        };
+        const callback = agent.callback;
+        agent.callback = function axiosTunnelingAgentCallback(req, opts) {
+          return callback.call(this, req, {
+            ...originTLSOptions,
+            ...opts
+          });
+        };
+      }
       agent[kAxiosInstalledTunnel] = true;
       cache.set(key, agent);
       return agent;
@@ -16631,7 +16743,7 @@ var require_axios = __commonJS({
     var supportedProtocols = platform.protocols.map((protocol) => {
       return protocol + ":";
     });
-    var decodeURIComponentSafe = (value) => {
+    var decodeURIComponentSafe$1 = (value) => {
       if (!utils$1.isString(value)) {
         return value;
       }
@@ -16645,81 +16757,13 @@ var require_axios = __commonJS({
       stream2.on("end", flush).on("error", flush);
       return throttled;
     };
-    var Http2Sessions = class {
-      constructor() {
-        this.sessions = /* @__PURE__ */ Object.create(null);
-      }
-      getSession(authority, options) {
-        options = Object.assign({
-          sessionTimeout: 1e3
-        }, options);
-        let authoritySessions = this.sessions[authority];
-        if (authoritySessions) {
-          let len = authoritySessions.length;
-          for (let i = 0; i < len; i++) {
-            const [sessionHandle, sessionOptions] = authoritySessions[i];
-            if (!sessionHandle.destroyed && !sessionHandle.closed && util.isDeepStrictEqual(sessionOptions, options)) {
-              return sessionHandle;
-            }
-          }
-        }
-        const session = http2.connect(authority, options);
-        let removed;
-        const removeSession = () => {
-          if (removed) {
-            return;
-          }
-          removed = true;
-          let entries = authoritySessions, len = entries.length, i = len;
-          while (i--) {
-            if (entries[i][0] === session) {
-              if (len === 1) {
-                delete this.sessions[authority];
-              } else {
-                entries.splice(i, 1);
-              }
-              if (!session.closed) {
-                session.close();
-              }
-              return;
-            }
-          }
-        };
-        const originalRequestFn = session.request;
-        const {
-          sessionTimeout
-        } = options;
-        if (sessionTimeout != null) {
-          let timer;
-          let streamsCount = 0;
-          session.request = function() {
-            const stream2 = originalRequestFn.apply(this, arguments);
-            streamsCount++;
-            if (timer) {
-              clearTimeout(timer);
-              timer = null;
-            }
-            stream2.once("close", () => {
-              if (!--streamsCount) {
-                timer = setTimeout(() => {
-                  timer = null;
-                  removeSession();
-                }, sessionTimeout);
-              }
-            });
-            return stream2;
-          };
-        }
-        session.once("close", removeSession);
-        let entry = [session, options];
-        authoritySessions ? authoritySessions.push(entry) : authoritySessions = this.sessions[authority] = [entry];
-        return session;
-      }
-    };
     var http2Sessions = new Http2Sessions();
     function dispatchBeforeRedirect(options, responseDetails, requestDetails) {
       if (options.beforeRedirects.proxy) {
         options.beforeRedirects.proxy(options);
+      }
+      if (options.beforeRedirects.auth) {
+        options.beforeRedirects.auth(options);
       }
       if (options.beforeRedirects.config) {
         options.beforeRedirects.config(options, responseDetails, requestDetails);
@@ -16896,6 +16940,7 @@ var require_axios = __commonJS({
     var httpAdapter = isHttpAdapterSupported && function httpAdapter2(config) {
       return wrapAsync(async function dispatchHttpRequest(resolve, reject, onDone) {
         const own2 = (key) => utils$1.hasOwnProp(config, key) ? config[key] : void 0;
+        const transitional = own2("transitional") || transitionalDefaults;
         let data = own2("data");
         let lookup = own2("lookup");
         let family = own2("family");
@@ -16934,7 +16979,6 @@ var require_axios = __commonJS({
           try {
             abortEmitter.emit("abort", !reason || reason.type ? new CanceledError(null, config, req) : reason);
           } catch (err) {
-            console.warn("emit error", err);
           }
         }
         function clearConnectPhaseTimer() {
@@ -16945,7 +16989,6 @@ var require_axios = __commonJS({
         }
         function createTimeoutError() {
           let timeoutErrorMessage = config.timeout ? "timeout of " + config.timeout + "ms exceeded" : "timeout exceeded";
-          const transitional = config.transitional || transitionalDefaults;
           if (config.timeoutErrorMessage) {
             timeoutErrorMessage = config.timeoutErrorMessage;
           }
@@ -17103,9 +17146,9 @@ var require_axios = __commonJS({
           const password = configAuth.password || "";
           auth = username + ":" + password;
         }
-        if (!auth && parsed.username) {
-          const urlUsername = decodeURIComponentSafe(parsed.username);
-          const urlPassword = decodeURIComponentSafe(parsed.password);
+        if (!auth && (parsed.username || parsed.password)) {
+          const urlUsername = decodeURIComponentSafe$1(parsed.username);
+          const urlPassword = decodeURIComponentSafe$1(parsed.password);
           auth = urlUsername + ":" + urlPassword;
         }
         auth && headers.delete("authorization");
@@ -17119,7 +17162,7 @@ var require_axios = __commonJS({
           customErr.exists = true;
           return reject(customErr);
         }
-        headers.set("Accept-Encoding", "gzip, compress, deflate" + (isBrotliSupported ? ", br" : ""), false);
+        headers.set("Accept-Encoding", utils$1.hasOwnProp(transitional, "advertiseZstdAcceptEncoding") && transitional.advertiseZstdAcceptEncoding === true ? ACCEPT_ENCODING_WITH_ZSTD : ACCEPT_ENCODING, false);
         const options = Object.assign(/* @__PURE__ */ Object.create(null), {
           path: path$1,
           method,
@@ -17136,19 +17179,21 @@ var require_axios = __commonJS({
           http2Options
         });
         !utils$1.isUndefined(lookup) && (options.lookup = lookup);
-        if (config.socketPath) {
-          if (typeof config.socketPath !== "string") {
+        const socketPath = own2("socketPath");
+        if (socketPath) {
+          if (typeof socketPath !== "string") {
             return reject(new AxiosError("socketPath must be a string", AxiosError.ERR_BAD_OPTION_VALUE, config));
           }
-          if (config.allowedSocketPaths != null) {
-            const allowed = Array.isArray(config.allowedSocketPaths) ? config.allowedSocketPaths : [config.allowedSocketPaths];
-            const resolvedSocket = path.resolve(config.socketPath);
+          const allowedSocketPaths = own2("allowedSocketPaths");
+          if (allowedSocketPaths != null) {
+            const allowed = Array.isArray(allowedSocketPaths) ? allowedSocketPaths : [allowedSocketPaths];
+            const resolvedSocket = path.resolve(socketPath);
             const isAllowed = allowed.some((entry) => typeof entry === "string" && path.resolve(entry) === resolvedSocket);
             if (!isAllowed) {
-              return reject(new AxiosError(`socketPath "${config.socketPath}" is not permitted by allowedSocketPaths`, AxiosError.ERR_BAD_OPTION_VALUE, config));
+              return reject(new AxiosError(`socketPath "${socketPath}" is not permitted by allowedSocketPaths`, AxiosError.ERR_BAD_OPTION_VALUE, config));
             }
           }
-          options.socketPath = config.socketPath;
+          options.socketPath = socketPath;
         } else {
           options.hostname = parsed.hostname.startsWith("[") ? parsed.hostname.slice(1, -1) : parsed.hostname;
           options.port = parsed.port;
@@ -17176,6 +17221,18 @@ var require_axios = __commonJS({
             const configBeforeRedirect = own2("beforeRedirect");
             if (configBeforeRedirect) {
               options.beforeRedirects.config = configBeforeRedirect;
+            }
+            if (auth) {
+              const requestOrigin = parsed.origin;
+              const authToRestore = auth;
+              options.beforeRedirects.auth = function beforeRedirectAuth(redirectOptions) {
+                try {
+                  if (new URL(redirectOptions.href).origin === requestOrigin) {
+                    redirectOptions.auth = authToRestore;
+                  }
+                } catch (e) {
+                }
+              };
             }
             transport = isHttpsRequest ? httpsFollow : httpFollow;
           }
@@ -17223,6 +17280,13 @@ var require_axios = __commonJS({
                   streams.push(zlib.createBrotliDecompress(brotliOptions));
                   delete res.headers["content-encoding"];
                 }
+                break;
+              case "zstd":
+                if (isZstdSupported) {
+                  streams.push(zlib.createZstdDecompress(zstdOptions));
+                  delete res.headers["content-encoding"];
+                }
+                break;
             }
           }
           responseStream = streams.length > 1 ? stream.pipeline(streams, utils$1.noop) : streams[0];
@@ -17555,8 +17619,8 @@ var require_axios = __commonJS({
         }
       });
     }
-    var encodeUTF8 = (str) => encodeURIComponent(str).replace(/%([0-9A-F]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
-    var resolveConfig = (config) => {
+    var encodeUTF8$1 = (str) => encodeURIComponent(str).replace(/%([0-9A-F]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+    function resolveConfig(config) {
       const newConfig = mergeConfig({}, config);
       const own2 = (key) => utils$1.hasOwnProp(newConfig, key) ? newConfig[key] : void 0;
       const data = own2("data");
@@ -17569,12 +17633,12 @@ var require_axios = __commonJS({
       const allowAbsoluteUrls = own2("allowAbsoluteUrls");
       const url2 = own2("url");
       newConfig.headers = headers = AxiosHeaders.from(headers);
-      newConfig.url = buildURL(buildFullPath(baseURL, url2, allowAbsoluteUrls), config.params, config.paramsSerializer);
+      newConfig.url = buildURL(buildFullPath(baseURL, url2, allowAbsoluteUrls), own2("params"), own2("paramsSerializer"));
       if (auth) {
-        headers.set("Authorization", "Basic " + btoa((auth.username || "") + ":" + (auth.password ? encodeUTF8(auth.password) : "")));
+        headers.set("Authorization", "Basic " + btoa((auth.username || "") + ":" + (auth.password ? encodeUTF8$1(auth.password) : "")));
       }
       if (utils$1.isFormData(data)) {
-        if (platform.hasStandardBrowserEnv || platform.hasStandardBrowserWebWorkerEnv) {
+        if (platform.hasStandardBrowserEnv || platform.hasStandardBrowserWebWorkerEnv || utils$1.isReactNative(data)) {
           headers.setContentType(void 0);
         } else if (utils$1.isFunction(data.getHeaders)) {
           setFormDataHeaders(headers, data.getHeaders(), own2("formDataHeaderPolicy"));
@@ -17593,7 +17657,7 @@ var require_axios = __commonJS({
         }
       }
       return newConfig;
-    };
+    }
     var isXHRAdapterSupported = typeof XMLHttpRequest !== "undefined";
     var xhrAdapter = isXHRAdapterSupported && function(config) {
       return new Promise(function dispatchXhrRequest(resolve, reject) {
@@ -17845,12 +17909,31 @@ var require_axios = __commonJS({
     var {
       isFunction
     } = utils$1;
+    var encodeUTF8 = (str) => encodeURIComponent(str).replace(/%([0-9A-F]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+    var decodeURIComponentSafe = (value) => {
+      if (!utils$1.isString(value)) {
+        return value;
+      }
+      try {
+        return decodeURIComponent(value);
+      } catch (error) {
+        return value;
+      }
+    };
     var test = (fn, ...args) => {
       try {
         return !!fn(...args);
       } catch (e) {
         return false;
       }
+    };
+    var maybeWithAuthCredentials = (url2) => {
+      const protocolIndex = url2.indexOf("://");
+      let urlToCheck = url2;
+      if (protocolIndex !== -1) {
+        urlToCheck = urlToCheck.slice(protocolIndex + 3);
+      }
+      return urlToCheck.includes("@") || urlToCheck.includes(":");
     };
     var factory = (env) => {
       const globalObject = utils$1.global !== void 0 && utils$1.global !== null ? utils$1.global : globalThis;
@@ -17955,6 +18038,7 @@ var require_axios = __commonJS({
         } = resolveConfig(config);
         const hasMaxContentLength = utils$1.isNumber(maxContentLength) && maxContentLength > -1;
         const hasMaxBodyLength = utils$1.isNumber(maxBodyLength) && maxBodyLength > -1;
+        const own2 = (key) => utils$1.hasOwnProp(config, key) ? config[key] : void 0;
         let _fetch = envFetch || fetch;
         responseType = responseType ? (responseType + "").toLowerCase() : "text";
         let composedSignal = composeSignals([signal, cancelToken && cancelToken.toAbortSignal()], timeout);
@@ -17964,6 +18048,36 @@ var require_axios = __commonJS({
         });
         let requestContentLength;
         try {
+          let auth = void 0;
+          const configAuth = own2("auth");
+          if (configAuth) {
+            const username = configAuth.username || "";
+            const password = configAuth.password || "";
+            auth = {
+              username,
+              password
+            };
+          }
+          if (maybeWithAuthCredentials(url2)) {
+            const parsedURL = new URL(url2, platform.origin);
+            if (!auth && (parsedURL.username || parsedURL.password)) {
+              const urlUsername = decodeURIComponentSafe(parsedURL.username);
+              const urlPassword = decodeURIComponentSafe(parsedURL.password);
+              auth = {
+                username: urlUsername,
+                password: urlPassword
+              };
+            }
+            if (parsedURL.username || parsedURL.password) {
+              parsedURL.username = "";
+              parsedURL.password = "";
+              url2 = parsedURL.href;
+            }
+          }
+          if (auth) {
+            headers.delete("authorization");
+            headers.set("Authorization", "Basic " + btoa(encodeUTF8((auth.username || "") + ":" + (auth.password || ""))));
+          }
           if (hasMaxContentLength && typeof url2 === "string" && url2.startsWith("data:")) {
             const estimated = estimateDataURLDecodedBytes(url2);
             if (estimated > maxContentLength) {
@@ -18335,7 +18449,8 @@ var require_axios = __commonJS({
             silentJSONParsing: validators.transitional(validators.boolean),
             forcedJSONParsing: validators.transitional(validators.boolean),
             clarifyTimeoutError: validators.transitional(validators.boolean),
-            legacyInterceptorReqResOrdering: validators.transitional(validators.boolean)
+            legacyInterceptorReqResOrdering: validators.transitional(validators.boolean),
+            advertiseZstdAcceptEncoding: validators.transitional(validators.boolean)
           }, false);
         }
         if (paramsSerializer != null) {
@@ -22124,5 +22239,5 @@ mime-types/index.js:
    *)
 
 axios/dist/node/axios.cjs:
-  (*! Axios v1.16.1 Copyright (c) 2026 Matt Zabriskie and contributors *)
+  (*! Axios v1.17.0 Copyright (c) 2026 Matt Zabriskie and contributors *)
 */

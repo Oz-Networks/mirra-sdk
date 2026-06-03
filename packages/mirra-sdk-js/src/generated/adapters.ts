@@ -321,6 +321,9 @@ export interface FeedItemsCreateFeedItemArgs {
   preview?: string; // Longer text content shown below details (e.g. email body preview, note content)
   notify?: boolean; // Send push notification (default: true, set false for background updates)
 }
+export interface FeedItemsHideFeedItemArgs {
+  feedItemId: string; // The feedItemId returned by a prior createFeedItem call — identifies which device notification to clear
+}
 
 // Feedback Adapter Types
 export interface FeedbackReportBugArgs {
@@ -9008,6 +9011,18 @@ function createFeedItemsAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'feed-items',
         method: 'createFeedItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Clear a previously-sent feed item notification from the user's device notification tray, by feedItemId. Use this to keep at most one live notification of a kind (e.g. dismiss the previous alert before sending a new one). Sends a silent signal to the device — it does not show a new notification and does not delete the item from the activity feed. No-op if the notification was already dismissed or the app is not reachable.
+     * @param args.feedItemId - The feedItemId returned by a prior createFeedItem call — identifies which device notification to clear
+     */
+    hideFeedItem: async (args: FeedItemsHideFeedItemArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'feed-items',
+        method: 'hideFeedItem',
         params: args || {}
       });
     }

@@ -35,7 +35,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-contacts`](./mirra-contacts/) | Contacts | 9 | No |
 | [`mirra-data`](./mirra-data/) | Data | 14 | No |
 | [`mirra-desktop`](./mirra-desktop/) | Desktop | 10 | No |
-| [`mirra-feed-items`](./mirra-feed-items/) | Feed Items | 1 | No |
+| [`mirra-feed-items`](./mirra-feed-items/) | Feed Items | 2 | No |
 | [`mirra-feedback`](./mirra-feedback/) | Feedback | 5 | No |
 | [`mirra-flows`](./mirra-flows/) | Flows | 21 | No |
 | [`mirra-memory`](./mirra-memory/) | Memory | 10 | No |
@@ -101,7 +101,6 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 |-------|---------|------------|---------------|
 | [`mirra-marketplace-resources`](./mirra-marketplace-resources/) | Marketplace Resources | 6 | No |
 | [`mirra-marketplace-templates`](./mirra-marketplace-templates/) | Marketplace Templates | 14 | No |
-| [`mirra-shopify`](./mirra-shopify/) | Shopify | 59 | Yes (OAuth) |
 
 ### Other
 
@@ -109,7 +108,13 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 |-------|---------|------------|---------------|
 | [`mirra-google-ads`](./mirra-google-ads/) | Google Ads | 25 | Yes (OAuth) |
 
-**Total: 38 adapters, 443 operations**
+### Other
+
+| Skill | Adapter | Operations | Auth Required |
+|-------|---------|------------|---------------|
+| [`mirra-shopify`](./mirra-shopify/) | Shopify | 61 | Yes (OAuth) |
+
+**Total: 38 adapters, 446 operations**
 
 ## How It Works
 

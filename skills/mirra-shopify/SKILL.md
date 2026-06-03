@@ -49,6 +49,7 @@ Replace `{operation}` with the operation name from the table below.
 | `deleteCollection` | Delete a collection. This removes the collection grouping only — the products that belonged to it... |
 | `addProductsToCollection` | Add one or more products to a manual (custom) collection. This is additive — a product keeps its ... |
 | `removeProductsFromCollection` | Remove one or more products from a manual (custom) collection. The products themselves are not de... |
+| `publishCollection` | Publish or unpublish an existing collection on the Online Store sales channel, making it visible ... |
 | `listProducts` | List products in the Shopify store with optional filtering and pagination. Returns up to 50 produ... |
 | `getProduct` | Get a single product by its Shopify product ID. Returns full product details including all varian... |
 | `createProduct` | Create a new product in the Shopify store. At minimum, a title is required. Set status to "draft"... |
@@ -56,6 +57,7 @@ Replace `{operation}` with the operation name from the table below.
 | `deleteProduct` | Permanently delete a product from the Shopify store. This action cannot be undone. |
 | `listOrders` | List orders from the Shopify store with optional filtering. Returns up to 50 orders per page sort... |
 | `getOrder` | Get a single order by its Shopify order ID. Returns full order details including line items and c... |
+| `getPaymentsBalance` | Get the store's Shopify Payments balance and recent payouts (bank deposits). Useful for profit/ca... |
 | `createOrder` | Create a new order in the Shopify store. Requires at least one line item. Can optionally include ... |
 | `cancelOrder` | Cancel an existing order. The order must be open. Optionally specify a reason for cancellation. |
 | `closeOrder` | Close an open order. A closed order is one that has no more work to be done (e.g., fully fulfille... |
@@ -328,6 +330,28 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -d '{"resourceId":"shopify","method":"removeProductsFromCollection","params":{"collectionId":"841564295","productIds":["1234567890"]}}' | jq .
 ```
 
+### `publishCollection`
+
+Publish or unpublish an existing collection on the Online Store sales channel, making it visible (or hidden) on the storefront. Use this to make a collection live after creating it, or to retry publishing a collection that was created but not yet published (e.g. when createCollection succeeded but its publish step was skipped). Requires the read_publications and write_publications scopes — if the store has not granted them, the merchant must reconnect Shopify and approve the expanded permissions before publishing will work.
+
+**Arguments:**
+
+- `collectionId` (string, **required**): The ID of the collection to publish or unpublish.
+- `published` (boolean, *optional*): true (the default) publishes the collection on the Online Store sales channel; false unpublishes (hides) it from the storefront.
+
+**Returns:**
+
+`object`: Returns { collectionId, published }.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"publishCollection","params":{"collectionId":"841564295","published":true}}' | jq .
+```
+
 ### `listProducts`
 
 List products in the Shopify store with optional filtering and pagination. Returns up to 50 products per page. Use the nextPageInfo cursor from the response to fetch subsequent pages.
@@ -502,6 +526,27 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"shopify","method":"getOrder","params":{"orderId":"<ID>"}}' | jq .
+```
+
+### `getPaymentsBalance`
+
+Get the store's Shopify Payments balance and recent payouts (bank deposits). Useful for profit/cashflow tracking: the balance is funds not yet paid out, and each payout breaks down gross charges vs. processing fees. Requires the read_shopify_payments_payouts scope — if the store has not granted it, the merchant must reconnect Shopify and approve the expanded permissions. NOTE: this only works for stores that use Shopify Payments; stores on an external gateway (PayPal, Stripe, etc.) have no Shopify Payments account and the operation returns empty balance/payouts with an explanatory note.
+
+**Arguments:**
+
+- `limit` (number, *optional*): Number of recent payouts to return, most recent first (1-50). Defaults to 10.
+
+**Returns:**
+
+`AdapterOperationResult`: Returns { balance: { amount, currency }[], payouts: NormalizedShopifyPayout[], totalRetrieved, note? }. balance may list multiple currencies. Each payout includes amount (net deposited), status, issuedAt, and gross/fee breakdown fields.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"getPaymentsBalance","params":{}}' | jq .
 ```
 
 ### `createOrder`
