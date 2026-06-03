@@ -112,9 +112,9 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 
 | Skill | Adapter | Operations | Auth Required |
 |-------|---------|------------|---------------|
-| [`mirra-shopify`](./mirra-shopify/) | Shopify | 61 | Yes (OAuth) |
+| [`mirra-shopify`](./mirra-shopify/) | Shopify | 62 | Yes (OAuth) |
 
-**Total: 38 adapters, 446 operations**
+**Total: 38 adapters, 447 operations**
 
 ## How It Works
 

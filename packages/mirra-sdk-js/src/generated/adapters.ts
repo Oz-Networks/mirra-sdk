@@ -1328,6 +1328,9 @@ export interface ShopifyUpdateFulfillmentTrackingArgs {
   trackingUrl?: string; // A URL where the customer can track the shipment.
   notifyCustomer?: boolean; // Whether to send the customer an updated-tracking notification email. Defaults to false.
 }
+export interface ShopifyListFulfillmentsArgs {
+  orderId: string; // The Shopify order ID whose fulfillments to list.
+}
 export interface ShopifyCreateCollectionArgs {
   title: string; // The collection title.
   descriptionHtml?: string; // The collection description as HTML.
@@ -6376,9 +6379,13 @@ export interface ShopifyFulfillmentData {
   id: string; // Fulfillment ID
   orderId: string; // ID of the fulfilled order
   status: string; // Fulfillment status (e.g. success, cancelled)
-  trackingNumber?: string; // Tracking number, or null
+  trackingNumber?: string; // First tracking number, or null
   trackingCompany?: string; // Shipping carrier, or null
   trackingUrl?: string; // Tracking URL, or null
+  trackingNumbers?: any; // All tracking numbers on the fulfillment (a shipment can have more than one)
+  shippedAt?: string; // When the shipment went out — the fulfillment creation timestamp (ISO 8601), or null
+  deliveredAt?: string; // Delivery timestamp (ISO 8601), or null if not yet delivered/known
+  estimatedDeliveryAt?: string; // Estimated delivery timestamp (ISO 8601), or null if unknown
   createdAt: string; // Fulfillment creation timestamp (ISO 8601)
 }
 
@@ -6388,13 +6395,38 @@ export interface ShopifyFulfillmentData {
   id: string; // Fulfillment ID
   orderId: string; // ID of the fulfilled order
   status: string; // Fulfillment status (e.g. success, cancelled)
-  trackingNumber?: string; // Tracking number, or null
+  trackingNumber?: string; // First tracking number, or null
   trackingCompany?: string; // Shipping carrier, or null
   trackingUrl?: string; // Tracking URL, or null
+  trackingNumbers?: any; // All tracking numbers on the fulfillment (a shipment can have more than one)
+  shippedAt?: string; // When the shipment went out — the fulfillment creation timestamp (ISO 8601), or null
+  deliveredAt?: string; // Delivery timestamp (ISO 8601), or null if not yet delivered/known
+  estimatedDeliveryAt?: string; // Estimated delivery timestamp (ISO 8601), or null if unknown
   createdAt: string; // Fulfillment creation timestamp (ISO 8601)
 }
 
 export type ShopifyUpdateFulfillmentTrackingResult = AdapterResultBase<ShopifyFulfillmentData>;
+
+export interface ShopifyFulfillment {
+  id: string; // Fulfillment ID
+  orderId: string; // ID of the fulfilled order
+  status: string; // Fulfillment status (e.g. success, cancelled)
+  trackingNumber?: string; // First tracking number, or null
+  trackingCompany?: string; // Shipping carrier, or null
+  trackingUrl?: string; // Tracking URL, or null
+  trackingNumbers?: any; // All tracking numbers on the fulfillment (a shipment can have more than one)
+  shippedAt?: string; // When the shipment went out — the fulfillment creation timestamp (ISO 8601), or null
+  deliveredAt?: string; // Delivery timestamp (ISO 8601), or null if not yet delivered/known
+  estimatedDeliveryAt?: string; // Estimated delivery timestamp (ISO 8601), or null if unknown
+  createdAt: string; // Fulfillment creation timestamp (ISO 8601)
+}
+
+export interface ShopifyListFulfillmentsData {
+  fulfillments: any; // Fulfillments recorded on the order
+  totalRetrieved: number; // Number of fulfillments retrieved
+}
+
+export type ShopifyListFulfillmentsResult = AdapterResultBase<ShopifyListFulfillmentsData>;
 
 export interface ShopifyCollectionData {
   id: string; // Collection ID
@@ -12174,6 +12206,19 @@ function createShopifyAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'updateFulfillmentTracking',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List the fulfillments (shipments) recorded on an order, including the tracking number, carrier, tracking URL, and the date each shipment went out. Use this to read tracking after an order has been fulfilled — for example to give a customer their tracking link. Requires the read_fulfillments scope, which connected stores have already granted.
+     * @param args.orderId - The Shopify order ID whose fulfillments to list.
+     * @returns Promise<ShopifyListFulfillmentsData> Typed flat response with IDE autocomplete
+     */
+    listFulfillments: async (args: ShopifyListFulfillmentsArgs): Promise<ShopifyListFulfillmentsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'listFulfillments',
         params: args || {}
       });
     },

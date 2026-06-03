@@ -44,6 +44,7 @@ Replace `{operation}` with the operation name from the table below.
 | `refundOrder` | Refund an order — either specific line items (partial refund) or all refundable items. Money is a... |
 | `fulfillOrder` | Fulfill an order (mark items as shipped) and optionally attach tracking. Fulfills either specific... |
 | `updateFulfillmentTracking` | Update the tracking information on an existing fulfillment (for example to add a tracking number ... |
+| `listFulfillments` | List the fulfillments (shipments) recorded on an order, including the tracking number, carrier, t... |
 | `createCollection` | Create a manual (custom) collection — a hand-picked grouping of products. Supports a theme templa... |
 | `updateCollection` | Update a manual (custom) collection — title, description, theme template suffix, sort order, imag... |
 | `deleteCollection` | Delete a collection. This removes the collection grouping only — the products that belonged to it... |
@@ -133,6 +134,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -d '{"resourceId":"shopify","method":"updateVariant","params":{"productId":"1234567890","variantId":"9876543210","price":"24.99","inventoryPolicy":"continue"}}' | jq .
 ```
 
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
+
 ### `refundOrder`
 
 Refund an order — either specific line items (partial refund) or all refundable items. Money is actually returned to the customer: the operation computes the suggested refund (transactions, taxes, and amounts) for the requested items, then creates the refund against the original payment. Optionally restock the refunded items and refund shipping.
@@ -158,6 +161,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"shopify","method":"refundOrder","params":{"orderId":"450789469","lineItems":[{"lineItemId":"518995019","quantity":2}],"restock":true,"notify":true}}' | jq .
 ```
+
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
 
 ### `fulfillOrder`
 
@@ -185,6 +190,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -d '{"resourceId":"shopify","method":"fulfillOrder","params":{"orderId":"450789469","trackingNumber":"1Z999AA10123456784","trackingCompany":"UPS","notifyCustomer":true}}' | jq .
 ```
 
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
+
 ### `updateFulfillmentTracking`
 
 Update the tracking information on an existing fulfillment (for example to add a tracking number after the fact, correct the carrier, or replace the tracking URL). Optionally notify the customer of the updated tracking.
@@ -208,6 +215,29 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"shopify","method":"updateFulfillmentTracking","params":{"fulfillmentId":"255858046","trackingNumber":"1Z999AA10123456784","trackingCompany":"UPS","notifyCustomer":true}}' | jq .
+```
+
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
+
+### `listFulfillments`
+
+List the fulfillments (shipments) recorded on an order, including the tracking number, carrier, tracking URL, and the date each shipment went out. Use this to read tracking after an order has been fulfilled — for example to give a customer their tracking link. Requires the read_fulfillments scope, which connected stores have already granted.
+
+**Arguments:**
+
+- `orderId` (string, **required**): The Shopify order ID whose fulfillments to list.
+
+**Returns:**
+
+`AdapterOperationResult`: Returns { fulfillments: ShopifyFulfillment[], totalRetrieved }. Each fulfillment includes id, orderId, status, trackingNumber, trackingCompany, trackingUrl, trackingNumbers, shippedAt, deliveredAt, estimatedDeliveryAt, createdAt. An order with no fulfillments returns an empty array.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"listFulfillments","params":{"orderId":"450789469"}}' | jq .
 ```
 
 ### `createCollection`
