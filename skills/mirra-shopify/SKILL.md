@@ -102,6 +102,7 @@ Replace `{operation}` with the operation name from the table below.
 | `updateRedirect` | Update a redirect. |
 | `deleteRedirect` | Delete a redirect. |
 | `createCoupon` | Create a discount code (coupon) that customers can enter at checkout for a percentage or fixed-am... |
+| `request` | Make a raw authenticated request to the Shopify API. Use the exact method, path, and body from Sh... |
 
 ## Operation Details
 
@@ -1609,6 +1610,32 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
+
+### `request`
+
+Make a raw authenticated request to the Shopify API. Use the exact method, path, and body from Shopify's own API documentation — your stored credentials are injected automatically. Returns the raw upstream response as { status, headers, body }.
+
+**Arguments:**
+
+- `method` (string, **required**): HTTP method: GET, POST, PUT, PATCH, or DELETE
+- `path` (string, **required**): API path including version, e.g. "/admin/api/2025-10/graphql.json"
+- `query` (object, *optional*): Query string parameters as key/value pairs
+- `headers` (object, *optional*): Additional request headers (injected auth headers cannot be overridden)
+- `body` (object, *optional*): Request body, shaped exactly as the API expects
+- `onBehalfOf` (string, *optional*): Optional userId of an owned sub-account to run the request as (ownership is verified)
+
+**Returns:**
+
+`AdapterOperationResult`: Raw upstream response: { status, headers, body }
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"shopify","method":"request","params":{"method":"<value>","path":"<value>"}}' | jq .
+```
 
 ## Response Format
 

@@ -277,7 +277,7 @@ export interface DocumentUploadArgs {
   productTags?: any[]; // Array of product tags for categorization
 }
 export interface DocumentGetArgs {
-  documentId: string; // Document ID to retrieve
+  documentId: string; // Document ID to retrieve (e.g. "document:..."). The parameter is named documentId, not id.
 }
 export interface DocumentGetStatusArgs {
   documentId: string; // Document ID to check
@@ -301,7 +301,7 @@ export interface DocumentListGraphsArgs {
   documentId: string; // Document ID
 }
 export interface DocumentSearchArgs {
-  query: string; // Search query
+  query: string; // Natural-language search query (what you are looking for). This is NOT a documentId.
   graphId?: string; // Graph ID to search in (defaults to user's graph)
   limit?: number; // Maximum results (default: 10)
   threshold?: number; // Similarity threshold 0-1 (default: 0.7)
@@ -1620,6 +1620,14 @@ export interface ShopifyCreateCouponArgs {
   appliesOncePerCustomer?: boolean; // If true, each customer can use the coupon only once. Defaults to false.
   minimumSubtotal?: number; // Minimum order subtotal (in the store currency) required to use the coupon. Omit for no minimum.
 }
+export interface ShopifyRequestArgs {
+  method: string; // HTTP method: GET, POST, PUT, PATCH, or DELETE
+  path: string; // API path including version, e.g. "/admin/api/2025-10/graphql.json"
+  query?: any; // Query string parameters as key/value pairs
+  headers?: any; // Additional request headers (injected auth headers cannot be overridden)
+  body?: any; // Request body, shaped exactly as the API expects
+  onBehalfOf?: string; // Optional userId of an owned sub-account to run the request as (ownership is verified)
+}
 
 // Socket Adapter Types
 export interface SocketSendArgs {
@@ -2888,7 +2896,8 @@ export interface DocumentGetData {
   createdAt: number; // Creation timestamp
   createdByUserId: string; // Creator user ID
   hasMultipleGraphs: boolean; // Whether shared to multiple graphs
-  chunks: any; // Document chunks
+  extractedText: string; // Full plain-text content of the document. Read or summarize a document directly from this field (empty string if the document has no extracted text yet).
+  chunks: any; // The document text split into embedding chunks. Same content as extractedText; use chunks only when you need positional/per-chunk data.
 }
 
 export type DocumentGetResult = AdapterResultBase<DocumentGetData>;
@@ -8897,8 +8906,8 @@ function createDocumentAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get document metadata and content. Returns normalized flat structure.
-     * @param args.documentId - Document ID to retrieve
+     * Get a single document by its documentId, including the full document text. The complete text is in the `extractedText` field — read or summarize a document directly from it (no need to fetch or stitch chunks). Also returns metadata (title, filename, mimeType, fileSize, processingStatus, etc.) and the document's `chunks[]`. To find content across many documents by meaning, use `search`; to enumerate documents in a graph, use `list`.
+     * @param args.documentId - Document ID to retrieve (e.g. "document:..."). The parameter is named documentId, not id.
      * @returns Promise<DocumentGetData> Typed flat response with IDE autocomplete
      */
     get: async (args: DocumentGetArgs): Promise<DocumentGetData> => {
@@ -8923,7 +8932,7 @@ function createDocumentAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get all chunks for a document. Returns normalized flat chunk structures.
+     * Get all chunks for a document, in order. Returns normalized flat chunk structures. For the document's full text in one field, prefer `get` (it returns `extractedText`); use getChunks only when you need the per-chunk breakdown or chunk positions.
      * @param args.documentId - Document ID
      * @returns Promise<DocumentGetChunksData> Typed flat response with IDE autocomplete
      */
@@ -8991,8 +9000,8 @@ function createDocumentAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Semantic search across document chunks. Returns normalized flat chunk structures.
-     * @param args.query - Search query
+     * Semantic (meaning-based) search across document chunks in a graph. Takes a natural-language `query` (not a documentId) and returns the best-matching passages in `results[]`, each with content, score, documentId, and position. Use this to find relevant content across documents; to read one specific document in full, use `get` instead.
+     * @param args.query - Natural-language search query (what you are looking for). This is NOT a documentId.
      * @param args.graphId - Graph ID to search in (defaults to user's graph) (optional)
      * @param args.limit - Maximum results (default: 10) (optional)
      * @param args.threshold - Similarity threshold 0-1 (default: 0.7) (optional)
@@ -9007,7 +9016,7 @@ function createDocumentAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * List documents in a graph. Returns normalized flat document structures.
+     * List documents in a graph (metadata only — does not include document text). Returns normalized flat document structures. To read a document's content, call `get` with its documentId; to search content by meaning, use `search`.
      * @param args.graphId - Graph ID to list documents from (defaults to user's graph) (optional)
      * @param args.limit - Maximum results (default: 50) (optional)
      * @param args.offset - Pagination offset (default: 0) (optional)
@@ -13079,6 +13088,23 @@ function createShopifyAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'shopify',
         method: 'createCoupon',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Make a raw authenticated request to the Shopify API. Use the exact method, path, and body from Shopify's own API documentation — your stored credentials are injected automatically. Returns the raw upstream response as { status, headers, body }.
+     * @param args.method - HTTP method: GET, POST, PUT, PATCH, or DELETE
+     * @param args.path - API path including version, e.g. "/admin/api/2025-10/graphql.json"
+     * @param args.query - Query string parameters as key/value pairs (optional)
+     * @param args.headers - Additional request headers (injected auth headers cannot be overridden) (optional)
+     * @param args.body - Request body, shaped exactly as the API expects (optional)
+     * @param args.onBehalfOf - Optional userId of an owned sub-account to run the request as (ownership is verified) (optional)
+     */
+    request: async (args: ShopifyRequestArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'shopify',
+        method: 'request',
         params: args || {}
       });
     }

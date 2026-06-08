@@ -39,15 +39,15 @@ Replace `{operation}` with the operation name from the table below.
 | Operation | Description |
 |-----------|-------------|
 | `upload` | Upload and process a document (PDF, DOCX, TXT, MD). Returns normalized flat structure. |
-| `get` | Get document metadata and content. Returns normalized flat structure. |
+| `get` | Get a single document by its documentId, including the full document text. The complete text is i... |
 | `getStatus` | Get document processing status. Returns normalized flat structure. |
-| `getChunks` | Get all chunks for a document. Returns normalized flat chunk structures. |
+| `getChunks` | Get all chunks for a document, in order. Returns normalized flat chunk structures. For the docume... |
 | `delete` | Delete a document and all its chunks. Returns normalized flat structure. |
 | `share` | Share a document to another graph (group or user-contact). Returns normalized flat structure. |
 | `unshare` | Remove document access from a graph. Returns normalized flat structure. |
 | `listGraphs` | List all graphs a document is shared in. Returns normalized flat graph structures. |
-| `search` | Semantic search across document chunks. Returns normalized flat chunk structures. |
-| `list` | List documents in a graph. Returns normalized flat document structures. |
+| `search` | Semantic (meaning-based) search across document chunks in a graph. Takes a natural-language `quer... |
+| `list` | List documents in a graph (metadata only — does not include document text). Returns normalized fl... |
 
 ## Operation Details
 
@@ -79,15 +79,15 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `get`
 
-Get document metadata and content. Returns normalized flat structure.
+Get a single document by its documentId, including the full document text. The complete text is in the `extractedText` field — read or summarize a document directly from it (no need to fetch or stitch chunks). Also returns metadata (title, filename, mimeType, fileSize, processingStatus, etc.) and the document's `chunks[]`. To find content across many documents by meaning, use `search`; to enumerate documents in a graph, use `list`.
 
 **Arguments:**
 
-- `documentId` (string, **required**): Document ID to retrieve
+- `documentId` (string, **required**): Document ID to retrieve (e.g. "document:..."). The parameter is named documentId, not id.
 
 **Returns:**
 
-`AdapterOperationResult`: Returns FLAT structure with: documentId, title, filename, mimeType, fileSize, processingStatus, chunkCount, graphIds[], primaryGraphId, createdAt, createdByUserId, hasMultipleGraphs, chunks[]. No nested objects.
+`AdapterOperationResult`: Returns FLAT structure with: documentId, title, filename, mimeType, fileSize, processingStatus, chunkCount, graphIds[], primaryGraphId, createdAt, createdByUserId, hasMultipleGraphs, extractedText (full document text — use this to read the document), chunks[]. No nested objects.
 
 **Example:**
 
@@ -121,7 +121,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `getChunks`
 
-Get all chunks for a document. Returns normalized flat chunk structures.
+Get all chunks for a document, in order. Returns normalized flat chunk structures. For the document's full text in one field, prefer `get` (it returns `extractedText`); use getChunks only when you need the per-chunk breakdown or chunk positions.
 
 **Arguments:**
 
@@ -229,11 +229,11 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `search`
 
-Semantic search across document chunks. Returns normalized flat chunk structures.
+Semantic (meaning-based) search across document chunks in a graph. Takes a natural-language `query` (not a documentId) and returns the best-matching passages in `results[]`, each with content, score, documentId, and position. Use this to find relevant content across documents; to read one specific document in full, use `get` instead.
 
 **Arguments:**
 
-- `query` (string, **required**): Search query
+- `query` (string, **required**): Natural-language search query (what you are looking for). This is NOT a documentId.
 - `graphId` (string, *optional*): Graph ID to search in (defaults to user's graph)
 - `limit` (number, *optional*): Maximum results (default: 10)
 - `threshold` (number, *optional*): Similarity threshold 0-1 (default: 0.7)
@@ -253,7 +253,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `list`
 
-List documents in a graph. Returns normalized flat document structures.
+List documents in a graph (metadata only — does not include document text). Returns normalized flat document structures. To read a document's content, call `get` with its documentId; to search content by meaning, use `search`.
 
 **Arguments:**
 
