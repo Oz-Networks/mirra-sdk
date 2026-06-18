@@ -82,11 +82,30 @@ export interface AIConversationMessage {
 /** @deprecated Use AIConversationMessage instead to avoid confusion with messaging ChatMessage */
 export type ChatMessage = AIConversationMessage;
 
+/**
+ * Server-driven streaming destination (Layer C). When present on a chat/agent
+ * request, the SERVER renders the response live into the destination (placeholder
+ * + throttled edits) and still returns the final result — so the caller gets the
+ * live-typing effect with a single `await`, no manual stream loop.
+ */
+export interface StreamTo {
+  telegramBot?: {
+    chatId: string | number;
+    botUsername?: string;       // omit if the user has exactly one bot
+    messageId?: number;         // edit this message; else the server sends a placeholder first
+    placeholder?: string;       // default "🤔 Thinking…"
+    parseMode?: 'Markdown' | 'MarkdownV2' | 'HTML';  // applied ONLY on the final edit
+    throttleMs?: number;        // default 1200 (~1 edit/sec ceiling)
+    showToolProgress?: boolean; // default true → status line on tool_start (agent only)
+  };
+}
+
 export interface ChatRequest {
   messages: AIConversationMessage[];
   model?: string;
   temperature?: number;
   maxTokens?: number;
+  streamTo?: StreamTo;
 }
 
 export interface ChatResponse {
@@ -134,6 +153,7 @@ export interface AgentRequest {
   temperature?: number;
   maxTokens?: number;
   maxRounds?: number;
+  streamTo?: StreamTo;
 }
 
 export interface AgentToolCall {
@@ -153,6 +173,19 @@ export interface AgentResponse {
   toolCalls: AgentToolCall[];
   stopReason: 'end_turn' | 'max_rounds' | 'error' | 'abort';
 }
+
+/**
+ * Event emitted by the streaming agent loop (`ai.agentStream`).
+ * Discriminated by `type`. The terminal `done` carries the full AgentResponse
+ * (the same object the non-streaming `ai.agent` returns), so consumers that only
+ * want the final answer can ignore the intermediate events.
+ */
+export type AgentStreamEvent =
+  | { type: 'text';          delta: string }
+  | { type: 'tool_start';    round: number; tool: { name: string; arguments: any } }
+  | { type: 'tool_complete'; round: number; tool: { name: string; arguments: any }; result?: any; error?: string | null }
+  | { type: 'done';          result: AgentResponse }
+  | { type: 'error';         message: string };
 
 export interface BatchChatRequest {
   requests: Array<{

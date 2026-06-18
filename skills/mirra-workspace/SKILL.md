@@ -51,6 +51,7 @@ Execute a bash command in the group workspace container. The workspace is a pers
 - `command` (string, **required**): Bash command to execute (e.g., "ls /workspace/scripts", "cat > /workspace/scripts/handler.js << 'EOF'\n...\nEOF")
 - `timeout` (number, *optional*): Timeout in milliseconds (default: 60000, max: 300000)
 - `cwd` (string, *optional*): Working directory inside the container (default: /workspace)
+- `sandboxed` (boolean, *optional*): Run in an isolated sandbox: no network, non-root, and fully ephemeral (no persistent /workspace, no stored credentials). Use this when the command processes untrusted or customer-facing input. Note: the sandbox is automatically enforced for any caller that does not own the workspace (sub-accounts, delegated/act-as callers), regardless of this flag.
 
 **Returns:**
 

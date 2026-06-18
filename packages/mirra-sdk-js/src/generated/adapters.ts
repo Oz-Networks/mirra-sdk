@@ -55,6 +55,7 @@ export interface AiChatArgs {
   model?: string; // Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names.
   temperature?: number; // Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7
   maxTokens?: number; // Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens).
+  streamTo?: any; // Optional server-driven live-rendering sink. Provide { telegramBot: { botUsername, chatId, messageId?, placeholder?, parseMode?, throttleMs?, showToolProgress? } } to have the server stream this reply into a Telegram chat — it sends a placeholder (or edits messageId) and updates it as tokens arrive (throttled, 429-aware, markdown-safe on the final edit). The call still returns the full response.
 }
 export interface AiDecideArgs {
   prompt: string; // The decision prompt - what needs to be decided and why
@@ -70,6 +71,7 @@ export interface AiAgentArgs {
   temperature?: number; // Temperature 0.0-1.0. Default: 0.5
   maxTokens?: number; // Max tokens per LLM call. Default: 4096
   maxRounds?: number; // Max tool-calling rounds. Default: 10, max: 25
+  streamTo?: any; // Optional server-driven live-rendering sink. Provide { telegramBot: { botUsername, chatId, messageId?, placeholder?, parseMode?, throttleMs?, showToolProgress? } } to have the server stream this agent run (text + tool progress) into a Telegram chat — placeholder + throttled edits, 429-aware, markdown-safe on the final edit. The call still returns the full AgentResponse. For manual control, use mirra.ai.agentStream(params) instead.
 }
 export interface AiComputerUseArgs {
   messages: any[]; // Anthropic-format messages array. Include tool_result blocks with base64 screenshots when responding to tool_use requests.
@@ -1944,6 +1946,7 @@ export interface WorkspaceExecArgs {
   command: string; // Bash command to execute (e.g., "ls /workspace/scripts", "cat > /workspace/scripts/handler.js << 'EOF'\n...\nEOF")
   timeout?: number; // Timeout in milliseconds (default: 60000, max: 300000)
   cwd?: string; // Working directory inside the container (default: /workspace)
+  sandboxed?: boolean; // Run in an isolated sandbox: no network, non-root, and fully ephemeral (no persistent /workspace, no stored credentials). Use this when the command processes untrusted or customer-facing input. Note: the sandbox is automatically enforced for any caller that does not own the workspace (sub-accounts, delegated/act-as callers), regardless of this flag.
 }
 
 // Flows Adapter Types
@@ -2373,7 +2376,7 @@ export interface AIComputerUseData {
   inputTokens: number; // Raw input tokens from Anthropic
   outputTokens: number; // Raw output tokens from Anthropic
   totalTokens: number; // Total raw tokens (input + output)
-  tokensCharged: number; // Actual tokens deducted from balance (after 6x multiplier)
+  tokensCharged: number; // Actual tokens deducted from balance (after 4x multiplier)
 }
 
 export type AiComputerUseResult = AdapterResultBase<AIComputerUseData>;
@@ -8139,12 +8142,13 @@ export type GoogleSheetsCopyRangeResult = AdapterResultBase<GoogleSheetsCopyRang
 function createAiAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Have a conversation with an AI assistant. Supports multi-turn conversations with system prompts, user messages, and assistant responses. PROVIDER: Uses Anthropic (Claude) as the AI provider. BEST PRACTICES: - Use system messages to set AI behavior and constraints - Keep conversations focused - avoid unnecessary context MESSAGE STRUCTURE: Each message has: - role: "system" | "user" | "assistant" - content: string OR array of content blocks for multimodal (text + images) IMAGE SUPPORT (VISION): To send images, use a content blocks array instead of a string: content: [ { type: "text", text: "What's in this image?" }, { type: "image", source: { type: "base64", media_type: "image/png", data: "<base64-data>" } } ] Supported media types: image/jpeg, image/png, image/gif, image/webp For vision, use a Sonnet-class model (e.g. "claude-sonnet-4-20250514"). KILLER PATTERN — TELEGRAM BOT VISION: Pair with mirra.telegramBot.downloadFile to OCR / understand user-uploaded media: const { base64, mimeType } = await mirra.telegramBot.downloadFile({ botUsername, fileId: event.data.bot.fileId }); await mirra.ai.chat({ model: "claude-sonnet-4-20250514", messages: [{ role: "user", content: [ { type: "text", text: "Extract the invoice total and vendor." }, { type: "image", source: { type: "base64", media_type: mimeType, data: base64 } } ] }] }); TYPICAL PATTERNS: 1. Simple query: [{ role: "user", content: "question" }] 2. With system prompt: [{ role: "system", content: "instructions" }, { role: "user", content: "question" }] 3. Multi-turn: [system, user, assistant, user, assistant, ...] 4. Vision: [{ role: "user", content: [{ type: "text", ... }, { type: "image", source: { ... } }] }]
+     * Have a conversation with an AI assistant. Supports multi-turn conversations with system prompts, user messages, and assistant responses. PROVIDER: Uses Anthropic (Claude) as the AI provider. BEST PRACTICES: - Use system messages to set AI behavior and constraints - Keep conversations focused - avoid unnecessary context MESSAGE STRUCTURE: Each message has: - role: "system" | "user" | "assistant" - content: string OR array of content blocks for multimodal (text + images) IMAGE SUPPORT (VISION): To send images, use a content blocks array instead of a string: content: [ { type: "text", text: "What's in this image?" }, { type: "image", source: { type: "base64", media_type: "image/png", data: "<base64-data>" } } ] Supported media types: image/jpeg, image/png, image/gif, image/webp For vision, use a Sonnet-class model (e.g. "claude-sonnet-4-20250514"). KILLER PATTERN — TELEGRAM BOT VISION: Pair with mirra.telegramBot.downloadFile to OCR / understand user-uploaded media: const { base64, mimeType } = await mirra.telegramBot.downloadFile({ botUsername, fileId: event.data.bot.fileId }); await mirra.ai.chat({ model: "claude-sonnet-4-20250514", messages: [{ role: "user", content: [ { type: "text", text: "Extract the invoice total and vendor." }, { type: "image", source: { type: "base64", media_type: mimeType, data: base64 } } ] }] }); TYPICAL PATTERNS: 1. Simple query: [{ role: "user", content: "question" }] 2. With system prompt: [{ role: "system", content: "instructions" }, { role: "user", content: "question" }] 3. Multi-turn: [system, user, assistant, user, assistant, ...] 4. Vision: [{ role: "user", content: [{ type: "text", ... }, { type: "image", source: { ... } }] }] LIVE STREAMING TO TELEGRAM (streamTo): Pass "streamTo: { telegramBot: { botUsername, chatId } }" and the SERVER renders the reply live into the chat — it sends a placeholder, then edits it as tokens arrive (throttled, rate-limit-aware, markdown-safe on the final edit). No manual edit loop: you make a single await and still get the full response back. await mirra.ai.chat({ messages: [{ role: "user", content: text }], streamTo: { telegramBot: { botUsername, chatId } }, });
      * @param args.message - Simple string shorthand for single-turn queries. Auto-wrapped into messages array. Use "messages" for multi-turn conversations. (optional)
      * @param args.messages - Array of message objects with role ("system" | "user" | "assistant") and content (string or content blocks array). For images, use content: [{ type: "text", text: "..." }, { type: "image", source: { type: "base64", media_type: "image/png", data: "<base64>" } }] (optional)
      * @param args.model - Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names. (optional)
      * @param args.temperature - Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7 (optional)
      * @param args.maxTokens - Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens). (optional)
+     * @param args.streamTo - Optional server-driven live-rendering sink. Provide { telegramBot: { botUsername, chatId, messageId?, placeholder?, parseMode?, throttleMs?, showToolProgress? } } to have the server stream this reply into a Telegram chat — it sends a placeholder (or edits messageId) and updates it as tokens arrive (throttled, 429-aware, markdown-safe on the final edit). The call still returns the full response. (optional)
      * @returns Promise<AIChatData> Typed flat response with IDE autocomplete
      */
     chat: async (args: AiChatArgs): Promise<AIChatData> => {
@@ -8172,7 +8176,7 @@ function createAiAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Run an AI agent that can call tools across multiple rounds. The agent receives a conversation, decides which tools to use, executes them, and continues until the task is complete or max rounds are reached. TOOL ACCESS: - Specify adapter names in "tools" array to limit which adapters the agent can use - Omit "tools" to give the agent access to ALL connected adapters - Tools are referenced by camelCase SDK name (e.g., "memory", "googleCalendar", "telegram") USE CASES: - Multi-step research: agent searches memory, reads documents, synthesizes answer - Automated workflows: agent creates calendar events, sends messages, updates records - Data processing: agent queries data, analyzes results, stores findings
+     * Run an AI agent that can call tools across multiple rounds. The agent receives a conversation, decides which tools to use, executes them, and continues until the task is complete or max rounds are reached. TOOL ACCESS: - Specify adapter names in "tools" array to limit which adapters the agent can use - Omit "tools" to give the agent access to ALL connected adapters - Tools are referenced by camelCase SDK name (e.g., "memory", "googleCalendar", "telegram") USE CASES: - Multi-step research: agent searches memory, reads documents, synthesizes answer - Automated workflows: agent creates calendar events, sends messages, updates records - Data processing: agent queries data, analyzes results, stores findings STREAMING (live progress) — two ways to surface the agent's text AND its per-tool-call progress as it happens: 1. streamTo (recommended, turnkey): the SERVER drives a live-updating message. Pass "streamTo: { telegramBot: { botUsername, chatId } }"; the server sends a placeholder, edits it as tokens and tool steps arrive (throttled, 429-aware, markdown-safe on the final edit), then still returns the full AgentResponse from the single await — no manual loop: await mirra.ai.agent({ messages: [{ role: 'user', content: text }], tools: ['memory', 'googleSearch'], streamTo: { telegramBot: { botUsername, chatId } }, }); 2. agentStream (manual, full control): iterate the raw SSE event stream and drive the UI yourself. mirra.ai.agentStream(params) yields, in order: { type: 'text', delta } | { type: 'tool_start', round, tool: { name, arguments } } | { type: 'tool_complete', round, tool, result?, error? } | { type: 'done', result } // full AgentResponse | { type: 'error', message } e.g.: for await (const ev of mirra.ai.agentStream({ messages, tools: ['memory'] })) { if (ev.type === 'text') buf += ev.delta; else if (ev.type === 'tool_start') status = '🔧 ' + ev.tool.name + '…'; // ...edit your Telegram message with (status + buf), throttled ~1/sec } Prefer streamTo unless you need to render somewhere other than a single edited message.
      * @param args.messages - Conversation messages array with role and content
      * @param args.tools - Adapter names to give the agent access to. Omit for all adapters. (optional)
      * @param args.systemPrompt - System prompt to guide agent behavior (optional)
@@ -8180,6 +8184,7 @@ function createAiAdapter(sdk: MirraSDK) {
      * @param args.temperature - Temperature 0.0-1.0. Default: 0.5 (optional)
      * @param args.maxTokens - Max tokens per LLM call. Default: 4096 (optional)
      * @param args.maxRounds - Max tool-calling rounds. Default: 10, max: 25 (optional)
+     * @param args.streamTo - Optional server-driven live-rendering sink. Provide { telegramBot: { botUsername, chatId, messageId?, placeholder?, parseMode?, throttleMs?, showToolProgress? } } to have the server stream this agent run (text + tool progress) into a Telegram chat — placeholder + throttled edits, 429-aware, markdown-safe on the final edit. The call still returns the full AgentResponse. For manual control, use mirra.ai.agentStream(params) instead. (optional)
      * @returns Promise<AIAgentData> Typed flat response with IDE autocomplete
      */
     agent: async (args: AiAgentArgs): Promise<AIAgentData> => {
@@ -8191,7 +8196,7 @@ function createAiAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Proxy for the Anthropic Computer Use API. Forwards requests to Anthropic's Messages API with computer use beta headers and returns the raw response. You handle the tool execution loop (screenshots, clicks, typing) on your side — Mirra handles auth and billing. HOW IT WORKS: 1. Send messages with computer use tool definitions 2. Receive response with tool_use blocks (screenshot, click, type, etc.) 3. Execute the actions on your machine/VM 4. Send tool_result back (including base64 screenshots) in the next request 5. Loop until stopReason is "end_turn" BILLING: - Tokens are charged at a 6x multiplier (same as Sonnet pricing tier) - Screenshots consume image input tokens (the main cost driver) - tokensCharged field shows actual tokens deducted from your balance MODEL: - Only Sonnet models are supported (claude-sonnet-4-6 default) - Opus models are not available for computer use via this endpoint TOOL TYPES: - computer_20251124: Mouse, keyboard, and screenshot actions - text_editor_20250728: File editing tool - bash_20250124: Shell command execution
+     * Proxy for the Anthropic Computer Use API. Forwards requests to Anthropic's Messages API with computer use beta headers and returns the raw response. You handle the tool execution loop (screenshots, clicks, typing) on your side — Mirra handles auth and billing. HOW IT WORKS: 1. Send messages with computer use tool definitions 2. Receive response with tool_use blocks (screenshot, click, type, etc.) 3. Execute the actions on your machine/VM 4. Send tool_result back (including base64 screenshots) in the next request 5. Loop until stopReason is "end_turn" BILLING: - Tokens are charged at a 4x multiplier (same as Sonnet pricing tier) - Screenshots consume image input tokens (the main cost driver) - tokensCharged field shows actual tokens deducted from your balance MODEL: - Only Sonnet models are supported (claude-sonnet-4-6 default) - Opus models are not available for computer use via this endpoint TOOL TYPES: - computer_20251124: Mouse, keyboard, and screenshot actions - text_editor_20250728: File editing tool - bash_20250124: Shell command execution
      * @param args.messages - Anthropic-format messages array. Include tool_result blocks with base64 screenshots when responding to tool_use requests.
      * @param args.tools - Anthropic computer use tool definitions. Defaults to computer tool with 1024x768 display if omitted. (optional)
      * @param args.model - Model to use. Default: claude-sonnet-4-6. Only Sonnet models are supported. (optional)
@@ -14082,6 +14087,7 @@ function createWorkspaceAdapter(sdk: MirraSDK) {
      * @param args.command - Bash command to execute (e.g., "ls /workspace/scripts", "cat > /workspace/scripts/handler.js << 'EOF'\n...\nEOF")
      * @param args.timeout - Timeout in milliseconds (default: 60000, max: 300000) (optional)
      * @param args.cwd - Working directory inside the container (default: /workspace) (optional)
+     * @param args.sandboxed - Run in an isolated sandbox: no network, non-root, and fully ephemeral (no persistent /workspace, no stored credentials). Use this when the command processes untrusted or customer-facing input. Note: the sandbox is automatically enforced for any caller that does not own the workspace (sub-accounts, delegated/act-as callers), regardless of this flag. (optional)
      * @returns Promise<WorkspaceExecData> Typed flat response with IDE autocomplete
      */
     exec: async (args: WorkspaceExecArgs): Promise<WorkspaceExecData> => {

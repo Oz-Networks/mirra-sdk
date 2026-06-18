@@ -57,6 +57,7 @@ Have a conversation with an AI assistant. Supports multi-turn conversations with
 - `model` (string, *optional*): Specific model to use. Default: "claude-3-haiku-20240307". Use Anthropic Claude model names.
 - `temperature` (number, *optional*): Creativity level 0.0-1.0. Lower=factual/consistent, Higher=creative/varied. Default: 0.7
 - `maxTokens` (number, *optional*): Maximum tokens in response. Default: 1000. Increase for longer responses (costs more tokens).
+- `streamTo` (object, *optional*): Optional server-driven live-rendering sink. Provide { telegramBot: { botUsername, chatId, messageId?, placeholder?, parseMode?, throttleMs?, showToolProgress? } } to have the server stream this reply into a Telegram chat — it sends a placeholder (or edits messageId) and updates it as tokens arrive (throttled, 429-aware, markdown-safe on the final edit). The call still returns the full response.
 
 **Returns:**
 
@@ -108,6 +109,7 @@ Run an AI agent that can call tools across multiple rounds. The agent receives a
 - `temperature` (number, *optional*): Temperature 0.0-1.0. Default: 0.5
 - `maxTokens` (number, *optional*): Max tokens per LLM call. Default: 4096
 - `maxRounds` (number, *optional*): Max tool-calling rounds. Default: 10, max: 25
+- `streamTo` (object, *optional*): Optional server-driven live-rendering sink. Provide { telegramBot: { botUsername, chatId, messageId?, placeholder?, parseMode?, throttleMs?, showToolProgress? } } to have the server stream this agent run (text + tool progress) into a Telegram chat — placeholder + throttled edits, 429-aware, markdown-safe on the final edit. The call still returns the full AgentResponse. For manual control, use mirra.ai.agentStream(params) instead.
 
 **Returns:**
 
@@ -137,7 +139,7 @@ Proxy for the Anthropic Computer Use API. Forwards requests to Anthropic's Messa
 
 **Returns:**
 
-`ComputerUseResponse`: Raw Anthropic response with content blocks (text + tool_use), token usage, and tokensCharged (after 6x multiplier).
+`ComputerUseResponse`: Raw Anthropic response with content blocks (text + tool_use), token usage, and tokensCharged (after 4x multiplier).
 
 **Example:**
 

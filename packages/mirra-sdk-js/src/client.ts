@@ -20,6 +20,7 @@ import {
   DecideResponse,
   AgentRequest,
   AgentResponse,
+  AgentStreamEvent,
   BatchChatRequest,
   Agent,
   CreateAgentParams,
@@ -117,10 +118,26 @@ export class MirraSDK {
     try {
       // Import generated adapters - will exist after running generate:llm-api
       const { generatedAdapters } = require('./generated/adapters');
-      
+
+      // The generated `ai` adapter dispatches every method through the buffered
+      // resources.call path, which can't carry an SSE stream. Preserve the
+      // hand-written streaming methods (which use the non-buffered SSE transport)
+      // so they survive the override below.
+      const handwrittenAi: any = this.ai;
+
       // Dynamically attach each adapter to this instance
       for (const [adapterName, adapterFactory] of Object.entries(generatedAdapters)) {
         (this as any)[adapterName] = (adapterFactory as any)(this);
+      }
+
+      // Re-graft streaming methods onto the generated `ai` adapter. These are
+      // intentionally NOT in the generator (they need a different transport than
+      // resources.call), so they only exist hand-written. The arrow functions
+      // close over `this`, so they keep working after re-attachment.
+      const ai: any = (this as any).ai;
+      if (ai && handwrittenAi) {
+        ai.chatStream = handwrittenAi.chatStream;
+        ai.agentStream = handwrittenAi.agentStream;
       }
     } catch (error) {
       // Generated adapters don't exist yet - this is OK during development
@@ -238,7 +255,7 @@ export class MirraSDK {
      * ```
      */
     chatStream: (request: ChatRequest): AsyncGenerator<ChatStreamChunk, void, unknown> => {
-      return this._streamChat(request);
+      return this._consumeSSE<ChatStreamChunk>('/ai/chatStream', request);
     },
 
     /**
@@ -262,6 +279,31 @@ export class MirraSDK {
         request
       );
       return response.data.data!;
+    },
+
+    /**
+     * Stream an AI agent run in real time. Yields `text` deltas as the model
+     * generates, `tool_start` / `tool_complete` events around each tool call,
+     * and a terminal `done` carrying the full AgentResponse (same object
+     * `ai.agent` returns) — or `error` on hard failure.
+     *
+     * Ideal for driving a live-typing UI (e.g. Telegram "send placeholder →
+     * edit") where you want both tokens and per-tool-call progress.
+     *
+     * @example
+     * ```typescript
+     * for await (const ev of sdk.ai.agentStream({
+     *   messages: [{ role: 'user', content: text }],
+     *   tools: ['memory', 'googleSearch'],
+     * })) {
+     *   if (ev.type === 'text') process.stdout.write(ev.delta);
+     *   else if (ev.type === 'tool_start') console.log(`\n[${ev.tool.name}]`);
+     *   else if (ev.type === 'done') console.log('\n', ev.result.stopReason);
+     * }
+     * ```
+     */
+    agentStream: (request: AgentRequest): AsyncGenerator<AgentStreamEvent, void, unknown> => {
+      return this._consumeSSE<AgentStreamEvent>('/ai/agentStream', request);
     },
 
     /**
@@ -290,49 +332,83 @@ export class MirraSDK {
   };
 
   /**
-   * Internal method to handle streaming chat
+   * Internal: consume a Server-Sent Events stream and yield parsed `data:` frames.
+   *
+   * Works in BOTH runtimes:
+   *  - Browser: axios returns a web `ReadableStream` (has `.getReader()`).
+   *  - Node / Lambda (where flows run): axios returns a Node `Readable` (async
+   *    iterable). The old `_streamChat` only handled `.getReader()`, so streaming
+   *    silently failed from a deployed flow — this is the fix that makes it work.
+   *
+   * Stops early when a terminal frame is seen (`done: true` for chat chunks, or
+   * `type: 'done' | 'error'` for agent events); otherwise ends when the server
+   * closes the stream.
    */
-  private async *_streamChat(request: ChatRequest): AsyncGenerator<ChatStreamChunk, void, unknown> {
-    const response = await this.client.post<ReadableStream>(
-      '/ai/chatStream',
-      request,
-      {
-        responseType: 'stream',
-        headers: {
-          'Accept': 'text/event-stream',
-        },
+  private async *_consumeSSE<T = any>(
+    path: string,
+    body: any
+  ): AsyncGenerator<T, void, unknown> {
+    const response = await this.client.post(path, body, {
+      responseType: 'stream',
+      headers: {
+        'Accept': 'text/event-stream',
+      },
+    });
+
+    const stream: any = response.data;
+
+    // Parse one SSE line; returns the event and whether it is terminal.
+    const parseLine = (line: string): { ev?: T; terminal?: boolean } => {
+      if (!line || !line.startsWith('data: ')) return {};
+      try {
+        const ev = JSON.parse(line.slice(6)) as any;
+        const terminal = ev?.done === true || ev?.type === 'done' || ev?.type === 'error';
+        return { ev: ev as T, terminal };
+      } catch {
+        return {}; // skip invalid JSON / keep-alive comments
       }
-    );
+    };
 
-    // Handle streaming response
-    const reader = (response.data as any).getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (line.trim() === '') continue;
-          if (line.startsWith('data: ')) {
-            try {
-              const chunk = JSON.parse(line.slice(6)) as ChatStreamChunk;
-              yield chunk;
-              if (chunk.done) return;
-            } catch (e) {
-              // Skip invalid JSON
-            }
+    // Browser: web ReadableStream
+    if (stream && typeof stream.getReader === 'function') {
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+          for (const line of lines) {
+            const { ev, terminal } = parseLine(line);
+            if (ev !== undefined) yield ev;
+            if (terminal) return;
           }
         }
+      } finally {
+        if (typeof reader.releaseLock === 'function') reader.releaseLock();
       }
-    } finally {
-      reader.releaseLock();
+      return;
+    }
+
+    // Node / Lambda: Readable async iterable
+    let buffer = '';
+    for await (const chunk of stream as AsyncIterable<Buffer | string>) {
+      buffer += typeof chunk === 'string' ? chunk : chunk.toString('utf8');
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        const { ev, terminal } = parseLine(line);
+        if (ev !== undefined) yield ev;
+        if (terminal) return;
+      }
+    }
+    // Flush any trailing buffered frame (stream ended without a final newline).
+    if (buffer) {
+      const { ev } = parseLine(buffer);
+      if (ev !== undefined) yield ev;
     }
   }
 
