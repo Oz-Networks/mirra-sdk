@@ -53,7 +53,7 @@ Replace `{operation}` with the operation name from the table below.
 
 ### `executeCommand`
 
-Run a shell command on the user's desktop and return stdout, stderr, and exit code. The command runs in the user's configured shell (e.g., zsh, bash, PowerShell, WSL). Output is truncated to 1 MB.
+Run a shell command on the user's desktop and return stdout, stderr, and exit code. The command runs DIRECTLY in the user's configured shell (zsh, bash, PowerShell, WSL, or cmd) — there is no extra shell layer. Do NOT wrap your script in another shell invocation (e.g. `powershell -Command "..."`, `bash -c "..."`): that double-evaluates it, so the outer shell strips your `$variables`/`%vars%` to empty before the inner shell runs — send native commands for the active shell instead. For multi-line scripts, prefer writeFile to save a script file (avoids all quoting/escaping) and then run that file. Call list_workspace_operations({ adapter: "desktop", operation: "executeCommand" }) to see which shell is active. Output is truncated to 1 MB.
 
 **Arguments:**
 
