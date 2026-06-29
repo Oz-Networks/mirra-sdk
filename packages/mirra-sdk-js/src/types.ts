@@ -733,3 +733,33 @@ export interface EventTypeInfo {
   enabled: boolean;
 }
 
+/**
+ * Parameters for creating a sub-account (child tenant) owned by the caller
+ */
+export interface CreateSubAccountParams {
+  /** Human-friendly name for the sub-account (1-40 chars). Required. */
+  displayName: string;
+  /** Optional description. */
+  description?: string;
+  /** Optional avatar URL. */
+  avatarUrl?: string;
+  /** Optional label for the minted API key. */
+  keyName?: string;
+  /** Create a parent↔sub-account DM group. Defaults to true server-side. */
+  createDirectChat?: boolean;
+}
+
+/**
+ * Result of creating a sub-account. `actorId` is the new tenant's user id; use the
+ * returned `apiKey` (shown only once) for subsequent calls made as that sub-account.
+ */
+export interface SubAccountResult {
+  actorId: string;
+  apiKey: string;
+  keyId: string;
+  username: string;
+  displayTag: string;
+  displayName?: string;
+  groupId?: string;
+}
+

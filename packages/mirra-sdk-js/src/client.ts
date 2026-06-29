@@ -59,6 +59,8 @@ import {
   UpdateFlowParams,
   ListFlowsParams,
   EventTypeInfo,
+  CreateSubAccountParams,
+  SubAccountResult,
 } from './types';
 
 export class MirraSDK {
@@ -466,6 +468,29 @@ export class MirraSDK {
       const response = await this.client.delete<
         MirraResponse<{ success: boolean }>
       >(`/agents/${id}`);
+      return response.data.data!;
+    },
+  };
+
+  // ============================================================================
+  // Account Operations
+  // ============================================================================
+
+  accounts = {
+    /**
+     * Create a sub-account (child tenant) owned by the authenticated account and
+     * mint an API key for it. Returns the new tenant's `actorId` and a plaintext
+     * `apiKey` (shown only once) to use for subsequent calls made as that sub-account.
+     *
+     * LLM / paid-op usage by the sub-account bills against the parent's quota.
+     */
+    createSubAccount: async (
+      params: CreateSubAccountParams
+    ): Promise<SubAccountResult> => {
+      const response = await this.client.post<MirraResponse<SubAccountResult>>(
+        '/accounts/subaccounts',
+        params
+      );
       return response.data.data!;
     },
   };
