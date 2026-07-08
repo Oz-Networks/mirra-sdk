@@ -146,27 +146,6 @@ export interface JiraExecuteExtendedArgs {
   body?: any; // Request body for POST/PUT/PATCH operations
 }
 
-// Claude Code Adapter Types
-export interface ClaudeCodeStartSessionArgs {
-  prompt: string; // The initial prompt/task for Claude Code
-  groupId?: string; // The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group.
-  cwd?: string; // Working directory for Claude Code (defaults to system default)
-  model?: string; // Claude model to use (e.g., "claude-sonnet-4-6")
-  allowUnsupervisedMode?: boolean; // Run Claude Code in unsupervised mode, skipping all permission prompts. Only use for autonomous agent-driven sessions where no human is monitoring. Sessions still run in worktree isolation.
-  agentMode?: boolean; // If true, persist session output to DataAdapter on completion for queryable audit trail. Currently supported via delegate_to_claude_code tool.
-  async?: boolean; // If true, return immediately after spawning the process without waiting for CC to connect via WebSocket. The session runs independently and writes results to ~/.claude/results/<sessionId>.json. Use for long-running autonomous tasks.
-  taskType?: string; // Type of task for the result file metadata: "implementation", "research", or "analysis". Only used when async=true. Defaults to "implementation".
-}
-export interface ClaudeCodeResumeSessionArgs {
-  claudeSessionId: string; // The Claude Code session ID to resume (from a previous session)
-  prompt: string; // The follow-up prompt/task
-  groupId?: string; // The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group.
-  cwd?: string; // Working directory for Claude Code
-}
-export interface ClaudeCodeKillSessionArgs {
-  sessionId: string; // The session ID to kill
-}
-
 // Data Adapter Types
 export interface DataDefineCollectionArgs {
   name: string; // Human-readable name for the collection (e.g. "Contacts", "Sales Metrics")
@@ -1057,7 +1036,7 @@ export interface MirraMessagingGetRecentMessagesArgs {
 // Observability Adapter Types
 export interface ObservabilityQueryEventsArgs {
   timeRange?: any; // Time range filter with start/end ISO 8601 strings. Defaults to last 24 hours.
-  adapter?: string; // Filter by adapter service ID (e.g. "data", "flows", "claudeCode", "desktop")
+  adapter?: string; // Filter by adapter service ID (e.g. "data", "flows", "desktop")
   operation?: string; // Filter by exact operation name (e.g. "insertRecord", "executeFlow")
   outcome?: string; // Filter by outcome: "success", "failure", or "pending"
   severity?: string; // Filter by severity: "debug", "info", "warn", or "error"
@@ -1766,18 +1745,6 @@ export interface TrelloExecuteExtendedArgs {
   pathParams?: any; // Path parameters, e.g., { id: "abc123" }
   queryParams?: any; // Query string parameters
   body?: any; // Request body for POST/PUT/PATCH operations
-}
-
-// Tunnel Adapter Types
-export interface TunnelCallArgs {
-  tunnel?: string; // Tunnel name to use (defaults to 'default')
-  method?: string; // HTTP method (defaults to GET)
-  path: string; // Request path (e.g., /api/query)
-  headers?: any; // Request headers
-  body?: any; // Request body (for POST/PUT/PATCH)
-}
-export interface TunnelStatusArgs {
-  tunnel?: string; // Tunnel name to check (defaults to 'default')
 }
 
 // Twitter Adapter Types
@@ -2504,53 +2471,6 @@ export interface JiraGetIssueTypesData {
 }
 
 export type JiraGetIssueTypesResult = AdapterResultBase<JiraGetIssueTypesData>;
-
-// Claude Code Response Types
-export interface ClaudeCodeStartSessionData {
-  sessionId: string; // Unique session identifier (prefixed with cc_)
-  channelId: string; // WebSocket channel ID for the session
-  processId?: string; // Desktop process identifier
-  pid?: number; // OS process ID of the Claude Code process
-  async?: boolean; // True when session was started in async mode (fire-and-forget)
-}
-
-export type ClaudeCodeStartSessionResult = AdapterResultBase<ClaudeCodeStartSessionData>;
-
-export interface ClaudeCodeResumeSessionData {
-  sessionId: string; // Unique session identifier for the resumed session (prefixed with cc_)
-  channelId: string; // WebSocket channel ID for the session
-  processId?: string; // Desktop process identifier
-  pid?: number; // OS process ID of the Claude Code process
-}
-
-export type ClaudeCodeResumeSessionResult = AdapterResultBase<ClaudeCodeResumeSessionData>;
-
-export interface ClaudeCodeSessionInfo {
-  sessionId: string; // Session identifier
-  channelId: string; // WebSocket channel ID
-  groupId: string; // Mirra group ID where output is posted
-  status: string; // Connection status (e.g., "connected")
-  startedAt?: string; // ISO 8601 timestamp when session started
-  initialPrompt?: string; // The initial prompt given to the session
-  cwd?: string; // Working directory for the session
-  model?: string; // Claude model being used
-  processId?: string; // Desktop process identifier
-  pid?: number; // OS process ID
-}
-
-export interface ClaudeCodeListSessionsData {
-  sessions: any; // Array of active Claude Code sessions
-  count: number; // Number of active sessions
-}
-
-export type ClaudeCodeListSessionsResult = AdapterResultBase<ClaudeCodeListSessionsData>;
-
-export interface ClaudeCodeKillSessionData {
-  killed: boolean; // Whether the session was successfully killed
-  sessionId: string; // Session ID that was killed
-}
-
-export type ClaudeCodeKillSessionResult = AdapterResultBase<ClaudeCodeKillSessionData>;
 
 // Data Response Types
 export interface DataCollectionInfo {
@@ -6588,41 +6508,6 @@ export interface TrelloDeleteCheckItemData {
 
 export type TrelloDeleteCheckItemResult = AdapterResultBase<TrelloDeleteCheckItemData>;
 
-// Tunnel Response Types
-export interface TunnelCallData {
-  statusCode: number; // HTTP response status code
-  headers: any; // HTTP response headers
-  body: any; // Response body (parsed as JSON if possible, otherwise string)
-  tunnelName: string; // Name of the tunnel used for the request
-  duration: number; // Request duration in milliseconds
-}
-
-export type TunnelCallResult = AdapterResultBase<TunnelCallData>;
-
-export interface TunnelStatusData {
-  tunnelName: string; // Name of the tunnel
-  connected: boolean; // Whether the tunnel is currently connected
-  tunnelUrl?: string; // URL of the tunnel endpoint
-  metadata?: any; // Tunnel client metadata (hostname, clientVersion, etc.)
-  connectedAt?: string; // ISO 8601 timestamp when the tunnel connected
-}
-
-export type TunnelStatusResult = AdapterResultBase<TunnelStatusData>;
-
-export interface TunnelListEntry {
-  tunnelName: string; // Name of the tunnel
-  tunnelUrl: string; // URL of the tunnel endpoint
-  connectedAt: string; // ISO 8601 timestamp when the tunnel connected
-  metadata?: any; // Tunnel client metadata
-}
-
-export interface TunnelListData {
-  tunnels: any; // List of connected tunnels
-  count: number; // Total number of connected tunnels
-}
-
-export type TunnelListResult = AdapterResultBase<TunnelListData>;
-
 // Twitter Response Types
 export interface TwitterPostTweetData {
   tweetId: string; // ID of the posted tweet
@@ -8102,75 +7987,6 @@ function createJiraAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'executeExtended',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Claude Code Adapter
- * Category: internal
- */
-function createClaudeCodeAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Start a new Claude Code session on the user's desktop. Spawns Claude Code with the given prompt and creates Flows to process protocol messages and route replies.
-     * @param args.prompt - The initial prompt/task for Claude Code
-     * @param args.groupId - The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group. (optional)
-     * @param args.cwd - Working directory for Claude Code (defaults to system default) (optional)
-     * @param args.model - Claude model to use (e.g., "claude-sonnet-4-6") (optional)
-     * @param args.allowUnsupervisedMode - Run Claude Code in unsupervised mode, skipping all permission prompts. Only use for autonomous agent-driven sessions where no human is monitoring. Sessions still run in worktree isolation. (optional)
-     * @param args.agentMode - If true, persist session output to DataAdapter on completion for queryable audit trail. Currently supported via delegate_to_claude_code tool. (optional)
-     * @param args.async - If true, return immediately after spawning the process without waiting for CC to connect via WebSocket. The session runs independently and writes results to ~/.claude/results/<sessionId>.json. Use for long-running autonomous tasks. (optional)
-     * @param args.taskType - Type of task for the result file metadata: "implementation", "research", or "analysis". Only used when async=true. Defaults to "implementation". (optional)
-     * @returns Promise<ClaudeCodeStartSessionData> Typed flat response with IDE autocomplete
-     */
-    startSession: async (args: ClaudeCodeStartSessionArgs): Promise<ClaudeCodeStartSessionData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'claudeCode',
-        method: 'startSession',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Resume an existing Claude Code session with a new prompt. The session continues from where it left off.
-     * @param args.claudeSessionId - The Claude Code session ID to resume (from a previous session)
-     * @param args.prompt - The follow-up prompt/task
-     * @param args.groupId - The Mirra group ID where Claude Code output will be posted. To find a groupId, call mirraMessaging.getGroups() which returns { groups: [{ groupId, name, description, role }], count }. If omitted, the desktop user will be prompted to select a group. (optional)
-     * @param args.cwd - Working directory for Claude Code (optional)
-     * @returns Promise<ClaudeCodeResumeSessionData> Typed flat response with IDE autocomplete
-     */
-    resumeSession: async (args: ClaudeCodeResumeSessionArgs): Promise<ClaudeCodeResumeSessionData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'claudeCode',
-        method: 'resumeSession',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List all active Claude Code sessions for the user
-     * @returns Promise<ClaudeCodeListSessionsData> Typed flat response with IDE autocomplete
-     */
-    listSessions: async (args?: {}): Promise<ClaudeCodeListSessionsData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'claudeCode',
-        method: 'listSessions',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Kill a running Claude Code session and clean up associated Flows
-     * @param args.sessionId - The session ID to kill
-     * @returns Promise<ClaudeCodeKillSessionData> Typed flat response with IDE autocomplete
-     */
-    killSession: async (args: ClaudeCodeKillSessionArgs): Promise<ClaudeCodeKillSessionData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'claudeCode',
-        method: 'killSession',
         params: args || {}
       });
     }
@@ -10985,7 +10801,7 @@ function createObservabilityAdapter(sdk: MirraSDK) {
     /**
      * Query audit events with flexible filters. Returns structured audit events for adapter operations, LLM tool calls, and desktop operations. Use this to investigate errors, see what happened recently, or trace a specific operation chain.
      * @param args.timeRange - Time range filter with start/end ISO 8601 strings. Defaults to last 24 hours. (optional)
-     * @param args.adapter - Filter by adapter service ID (e.g. "data", "flows", "claudeCode", "desktop") (optional)
+     * @param args.adapter - Filter by adapter service ID (e.g. "data", "flows", "desktop") (optional)
      * @param args.operation - Filter by exact operation name (e.g. "insertRecord", "executeFlow") (optional)
      * @param args.outcome - Filter by outcome: "success", "failure", or "pending" (optional)
      * @param args.severity - Filter by severity: "debug", "info", "warn", or "error" (optional)
@@ -13111,56 +12927,6 @@ function createTrelloAdapter(sdk: MirraSDK) {
 }
 
 /**
- * Tunnel Adapter
- * Category: internal
- */
-function createTunnelAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Make an HTTP request through a tunnel to a local service
-     * @param args.tunnel - Tunnel name to use (defaults to 'default') (optional)
-     * @param args.method - HTTP method (defaults to GET) (optional)
-     * @param args.path - Request path (e.g., /api/query)
-     * @param args.headers - Request headers (optional)
-     * @param args.body - Request body (for POST/PUT/PATCH) (optional)
-     * @returns Promise<TunnelCallData> Typed flat response with IDE autocomplete
-     */
-    call: async (args: TunnelCallArgs): Promise<TunnelCallData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'tunnel',
-        method: 'call',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Check if a specific tunnel is connected
-     * @param args.tunnel - Tunnel name to check (defaults to 'default') (optional)
-     * @returns Promise<TunnelStatusData> Typed flat response with IDE autocomplete
-     */
-    status: async (args: TunnelStatusArgs): Promise<TunnelStatusData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'tunnel',
-        method: 'status',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List all connected tunnels for the user
-     * @returns Promise<TunnelListData> Typed flat response with IDE autocomplete
-     */
-    list: async (args?: {}): Promise<TunnelListData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'tunnel',
-        method: 'list',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
  * Twitter Adapter
  * Category: social
  */
@@ -14589,7 +14355,6 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
 export const generatedAdapters = {
   ai: createAiAdapter,
   jira: createJiraAdapter,
-  claudeCode: createClaudeCodeAdapter,
   data: createDataAdapter,
   desktop: createDesktopAdapter,
   document: createDocumentAdapter,
@@ -14615,7 +14380,6 @@ export const generatedAdapters = {
   telegram: createTelegramAdapter,
   telegramBot: createTelegramBotAdapter,
   trello: createTrelloAdapter,
-  tunnel: createTunnelAdapter,
   twitter: createTwitterAdapter,
   videoGenerator: createVideoGeneratorAdapter,
   voice: createVoiceAdapter,

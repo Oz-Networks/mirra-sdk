@@ -50,7 +50,7 @@ Query audit events with flexible filters. Returns structured audit events for ad
 **Arguments:**
 
 - `timeRange` (object, *optional*): Time range filter with start/end ISO 8601 strings. Defaults to last 24 hours.
-- `adapter` (string, *optional*): Filter by adapter service ID (e.g. "data", "flows", "claudeCode", "desktop")
+- `adapter` (string, *optional*): Filter by adapter service ID (e.g. "data", "flows", "desktop")
 - `operation` (string, *optional*): Filter by exact operation name (e.g. "insertRecord", "executeFlow")
 - `outcome` (string, *optional*): Filter by outcome: "success", "failure", or "pending"
 - `severity` (string, *optional*): Filter by severity: "debug", "info", "warn", or "error"
@@ -129,8 +129,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
       "duration": 42
     },
     {
-      "adapter": "claudeCode",
-      "operation": "startSession",
+      "adapter": "desktop",
+      "operation": "executeCommand",
       "outcome": "failure",
       "duration": 12
     }
@@ -139,7 +139,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
     "totalDuration": 54,
     "adaptersCalled": [
       "data",
-      "claudeCode"
+      "desktop"
     ],
     "outcome": "mixed",
     "errorCount": 1

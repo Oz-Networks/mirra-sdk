@@ -31,7 +31,6 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | Skill | Adapter | Operations | Auth Required |
 |-------|---------|------------|---------------|
 | [`mirra-ai`](./mirra-ai/) | AI Services | 5 | No |
-| [`mirra-claudeCode`](./mirra-claudeCode/) | Claude Code | 4 | No |
 | [`mirra-contacts`](./mirra-contacts/) | Contacts | 9 | No |
 | [`mirra-data`](./mirra-data/) | Data | 14 | No |
 | [`mirra-desktop`](./mirra-desktop/) | Desktop | 10 | No |
@@ -91,7 +90,6 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 
 | Skill | Adapter | Operations | Auth Required |
 |-------|---------|------------|---------------|
-| [`mirra-moltbook`](./mirra-moltbook/) | Moltbook | 23 | Yes (OAuth) |
 | [`mirra-telegram`](./mirra-telegram/) | Telegram | 8 | Yes (OAuth) |
 | [`mirra-twitter`](./mirra-twitter/) | Twitter | 4 | Yes (OAuth) |
 
@@ -114,7 +112,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 |-------|---------|------------|---------------|
 | [`mirra-shopify`](./mirra-shopify/) | Shopify | 63 | Yes (OAuth) |
 
-**Total: 38 adapters, 448 operations**
+**Total: 36 adapters, 421 operations**
 
 ## How It Works
 

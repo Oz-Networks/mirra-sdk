@@ -582,18 +582,17 @@ export class MirraSDK {
      *
      * @example
      * ```typescript
-     * // Get the Claude Code router script ID for Flow creation
-     * const { scriptId } = await sdk.scripts.getSystemScript('claude-code-router');
-     * console.log('Router script ID:', scriptId);
+     * // Get the call-summary script ID for Flow creation
+     * const { scriptId } = await sdk.scripts.getSystemScript('call-summary-script');
+     * console.log('Summary script ID:', scriptId);
      * ```
      *
      * @param type - The system script type:
-     *   - `claude-code-router`: Routes mobile replies to Claude Code sessions on user PCs
      *   - `call-summary-script`: Generates call summaries for completed voice calls
      *   - `call-reminder-script`: Creates reminders from call context
      */
     getSystemScript: async (
-      type: 'claude-code-router' | 'call-summary-script' | 'call-reminder-script'
+      type: 'call-summary-script' | 'call-reminder-script'
     ): Promise<{ type: string; scriptId: string }> => {
       const response = await this.client.get<
         MirraResponse<{ type: string; scriptId: string }>
