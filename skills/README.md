@@ -112,7 +112,15 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 |-------|---------|------------|---------------|
 | [`mirra-shopify`](./mirra-shopify/) | Shopify | 63 | Yes (OAuth) |
 
-**Total: 36 adapters, 421 operations**
+### Collaboration
+
+Hand-authored orchestration skills (not tied to a single adapter):
+
+| Skill | What it does |
+|-------|--------------|
+| [`mirra-cowork`](./mirra-cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, poll for replies on a cadence you set, and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
+
+**Total: 36 adapters, 421 operations, 1 collaboration skill(s)**
 
 ## How It Works
 
@@ -126,8 +134,9 @@ Skills use `curl` so they work everywhere with no dependencies to install.
 
 ## Regeneration
 
-These skills are auto-generated from adapter operation schemas. Do not edit manually.
-To regenerate after adapter changes:
+Most skills are auto-generated from adapter operation schemas — do not edit those here (this directory is wiped on each run).
+Hand-authored collaboration skills live in `tools/llm-api-generator/static-skills/` and are copied in verbatim.
+To regenerate after adapter or static-skill changes:
 
 ```bash
 cd apps/server && npm run generate:llm-api
