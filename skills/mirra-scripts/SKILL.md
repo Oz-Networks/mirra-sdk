@@ -52,8 +52,6 @@ Replace `{operation}` with the operation name from the table below.
 | `unpublishScript` | Remove a script from the marketplace. Returns flat unpublish confirmation. |
 | `listMarketplaceScripts` | Search and list published scripts in the marketplace. Returns flat script summaries with pagination. |
 | `getMetrics` | Get execution metrics for a script. Returns flat metrics structure. |
-| `createWebhook` | Create a webhook endpoint for the script. Returns flat webhook details. |
-| `createSchedule` | Create a cron schedule for the script. Returns flat schedule details. |
 | `getFlowScript` | Get the script code for a specific flow. Returns flat flow script structure. |
 | `modifyFlowScript` | Replace the ENTIRE script code for a flow. For small changes, prefer editScriptCode or editFlowSc... |
 | `readScriptCode` | Read the active version's code for a script with line numbers. Supports optional line range. Use ... |
@@ -648,78 +646,6 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "successRate": 0.98,
   "errorRate": 0.02,
   "lastExecutedAt": "2024-12-08T15:30:00Z"
-}
-```
-
-### `createWebhook`
-
-Create a webhook endpoint for the script. Returns flat webhook details.
-
-**Arguments:**
-
-- `scriptId` (string, **required**): ID of the script
-- `name` (string, **required**): Name of the webhook
-- `enabled` (boolean, *optional*): Whether webhook is enabled (default: true)
-
-**Returns:**
-
-`object`: Returns FLAT structure: { scriptId, webhookUrl, webhookSecret, name, enabled }
-
-**Example:**
-
-```bash
-curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"scripts","method":"createWebhook","params":{"scriptId":"507f1f77bcf86cd799439011","name":"GitHub Deploy Hook"}}' | jq .
-```
-
-**Example response:**
-
-```json
-{
-  "scriptId": "507f1f77bcf86cd799439011",
-  "webhookUrl": "https://api.mirra.com/webhooks/...",
-  "webhookSecret": "...",
-  "name": "GitHub Deploy Hook",
-  "enabled": true
-}
-```
-
-### `createSchedule`
-
-Create a cron schedule for the script. Returns flat schedule details.
-
-**Arguments:**
-
-- `scriptId` (string, **required**): ID of the script
-- `name` (string, **required**): Name of the schedule
-- `cronExpression` (string, **required**): Cron expression (e.g., "0 9 * * *" for daily at 9am)
-- `enabled` (boolean, *optional*): Whether schedule is enabled (default: true)
-- `data` (object, *optional*): Data to pass to the script on scheduled execution
-
-**Returns:**
-
-`object`: Returns FLAT structure: { scheduleId, scriptId, name, cronExpression, enabled }
-
-**Example:**
-
-```bash
-curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"scripts","method":"createSchedule","params":{"scriptId":"507f1f77bcf86cd799439011","name":"Daily Report Schedule","cronExpression":"0 9 * * *","data":{"reportType":"daily"}}}' | jq .
-```
-
-**Example response:**
-
-```json
-{
-  "scheduleId": "sched_abc123",
-  "scriptId": "507f1f77bcf86cd799439011",
-  "name": "Daily Report Schedule",
-  "cronExpression": "0 9 * * *",
-  "enabled": true
 }
 ```
 

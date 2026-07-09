@@ -866,18 +866,6 @@ export interface ScriptsListMarketplaceScriptsArgs {
 export interface ScriptsGetMetricsArgs {
   scriptId: string; // ID of the script
 }
-export interface ScriptsCreateWebhookArgs {
-  scriptId: string; // ID of the script
-  name: string; // Name of the webhook
-  enabled?: boolean; // Whether webhook is enabled (default: true)
-}
-export interface ScriptsCreateScheduleArgs {
-  scriptId: string; // ID of the script
-  name: string; // Name of the schedule
-  cronExpression: string; // Cron expression (e.g., "0 9 * * *" for daily at 9am)
-  enabled?: boolean; // Whether schedule is enabled (default: true)
-  data?: any; // Data to pass to the script on scheduled execution
-}
 export interface ScriptsGetFlowScriptArgs {
   flowId: string; // ID of the flow to get script code for
 }
@@ -3956,26 +3944,6 @@ export interface ScriptMetricsData {
 }
 
 export type ScriptsGetMetricsResult = AdapterResultBase<ScriptMetricsData>;
-
-export interface ScriptWebhookData {
-  scriptId: string; // Script ID
-  webhookUrl: string; // Webhook URL endpoint
-  webhookSecret: string; // Webhook secret for verification
-  name: string; // Webhook name
-  enabled: boolean; // Whether webhook is enabled
-}
-
-export type ScriptsCreateWebhookResult = AdapterResultBase<ScriptWebhookData>;
-
-export interface ScriptScheduleData {
-  scheduleId: string; // Schedule ID
-  scriptId: string; // Script ID
-  name: string; // Schedule name
-  cronExpression: string; // Cron expression
-  enabled: boolean; // Whether schedule is enabled
-}
-
-export type ScriptsCreateScheduleResult = AdapterResultBase<ScriptScheduleData>;
 
 export interface ScriptFlowGetData {
   code: string; // Script source code
@@ -10146,38 +10114,6 @@ function createScriptsAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'scripts',
         method: 'getMetrics',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create a webhook endpoint for the script. Returns flat webhook details.
-     * @param args.scriptId - ID of the script
-     * @param args.name - Name of the webhook
-     * @param args.enabled - Whether webhook is enabled (default: true) (optional)
-     * @returns Promise<ScriptWebhookData> Typed flat response with IDE autocomplete
-     */
-    createWebhook: async (args: ScriptsCreateWebhookArgs): Promise<ScriptWebhookData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'createWebhook',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create a cron schedule for the script. Returns flat schedule details.
-     * @param args.scriptId - ID of the script
-     * @param args.name - Name of the schedule
-     * @param args.cronExpression - Cron expression (e.g., "0 9 * * *" for daily at 9am)
-     * @param args.enabled - Whether schedule is enabled (default: true) (optional)
-     * @param args.data - Data to pass to the script on scheduled execution (optional)
-     * @returns Promise<ScriptScheduleData> Typed flat response with IDE autocomplete
-     */
-    createSchedule: async (args: ScriptsCreateScheduleArgs): Promise<ScriptScheduleData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'createSchedule',
         params: args || {}
       });
     },
