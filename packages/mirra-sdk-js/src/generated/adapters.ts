@@ -301,6 +301,7 @@ export interface FeedItemsCreateFeedItemArgs {
   details?: any; // Key-value pairs of relevant info to display (e.g. { "recipients": "3 people", "status": "sent" })
   preview?: string; // Longer text content shown below details (e.g. email body preview, note content)
   notify?: boolean; // Send push notification (default: true, set false for background updates)
+  image?: any; // Optional image to attach to the notification, rendered inline in the activity feed. Provide the raw image bytes as base64. Shape: { data: <base64 string>, mimeType: "image/jpeg" | "image/png", alt?: "short description" }. Max ~10MB decoded.
 }
 export interface FeedItemsHideFeedItemArgs {
   feedItemId: string; // The feedItemId returned by a prior createFeedItem call — identifies which device notification to clear
@@ -8486,6 +8487,7 @@ function createFeedItemsAdapter(sdk: MirraSDK) {
      * @param args.details - Key-value pairs of relevant info to display (e.g. { "recipients": "3 people", "status": "sent" }) (optional)
      * @param args.preview - Longer text content shown below details (e.g. email body preview, note content) (optional)
      * @param args.notify - Send push notification (default: true, set false for background updates) (optional)
+     * @param args.image - Optional image to attach to the notification, rendered inline in the activity feed. Provide the raw image bytes as base64. Shape: { data: <base64 string>, mimeType: "image/jpeg" | "image/png", alt?: "short description" }. Max ~10MB decoded. (optional)
      * @returns Promise<FeedItemCreateData> Typed flat response with IDE autocomplete
      */
     createFeedItem: async (args: FeedItemsCreateFeedItemArgs): Promise<FeedItemCreateData> => {

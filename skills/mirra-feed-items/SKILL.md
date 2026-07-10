@@ -55,6 +55,7 @@ Create a notification for the user. Shows up in their activity feed and sends a 
 - `details` (object, *optional*): Key-value pairs of relevant info to display (e.g. { "recipients": "3 people", "status": "sent" })
 - `preview` (string, *optional*): Longer text content shown below details (e.g. email body preview, note content)
 - `notify` (boolean, *optional*): Send push notification (default: true, set false for background updates)
+- `image` (object, *optional*): Optional image to attach to the notification, rendered inline in the activity feed. Provide the raw image bytes as base64. Shape: { data: <base64 string>, mimeType: "image/jpeg" | "image/png", alt?: "short description" }. Max ~10MB decoded.
 
 **Returns:**
 
