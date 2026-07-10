@@ -146,6 +146,40 @@ export interface JiraExecuteExtendedArgs {
   body?: any; // Request body for POST/PUT/PATCH operations
 }
 
+// Dashboards Adapter Types
+export interface DashboardsCreateDashboardArgs {
+  title: string; // Tab label shown on the notifications screen (e.g. "Security")
+  icon?: string; // Ionicons icon name for the tab (e.g. "shield-checkmark-outline")
+  order?: number; // Tab order among the user's dashboards (default: after existing tabs)
+  widgets?: any[]; // Initial widget definitions: [{ widgetId, type, title?, size?, order?, data, staleAfterSeconds?, tapAction? }]. staleAfterSeconds dims the widget and shows its age when the data is older than this.
+}
+export interface DashboardsGetDashboardArgs {
+  dashboardId: string; // The dashboardId returned by createDashboard or listDashboards
+}
+export interface DashboardsDeleteDashboardArgs {
+  dashboardId: string; // The dashboardId to delete
+}
+export interface DashboardsUpsertWidgetArgs {
+  dashboardId: string; // Dashboard to modify
+  widgetId: string; // Stable caller-chosen slug (e.g. "person-jane"). Creates the widget if it doesn't exist, replaces it if it does.
+  type: string; // Widget type: stat | image_card | list | progress | sparkline
+  title?: string; // Card title shown above the widget content
+  size?: string; // "full" (whole row, default) or "half" (pairs into 2-column rows)
+  order?: number; // Sort key within the dashboard; lower = higher on screen (default 0)
+  data: any; // Type-specific payload — see createDashboard description for shapes per type
+  staleAfterSeconds?: number; // Client dims the widget and shows its age when data is older than this
+  tapAction?: any; // Action when the widget is tapped: { type: "navigate", screen, params? } or { type: "open_url", url }
+}
+export interface DashboardsUpdateWidgetDataArgs {
+  dashboardId: string; // Dashboard containing the widget
+  widgetId: string; // The widget to repaint — must already exist
+  data: any; // Full replacement data payload, shaped for the widget's type
+}
+export interface DashboardsRemoveWidgetArgs {
+  dashboardId: string; // Dashboard containing the widget
+  widgetId: string; // The widget to remove
+}
+
 // Data Adapter Types
 export interface DataDefineCollectionArgs {
   name: string; // Human-readable name for the collection (e.g. "Contacts", "Sales Metrics")
@@ -2460,6 +2494,93 @@ export interface JiraGetIssueTypesData {
 }
 
 export type JiraGetIssueTypesResult = AdapterResultBase<JiraGetIssueTypesData>;
+
+// Dashboards Response Types
+export interface DashboardCreateData {
+  dashboardId: string; // Unique ID of the created dashboard
+  title: string; // Tab label
+  icon?: string; // Ionicons tab icon name
+  order: number; // Tab order among dashboards
+  widgetCount: number; // Number of widgets created
+  createdAt: string; // ISO timestamp of creation
+}
+
+export type DashboardsCreateDashboardResult = AdapterResultBase<DashboardCreateData>;
+
+export interface DashboardSummary {
+  dashboardId: string; // Dashboard ID
+  title: string; // Tab label
+  icon?: string; // Ionicons tab icon name
+  order: number; // Tab order
+  widgetCount: number; // Number of widgets
+  updatedAt: string; // ISO timestamp of last change
+}
+
+export interface DashboardListData {
+  dashboards: any; // Dashboards in this context, ordered by tab order
+  count: number; // Total number of dashboards returned
+}
+
+export type DashboardsListDashboardsResult = AdapterResultBase<DashboardListData>;
+
+export interface DashboardDetail {
+  dashboardId: string; // Dashboard ID
+  title: string; // Tab label
+  icon?: string; // Ionicons tab icon name
+  order: number; // Tab order
+  widgets: any; // Widgets ordered by their order field
+  createdAt: string; // ISO timestamp of creation
+  updatedAt: string; // ISO timestamp of last change
+}
+
+export interface DashboardGetData {
+  dashboard: any; // Full dashboard including widget data
+}
+
+export type DashboardsGetDashboardResult = AdapterResultBase<DashboardGetData>;
+
+export interface DashboardDeleteData {
+  dashboardId: string; // ID of the deleted dashboard
+  deleted: boolean; // Always true on success
+}
+
+export type DashboardsDeleteDashboardResult = AdapterResultBase<DashboardDeleteData>;
+
+export interface DashboardWidget {
+  widgetId: string; // Stable caller-chosen widget id
+  type: any; // Widget type
+  title?: string; // Card title
+  size: any; // Grid sizing
+  order: number; // Sort key within the dashboard
+  data: any; // Type-specific data payload
+  staleAfterSeconds?: number; // Staleness threshold for client dimming
+  tapAction?: any; // Tap action (navigate / open_url)
+  updatedAt: string; // ISO timestamp of last data update
+}
+
+export interface DashboardUpsertWidgetData {
+  dashboardId: string; // Dashboard the widget belongs to
+  widget: any; // The stored widget definition (image uploads resolved to CDN URLs)
+  created: boolean; // True if the widget was created, false if replaced
+}
+
+export type DashboardsUpsertWidgetResult = AdapterResultBase<DashboardUpsertWidgetData>;
+
+export interface DashboardUpdateWidgetDataData {
+  dashboardId: string; // Dashboard the widget belongs to
+  widgetId: string; // The repainted widget
+  updatedAt: string; // ISO timestamp of the update
+}
+
+export type DashboardsUpdateWidgetDataResult = AdapterResultBase<DashboardUpdateWidgetDataData>;
+
+export interface DashboardRemoveWidgetData {
+  dashboardId: string; // Dashboard the widget belonged to
+  widgetId: string; // The removed widget
+  removed: boolean; // Always true on success
+}
+
+export type DashboardsRemoveWidgetResult = AdapterResultBase<DashboardRemoveWidgetData>;
 
 // Data Response Types
 export interface DataCollectionInfo {
@@ -7956,6 +8077,118 @@ function createJiraAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'jira',
         method: 'executeExtended',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Dashboards Adapter
+ * Category: internal
+ */
+function createDashboardsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a dashboard — a new tab on the user's notifications screen containing a grid of widgets. Pass initial widgets to scaffold the whole dashboard in one call. Each widget needs a stable, caller-chosen widgetId (e.g. "occupancy", "person-jane") so flows can repaint it later with updateWidgetData without tracking server-generated ids. Widget types: "stat" (big number: { value, label?, delta?: { value, direction: "up"|"down"|"flat" }, emphasis?: "default"|"success"|"warning"|"alert" }), "image_card" (snapshot + caption: { image: { url } OR { data: <base64>, mimeType }, title?, caption?, timestamp? }), "list" (compact rows: { items: [{ text, secondaryText?, timestamp?, status?: "ok"|"warn"|"alert"|"neutral", imageUrl? }], maxVisible? }), "progress" (bounded quantity: { value: 0..1, label?, displayText? }), "sparkline" (trend: { points: number[], label?, currentValue? }). Sizes: "full" takes the row, consecutive "half" widgets pair into 2-column rows. Lower order = higher on screen. Widget updates are silent — for notable events (e.g. unknown person detected) also create a feed item, which carries the push notification.
+     * @param args.title - Tab label shown on the notifications screen (e.g. "Security")
+     * @param args.icon - Ionicons icon name for the tab (e.g. "shield-checkmark-outline") (optional)
+     * @param args.order - Tab order among the user's dashboards (default: after existing tabs) (optional)
+     * @param args.widgets - Initial widget definitions: [{ widgetId, type, title?, size?, order?, data, staleAfterSeconds?, tapAction? }]. staleAfterSeconds dims the widget and shows its age when the data is older than this. (optional)
+     * @returns Promise<DashboardCreateData> Typed flat response with IDE autocomplete
+     */
+    createDashboard: async (args: DashboardsCreateDashboardArgs): Promise<DashboardCreateData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'dashboards',
+        method: 'createDashboard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List the dashboards in this context (id, title, icon, order, widget count). Use to find an existing dashboard before creating a duplicate.
+     * @returns Promise<DashboardListData> Typed flat response with IDE autocomplete
+     */
+    listDashboards: async (args?: {}): Promise<DashboardListData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'dashboards',
+        method: 'listDashboards',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a full dashboard including every widget's definition and current data. Use to inspect current widget state (e.g. read the existing recent-events list before appending to it).
+     * @param args.dashboardId - The dashboardId returned by createDashboard or listDashboards
+     * @returns Promise<DashboardGetData> Typed flat response with IDE autocomplete
+     */
+    getDashboard: async (args: DashboardsGetDashboardArgs): Promise<DashboardGetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'dashboards',
+        method: 'getDashboard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Permanently delete a dashboard and all its widgets. The tab disappears from the user's device immediately.
+     * @param args.dashboardId - The dashboardId to delete
+     * @returns Promise<DashboardDeleteData> Typed flat response with IDE autocomplete
+     */
+    deleteDashboard: async (args: DashboardsDeleteDashboardArgs): Promise<DashboardDeleteData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'dashboards',
+        method: 'deleteDashboard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a widget or replace its full definition (type, title, size, order, data, staleAfterSeconds, tapAction). Use for structural changes — adding a person card on arrival, changing a widget's size or position. For routine data repaints on an existing widget, use updateWidgetData instead: it can't clobber layout config. For image_card widgets you may pass image as { data: <base64>, mimeType, alt? } — it is uploaded to the CDN and stored as a URL. Never store base64 in widget data. tapAction (optional) makes the widget tappable: { type: "navigate", screen, params? } or { type: "open_url", url }.
+     * @param args.dashboardId - Dashboard to modify
+     * @param args.widgetId - Stable caller-chosen slug (e.g. "person-jane"). Creates the widget if it doesn't exist, replaces it if it does.
+     * @param args.type - Widget type: stat | image_card | list | progress | sparkline
+     * @param args.title - Card title shown above the widget content (optional)
+     * @param args.size - "full" (whole row, default) or "half" (pairs into 2-column rows) (optional)
+     * @param args.order - Sort key within the dashboard; lower = higher on screen (default 0) (optional)
+     * @param args.data - Type-specific payload — see createDashboard description for shapes per type
+     * @param args.staleAfterSeconds - Client dims the widget and shows its age when data is older than this (optional)
+     * @param args.tapAction - Action when the widget is tapped: { type: "navigate", screen, params? } or { type: "open_url", url } (optional)
+     * @returns Promise<DashboardUpsertWidgetData> Typed flat response with IDE autocomplete
+     */
+    upsertWidget: async (args: DashboardsUpsertWidgetArgs): Promise<DashboardUpsertWidgetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'dashboards',
+        method: 'upsertWidget',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Repaint a widget's data — the hot path for keeping a dashboard current. Only the data payload changes; layout config (type, title, size, order) is untouched, so a flow on a loop can't clobber it. Errors if the widget doesn't exist (catches typo'd widgetIds) — use upsertWidget to create widgets. The data shape must match the widget's existing type (see createDashboard description). Updates are silent: no push notification. If the update is notable, also create a feed item.
+     * @param args.dashboardId - Dashboard containing the widget
+     * @param args.widgetId - The widget to repaint — must already exist
+     * @param args.data - Full replacement data payload, shaped for the widget's type
+     * @returns Promise<DashboardUpdateWidgetDataData> Typed flat response with IDE autocomplete
+     */
+    updateWidgetData: async (args: DashboardsUpdateWidgetDataArgs): Promise<DashboardUpdateWidgetDataData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'dashboards',
+        method: 'updateWidgetData',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Remove a widget from a dashboard (e.g. remove a person card when they leave the property). Errors if the widget doesn't exist.
+     * @param args.dashboardId - Dashboard containing the widget
+     * @param args.widgetId - The widget to remove
+     * @returns Promise<DashboardRemoveWidgetData> Typed flat response with IDE autocomplete
+     */
+    removeWidget: async (args: DashboardsRemoveWidgetArgs): Promise<DashboardRemoveWidgetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'dashboards',
+        method: 'removeWidget',
         params: args || {}
       });
     }
@@ -14293,6 +14526,7 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
 export const generatedAdapters = {
   ai: createAiAdapter,
   jira: createJiraAdapter,
+  dashboards: createDashboardsAdapter,
   data: createDataAdapter,
   desktop: createDesktopAdapter,
   document: createDocumentAdapter,

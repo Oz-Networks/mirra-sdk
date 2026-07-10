@@ -32,6 +32,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 |-------|---------|------------|---------------|
 | [`mirra-ai`](./mirra-ai/) | AI Services | 5 | No |
 | [`mirra-contacts`](./mirra-contacts/) | Contacts | 9 | No |
+| [`mirra-dashboards`](./mirra-dashboards/) | Dashboards | 7 | No |
 | [`mirra-data`](./mirra-data/) | Data | 14 | No |
 | [`mirra-desktop`](./mirra-desktop/) | Desktop | 10 | No |
 | [`mirra-feed-items`](./mirra-feed-items/) | Feed Items | 2 | No |
@@ -120,7 +121,7 @@ Hand-authored orchestration skills (not tied to a single adapter):
 |-------|--------------|
 | [`mirra-cowork`](./mirra-cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, poll for replies on a cadence you set, and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
 
-**Total: 36 adapters, 419 operations, 1 collaboration skill(s)**
+**Total: 37 adapters, 426 operations, 1 collaboration skill(s)**
 
 ## How It Works
 
