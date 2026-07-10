@@ -1,12 +1,12 @@
 ---
 name: mirra-dashboards
-description: "Use Mirra to native dashboards on the mobile notifications screen — tabbed grids of typed widgets (stat, image_card, list, progress) that flows keep current. use widgets .... Covers all Dashboards SDK operations via REST API."
+description: "Use Mirra to native dashboards on the mobile notifications screen — tabbed grids of typed widgets (stat, image_card, list, progress, sparkline) that flows keep current. u.... Covers all Dashboards SDK operations via REST API."
 allowed-tools: Read, Bash(curl:*, jq:*)
 ---
 
 # Mirra Dashboards
 
-Native dashboards on the mobile notifications screen — tabbed grids of typed widgets (stat, image_card, list, progress) that flows keep current. Use widgets for live state, Data collections for history, and feed items for notable events that deserve a push notification.
+Native dashboards on the mobile notifications screen — tabbed grids of typed widgets (stat, image_card, list, progress, sparkline) that flows keep current. Use widgets for live state, Data collections for history, and feed items for notable events that deserve a push notification.
 
 ## Prerequisites
 

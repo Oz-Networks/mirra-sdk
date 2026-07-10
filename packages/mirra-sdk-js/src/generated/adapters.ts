@@ -1881,7 +1881,7 @@ export interface FlowsCreateFlowArgs {
   scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields.
   scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings.
   enabled?: boolean; // Whether the flow is enabled (default: true)
-  webhook?: boolean; // Set to true to create a webhook-triggered flow. Returns a webhookUrl in the response. External services POST to this URL to trigger the flow. The request body is available as event.data.body in the handler.
+  webhook?: boolean; // Set to true to create a webhook-triggered flow. Returns a webhookUrl in the response. External services POST to this URL to trigger the flow. The request body is available as event.fields.body in the handler (event.data.body is NOT populated for webhook flows).
   parentSpaceId?: string; // Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. If omitted, auto-inherited from the current group context (if any).
 }
 export interface FlowsCreateTimeFlowArgs {
@@ -13394,7 +13394,7 @@ function createFlowsAdapter(sdk: MirraSDK) {
      * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields. (optional)
      * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings. (optional)
      * @param args.enabled - Whether the flow is enabled (default: true) (optional)
-     * @param args.webhook - Set to true to create a webhook-triggered flow. Returns a webhookUrl in the response. External services POST to this URL to trigger the flow. The request body is available as event.data.body in the handler. (optional)
+     * @param args.webhook - Set to true to create a webhook-triggered flow. Returns a webhookUrl in the response. External services POST to this URL to trigger the flow. The request body is available as event.fields.body in the handler (event.data.body is NOT populated for webhook flows). (optional)
      * @param args.parentSpaceId - Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. If omitted, auto-inherited from the current group context (if any). (optional)
      * @returns Promise<FlowsCreateFlowData> Typed flat response with IDE autocomplete
      */
