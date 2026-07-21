@@ -50,6 +50,7 @@ Replace `{operation}` with the operation name from the table below.
 | `getGroupMembers` | Get the list of members in a group. Requires the authenticated user to be a member of the group. |
 | `searchMessages` | Search chat messages by keywords. Returns summaries by default to avoid overwhelming context. Use... |
 | `getRecentMessages` | Browse recent messages by recency without requiring a keyword search. Returns full message text s... |
+| `waitForMessages` | Long-poll for new messages in a group. Blocks up to timeoutSeconds (max 50) and returns as soon a... |
 
 ## Operation Details
 
@@ -421,6 +422,59 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "limit": 20,
   "offset": 0,
   "hasMore": true
+}
+```
+
+### `waitForMessages`
+
+Long-poll for new messages in a group. Blocks up to timeoutSeconds (max 50) and returns as soon as a matching message arrives, or empty on timeout. Use after sendMessage to wait for replies without cadence polling; chain calls with the returned cursor to keep a subscription window open.
+
+**Arguments:**
+
+- `groupId` (string, **required**): Group ID to watch for new messages (use getGroups to get the groupId)
+- `afterMessageId` (string, *optional*): Cursor: only return messages sent after this message ID (exclusive). Pass the cursor from the previous waitForMessages call, or the messageId returned by sendMessage.
+- `afterTimestamp` (string, *optional*): Cursor alternative: ISO timestamp; only return messages created after it. Ignored if afterMessageId is set. If neither cursor is given, only messages arriving after this call starts are returned.
+- `timeoutSeconds` (number, *optional*): Max seconds to hold the request open waiting for messages (default 25, max 50)
+- `excludeSelf` (boolean, *optional*): Skip messages sent by the authenticated user (default true) so your own sends do not wake the wait
+- `limit` (number, *optional*): Max messages to return (default 20, max 50)
+
+**Returns:**
+
+`AdapterOperationResult`: Returns { messages[], count, timedOut, waitedSeconds, cursor }. Messages sorted oldest first with the same FLAT fields as getRecentMessages. On timeout messages is empty and timedOut=true. Pass cursor as afterMessageId on the next call to continue seamlessly.
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"mirra-messaging","method":"waitForMessages","params":{"groupId":"507f1f77bcf86cd799439043","afterMessageId":"507f1f77bcf86cd799439041","timeoutSeconds":50}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "messages": [
+    {
+      "messageId": "507f1f77bcf86cd799439055",
+      "chatInstanceId": "507f1f77bcf86cd799439042",
+      "groupId": "507f1f77bcf86cd799439043",
+      "groupName": "Engineering",
+      "senderId": "507f1f77bcf86cd799439044",
+      "senderUsername": "alice",
+      "text": "Yes — deploy is green, go ahead.",
+      "timestamp": "2024-01-26T15:31:12Z",
+      "scope": "group",
+      "isFromMe": false,
+      "chatType": "group",
+      "messageLength": 32
+    }
+  ],
+  "count": 1,
+  "timedOut": false,
+  "waitedSeconds": 8,
+  "cursor": "507f1f77bcf86cd799439055"
 }
 ```
 

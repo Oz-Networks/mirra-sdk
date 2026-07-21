@@ -52,7 +52,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | Skill | Adapter | Operations | Auth Required |
 |-------|---------|------------|---------------|
 | [`mirra-google-gmail`](./mirra-google-gmail/) | Gmail | 10 | Yes (OAuth) |
-| [`mirra-mirra-messaging`](./mirra-mirra-messaging/) | Mirra Messaging | 12 | No |
+| [`mirra-mirra-messaging`](./mirra-mirra-messaging/) | Mirra Messaging | 13 | No |
 | [`mirra-telegramBot`](./mirra-telegramBot/) | Telegram Bot | 14 | Yes (OAuth) |
 
 ### Productivity
@@ -120,9 +120,9 @@ Hand-authored orchestration skills (not tied to a single adapter):
 
 | Skill | What it does |
 |-------|--------------|
-| [`mirra-cowork`](./mirra-cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, poll for replies on a cadence you set, and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
+| [`mirra-cowork`](./mirra-cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, wait for replies in near-real-time (long-poll), and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
 
-**Total: 38 adapters, 436 operations, 1 collaboration skill(s)**
+**Total: 38 adapters, 437 operations, 1 collaboration skill(s)**
 
 ## How It Works
 
