@@ -384,6 +384,46 @@ export interface FeedbackSubmitFeatureRequestArgs {
   priority?: string; // Priority: high, medium, or low
 }
 
+// GitHub Adapter Types
+export interface GithubLinkRepoArgs {
+  owner: string; // Repository owner (org or user), e.g. "Oz-Networks"
+  repo: string; // Repository name, e.g. "fxn-monorepo"
+  basePath?: string; // Directory all Mirra writes are confined to (default ".mirra"). No leading slash, no "..".
+  promptFiles?: any[]; // Repo paths injected into the group's system prompt (default ["{basePath}/CONTEXT.md"], max 5)
+}
+export interface GithubUpdateRepoSettingsArgs {
+  basePath?: string; // New write-confinement directory (no leading slash, no "..")
+  promptFiles?: any[]; // Repo paths to inject into the group prompt (max 5)
+  autoSync?: any; // { calls?: boolean, chatDigest?: "off" | "daily" | "weekly" }
+}
+export interface GithubReadFileArgs {
+  path: string; // File path from repo root, e.g. "docs/requirements.md" or ".mirra/CONTEXT.md"
+  ref?: string; // Branch, tag, or commit SHA (default: the repo's default branch)
+}
+export interface GithubListFilesArgs {
+  path?: string; // Directory path from repo root (default: repo root)
+  ref?: string; // Branch, tag, or commit SHA (default: default branch)
+  recursive?: boolean; // Walk the subtree recursively (default false)
+}
+export interface GithubWriteFileArgs {
+  path: string; // File path — relative to basePath, or an absolute repo path already under basePath
+  content: string; // Full file content (max 1MB)
+  message?: string; // Commit message (default: "mirra: update {path}")
+}
+export interface GithubCommitFilesArgs {
+  files: any[]; // Array of { path, content } (max 50 files, 5MB total). Paths relative to basePath or already under it.
+  message: string; // Commit message
+  skipExisting?: boolean; // Skip files that already exist in the repo (default false)
+}
+export interface GithubDeleteFileArgs {
+  path: string; // File path — relative to basePath, or an absolute repo path already under basePath
+  message?: string; // Commit message (default: "mirra: delete {path}")
+}
+export interface GithubGetRecentCommitsArgs {
+  path?: string; // Only commits touching this path (e.g. ".mirra/" or "src/")
+  limit?: number; // Max commits to return (default 10, max 50)
+}
+
 // Google Ads Adapter Types
 export interface GoogleAdsGetAccountOverviewArgs {
   customerId: string; // Google Ads account ID (e.g., '123-456-7890')
@@ -3032,6 +3072,137 @@ export interface FeedbackSubmitFeatureRequestData {
 }
 
 export type FeedbackSubmitFeatureRequestResult = AdapterResultBase<FeedbackSubmitFeatureRequestData>;
+
+// GitHub Response Types
+export interface GithubLinkRepoData {
+  linked: boolean; // True when the repo was linked; false when the App must be installed first
+  installUrl?: string; // App install URL (present when linked is false; expires in ~30 min)
+  message?: string; // Human-readable next step (present when linked is false)
+  owner?: string; // Repository owner
+  repo?: string; // Repository name
+  installationId?: number; // GitHub App installation ID
+  defaultBranch?: string; // Default branch commits land on
+  basePath?: string; // Write-confinement directory
+  promptFiles?: any; // Paths injected into the group prompt
+  scaffoldCommitUrl?: string; // Commit URL of the seeded scaffold (absent if nothing needed seeding)
+  warnings?: any; // Non-fatal issues (branch protection, basePath collision, scaffold failure)
+}
+
+export type GithubLinkRepoResult = AdapterResultBase<GithubLinkRepoData>;
+
+export interface GithubUnlinkRepoData {
+  unlinked: boolean; // Always true on success
+  owner: string; // Owner of the unlinked repo
+  repo: string; // Name of the unlinked repo
+}
+
+export type GithubUnlinkRepoResult = AdapterResultBase<GithubUnlinkRepoData>;
+
+export interface GithubAutoSync {
+  calls: boolean; // Auto-commit call notes on call end
+  chatDigest: any; // Scheduled chat digest cadence
+}
+
+export interface GithubLiveCheck {
+  ok: boolean; // Token mint + repo fetch succeeded
+  error?: string; // Failure detail when ok is false
+}
+
+export interface GithubRepoStatusData {
+  linked: boolean; // Whether this group has a repo config
+  message?: string; // Guidance when not linked
+  status?: any; // Config lifecycle status
+  owner?: string; // Repository owner
+  repo?: string; // Repository name
+  installationId?: number; // GitHub App installation ID
+  defaultBranch?: string; // Default branch
+  basePath?: string; // Write-confinement directory
+  promptFiles?: any; // Paths injected into the group prompt
+  autoSync?: any; // Auto-ingest settings
+  lastError?: string; // Last recorded error, if any
+  live?: any; // Result of a live GitHub connectivity check
+}
+
+export type GithubGetRepoStatusResult = AdapterResultBase<GithubRepoStatusData>;
+
+export interface GithubUpdateRepoSettingsData {
+  updated: boolean; // Always true on success
+  basePath: string; // Effective write-confinement directory
+  promptFiles: any; // Effective prompt-injection paths
+  autoSync: any; // Effective auto-ingest settings
+}
+
+export type GithubUpdateRepoSettingsResult = AdapterResultBase<GithubUpdateRepoSettingsData>;
+
+export interface GithubReadFileData {
+  path: string; // File path from repo root
+  content: string; // File content (possibly truncated)
+  size: number; // Full file size in bytes
+  truncated: boolean; // True if content was cut at the 200k char cap
+  ref: string; // Ref the file was read from
+}
+
+export type GithubReadFileResult = AdapterResultBase<GithubReadFileData>;
+
+export interface GithubFileEntry {
+  path: string; // Full path from repo root
+  name: string; // File or directory name
+  type: any; // Entry type
+  size?: number; // File size in bytes (files only)
+}
+
+export interface GithubListFilesData {
+  path: string; // Directory listed (empty string = repo root)
+  entries: any; // Directory entries
+  count: number; // Number of entries returned
+  truncated: boolean; // True if the listing was cut at the 500-entry cap
+}
+
+export type GithubListFilesResult = AdapterResultBase<GithubListFilesData>;
+
+export interface GithubWriteFileData {
+  path: string; // Resolved repo path the file was written to
+  commitSha: string; // SHA of the commit
+  commitUrl: string; // GitHub URL of the commit
+  fileUrl: string; // GitHub blob URL of the file
+  created: boolean; // True if the file was new, false if updated
+}
+
+export type GithubWriteFileResult = AdapterResultBase<GithubWriteFileData>;
+
+export interface GithubCommitFilesData {
+  commitSha: string; // SHA of the commit (empty string when everything was skipped)
+  commitUrl: string; // GitHub URL of the commit (empty string when everything was skipped)
+  committedPaths: any; // Resolved repo paths included in the commit
+  skippedPaths: any; // Paths skipped because they already existed (skipExisting)
+  fileCount: number; // Number of files committed
+}
+
+export type GithubCommitFilesResult = AdapterResultBase<GithubCommitFilesData>;
+
+export interface GithubDeleteFileData {
+  path: string; // Resolved repo path of the deleted file
+  deleted: boolean; // Always true on success
+  commitSha: string; // SHA of the deletion commit
+  commitUrl: string; // GitHub URL of the deletion commit
+}
+
+export type GithubDeleteFileResult = AdapterResultBase<GithubDeleteFileData>;
+
+export interface GithubCommitEntry {
+  sha: string; // Abbreviated commit SHA
+  message: string; // First line of the commit message
+  author: string; // Author login or name
+  date: string; // ISO commit date
+  commitUrl: string; // GitHub URL of the commit
+}
+
+export interface GithubRecentCommitsData {
+  commits: any; // Recent commits, newest first
+  count: number; // Number of commits returned
+}
+
+export type GithubGetRecentCommitsResult = AdapterResultBase<GithubRecentCommitsData>;
 
 // Google Calendar Response Types
 export interface GoogleCalendarAttendee {
@@ -8845,6 +9016,156 @@ function createFeedbackAdapter(sdk: MirraSDK) {
 }
 
 /**
+ * GitHub Adapter
+ * Category: productivity
+ */
+function createGithubAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Link a GitHub repository to this group (group admin only). The repo becomes the group's shared ground truth: Mirra auto-commits call notes and decisions under basePath (default ".mirra/") and injects promptFiles (default ".mirra/CONTEXT.md") into the group's AI context. Requires the Mirra GitHub App to be installed on the repo's owner — if it isn't, this returns linked: false with an installUrl to complete installation first (the URL expires in ~30 minutes; re-call linkRepo after installing). On success, seeds an opinionated scaffold (README, CONTEXT.md, calls/, decisions/, chats/) and appends a "Mirra shared context" section to the repo's root CLAUDE.md so every teammate's Claude Code learns the conventions.
+     * @param args.owner - Repository owner (org or user), e.g. "Oz-Networks"
+     * @param args.repo - Repository name, e.g. "fxn-monorepo"
+     * @param args.basePath - Directory all Mirra writes are confined to (default ".mirra"). No leading slash, no "..". (optional)
+     * @param args.promptFiles - Repo paths injected into the group's system prompt (default ["{basePath}/CONTEXT.md"], max 5) (optional)
+     * @returns Promise<GithubLinkRepoData> Typed flat response with IDE autocomplete
+     */
+    linkRepo: async (args: GithubLinkRepoArgs): Promise<GithubLinkRepoData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'github',
+        method: 'linkRepo',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Unlink the group's GitHub repository (group admin only). Stops all auto-commits and prompt injection. Nothing in the repo is deleted; the config is retired and a new repo can be linked afterwards.
+     * @returns Promise<GithubUnlinkRepoData> Typed flat response with IDE autocomplete
+     */
+    unlinkRepo: async (args?: {}): Promise<GithubUnlinkRepoData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'github',
+        method: 'unlinkRepo',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the group's repo link status: config (owner/repo, basePath, promptFiles, autoSync) plus a live connectivity check against GitHub. Returns linked: false (not an error) when no repo is linked — use this to check before reading/writing.
+     * @returns Promise<GithubRepoStatusData> Typed flat response with IDE autocomplete
+     */
+    getRepoStatus: async (args?: {}): Promise<GithubRepoStatusData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'github',
+        method: 'getRepoStatus',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update the group's repo link settings (group admin only): basePath (write confinement dir), promptFiles (injected into group AI context), autoSync toggles.
+     * @param args.basePath - New write-confinement directory (no leading slash, no "..") (optional)
+     * @param args.promptFiles - Repo paths to inject into the group prompt (max 5) (optional)
+     * @param args.autoSync - { calls?: boolean, chatDigest?: "off" | "daily" | "weekly" } (optional)
+     * @returns Promise<GithubUpdateRepoSettingsData> Typed flat response with IDE autocomplete
+     */
+    updateRepoSettings: async (args: GithubUpdateRepoSettingsArgs): Promise<GithubUpdateRepoSettingsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'github',
+        method: 'updateRepoSettings',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read a file from anywhere in the group's linked repo (reads are repo-wide, not confined to basePath). Use for requirements, docs, CONTEXT.md, code — the same files the team's Claude Code reads. Content over 200k characters is truncated with a marker.
+     * @param args.path - File path from repo root, e.g. "docs/requirements.md" or ".mirra/CONTEXT.md"
+     * @param args.ref - Branch, tag, or commit SHA (default: the repo's default branch) (optional)
+     * @returns Promise<GithubReadFileData> Typed flat response with IDE autocomplete
+     */
+    readFile: async (args: GithubReadFileArgs): Promise<GithubReadFileData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'github',
+        method: 'readFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List files in a directory of the linked repo (repo-wide). Pass recursive: true to walk the whole subtree (capped at 500 entries).
+     * @param args.path - Directory path from repo root (default: repo root) (optional)
+     * @param args.ref - Branch, tag, or commit SHA (default: default branch) (optional)
+     * @param args.recursive - Walk the subtree recursively (default false) (optional)
+     * @returns Promise<GithubListFilesData> Typed flat response with IDE autocomplete
+     */
+    listFiles: async (args: GithubListFilesArgs): Promise<GithubListFilesData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'github',
+        method: 'listFiles',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create or update a single file in the group's repo. Writes are CONFINED to the group's basePath (default ".mirra/") — pass a path relative to basePath (e.g. "decisions/2026-07-20-auth.md") or the full confined path (".mirra/decisions/2026-07-20-auth.md"). Commits directly to the default branch as mirra[bot]. Use commitFiles for atomic multi-file commits.
+     * @param args.path - File path — relative to basePath, or an absolute repo path already under basePath
+     * @param args.content - Full file content (max 1MB)
+     * @param args.message - Commit message (default: "mirra: update {path}") (optional)
+     * @returns Promise<GithubWriteFileData> Typed flat response with IDE autocomplete
+     */
+    writeFile: async (args: GithubWriteFileArgs): Promise<GithubWriteFileData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'github',
+        method: 'writeFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Commit multiple files atomically in ONE commit (Git Data API). Same basePath confinement as writeFile. Use for backfills and multi-file updates so the repo history stays clean. skipExisting: true leaves already-existing files untouched (useful for idempotent seeding).
+     * @param args.files - Array of { path, content } (max 50 files, 5MB total). Paths relative to basePath or already under it.
+     * @param args.message - Commit message
+     * @param args.skipExisting - Skip files that already exist in the repo (default false) (optional)
+     * @returns Promise<GithubCommitFilesData> Typed flat response with IDE autocomplete
+     */
+    commitFiles: async (args: GithubCommitFilesArgs): Promise<GithubCommitFilesData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'github',
+        method: 'commitFiles',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a file from the group's repo. Confined to basePath — only Mirra-managed files can be deleted, never the team's code. Requires user confirmation (risky operation).
+     * @param args.path - File path — relative to basePath, or an absolute repo path already under basePath
+     * @param args.message - Commit message (default: "mirra: delete {path}") (optional)
+     * @returns Promise<GithubDeleteFileData> Typed flat response with IDE autocomplete
+     */
+    deleteFile: async (args: GithubDeleteFileArgs): Promise<GithubDeleteFileData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'github',
+        method: 'deleteFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List recent commits on the default branch (repo-wide), optionally filtered to a path. Answers "what changed in the repo lately?".
+     * @param args.path - Only commits touching this path (e.g. ".mirra/" or "src/") (optional)
+     * @param args.limit - Max commits to return (default 10, max 50) (optional)
+     * @returns Promise<GithubRecentCommitsData> Typed flat response with IDE autocomplete
+     */
+    getRecentCommits: async (args: GithubGetRecentCommitsArgs): Promise<GithubRecentCommitsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'github',
+        method: 'getRecentCommits',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
  * Google Ads Adapter
  * Category: advertising
  */
@@ -14532,6 +14853,7 @@ export const generatedAdapters = {
   document: createDocumentAdapter,
   feedItems: createFeedItemsAdapter,
   feedback: createFeedbackAdapter,
+  github: createGithubAdapter,
   googleAds: createGoogleAdsAdapter,
   googleCalendar: createGoogleCalendarAdapter,
   googleDrive: createGoogleDriveAdapter,

@@ -59,6 +59,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 
 | Skill | Adapter | Operations | Auth Required |
 |-------|---------|------------|---------------|
+| [`mirra-github`](./mirra-github/) | GitHub | 10 | No |
 | [`mirra-google-calendar`](./mirra-google-calendar/) | Google Calendar | 7 | Yes (OAuth) |
 | [`mirra-google-docs`](./mirra-google-docs/) | Google Docs | 13 | Yes (OAuth) |
 | [`mirra-google-sheets`](./mirra-google-sheets/) | Google Sheets | 17 | Yes (OAuth) |
@@ -121,7 +122,7 @@ Hand-authored orchestration skills (not tied to a single adapter):
 |-------|--------------|
 | [`mirra-cowork`](./mirra-cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, poll for replies on a cadence you set, and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
 
-**Total: 37 adapters, 426 operations, 1 collaboration skill(s)**
+**Total: 38 adapters, 436 operations, 1 collaboration skill(s)**
 
 ## How It Works
 
