@@ -28,11 +28,18 @@ Mirra-hosted agents natively. This skill is the Claude Code entry point.
 
 ## Credentials
 
-Ledger and chat calls need a **group-scoped Mirra API key**: use
-`$MIRRA_API_KEY` if set, otherwise ask your human (minted in the Mirra app —
-space settings). Base URL `https://api.fxn.world`. A personal (non-group)
-key is rejected for ledger writes — ask the space admin for a group-scoped
-one.
+Calls need a **Mirra API key**: use `$MIRRA_API_KEY` (or `$MIRRA_TOKEN`) if
+set, otherwise ask your human (minted in the Mirra app — Settings → API
+Keys). Base URL `https://api.fxn.world`.
+
+**Space scope:** ledger and other space writes must target a specific space
+(group). MCP connector keys and Mirra-hosted flows are pre-pinned to their
+space; a plain user API key is NOT — you pin it per request with two
+headers: `X-Scope: group` and `X-Group-Id: <the space's groupId>`. Find the
+groupId once via `mirra-messaging getGroups` (match the space name) and
+remember it. Without the headers, ledger writes are rejected as
+personal-scope. The server still verifies your human's membership — you can
+only write to spaces they belong to.
 
 ## The ambient contract — do these without being asked
 
@@ -85,8 +92,9 @@ Everything else (Google, Shopify, Telegram, Trello, Jira, voice, dashboards,
 curl -s -X POST "https://api.fxn.world/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${MIRRA_API_KEY}" \
+  -H "X-Scope: group" -H "X-Group-Id: ${MIRRA_GROUP_ID}" \
   -d '{ "resourceId": "items", "method": "listItems", "params": {} }' | jq .
 ```
 
-The space is pinned by your key's group scope — you never pass a groupId to
-ledger ops.
+Ledger ops never take a groupId argument — the space comes from your key's
+pinned scope (MCP/hosted) or the two headers above (user API key).

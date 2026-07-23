@@ -49,12 +49,16 @@ place as the burst continues, never stacked.
 curl -s -X POST "${API_URL:-https://api.fxn.world}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
+  -H "X-Scope: group" -H "X-Group-Id: ${MIRRA_GROUP_ID}" \
   -d '{ "resourceId": "items", "method": "<operation>", "params": { ...args } }' | jq .
 ```
 
-The space is pinned by your credential's group scope — you never pass a
-groupId. A personal (non-group) key is rejected: ask whoever runs Mirra on
-your team for a group-scoped key.
+Ledger ops never take a groupId argument — the space comes from the scope
+headers above when you hold a plain user API key (find the groupId once via
+`mirra-messaging getGroups`), or from the credential itself for MCP keys and
+Mirra-hosted flows (omit the headers there). Writes without a group scope
+are rejected as personal-scope, and the server verifies your human is an
+active member of the target space.
 
 **claude.ai / Claude via the Mirra MCP connector** — the same ops surface as
 persona tools: `track_work_item` (createItem / proposeItem via
