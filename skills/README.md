@@ -121,10 +121,11 @@ Hand-authored orchestration skills (not tied to a single adapter):
 
 | Skill | What it does |
 |-------|--------------|
+| [`mirra`](./mirra/) | START HERE for anything Mirra. Load this whenever the repo you're working in has a .mirra/ directory (it's linked to a Mirra team space), or your human mentions their Mirra space, teammates' updates, or the team ledger. Directs the ambient team rituals — record work in the shared ledger, publish update cards, ask the space before expanding scope — and indexes every detail-level mirra-* skill. |
 | [`mirra-cowork`](./mirra-cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, wait for replies in near-real-time (long-poll), and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
 | [`mirra-ledger`](./mirra-ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), relay approvals, close what ships, and publish ONE narrated update card per work burst — revise, never stack. Rides the Mirra items adapter / MCP work-ledger tools. |
 
-**Total: 39 adapters, 444 operations, 2 collaboration skill(s)**
+**Total: 39 adapters, 444 operations, 3 collaboration skill(s)**
 
 ## How It Works
 

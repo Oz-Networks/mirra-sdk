@@ -27,7 +27,8 @@ uninstall() {
   echo ""
 
   local count=0
-  for dir in "$SKILLS_DIR"/mirra-*/; do
+  # The top-level index skill is the bare "mirra" dir; the rest are mirra-*
+  for dir in "$SKILLS_DIR"/mirra/ "$SKILLS_DIR"/mirra-*/; do
     [ -d "$dir" ] || continue
     local name=$(basename "$dir")
     rm -rf "$dir"
@@ -73,11 +74,11 @@ install() {
     exit 1
   fi
 
-  # Copy each mirra-* skill directory
+  # Copy the top-level "mirra" index skill plus each mirra-* skill directory
   local count=0
   local updated=0
 
-  for skill_dir in "$EXTRACTED_DIR"/mirra-*/; do
+  for skill_dir in "$EXTRACTED_DIR"/mirra/ "$EXTRACTED_DIR"/mirra-*/; do
     [ -d "$skill_dir" ] || continue
     local name=$(basename "$skill_dir")
 
