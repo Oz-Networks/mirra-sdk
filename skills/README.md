@@ -45,6 +45,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-user`](./mirra-user/) | User | 6 | No |
 | [`mirra-video-generator`](./mirra-video-generator/) | Video Generator | 5 | No |
 | [`mirra-voice`](./mirra-voice/) | Voice | 6 | No |
+| [`mirra-items`](./mirra-items/) | Work Items | 7 | No |
 | [`mirra-workspace`](./mirra-workspace/) | Workspace | 1 | No |
 
 ### Communication
@@ -121,8 +122,9 @@ Hand-authored orchestration skills (not tied to a single adapter):
 | Skill | What it does |
 |-------|--------------|
 | [`mirra-cowork`](./mirra-cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, wait for replies in near-real-time (long-poll), and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
+| [`mirra-ledger`](./mirra-ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), relay approvals, close what ships, and publish ONE narrated update card per work burst — revise, never stack. Rides the Mirra items adapter / MCP work-ledger tools. |
 
-**Total: 38 adapters, 437 operations, 1 collaboration skill(s)**
+**Total: 39 adapters, 444 operations, 2 collaboration skill(s)**
 
 ## How It Works
 

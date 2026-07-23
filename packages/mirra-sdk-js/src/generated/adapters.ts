@@ -811,6 +811,37 @@ export interface SkillsGetSkillUsageArgs {
   limit?: number; // Max records to return (default 20)
 }
 
+// Work Items Adapter Types
+export interface ItemsCreateItemArgs {
+  title: string; // Imperative, specific title (max 200 chars), e.g. "Add retry logic to auth refresh"
+  source?: string; // Where this was decided — a call notes path or chat reference (provenance for the ledger)
+  artifacts?: any[]; // Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
+}
+export interface ItemsProposeItemArgs {
+  title: string; // Imperative, specific title for the proposed work (max 200 chars)
+  source?: string; // Where the discovery came from — what you were working on when you found it
+  artifacts?: any[]; // Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
+}
+export interface ItemsOpenItemArgs {
+  itemKey: string; // The item key, e.g. "043-rebuild-the-flaky-websocket-reconnect" (find it with listItems)
+  source?: string; // Where the approval was decided — chat thread or call reference
+  artifacts?: any[]; // Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
+}
+export interface ItemsCloseItemArgs {
+  itemKey: string; // The item key of the finished work (find it with listItems)
+  source?: string; // Optional provenance note if the item is missing one
+  artifacts?: any[]; // Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
+}
+export interface ItemsListItemsArgs {
+  status?: string; // Filter to one status: "open", "proposed", or "done" (default: all)
+}
+export interface ItemsPublishUpdateArgs {
+  defaultBody: string; // The narrative every teammate sees (markdown, max 8000 chars). Written FOR the reader: what happened, what it means for them.
+  recipientBodies?: any[]; // Per-teammate versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their version instead of defaultBody; nobody else ever sees it.
+  itemKeys?: any[]; // Item keys this update covers (rendered as ledger chips). Must exist in this space.
+  artifacts?: any[]; // Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
+}
+
 // Jupiter Adapter Types
 export interface JupiterSwapArgs {
   inputMint: string; // Mint address of the token you are SPENDING (e.g. SOL: So11111111111111111111111111111111111111112)
@@ -1094,6 +1125,14 @@ export interface MirraMessagingGetRecentMessagesArgs {
   endDate?: string; // ISO date for time range end
   limit?: number; // Max results (default 20, max 50)
   offset?: number; // Pagination offset
+}
+export interface MirraMessagingWaitForMessagesArgs {
+  groupId: string; // Group ID to watch for new messages (use getGroups to get the groupId)
+  afterMessageId?: string; // Cursor: only return messages sent after this message ID (exclusive). Pass the cursor from the previous waitForMessages call, or the messageId returned by sendMessage.
+  afterTimestamp?: string; // Cursor alternative: ISO timestamp; only return messages created after it. Ignored if afterMessageId is set. If neither cursor is given, only messages arriving after this call starts are returned.
+  timeoutSeconds?: number; // Max seconds to hold the request open waiting for messages (default 25, max 50)
+  excludeSelf?: boolean; // Skip messages sent by the authenticated user (default true) so your own sends do not wake the wait
+  limit?: number; // Max messages to return (default 20, max 50)
 }
 
 // Observability Adapter Types
@@ -3085,7 +3124,8 @@ export interface GithubLinkRepoData {
   basePath?: string; // Write-confinement directory
   promptFiles?: any; // Paths injected into the group prompt
   scaffoldCommitUrl?: string; // Commit URL of the seeded scaffold (absent if nothing needed seeding)
-  warnings?: any; // Non-fatal issues (branch protection, basePath collision, scaffold failure)
+  itemsExported?: number; // Count of existing ledger items exported to <basePath>/items/ in the one-time migration (absent when the space had none)
+  warnings?: any; // Non-fatal issues (branch protection, scaffold or item-export failure)
 }
 
 export type GithubLinkRepoResult = AdapterResultBase<GithubLinkRepoData>;
@@ -3835,6 +3875,81 @@ export interface SkillUsageListData {
 }
 
 export type SkillsGetSkillUsageResult = AdapterResultBase<SkillUsageListData>;
+
+// Work Items Response Types
+export interface WorkItem {
+  itemKey: string; // Server-assigned key, e.g. "042-auth-retry"
+  status: any; // Ledger status
+  title: string; // Item title
+  ownerUserId?: string; // Owner user id (absent when unowned)
+  ownerName?: string; // Owner display name
+  source?: string; // Provenance — where this work was decided/found
+  via: string; // How the last write happened: 'op' (agent), 'call', or 'git'
+  artifacts: any; // Attached artifact refs [{ kind, url, title? }]
+  doneAt?: string; // ISO timestamp when closed (done items only)
+  createdAt: string; // ISO creation timestamp
+  updatedAt: string; // ISO last-write timestamp
+}
+
+export interface ItemsCreateData {
+  item: any; // The created/updated item
+}
+
+export type ItemsCreateItemResult = AdapterResultBase<ItemsCreateData>;
+
+export interface ItemsProposeData {
+  item: any; // The created/updated item
+}
+
+export type ItemsProposeItemResult = AdapterResultBase<ItemsProposeData>;
+
+export interface ItemsOpenData {
+  item: any; // The created/updated item
+}
+
+export type ItemsOpenItemResult = AdapterResultBase<ItemsOpenData>;
+
+export interface ItemsCloseData {
+  item: any; // The created/updated item
+}
+
+export type ItemsCloseItemResult = AdapterResultBase<ItemsCloseData>;
+
+export interface ItemsListData {
+  items: any; // Ledger items, newest-updated first
+  count: number; // Number of items returned
+}
+
+export type ItemsListItemsResult = AdapterResultBase<ItemsListData>;
+
+export interface UpdateCard {
+  cardId: string; // Card id
+  authorUserId: string; // Publishing user (stamped from the credential)
+  authorName?: string; // Publishing user display name
+  defaultBody: string; // The narrative every teammate sees
+  recipientBodies: any; // Per-teammate versions [{ userId, body }] (your own card only — served per-recipient in feeds)
+  itemKeys: any; // Item keys the card references
+  artifacts: any; // Attached artifact refs [{ kind, url, title? }]
+  revisionCount: number; // How many times this burst card has been revised
+  firstPublishedAt: string; // ISO timestamp of the first publish in this burst
+  lastPublishedAt: string; // ISO timestamp of the latest publish/revision
+}
+
+export interface ItemsPublishUpdateData {
+  card: any; // Your published/revised card
+  revised: boolean; // True when this revised the current burst card instead of starting a new one
+  priorDefaultBody?: string; // The narrative that was replaced (present when revised)
+}
+
+export type ItemsPublishUpdateResult = AdapterResultBase<ItemsPublishUpdateData>;
+
+export interface ItemsCurrentCardData {
+  card?: any; // Your in-burst card, or null when a fresh publish starts a new card
+  inBurst: boolean; // Whether a publish now would revise (true) or start fresh (false)
+  burstGapHours: number; // The rolling burst window in hours
+}
+
+export type ItemsGetCurrentUpdateCardResult = AdapterResultBase<ItemsCurrentCardData>;
 
 // Jupiter Response Types
 export interface JupiterSwapData {
@@ -4885,6 +5000,16 @@ export interface MirraMessagingGetRecentMessagesData {
 }
 
 export type MirraMessagingGetRecentMessagesResult = AdapterResultBase<MirraMessagingGetRecentMessagesData>;
+
+export interface MirraMessagingWaitForMessagesData {
+  messages: any; // New messages sorted oldest first (empty on timeout)
+  count: number; // Number of messages returned
+  timedOut: boolean; // True if the wait window elapsed with no matching messages
+  waitedSeconds: number; // How long the call actually waited
+  cursor: any; // Pass as afterMessageId on the next call to continue from here
+}
+
+export type MirraMessagingWaitForMessagesResult = AdapterResultBase<MirraMessagingWaitForMessagesData>;
 
 // Pages Response Types
 export interface PagesCreatePageData {
@@ -10264,6 +10389,115 @@ function createSkillsAdapter(sdk: MirraSDK) {
 }
 
 /**
+ * Work Items Adapter
+ * Category: internal
+ */
+function createItemsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create an open work item — work the team has already agreed should happen (decided on a call or in chat). You become the owner. For work nobody agreed to yet, use proposeItem instead. The item key (e.g. "042-auth-retry") is server-assigned and returned.
+     * @param args.title - Imperative, specific title (max 200 chars), e.g. "Add retry logic to auth refresh"
+     * @param args.source - Where this was decided — a call notes path or chat reference (provenance for the ledger) (optional)
+     * @param args.artifacts - Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. (optional)
+     * @returns Promise<ItemsCreateData> Typed flat response with IDE autocomplete
+     */
+    createItem: async (args: ItemsCreateItemArgs): Promise<ItemsCreateData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'items',
+        method: 'createItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Propose work the team has NOT agreed to yet — an out-of-scope discovery ("we should rebuild X"). The item enters the ledger as `proposed` and waits for a decision. After proposing, post the question to the space chat (mirra-messaging sendMessage) with your context so the team can decide. When the owner relays approval, their agent flips it with openItem.
+     * @param args.title - Imperative, specific title for the proposed work (max 200 chars)
+     * @param args.source - Where the discovery came from — what you were working on when you found it (optional)
+     * @param args.artifacts - Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. (optional)
+     * @returns Promise<ItemsProposeData> Typed flat response with IDE autocomplete
+     */
+    proposeItem: async (args: ItemsProposeItemArgs): Promise<ItemsProposeData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'items',
+        method: 'proposeItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Flip a proposed item to open — the team approved it (decided on a call or in chat, relayed to you by your human). Record where the approval happened in source. Errors if the item is not currently proposed.
+     * @param args.itemKey - The item key, e.g. "043-rebuild-the-flaky-websocket-reconnect" (find it with listItems)
+     * @param args.source - Where the approval was decided — chat thread or call reference (optional)
+     * @param args.artifacts - Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. (optional)
+     * @returns Promise<ItemsOpenData> Typed flat response with IDE autocomplete
+     */
+    openItem: async (args: ItemsOpenItemArgs): Promise<ItemsOpenData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'items',
+        method: 'openItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Mark an open item done — the work shipped. Attach artifact links (the PR, the deployed page) so the team can see what was produced. Errors if the item is not currently open.
+     * @param args.itemKey - The item key of the finished work (find it with listItems)
+     * @param args.source - Optional provenance note if the item is missing one (optional)
+     * @param args.artifacts - Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. (optional)
+     * @returns Promise<ItemsCloseData> Typed flat response with IDE autocomplete
+     */
+    closeItem: async (args: ItemsCloseItemArgs): Promise<ItemsCloseData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'items',
+        method: 'closeItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read the space's work ledger — every item with status, owner, and artifacts, newest-updated first. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
+     * @param args.status - Filter to one status: "open", "proposed", or "done" (default: all) (optional)
+     * @returns Promise<ItemsListData> Typed flat response with IDE autocomplete
+     */
+    listItems: async (args: ItemsListItemsArgs): Promise<ItemsListData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'items',
+        method: 'listItems',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual. Within a rolling burst window (~6h since your last publish) this REVISES your current card in place instead of stacking a new one; the response returns the narrative it replaced (priorDefaultBody) so you can verify your new body covers the whole burst. ALWAYS call getCurrentUpdateCard first and fold the existing narrative into your rewrite. defaultBody is what everyone sees; recipientBodies are optional per-teammate versions (each recipient sees only their own). Reference the items you touched via itemKeys so the card renders them as chips.
+     * @param args.defaultBody - The narrative every teammate sees (markdown, max 8000 chars). Written FOR the reader: what happened, what it means for them.
+     * @param args.recipientBodies - Per-teammate versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their version instead of defaultBody; nobody else ever sees it. (optional)
+     * @param args.itemKeys - Item keys this update covers (rendered as ledger chips). Must exist in this space. (optional)
+     * @param args.artifacts - Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. (optional)
+     * @returns Promise<ItemsPublishUpdateData> Typed flat response with IDE autocomplete
+     */
+    publishUpdate: async (args: ItemsPublishUpdateArgs): Promise<ItemsPublishUpdateData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'items',
+        method: 'publishUpdate',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Fetch your current burst card, if your last publish is still inside the burst window. Call this BEFORE publishUpdate: when a card comes back, fold its narrative into your rewrite so the revised card covers the whole burst (revise, never stack). Returns card: null when a fresh publish would start a new card.
+     * @returns Promise<ItemsCurrentCardData> Typed flat response with IDE autocomplete
+     */
+    getCurrentUpdateCard: async (args?: {}): Promise<ItemsCurrentCardData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'items',
+        method: 'getCurrentUpdateCard',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
  * Jupiter Adapter
  * Category: crypto
  */
@@ -11278,6 +11512,24 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'mirra-messaging',
         method: 'getRecentMessages',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Long-poll for new messages in a group. Blocks up to timeoutSeconds (max 50) and returns as soon as a matching message arrives, or empty on timeout. Use after sendMessage to wait for replies without cadence polling; chain calls with the returned cursor to keep a subscription window open.
+     * @param args.groupId - Group ID to watch for new messages (use getGroups to get the groupId)
+     * @param args.afterMessageId - Cursor: only return messages sent after this message ID (exclusive). Pass the cursor from the previous waitForMessages call, or the messageId returned by sendMessage. (optional)
+     * @param args.afterTimestamp - Cursor alternative: ISO timestamp; only return messages created after it. Ignored if afterMessageId is set. If neither cursor is given, only messages arriving after this call starts are returned. (optional)
+     * @param args.timeoutSeconds - Max seconds to hold the request open waiting for messages (default 25, max 50) (optional)
+     * @param args.excludeSelf - Skip messages sent by the authenticated user (default true) so your own sends do not wake the wait (optional)
+     * @param args.limit - Max messages to return (default 20, max 50) (optional)
+     * @returns Promise<MirraMessagingWaitForMessagesData> Typed flat response with IDE autocomplete
+     */
+    waitForMessages: async (args: MirraMessagingWaitForMessagesArgs): Promise<MirraMessagingWaitForMessagesData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'mirra-messaging',
+        method: 'waitForMessages',
         params: args || {}
       });
     }
@@ -14860,6 +15112,7 @@ export const generatedAdapters = {
   googleGmail: createGoogleGmailAdapter,
   hypertrade: createHypertradeAdapter,
   skills: createSkillsAdapter,
+  items: createItemsAdapter,
   jupiter: createJupiterAdapter,
   marketplaceResources: createMarketplaceResourcesAdapter,
   scripts: createScriptsAdapter,

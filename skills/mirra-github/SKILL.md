@@ -64,7 +64,7 @@ Link a GitHub repository to this group (group admin only). The repo becomes the 
 
 **Returns:**
 
-`AdapterOperationResult`: Returns: linked (boolean). When false: installUrl, message. When true: owner, repo, installationId, defaultBranch, basePath, promptFiles, scaffoldCommitUrl?, warnings[]
+`AdapterOperationResult`: Returns: linked (boolean). When false: installUrl, message. When true: owner, repo, installationId, defaultBranch, basePath, promptFiles, scaffoldCommitUrl?, itemsExported?, warnings[]
 
 **Example:**
 
