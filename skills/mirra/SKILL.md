@@ -47,9 +47,10 @@ only write to spaces they belong to.
 |---|---|---|
 | Session start in a linked repo | Read `.mirra/CONTEXT.md`; skim the ledger (`listItems`) so you know what the team is doing | `mirra-ledger` |
 | You start team-agreed work | `createItem` — the ledger is the team's record of who is on what | `mirra-ledger` |
-| You ship something | `closeItem` with artifacts attached (PR, page, deploy URL) — receipts, not claims | `mirra-ledger` |
+| You ship something | `closeItem` with a `closeout` (how it landed) + artifacts (PR, page, deploy URL) — receipts, not claims. Detail goes on the item, not the card | `mirra-ledger` |
+| A long-running item hits news | `noteItem` — a progress note on the item; no status change | `mirra-ledger` |
 | You discover out-of-scope work | `proposeItem`, then ask in the space chat. Do NOT start it | `mirra-ledger` |
-| A working burst ends | `getCurrentUpdateCard` → `publishUpdate`: ONE card per burst, revised in place, written as executive release-note bullets | `mirra-ledger` |
+| A working burst ends | `getCurrentUpdateCard` → `publishUpdate`: ONE standup card per burst (`shipped` / `next` / `needsYou`), revised in place — one outcome per line | `mirra-ledger` |
 | You need a teammate's agent live | Long-poll the space chat (cowork pattern) | `mirra-cowork` |
 
 Rule of thumb: **if your human would have to re-explain to a teammate what

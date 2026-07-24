@@ -1,12 +1,12 @@
 ---
 name: mirra-items
-description: "Use Mirra to the space's shared work-ledger. items are agreed work with status (open/proposed/done), an owner, and artifact links; every teammate's home feed renders them.... Covers all Work Items SDK operations via REST API."
+description: "Use Mirra to the space's shared work-ledger. items are agreed work with status (open/proposed/done), an owner, artifact links, and progress notes; every teammate's home f.... Covers all Work Items SDK operations via REST API."
 allowed-tools: Read, Bash(curl:*, jq:*)
 ---
 
 # Mirra Work Items
 
-The space's shared work-ledger. Items are agreed work with status (open/proposed/done), an owner, and artifact links; every teammate's home feed renders them. Agents (not humans in the app) write the ledger: createItem for agreed scope, proposeItem for out-of-scope discoveries (then ask the team in chat), openItem when an approval lands, closeItem when work ships. After a work burst, publishUpdate narrates what happened for teammates' feeds — it revises your current burst card instead of stacking new ones. Ownership and attribution are stamped from your credential; a group-scoped key is required.
+The space's shared work-ledger. Items are agreed work with status (open/proposed/done), an owner, artifact links, and progress notes; every teammate's home feed renders them. Agents (not humans in the app) write the ledger: createItem for agreed scope, proposeItem for out-of-scope discoveries (then ask the team in chat), openItem when an approval lands, closeItem (with a closeout — how it landed) when work ships, noteItem to log progress on a long-running item. After a work burst, publishUpdate narrates what happened as a standup for teammates' feeds — shipped / next / needsYou lines, one outcome each — revising your current burst card instead of stacking new ones. Ownership and attribution are stamped from your credential; a group-scoped key is required.
 
 ## Prerequisites
 
@@ -42,8 +42,9 @@ Replace `{operation}` with the operation name from the table below.
 | `proposeItem` | Propose work the team has NOT agreed to yet — an out-of-scope discovery ("we should rebuild X"). ... |
 | `openItem` | Flip a proposed item to open — the team approved it (decided on a call or in chat, relayed to you... |
 | `closeItem` | Mark an open item done — the work shipped. Attach artifact links (the PR, the deployed page) so t... |
+| `noteItem` | Add a progress note to an open or proposed item that has real news but is not finished — the long... |
 | `listItems` | Read the space's work ledger — every item with status, owner, and artifacts, newest-updated first... |
-| `publishUpdate` | Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual. ... |
+| `publishUpdate` | Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual, ... |
 | `getCurrentUpdateCard` | Fetch your current burst card, if your last publish is still inside the burst window. Call this B... |
 
 ## Operation Details
@@ -176,17 +177,18 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `closeItem`
 
-Mark an open item done — the work shipped. Attach artifact links (the PR, the deployed page) so the team can see what was produced. Errors if the item is not currently open.
+Mark an open item done — the work shipped. Attach artifact links (the PR, the deployed page) so the team can see what was produced, and write a closeout: the short "how it actually landed" paragraph that used to bloat update cards. The closeout lives on the item (rendered in its detail view, exported to the repo), NOT on the home card — so the release-note detail has a home and the card stays a one-line standup. Strongly encouraged; skipping it leaves a thinner record. Errors if the item is not currently open.
 
 **Arguments:**
 
 - `itemKey` (string, **required**): The item key of the finished work (find it with listItems)
+- `closeout` (string, *optional*): How the work actually landed — a short paragraph (max 4000 chars, newlines fine): what changed, any caveat, what to watch. This is the release-note detail; it belongs here on the item, never on the home card. Plain language a teammate can read.
 - `source` (string, *optional*): Optional provenance note if the item is missing one
 - `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. Only attach links a teammate can open in a browser and see something meaningful: a page, mockup, image, PR/commit, deploy, or doc. Never API routes or endpoints, code file paths, localhost URLs, or anything that renders raw JSON — if the work has no viewable surface (an API change, a refactor), link the PR instead, or attach nothing. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 
 **Returns:**
 
-`AdapterOperationResult`: Returns: item (the updated item, status "done", with doneAt)
+`AdapterOperationResult`: Returns: item (the updated item, status "done", with doneAt and the closeout appended to notes as a closing note)
 
 **Example:**
 
@@ -194,7 +196,7 @@ Mark an open item done — the work shipped. Attach artifact links (the PR, the 
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"items","method":"closeItem","params":{"itemKey":"042-add-retry-logic-to-auth-refresh","artifacts":[{"kind":"pr","url":"https://github.com/acme/app/pull/118","title":"Auth retry logic"}]}}' | jq .
+  -d '{"resourceId":"items","method":"closeItem","params":{"itemKey":"042-add-retry-logic-to-auth-refresh","closeout":"Auth refresh now retries with backoff and recovers the session silently on spotty networks. The mobile OTA can drop its client-side workaround. One caveat: retries cap at 3, then surface the sign-in screen as before.","artifacts":[{"kind":"pr","url":"https://github.com/acme/app/pull/118","title":"Auth retry logic"}]}}' | jq .
 ```
 
 **Example response:**
@@ -215,9 +217,67 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
         "title": "Auth retry logic"
       }
     ],
+    "notes": [
+      {
+        "at": "2026-07-23T21:00:00.000Z",
+        "text": "Auth refresh now retries with backoff and recovers the session silently on spotty networks. The mobile OTA can drop its client-side workaround. One caveat: retries cap at 3, then surface the sign-in screen as before.",
+        "closing": true,
+        "actorName": "mel",
+        "via": "op"
+      }
+    ],
     "doneAt": "2026-07-23T21:00:00.000Z",
     "createdAt": "2026-07-23T18:00:00.000Z",
     "updatedAt": "2026-07-23T21:00:00.000Z"
+  }
+}
+```
+
+### `noteItem`
+
+Add a progress note to an open or proposed item that has real news but is not finished — the long-running case (a months-long prospecting item, a multi-week build). The note lands on the item (shown in its detail view, exported to the repo), never on the home card. Does NOT change status. Rejected on done items — a note after the fact is a closeout revision, which is a repo-side edit. To finish work, use closeItem with a closeout instead.
+
+**Arguments:**
+
+- `itemKey` (string, **required**): The item key to note (find it with listItems)
+- `note` (string, **required**): The progress note — what advanced, in plain language (max 4000 chars, newlines fine). Not a status change; just news worth recording on the item.
+
+**Returns:**
+
+`AdapterOperationResult`: Returns: item (the item with the note appended to notes; status unchanged)
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"items","method":"noteItem","params":{"itemKey":"010-land-the-nextcom-pilot","note":"Second demo went well — their ops lead is now the champion. Waiting on procurement to greenlight a paid pilot; expect an answer next week."}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "item": {
+    "itemKey": "010-land-the-nextcom-pilot",
+    "status": "open",
+    "title": "Land the NextCom pilot",
+    "ownerUserId": "u1",
+    "ownerName": "mel",
+    "via": "op",
+    "artifacts": [],
+    "notes": [
+      {
+        "at": "2026-07-24T16:00:00.000Z",
+        "text": "Second demo went well — their ops lead is now the champion. Waiting on procurement to greenlight a paid pilot; expect an answer next week.",
+        "closing": false,
+        "actorName": "mel",
+        "via": "op"
+      }
+    ],
+    "createdAt": "2026-07-01T18:00:00.000Z",
+    "updatedAt": "2026-07-24T16:00:00.000Z"
   }
 }
 ```
@@ -266,18 +326,22 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `publishUpdate`
 
-Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual. Within a rolling burst window (~6h since your last publish) this REVISES your current card in place instead of stacking a new one; the response returns the narrative it replaced (priorDefaultBody) so you can verify your new body covers the whole burst. ALWAYS call getCurrentUpdateCard first and fold the existing narrative into your rewrite. Write executive release notes, skimmed in seconds: one '• ' bullet per shipped thing, 1–2 short sentences each ('Fixed an issue where…', 'You can now…'). State outcomes and unlocked capabilities — never root causes, file names, or implementation detail; that story lives in the ledger items and artifacts. defaultBody is what everyone sees; recipientBodies are optional per-teammate versions (each recipient sees only their own). Reference the items you touched via itemKeys so the card renders them as chips.
+Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual, written as a standup, not release notes. Fill three slots: shipped (what landed, ≤3 lines), next (what you are on now, ≤2 lines), needsYou (a question or ask for the team, ≤2 lines). ONE OUTCOME PER LINE, ≤140 chars, no line breaks inside a line — four changes to one screen are one line. If you need a second sentence to explain HOW something was done, that sentence belongs in the item's closeout (closeItem), not on the card. State outcomes and unlocked capabilities — never root causes, file names, or implementation detail. Within a rolling burst window (~6h since your last publish) this REVISES your current card in place instead of stacking a new one; the response returns the narrative it replaced (priorDefaultBody) so you can verify your new lines cover the whole burst — ALWAYS call getCurrentUpdateCard first and fold the existing slots into your rewrite. Attach an item to a line with itemKey so the line deep-links to it. recipientBodies are optional per-teammate prose versions (each recipient sees only their own, as prose rather than slots). NOTE: the legacy defaultBody (a prose body with no slots) is DEPRECATED and capped at 60 words — send slots instead.
 
 **Arguments:**
 
-- `defaultBody` (string, **required**): The update every teammate sees (plain text — newlines render, markdown does not; max 8000 chars). Executive release-note bullets: one '• ' line per shipped thing, 1–2 short sentences each, outcomes only.
-- `recipientBodies` (array, *optional*): Per-teammate versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their version instead of defaultBody; nobody else ever sees it.
-- `itemKeys` (array, *optional*): Item keys this update covers (rendered as ledger chips). Must exist in this space.
+- `headline` (string, *optional*): Optional one-line lead above the slots (≤80 chars), e.g. "Meetings are a real feature now". Skip it if the shipped lines speak for themselves.
+- `shipped` (array, *optional*): What landed this burst — [{ text, itemKey? }], at most 3 lines, one OUTCOME each (≤140 chars, single line). Fold related changes into one line; move the "how" to the item closeout. Set itemKey to deep-link the line to its ledger item.
+- `next` (array, *optional*): What you are working on now — [{ text, itemKey? }], at most 2 lines, one thing each (≤140 chars).
+- `needsYou` (array, *optional*): What you need from the team — a question or decision — [{ text, itemKey? }], at most 2 lines (≤140 chars). Renders on an attention block so teammates see the ask on the scroll-past.
+- `defaultBody` (string, *optional*): DEPRECATED legacy prose body (plain text; capped at 60 words / 5 lines for one more release, then rejected). Prefer shipped/next/needsYou. When slots are supplied this is derived automatically and any value here is ignored.
+- `recipientBodies` (array, *optional*): Per-teammate prose versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their prose version instead of the slots; nobody else ever sees it.
+- `itemKeys` (array, *optional*): Extra item keys this update covers beyond those named on lines (rendered as chips). Must exist in this space. Line itemKeys are added automatically.
 - `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. Only attach links a teammate can open in a browser and see something meaningful: a page, mockup, image, PR/commit, deploy, or doc. Never API routes or endpoints, code file paths, localhost URLs, or anything that renders raw JSON — if the work has no viewable surface (an API change, a refactor), link the PR instead, or attach nothing. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 
 **Returns:**
 
-`AdapterOperationResult`: Returns: card ({ cardId, authorUserId, authorName, defaultBody, recipientBodies, itemKeys, artifacts, revisionCount, firstPublishedAt, lastPublishedAt }), revised (true if this revised the current burst card), priorDefaultBody (the narrative that was replaced, when revised)
+`AdapterOperationResult`: Returns: card ({ cardId, authorUserId, authorName, headline, lines, defaultBody, recipientBodies, itemKeys, artifacts, revisionCount, firstPublishedAt, lastPublishedAt }), revised (true if this revised the current burst card), priorDefaultBody (the narrative that was replaced, when revised), deprecation (present only when the legacy prose path was used — move to slots)
 
 **Example:**
 
@@ -285,7 +349,7 @@ Publish your narrated update card to every teammate's home feed — the after-a-
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"items","method":"publishUpdate","params":{"defaultBody":"• Fixed an issue where sign-in could fail on spotty networks — sessions now recover on their own (042).\n• Websocket reconnect rebuild is underway (043).","itemKeys":["042-add-retry-logic-to-auth-refresh","043-rebuild-the-flaky-websocket-reconnect"],"recipientBodies":[{"username":"anthony","body":"• Sign-in recovery is live — your mobile OTA can drop the workaround (042).\n• Websocket reconnect rebuild is underway (043)."}]}}' | jq .
+  -d '{"resourceId":"items","method":"publishUpdate","params":{"headline":"Meetings are a real feature now","shipped":[{"text":"Sign-in recovers on its own on spotty networks — no more dropped sessions.","itemKey":"042-add-retry-logic-to-auth-refresh"}],"next":[{"text":"Rebuilding the flaky websocket reconnect.","itemKey":"043-rebuild-the-flaky-websocket-reconnect"}],"needsYou":[{"text":"The nightly export ran twice today — want me to fix the schedule?"}],"artifacts":[{"kind":"pr","url":"https://github.com/acme/app/pull/118","title":"Auth retry logic"}]}}' | jq .
 ```
 
 **Example response:**
@@ -296,18 +360,36 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
     "cardId": "66a1b2c3d4e5f6a7b8c9d0e1",
     "authorUserId": "u1",
     "authorName": "mel",
-    "defaultBody": "• Fixed an issue where sign-in could fail on spotty networks — sessions now recover on their own (042).\n• Websocket reconnect rebuild is underway (043).",
-    "recipientBodies": [
+    "headline": "Meetings are a real feature now",
+    "lines": [
       {
-        "userId": "u2",
-        "body": "• Sign-in recovery is live — your mobile OTA can drop the workaround (042).\n• Websocket reconnect rebuild is underway (043)."
+        "slot": "shipped",
+        "text": "Sign-in recovers on its own on spotty networks — no more dropped sessions.",
+        "itemKey": "042-add-retry-logic-to-auth-refresh"
+      },
+      {
+        "slot": "next",
+        "text": "Rebuilding the flaky websocket reconnect.",
+        "itemKey": "043-rebuild-the-flaky-websocket-reconnect"
+      },
+      {
+        "slot": "needsYou",
+        "text": "The nightly export ran twice today — want me to fix the schedule?"
       }
     ],
+    "defaultBody": "Meetings are a real feature now\n• Sign-in recovers on its own on spotty networks — no more dropped sessions.\nNext: Rebuilding the flaky websocket reconnect.\nNeeds you: The nightly export ran twice today — want me to fix the schedule?",
+    "recipientBodies": [],
     "itemKeys": [
       "042-add-retry-logic-to-auth-refresh",
       "043-rebuild-the-flaky-websocket-reconnect"
     ],
-    "artifacts": [],
+    "artifacts": [
+      {
+        "kind": "pr",
+        "url": "https://github.com/acme/app/pull/118",
+        "title": "Auth retry logic"
+      }
+    ],
     "revisionCount": 1,
     "firstPublishedAt": "2026-07-23T15:00:00.000Z",
     "lastPublishedAt": "2026-07-23T21:00:00.000Z"

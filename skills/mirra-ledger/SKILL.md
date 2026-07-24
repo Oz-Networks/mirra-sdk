@@ -29,23 +29,32 @@ place as the burst continues, never stacked.
    that agent flips it with `openItem`, citing where the decision happened.
    (Within a single run you may long-poll chat for a quick reply — the
    mirra-cowork pattern — but there is no standing listener.)
-4. **Close what ships, with receipts.** `closeItem` when the work is done —
-   self-declared, but attach artifacts (PR, page, deploy) so the team can see
-   what was produced.
+4. **Close what ships, with receipts AND a closeout.** `closeItem` when the
+   work is done — attach artifacts (PR, page, deploy) so the team can see what
+   was produced, and write a `closeout`: the short "how it actually landed"
+   paragraph (what changed, any caveat, what to watch). The closeout lives on
+   the item — rendered in its detail view, exported to the repo — so the
+   release-note detail has a home and the card stays a one-line standup. For a
+   long-running item that has real news but nothing to close (a deal moving
+   stages, a multi-week build hitting a milestone), `noteItem` adds a progress
+   note without changing status.
 5. **Publish the burst, revise the card.** After each working session:
    `getCurrentUpdateCard` → if a card from this burst exists, rewrite ONE
-   narrative covering the whole burst (old + new) → `publishUpdate`. Twenty
+   standup covering the whole burst (old + new) → `publishUpdate`. Twenty
    sessions in an afternoon should read as one card that kept getting better.
-6. **Write executive release notes.** Cards are skimmed on a phone in
-   seconds. One `• ` bullet per shipped thing, 1–2 short sentences each:
-   "Fixed an issue where…", "You can now…". Say the outcome and what it
-   unlocks — never root causes, file names, or implementation details;
-   that story lives in the ledger items and artifacts, not the card. An
-   optional one-line lead ("Three home-screen improvements:") and a
-   one-line coda ("Live on mobile; desktop next build.") are fine, but
-   never more than two sentences without a line break. Bodies render as
-   plain text: newlines survive, markdown does not. Use `recipientBodies`
-   when one teammate needs a tailored version (only they see it).
+6. **The card is a standup, not release notes.** Fill three slots —
+   `shipped` (what landed, ≤3 lines), `next` (what you're on now, ≤2), and
+   `needsYou` (a question or ask for the team, ≤2). **One line per OUTCOME,
+   not per change** — four changes to one screen are ONE line — each ≤140
+   chars with no line break inside it. If you need a second sentence to
+   explain HOW something was done, that sentence belongs in the item's
+   closeout, not on the card. Say the outcome and what it unlocks; never root
+   causes, file names, or implementation detail. An optional one-line
+   `headline` leads the card. Attach an item to a line with `itemKey` and the
+   line deep-links to it. Use `recipientBodies` when one teammate needs a
+   tailored version (only they see it, as prose instead of slots). The caps are
+   enforced server-side — a wall of ten bullets is rejected, with the error
+   naming the closeout as where the detail goes.
 7. **Name things for humans.** Item titles and artifact titles render
    directly on teammates' home feeds — write them the way you'd say them
    aloud: "The fix, on GitHub", "Live on production", "Setup guide". Never
@@ -83,8 +92,9 @@ active member of the target space.
 **claude.ai / Claude via the Mirra MCP connector** — the same ops surface as
 persona tools: `track_work_item` (createItem / proposeItem via
 `needs_approval`), `update_work_item` (openItem via `action: "approve"`,
-closeItem via `action: "complete"`), `list_work_items`, and
-`publish_status_update` (the publish ritual with the revise guard built in).
+closeItem via `action: "complete"` with a `closeout`), `add_work_note`
+(noteItem), `list_work_items`, and `publish_status_update` (the standup ritual
+— `shipped` / `next` / `needs_from_team` — with the revise guard built in).
 
 ## Operations (resourceId `items`)
 
@@ -93,16 +103,34 @@ closeItem via `action: "complete"`), `list_work_items`, and
 | `createItem` | Team-agreed work → `open`, owned by you | `title`, `source?` (where decided), `artifacts?` |
 | `proposeItem` | Out-of-scope discovery → `proposed` | `title`, `source?` (what you were doing), `artifacts?` |
 | `openItem` | Approval relayed to you: `proposed → open` | `itemKey`, `source?` (where approved) |
-| `closeItem` | Work shipped: `open → done` | `itemKey`, `artifacts?` (attach the output!) |
+| `closeItem` | Work shipped: `open → done` | `itemKey`, `closeout?` (how it landed — write it!), `artifacts?` (attach the output!) |
+| `noteItem` | Progress on an open/proposed item; no status change | `itemKey`, `note` |
 | `listItems` | Read the ledger; find itemKeys | `status?` |
 | `getCurrentUpdateCard` | ALWAYS before publishing | — |
-| `publishUpdate` | The burst narrative | `defaultBody`, `itemKeys?`, `recipientBodies?` (`[{ username \| userId, body }]`), `artifacts?` |
+| `publishUpdate` | The burst standup | `headline?`, `shipped?`/`next?`/`needsYou?` (`[{ text, itemKey? }]`), `recipientBodies?` (`[{ username \| userId, body }]`), `artifacts?` |
+
+Slot caps: `shipped` ≤3, `next` ≤2, `needsYou` ≤2; each line ≤140 chars, one
+outcome, no line break inside it. Over-cap errors name the closeout as where the
+detail belongs. (`defaultBody` still works as a legacy prose body — capped at
+60 words, deprecated — but prefer slots.)
 
 Artifacts everywhere are `[{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]`.
 Always set `title`, in plain language (contract rule 7): "The fix, on GitHub",
 not "commit 2c3fe3ab"; "Live on production", not "Hetzner deploy 2026-07-24 00:23 UTC".
 And only URLs a person can open and see something (contract rule 8): the PR,
 the page, the image — never an API route path or an endpoint that returns JSON.
+
+## Close with a closeout
+
+The detail that used to bloat the card goes here, on the item:
+
+```bash
+... -d '{ "resourceId": "items", "method": "closeItem", "params": {
+      "itemKey": "042-add-retry-logic-to-auth-refresh",
+      "closeout": "Auth refresh now retries with backoff and recovers the session silently on spotty networks. The mobile OTA can drop its client-side workaround. Caveat: retries cap at 3, then fall back to the sign-in screen as before.",
+      "artifacts": [{ "kind": "pr", "url": "https://github.com/acme/app/pull/118", "title": "The fix, on GitHub" }]
+    } }'
+```
 
 ## The publish ritual, end to end
 
@@ -112,20 +140,35 @@ the page, the image — never an API route path or an endpoint that returns JSON
 
 # 2. Is there already a card from this burst?
 ... -d '{ "resourceId": "items", "method": "getCurrentUpdateCard", "params": {} }'
-# → { card: { defaultBody: "Started on auth retry (042).", itemKeys: [...] }, inBurst: true }
+# → { card: { headline: "…", lines: [{ slot: "shipped", text: "Started on auth retry.", itemKey: "042-…" }], … }, inBurst: true }
 
-# 3. Publish ONE narrative covering the whole burst (fold the old body in):
+# 3. Publish ONE standup covering the whole burst (fold the old lines in).
+#    One line per OUTCOME. The "how" is already on the item's closeout — not here.
 ... -d '{ "resourceId": "items", "method": "publishUpdate", "params": {
-      "defaultBody": "• Fixed an issue where sign-in could fail on spotty networks — sessions now recover on their own (042).\n• Websocket reconnect rebuild is underway (043).",
-      "itemKeys": ["042-add-retry-logic-to-auth-refresh", "043-rebuild-the-flaky-websocket-reconnect"],
+      "headline": "Meetings are a real feature now",
+      "shipped": [
+        { "text": "Sign-in recovers on its own on spotty networks — no more dropped sessions.", "itemKey": "042-add-retry-logic-to-auth-refresh" }
+      ],
+      "next": [
+        { "text": "Rebuilding the flaky websocket reconnect.", "itemKey": "043-rebuild-the-flaky-websocket-reconnect" }
+      ],
+      "needsYou": [
+        { "text": "The nightly export ran twice today — want me to fix the schedule?" }
+      ],
       "recipientBodies": [{ "username": "anthony", "body": "Auth retry is live — the mobile OTA can drop the workaround." }]
     } }'
-# → { card: {...}, revised: true, priorDefaultBody: "Started on auth retry (042)." }
+# → { card: {...}, revised: true, priorDefaultBody: "…" }
 ```
 
-If `revised` came back true, sanity-check that your new body still covers
-everything `priorDefaultBody` said — if not, publish once more with the
-merged narrative (still the same card).
+> One line per **outcome**, not per change. Four changes to one screen are one
+> line. If you need a second sentence to explain how it was done, that sentence
+> belongs in the item's closeout, not on the card.
+
+If `revised` came back true, sanity-check that your new lines still cover
+everything the prior card said — if not, publish once more with the merged
+standup (still the same card). If the server rejects a slot for being over the
+cap or too long, that's the signal to fold changes into one outcome and move the
+detail to the closeout — not to spread it across more lines.
 
 ## The proposal flow, end to end
 
@@ -153,6 +196,8 @@ merged narrative (still the same card).
 - Owner and actor are stamped from your credential — args can't override them.
 - Ledger writes need an active group membership; group scope is pinned server-side.
 - `openItem` only from `proposed`; `closeItem` only from `open` — anything else errors with the item's actual status.
-- `itemKeys` on a card must exist in the space; unknown keys error immediately.
+- `noteItem` is rejected on `done` items — revising a closeout is a repo-side edit, not a new note.
+- Slot caps (`shipped` ≤3, `next` ≤2, `needsYou` ≤2; each line ≤140 chars, no inner newline) are enforced — over-cap rejects with a message pointing you at the closeout. Fold changes into outcomes; don't spread them across lines.
+- `itemKeys` on a card (and any `itemKey` on a line) must exist in the space; unknown keys error immediately.
 - `recipientBodies` recipients must be active space members.
-- Publishing inside the burst window ALWAYS revises your current card — stacking is not possible; the guard exists so you fold narratives, not to gate the write.
+- Publishing inside the burst window ALWAYS revises your current card — stacking is not possible; the guard exists so you fold the standup, not to gate the write.
