@@ -831,16 +831,25 @@ export interface ItemsOpenItemArgs {
 }
 export interface ItemsCloseItemArgs {
   itemKey: string; // The item key of the finished work (find it with listItems)
+  closeout?: string; // How the work actually landed — a short paragraph (max 4000 chars, newlines fine): what changed, any caveat, what to watch. This is the release-note detail; it belongs here on the item, never on the home card. Plain language a teammate can read.
   source?: string; // Optional provenance note if the item is missing one
   artifacts?: any[]; // Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. Only attach links a teammate can open in a browser and see something meaningful: a page, mockup, image, PR/commit, deploy, or doc. Never API routes or endpoints, code file paths, localhost URLs, or anything that renders raw JSON — if the work has no viewable surface (an API change, a refactor), link the PR instead, or attach nothing. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
+}
+export interface ItemsNoteItemArgs {
+  itemKey: string; // The item key to note (find it with listItems)
+  note: string; // The progress note — what advanced, in plain language (max 4000 chars, newlines fine). Not a status change; just news worth recording on the item.
 }
 export interface ItemsListItemsArgs {
   status?: string; // Filter to one status: "open", "proposed", or "done" (default: all)
 }
 export interface ItemsPublishUpdateArgs {
-  defaultBody: string; // The update every teammate sees (plain text — newlines render, markdown does not; max 8000 chars). Executive release-note bullets: one '• ' line per shipped thing, 1–2 short sentences each, outcomes only.
-  recipientBodies?: any[]; // Per-teammate versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their version instead of defaultBody; nobody else ever sees it.
-  itemKeys?: any[]; // Item keys this update covers (rendered as ledger chips). Must exist in this space.
+  headline?: string; // Optional one-line lead above the slots (≤80 chars), e.g. "Meetings are a real feature now". Skip it if the shipped lines speak for themselves.
+  shipped?: any[]; // What landed this burst — [{ text, itemKey? }], at most 3 lines, one OUTCOME each (≤140 chars, single line). Fold related changes into one line; move the "how" to the item closeout. Set itemKey to deep-link the line to its ledger item.
+  next?: any[]; // What you are working on now — [{ text, itemKey? }], at most 2 lines, one thing each (≤140 chars).
+  needsYou?: any[]; // What you need from the team — a question or decision — [{ text, itemKey? }], at most 2 lines (≤140 chars). Renders on an attention block so teammates see the ask on the scroll-past.
+  defaultBody?: string; // DEPRECATED legacy prose body (plain text; capped at 60 words / 5 lines for one more release, then rejected). Prefer shipped/next/needsYou. When slots are supplied this is derived automatically and any value here is ignored.
+  recipientBodies?: any[]; // Per-teammate prose versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their prose version instead of the slots; nobody else ever sees it.
+  itemKeys?: any[]; // Extra item keys this update covers beyond those named on lines (rendered as chips). Must exist in this space. Line itemKeys are added automatically.
   artifacts?: any[]; // Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. Only attach links a teammate can open in a browser and see something meaningful: a page, mockup, image, PR/commit, deploy, or doc. Never API routes or endpoints, code file paths, localhost URLs, or anything that renders raw JSON — if the work has no viewable surface (an API change, a refactor), link the PR instead, or attach nothing. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 }
 
@@ -3888,6 +3897,7 @@ export interface WorkItem {
   source?: string; // Provenance — where this work was decided/found
   via: string; // How the last write happened: 'op' (agent), 'call', or 'git'
   artifacts: any; // Attached artifact refs [{ kind, url, title? }]
+  notes: any; // Progress notes + closeout, oldest first [{ at, text, closing, actorName?, via }]. The note with closing:true is the closeout.
   doneAt?: string; // ISO timestamp when closed (done items only)
   createdAt: string; // ISO creation timestamp
   updatedAt: string; // ISO last-write timestamp
@@ -3917,6 +3927,12 @@ export interface ItemsCloseData {
 
 export type ItemsCloseItemResult = AdapterResultBase<ItemsCloseData>;
 
+export interface ItemsNoteData {
+  item: any; // The created/updated item
+}
+
+export type ItemsNoteItemResult = AdapterResultBase<ItemsNoteData>;
+
 export interface ItemsListData {
   items: any; // Ledger items, newest-updated first
   count: number; // Number of items returned
@@ -3928,7 +3944,9 @@ export interface UpdateCard {
   cardId: string; // Card id
   authorUserId: string; // Publishing user (stamped from the credential)
   authorName?: string; // Publishing user display name
-  defaultBody: string; // The narrative every teammate sees
+  headline?: string; // Optional one-line lead above the slots
+  lines: any; // Standup slot lines [{ slot: "shipped"|"next"|"needsYou", text, itemKey? }]; [] on legacy prose cards
+  defaultBody: string; // The prose narrative every teammate without a personal version sees; derived from slots when slots were supplied
   recipientBodies: any; // Per-teammate versions [{ userId, body }] (your own card only — served per-recipient in feeds)
   itemKeys: any; // Item keys the card references
   artifacts: any; // Attached artifact refs [{ kind, url, title? }]
@@ -3941,6 +3959,7 @@ export interface ItemsPublishUpdateData {
   card: any; // Your published/revised card
   revised: boolean; // True when this revised the current burst card instead of starting a new one
   priorDefaultBody?: string; // The narrative that was replaced (present when revised)
+  deprecation?: string; // Present only when the legacy prose path (defaultBody, no slots) was used — move to shipped/next/needsYou slots
 }
 
 export type ItemsPublishUpdateResult = AdapterResultBase<ItemsPublishUpdateData>;
@@ -10444,8 +10463,9 @@ function createItemsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Mark an open item done — the work shipped. Attach artifact links (the PR, the deployed page) so the team can see what was produced. Errors if the item is not currently open.
+     * Mark an open item done — the work shipped. Attach artifact links (the PR, the deployed page) so the team can see what was produced, and write a closeout: the short "how it actually landed" paragraph that used to bloat update cards. The closeout lives on the item (rendered in its detail view, exported to the repo), NOT on the home card — so the release-note detail has a home and the card stays a one-line standup. Strongly encouraged; skipping it leaves a thinner record. Errors if the item is not currently open.
      * @param args.itemKey - The item key of the finished work (find it with listItems)
+     * @param args.closeout - How the work actually landed — a short paragraph (max 4000 chars, newlines fine): what changed, any caveat, what to watch. This is the release-note detail; it belongs here on the item, never on the home card. Plain language a teammate can read. (optional)
      * @param args.source - Optional provenance note if the item is missing one (optional)
      * @param args.artifacts - Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. Only attach links a teammate can open in a browser and see something meaningful: a page, mockup, image, PR/commit, deploy, or doc. Never API routes or endpoints, code file paths, localhost URLs, or anything that renders raw JSON — if the work has no viewable surface (an API change, a refactor), link the PR instead, or attach nothing. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps. (optional)
      * @returns Promise<ItemsCloseData> Typed flat response with IDE autocomplete
@@ -10454,6 +10474,20 @@ function createItemsAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'items',
         method: 'closeItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Add a progress note to an open or proposed item that has real news but is not finished — the long-running case (a months-long prospecting item, a multi-week build). The note lands on the item (shown in its detail view, exported to the repo), never on the home card. Does NOT change status. Rejected on done items — a note after the fact is a closeout revision, which is a repo-side edit. To finish work, use closeItem with a closeout instead.
+     * @param args.itemKey - The item key to note (find it with listItems)
+     * @param args.note - The progress note — what advanced, in plain language (max 4000 chars, newlines fine). Not a status change; just news worth recording on the item.
+     * @returns Promise<ItemsNoteData> Typed flat response with IDE autocomplete
+     */
+    noteItem: async (args: ItemsNoteItemArgs): Promise<ItemsNoteData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'items',
+        method: 'noteItem',
         params: args || {}
       });
     },
@@ -10472,10 +10506,14 @@ function createItemsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual. Within a rolling burst window (~6h since your last publish) this REVISES your current card in place instead of stacking a new one; the response returns the narrative it replaced (priorDefaultBody) so you can verify your new body covers the whole burst. ALWAYS call getCurrentUpdateCard first and fold the existing narrative into your rewrite. Write executive release notes, skimmed in seconds: one '• ' bullet per shipped thing, 1–2 short sentences each ('Fixed an issue where…', 'You can now…'). State outcomes and unlocked capabilities — never root causes, file names, or implementation detail; that story lives in the ledger items and artifacts. defaultBody is what everyone sees; recipientBodies are optional per-teammate versions (each recipient sees only their own). Reference the items you touched via itemKeys so the card renders them as chips.
-     * @param args.defaultBody - The update every teammate sees (plain text — newlines render, markdown does not; max 8000 chars). Executive release-note bullets: one '• ' line per shipped thing, 1–2 short sentences each, outcomes only.
-     * @param args.recipientBodies - Per-teammate versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their version instead of defaultBody; nobody else ever sees it. (optional)
-     * @param args.itemKeys - Item keys this update covers (rendered as ledger chips). Must exist in this space. (optional)
+     * Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual, written as a standup, not release notes. Fill three slots: shipped (what landed, ≤3 lines), next (what you are on now, ≤2 lines), needsYou (a question or ask for the team, ≤2 lines). ONE OUTCOME PER LINE, ≤140 chars, no line breaks inside a line — four changes to one screen are one line. If you need a second sentence to explain HOW something was done, that sentence belongs in the item's closeout (closeItem), not on the card. State outcomes and unlocked capabilities — never root causes, file names, or implementation detail. Within a rolling burst window (~6h since your last publish) this REVISES your current card in place instead of stacking a new one; the response returns the narrative it replaced (priorDefaultBody) so you can verify your new lines cover the whole burst — ALWAYS call getCurrentUpdateCard first and fold the existing slots into your rewrite. Attach an item to a line with itemKey so the line deep-links to it. recipientBodies are optional per-teammate prose versions (each recipient sees only their own, as prose rather than slots). NOTE: the legacy defaultBody (a prose body with no slots) is DEPRECATED and capped at 60 words — send slots instead.
+     * @param args.headline - Optional one-line lead above the slots (≤80 chars), e.g. "Meetings are a real feature now". Skip it if the shipped lines speak for themselves. (optional)
+     * @param args.shipped - What landed this burst — [{ text, itemKey? }], at most 3 lines, one OUTCOME each (≤140 chars, single line). Fold related changes into one line; move the "how" to the item closeout. Set itemKey to deep-link the line to its ledger item. (optional)
+     * @param args.next - What you are working on now — [{ text, itemKey? }], at most 2 lines, one thing each (≤140 chars). (optional)
+     * @param args.needsYou - What you need from the team — a question or decision — [{ text, itemKey? }], at most 2 lines (≤140 chars). Renders on an attention block so teammates see the ask on the scroll-past. (optional)
+     * @param args.defaultBody - DEPRECATED legacy prose body (plain text; capped at 60 words / 5 lines for one more release, then rejected). Prefer shipped/next/needsYou. When slots are supplied this is derived automatically and any value here is ignored. (optional)
+     * @param args.recipientBodies - Per-teammate prose versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their prose version instead of the slots; nobody else ever sees it. (optional)
+     * @param args.itemKeys - Extra item keys this update covers beyond those named on lines (rendered as chips). Must exist in this space. Line itemKeys are added automatically. (optional)
      * @param args.artifacts - Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. Only attach links a teammate can open in a browser and see something meaningful: a page, mockup, image, PR/commit, deploy, or doc. Never API routes or endpoints, code file paths, localhost URLs, or anything that renders raw JSON — if the work has no viewable surface (an API change, a refactor), link the PR instead, or attach nothing. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps. (optional)
      * @returns Promise<ItemsPublishUpdateData> Typed flat response with IDE autocomplete
      */
