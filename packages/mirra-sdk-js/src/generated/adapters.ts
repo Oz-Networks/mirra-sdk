@@ -337,6 +337,7 @@ export interface FeedItemsCreateFeedItemArgs {
   notify?: boolean; // Send push notification (default: true, set false for background updates)
   image?: any; // Optional image to attach to the notification, rendered inline in the activity feed. Provide the raw image bytes as base64. Shape: { data: <base64 string>, mimeType: "image/jpeg" | "image/png", alt?: "short description" }. Max ~10MB decoded.
   dashboardId?: string; // Optional landing hint. When set to the id of a dashboard in the current scope, tapping the push opens that dashboard artifact instead of the generic detail screen. Validated against your dashboards — an unknown id is ignored (the alert still sends).
+  tapAction?: any; // Optional landing hint for where tapping the push takes the user. Two shapes: { "type": "open_url", "url": "https://..." } opens an external link, or { "type": "navigate", "screen": "feed-item-details", "params": { ... } } opens an in-app screen (the app validates the screen name against its known feed screens and falls back to the alert's own detail if it does not recognize it). Malformed hints are ignored — the alert always still sends. If you only need to open a dashboard, prefer dashboardId.
 }
 export interface FeedItemsHideFeedItemArgs {
   feedItemId: string; // The feedItemId returned by a prior createFeedItem call — identifies which device notification to clear
@@ -9019,6 +9020,7 @@ function createFeedItemsAdapter(sdk: MirraSDK) {
      * @param args.notify - Send push notification (default: true, set false for background updates) (optional)
      * @param args.image - Optional image to attach to the notification, rendered inline in the activity feed. Provide the raw image bytes as base64. Shape: { data: <base64 string>, mimeType: "image/jpeg" | "image/png", alt?: "short description" }. Max ~10MB decoded. (optional)
      * @param args.dashboardId - Optional landing hint. When set to the id of a dashboard in the current scope, tapping the push opens that dashboard artifact instead of the generic detail screen. Validated against your dashboards — an unknown id is ignored (the alert still sends). (optional)
+     * @param args.tapAction - Optional landing hint for where tapping the push takes the user. Two shapes: { "type": "open_url", "url": "https://..." } opens an external link, or { "type": "navigate", "screen": "feed-item-details", "params": { ... } } opens an in-app screen (the app validates the screen name against its known feed screens and falls back to the alert's own detail if it does not recognize it). Malformed hints are ignored — the alert always still sends. If you only need to open a dashboard, prefer dashboardId. (optional)
      * @returns Promise<FeedItemCreateData> Typed flat response with IDE autocomplete
      */
     createFeedItem: async (args: FeedItemsCreateFeedItemArgs): Promise<FeedItemCreateData> => {

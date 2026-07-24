@@ -57,6 +57,7 @@ Create a notification for the user. Shows up in their activity feed and sends a 
 - `notify` (boolean, *optional*): Send push notification (default: true, set false for background updates)
 - `image` (object, *optional*): Optional image to attach to the notification, rendered inline in the activity feed. Provide the raw image bytes as base64. Shape: { data: <base64 string>, mimeType: "image/jpeg" | "image/png", alt?: "short description" }. Max ~10MB decoded.
 - `dashboardId` (string, *optional*): Optional landing hint. When set to the id of a dashboard in the current scope, tapping the push opens that dashboard artifact instead of the generic detail screen. Validated against your dashboards — an unknown id is ignored (the alert still sends).
+- `tapAction` (object, *optional*): Optional landing hint for where tapping the push takes the user. Two shapes: { "type": "open_url", "url": "https://..." } opens an external link, or { "type": "navigate", "screen": "feed-item-details", "params": { ... } } opens an in-app screen (the app validates the screen name against its known feed screens and falls back to the alert's own detail if it does not recognize it). Malformed hints are ignored — the alert always still sends. If you only need to open a dashboard, prefer dashboardId.
 
 **Returns:**
 
