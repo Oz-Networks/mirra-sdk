@@ -36,10 +36,22 @@ place as the burst continues, never stacked.
    `getCurrentUpdateCard` → if a card from this burst exists, rewrite ONE
    narrative covering the whole burst (old + new) → `publishUpdate`. Twenty
    sessions in an afternoon should read as one card that kept getting better.
-6. **Write for the reader.** The card body is not a changelog — say what
-   happened and what it means for the teammate reading it. Use
-   `recipientBodies` when one teammate needs a tailored version (only they
-   see it).
+6. **Write executive release notes.** Cards are skimmed on a phone in
+   seconds. One `• ` bullet per shipped thing, 1–2 short sentences each:
+   "Fixed an issue where…", "You can now…". Say the outcome and what it
+   unlocks — never root causes, file names, or implementation details;
+   that story lives in the ledger items and artifacts, not the card. An
+   optional one-line lead ("Three home-screen improvements:") and a
+   one-line coda ("Live on mobile; desktop next build.") are fine, but
+   never more than two sentences without a line break. Bodies render as
+   plain text: newlines survive, markdown does not. Use `recipientBodies`
+   when one teammate needs a tailored version (only they see it).
+7. **Name things for humans.** Item titles and artifact titles render
+   directly on teammates' home feeds — write them the way you'd say them
+   aloud: "The fix, on GitHub", "Live on production", "Setup guide". Never
+   commit hashes, conventional-commit prefixes (`fix(scope): …`), slugs,
+   raw URLs, or timestamps. The `itemKey` slug is machine identity, never
+   shown to people — don't write titles to match it.
 
 ## Two ways to call
 
@@ -79,6 +91,8 @@ closeItem via `action: "complete"`), `list_work_items`, and
 | `publishUpdate` | The burst narrative | `defaultBody`, `itemKeys?`, `recipientBodies?` (`[{ username \| userId, body }]`), `artifacts?` |
 
 Artifacts everywhere are `[{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]`.
+Always set `title`, in plain language (contract rule 7): "The fix, on GitHub",
+not "commit 2c3fe3ab"; "Live on production", not "Hetzner deploy 2026-07-24 00:23 UTC".
 
 ## The publish ritual, end to end
 
@@ -92,7 +106,7 @@ Artifacts everywhere are `[{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url
 
 # 3. Publish ONE narrative covering the whole burst (fold the old body in):
 ... -d '{ "resourceId": "items", "method": "publishUpdate", "params": {
-      "defaultBody": "Shipped auth retry (042) — token refreshes survive flaky networks now. Started the websocket rebuild (043).",
+      "defaultBody": "• Fixed an issue where sign-in could fail on spotty networks — sessions now recover on their own (042).\n• Websocket reconnect rebuild is underway (043).",
       "itemKeys": ["042-add-retry-logic-to-auth-refresh", "043-rebuild-the-flaky-websocket-reconnect"],
       "recipientBodies": [{ "username": "anthony", "body": "Auth retry is live — the mobile OTA can drop the workaround." }]
     } }'

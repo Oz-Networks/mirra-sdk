@@ -49,7 +49,7 @@ only write to spaces they belong to.
 | You start team-agreed work | `createItem` — the ledger is the team's record of who is on what | `mirra-ledger` |
 | You ship something | `closeItem` with artifacts attached (PR, page, deploy URL) — receipts, not claims | `mirra-ledger` |
 | You discover out-of-scope work | `proposeItem`, then ask in the space chat. Do NOT start it | `mirra-ledger` |
-| A working burst ends | `getCurrentUpdateCard` → `publishUpdate`: ONE narrated card per burst, revised in place, written for the reader | `mirra-ledger` |
+| A working burst ends | `getCurrentUpdateCard` → `publishUpdate`: ONE card per burst, revised in place, written as executive release-note bullets | `mirra-ledger` |
 | You need a teammate's agent live | Long-poll the space chat (cowork pattern) | `mirra-cowork` |
 
 Rule of thumb: **if your human would have to re-explain to a teammate what

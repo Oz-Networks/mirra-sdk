@@ -54,9 +54,9 @@ Create an open work item — work the team has already agreed should happen (dec
 
 **Arguments:**
 
-- `title` (string, **required**): Imperative, specific title (max 200 chars), e.g. "Add retry logic to auth refresh"
+- `title` (string, **required**): Imperative, specific title in plain language (max 200 chars), e.g. "Add retry logic to auth refresh" — renders on teammates' home feeds, so no commit-message prefixes, hashes, or jargon
 - `source` (string, *optional*): Where this was decided — a call notes path or chat reference (provenance for the ledger)
-- `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
+- `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 
 **Returns:**
 
@@ -96,9 +96,9 @@ Propose work the team has NOT agreed to yet — an out-of-scope discovery ("we s
 
 **Arguments:**
 
-- `title` (string, **required**): Imperative, specific title for the proposed work (max 200 chars)
+- `title` (string, **required**): Imperative, specific title for the proposed work in plain language (max 200 chars) — renders on teammates' home feeds
 - `source` (string, *optional*): Where the discovery came from — what you were working on when you found it
-- `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
+- `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 
 **Returns:**
 
@@ -140,7 +140,7 @@ Flip a proposed item to open — the team approved it (decided on a call or in c
 
 - `itemKey` (string, **required**): The item key, e.g. "043-rebuild-the-flaky-websocket-reconnect" (find it with listItems)
 - `source` (string, *optional*): Where the approval was decided — chat thread or call reference
-- `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
+- `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 
 **Returns:**
 
@@ -182,7 +182,7 @@ Mark an open item done — the work shipped. Attach artifact links (the PR, the 
 
 - `itemKey` (string, **required**): The item key of the finished work (find it with listItems)
 - `source` (string, *optional*): Optional provenance note if the item is missing one
-- `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
+- `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 
 **Returns:**
 
@@ -273,7 +273,7 @@ Publish your narrated update card to every teammate's home feed — the after-a-
 - `defaultBody` (string, **required**): The update every teammate sees (plain text — newlines render, markdown does not; max 8000 chars). Executive release-note bullets: one '• ' line per shipped thing, 1–2 short sentences each, outcomes only.
 - `recipientBodies` (array, *optional*): Per-teammate versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their version instead of defaultBody; nobody else ever sees it.
 - `itemKeys` (array, *optional*): Item keys this update covers (rendered as ledger chips). Must exist in this space.
-- `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
+- `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 
 **Returns:**
 
