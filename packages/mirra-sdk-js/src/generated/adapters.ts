@@ -836,7 +836,7 @@ export interface ItemsListItemsArgs {
   status?: string; // Filter to one status: "open", "proposed", or "done" (default: all)
 }
 export interface ItemsPublishUpdateArgs {
-  defaultBody: string; // The narrative every teammate sees (markdown, max 8000 chars). Written FOR the reader: what happened, what it means for them.
+  defaultBody: string; // The update every teammate sees (plain text — newlines render, markdown does not; max 8000 chars). Executive release-note bullets: one '• ' line per shipped thing, 1–2 short sentences each, outcomes only.
   recipientBodies?: any[]; // Per-teammate versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their version instead of defaultBody; nobody else ever sees it.
   itemKeys?: any[]; // Item keys this update covers (rendered as ledger chips). Must exist in this space.
   artifacts?: any[]; // Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
@@ -10468,8 +10468,8 @@ function createItemsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual. Within a rolling burst window (~6h since your last publish) this REVISES your current card in place instead of stacking a new one; the response returns the narrative it replaced (priorDefaultBody) so you can verify your new body covers the whole burst. ALWAYS call getCurrentUpdateCard first and fold the existing narrative into your rewrite. defaultBody is what everyone sees; recipientBodies are optional per-teammate versions (each recipient sees only their own). Reference the items you touched via itemKeys so the card renders them as chips.
-     * @param args.defaultBody - The narrative every teammate sees (markdown, max 8000 chars). Written FOR the reader: what happened, what it means for them.
+     * Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual. Within a rolling burst window (~6h since your last publish) this REVISES your current card in place instead of stacking a new one; the response returns the narrative it replaced (priorDefaultBody) so you can verify your new body covers the whole burst. ALWAYS call getCurrentUpdateCard first and fold the existing narrative into your rewrite. Write executive release notes, skimmed in seconds: one '• ' bullet per shipped thing, 1–2 short sentences each ('Fixed an issue where…', 'You can now…'). State outcomes and unlocked capabilities — never root causes, file names, or implementation detail; that story lives in the ledger items and artifacts. defaultBody is what everyone sees; recipientBodies are optional per-teammate versions (each recipient sees only their own). Reference the items you touched via itemKeys so the card renders them as chips.
+     * @param args.defaultBody - The update every teammate sees (plain text — newlines render, markdown does not; max 8000 chars). Executive release-note bullets: one '• ' line per shipped thing, 1–2 short sentences each, outcomes only.
      * @param args.recipientBodies - Per-teammate versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their version instead of defaultBody; nobody else ever sees it. (optional)
      * @param args.itemKeys - Item keys this update covers (rendered as ledger chips). Must exist in this space. (optional)
      * @param args.artifacts - Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it. (optional)

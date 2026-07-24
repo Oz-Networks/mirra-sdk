@@ -266,11 +266,11 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `publishUpdate`
 
-Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual. Within a rolling burst window (~6h since your last publish) this REVISES your current card in place instead of stacking a new one; the response returns the narrative it replaced (priorDefaultBody) so you can verify your new body covers the whole burst. ALWAYS call getCurrentUpdateCard first and fold the existing narrative into your rewrite. defaultBody is what everyone sees; recipientBodies are optional per-teammate versions (each recipient sees only their own). Reference the items you touched via itemKeys so the card renders them as chips.
+Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual. Within a rolling burst window (~6h since your last publish) this REVISES your current card in place instead of stacking a new one; the response returns the narrative it replaced (priorDefaultBody) so you can verify your new body covers the whole burst. ALWAYS call getCurrentUpdateCard first and fold the existing narrative into your rewrite. Write executive release notes, skimmed in seconds: one '• ' bullet per shipped thing, 1–2 short sentences each ('Fixed an issue where…', 'You can now…'). State outcomes and unlocked capabilities — never root causes, file names, or implementation detail; that story lives in the ledger items and artifacts. defaultBody is what everyone sees; recipientBodies are optional per-teammate versions (each recipient sees only their own). Reference the items you touched via itemKeys so the card renders them as chips.
 
 **Arguments:**
 
-- `defaultBody` (string, **required**): The narrative every teammate sees (markdown, max 8000 chars). Written FOR the reader: what happened, what it means for them.
+- `defaultBody` (string, **required**): The update every teammate sees (plain text — newlines render, markdown does not; max 8000 chars). Executive release-note bullets: one '• ' line per shipped thing, 1–2 short sentences each, outcomes only.
 - `recipientBodies` (array, *optional*): Per-teammate versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their version instead of defaultBody; nobody else ever sees it.
 - `itemKeys` (array, *optional*): Item keys this update covers (rendered as ledger chips). Must exist in this space.
 - `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Attach what the work produced — the PR, the published page, the deploy — so cards can preview it.
@@ -285,7 +285,7 @@ Publish your narrated update card to every teammate's home feed — the after-a-
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"items","method":"publishUpdate","params":{"defaultBody":"Shipped auth retry (042) — token refreshes now survive flaky networks. Started on the websocket rebuild (043); reconnect state machine is sketched.","itemKeys":["042-add-retry-logic-to-auth-refresh","043-rebuild-the-flaky-websocket-reconnect"],"recipientBodies":[{"username":"anthony","body":"Auth retry is live — your mobile OTA can drop the workaround. Websocket rebuild underway."}]}}' | jq .
+  -d '{"resourceId":"items","method":"publishUpdate","params":{"defaultBody":"• Fixed an issue where sign-in could fail on spotty networks — sessions now recover on their own (042).\n• Websocket reconnect rebuild is underway (043).","itemKeys":["042-add-retry-logic-to-auth-refresh","043-rebuild-the-flaky-websocket-reconnect"],"recipientBodies":[{"username":"anthony","body":"• Sign-in recovery is live — your mobile OTA can drop the workaround (042).\n• Websocket reconnect rebuild is underway (043)."}]}}' | jq .
 ```
 
 **Example response:**
@@ -296,11 +296,11 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
     "cardId": "66a1b2c3d4e5f6a7b8c9d0e1",
     "authorUserId": "u1",
     "authorName": "mel",
-    "defaultBody": "Shipped auth retry (042) — token refreshes now survive flaky networks. Started on the websocket rebuild (043); reconnect state machine is sketched.",
+    "defaultBody": "• Fixed an issue where sign-in could fail on spotty networks — sessions now recover on their own (042).\n• Websocket reconnect rebuild is underway (043).",
     "recipientBodies": [
       {
         "userId": "u2",
-        "body": "Auth retry is live — your mobile OTA can drop the workaround. Websocket rebuild underway."
+        "body": "• Sign-in recovery is live — your mobile OTA can drop the workaround (042).\n• Websocket reconnect rebuild is underway (043)."
       }
     ],
     "itemKeys": [
