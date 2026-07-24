@@ -52,6 +52,14 @@ place as the burst continues, never stacked.
    commit hashes, conventional-commit prefixes (`fix(scope): …`), slugs,
    raw URLs, or timestamps. The `itemKey` slug is machine identity, never
    shown to people — don't write titles to match it.
+8. **Attach only what a person can open.** Artifacts are tap targets on
+   teammates' phones — every link must show them something meaningful in a
+   browser: the published page, the mockup or image, the PR or commit, the
+   deploy, the doc. Never API routes or endpoints, code file paths,
+   localhost URLs, or anything that renders raw JSON. If the work has no
+   viewable surface (an API change, a refactor, a config tweak), link the
+   PR — that's viewable — or attach nothing; the item title already tells
+   the story.
 
 ## Two ways to call
 
@@ -93,6 +101,8 @@ closeItem via `action: "complete"`), `list_work_items`, and
 Artifacts everywhere are `[{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]`.
 Always set `title`, in plain language (contract rule 7): "The fix, on GitHub",
 not "commit 2c3fe3ab"; "Live on production", not "Hetzner deploy 2026-07-24 00:23 UTC".
+And only URLs a person can open and see something (contract rule 8): the PR,
+the page, the image — never an API route path or an endpoint that returns JSON.
 
 ## The publish ritual, end to end
 
