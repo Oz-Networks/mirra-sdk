@@ -1,12 +1,12 @@
 ---
 name: mirra-dashboards
-description: "Use Mirra to native dashboards on the mobile notifications screen — tabbed grids of typed widgets (stat, image_card, list, progress, sparkline) that flows keep current. u.... Covers all Dashboards SDK operations via REST API."
+description: "Use Mirra to living dashboards in the artifacts library — natively-rendered grids of typed widgets (stat, image_card, list, progress, sparkline) that flows keep current. .... Covers all Dashboards SDK operations via REST API."
 allowed-tools: Read, Bash(curl:*, jq:*)
 ---
 
 # Mirra Dashboards
 
-Native dashboards on the mobile notifications screen — tabbed grids of typed widgets (stat, image_card, list, progress, sparkline) that flows keep current. Use widgets for live state, Data collections for history, and feed items for notable events that deserve a push notification.
+Living dashboards in the Artifacts library — natively-rendered grids of typed widgets (stat, image_card, list, progress, sparkline) that flows keep current. Each dashboard is a self-updating artifact for its space. Use widgets for live state, Data collections for history, and feed items for notable events that deserve a push notification (pass the dashboardId to make the push open the dashboard).
 
 ## Prerequisites
 
@@ -38,10 +38,10 @@ Replace `{operation}` with the operation name from the table below.
 
 | Operation | Description |
 |-----------|-------------|
-| `createDashboard` | Create a dashboard — a new tab on the user's notifications screen containing a grid of widgets. P... |
+| `createDashboard` | Create a dashboard — a living artifact in the user's Artifacts library containing a grid of widge... |
 | `listDashboards` | List the dashboards in this context (id, title, icon, order, widget count). Use to find an existi... |
 | `getDashboard` | Get a full dashboard including every widget's definition and current data. Use to inspect current... |
-| `deleteDashboard` | Permanently delete a dashboard and all its widgets. The tab disappears from the user's device imm... |
+| `deleteDashboard` | Permanently delete a dashboard and all its widgets. It disappears from the user's Artifacts libra... |
 | `upsertWidget` | Create a widget or replace its full definition (type, title, size, order, data, staleAfterSeconds... |
 | `updateWidgetData` | Repaint a widget's data — the hot path for keeping a dashboard current. Only the data payload cha... |
 | `removeWidget` | Remove a widget from a dashboard (e.g. remove a person card when they leave the property). Errors... |
@@ -50,13 +50,13 @@ Replace `{operation}` with the operation name from the table below.
 
 ### `createDashboard`
 
-Create a dashboard — a new tab on the user's notifications screen containing a grid of widgets. Pass initial widgets to scaffold the whole dashboard in one call. Each widget needs a stable, caller-chosen widgetId (e.g. "occupancy", "person-jane") so flows can repaint it later with updateWidgetData without tracking server-generated ids. Widget types: "stat" (big number: { value, label?, delta?: { value, direction: "up"|"down"|"flat" }, emphasis?: "default"|"success"|"warning"|"alert" }), "image_card" (snapshot + caption: { image: { url } OR { data: <base64>, mimeType }, title?, caption?, timestamp? }), "list" (compact rows: { items: [{ text, secondaryText?, timestamp?, status?: "ok"|"warn"|"alert"|"neutral", imageUrl? }], maxVisible? }), "progress" (bounded quantity: { value: 0..1, label?, displayText? }), "sparkline" (trend: { points: number[], label?, currentValue? }). Sizes: "full" takes the row, consecutive "half" widgets pair into 2-column rows. Lower order = higher on screen. Widget updates are silent — for notable events (e.g. unknown person detected) also create a feed item, which carries the push notification.
+Create a dashboard — a living artifact in the user's Artifacts library containing a grid of widgets. Pass initial widgets to scaffold the whole dashboard in one call. Each widget needs a stable, caller-chosen widgetId (e.g. "occupancy", "person-jane") so flows can repaint it later with updateWidgetData without tracking server-generated ids. Widget types: "stat" (big number: { value, label?, delta?: { value, direction: "up"|"down"|"flat" }, emphasis?: "default"|"success"|"warning"|"alert" }), "image_card" (snapshot + caption: { image: { url } OR { data: <base64>, mimeType }, title?, caption?, timestamp? }), "list" (compact rows: { items: [{ text, secondaryText?, timestamp?, status?: "ok"|"warn"|"alert"|"neutral", imageUrl? }], maxVisible? }), "progress" (bounded quantity: { value: 0..1, label?, displayText? }), "sparkline" (trend: { points: number[], label?, currentValue? }). Sizes: "full" takes the row, consecutive "half" widgets pair into 2-column rows. Lower order = higher on screen. Widget updates are silent — for notable events (e.g. unknown person detected) also create a feed item, which carries the push notification.
 
 **Arguments:**
 
-- `title` (string, **required**): Tab label shown on the notifications screen (e.g. "Security")
-- `icon` (string, *optional*): Ionicons icon name for the tab (e.g. "shield-checkmark-outline")
-- `order` (number, *optional*): Tab order among the user's dashboards (default: after existing tabs)
+- `title` (string, **required**): Dashboard title shown in the Artifacts library (e.g. "Security")
+- `icon` (string, *optional*): Ionicons icon name for the dashboard (e.g. "shield-checkmark-outline")
+- `order` (number, *optional*): Sort order among the space's dashboards (default: after existing dashboards)
 - `widgets` (array, *optional*): Initial widget definitions: [{ widgetId, type, title?, size?, order?, data, staleAfterSeconds?, tapAction? }]. staleAfterSeconds dims the widget and shows its age when the data is older than this.
 
 **Returns:**
@@ -172,7 +172,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `deleteDashboard`
 
-Permanently delete a dashboard and all its widgets. The tab disappears from the user's device immediately.
+Permanently delete a dashboard and all its widgets. It disappears from the user's Artifacts library immediately.
 
 **Arguments:**
 

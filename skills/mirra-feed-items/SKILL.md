@@ -45,7 +45,7 @@ Replace `{operation}` with the operation name from the table below.
 
 ### `createFeedItem`
 
-Create a notification for the user. Shows up in their activity feed and sends a push notification. The feed item appears in the current conversation context (group chat, DM, or personal feed).
+Create a notification for the user. Shows up in their activity feed and sends a push notification. The feed item appears in the current conversation context (group chat, DM, or personal feed). Pair with a dashboard: pass dashboardId to make the push tap open a living dashboard artifact — ideal when the alert reflects fresh data you also wrote to that dashboard (e.g. a new camera snapshot).
 
 **Arguments:**
 
@@ -56,6 +56,7 @@ Create a notification for the user. Shows up in their activity feed and sends a 
 - `preview` (string, *optional*): Longer text content shown below details (e.g. email body preview, note content)
 - `notify` (boolean, *optional*): Send push notification (default: true, set false for background updates)
 - `image` (object, *optional*): Optional image to attach to the notification, rendered inline in the activity feed. Provide the raw image bytes as base64. Shape: { data: <base64 string>, mimeType: "image/jpeg" | "image/png", alt?: "short description" }. Max ~10MB decoded.
+- `dashboardId` (string, *optional*): Optional landing hint. When set to the id of a dashboard in the current scope, tapping the push opens that dashboard artifact instead of the generic detail screen. Validated against your dashboards — an unknown id is ignored (the alert still sends).
 
 **Returns:**
 

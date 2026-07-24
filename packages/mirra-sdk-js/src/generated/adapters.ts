@@ -148,9 +148,9 @@ export interface JiraExecuteExtendedArgs {
 
 // Dashboards Adapter Types
 export interface DashboardsCreateDashboardArgs {
-  title: string; // Tab label shown on the notifications screen (e.g. "Security")
-  icon?: string; // Ionicons icon name for the tab (e.g. "shield-checkmark-outline")
-  order?: number; // Tab order among the user's dashboards (default: after existing tabs)
+  title: string; // Dashboard title shown in the Artifacts library (e.g. "Security")
+  icon?: string; // Ionicons icon name for the dashboard (e.g. "shield-checkmark-outline")
+  order?: number; // Sort order among the space's dashboards (default: after existing dashboards)
   widgets?: any[]; // Initial widget definitions: [{ widgetId, type, title?, size?, order?, data, staleAfterSeconds?, tapAction? }]. staleAfterSeconds dims the widget and shows its age when the data is older than this.
 }
 export interface DashboardsGetDashboardArgs {
@@ -336,6 +336,7 @@ export interface FeedItemsCreateFeedItemArgs {
   preview?: string; // Longer text content shown below details (e.g. email body preview, note content)
   notify?: boolean; // Send push notification (default: true, set false for background updates)
   image?: any; // Optional image to attach to the notification, rendered inline in the activity feed. Provide the raw image bytes as base64. Shape: { data: <base64 string>, mimeType: "image/jpeg" | "image/png", alt?: "short description" }. Max ~10MB decoded.
+  dashboardId?: string; // Optional landing hint. When set to the id of a dashboard in the current scope, tapping the push opens that dashboard artifact instead of the generic detail screen. Validated against your dashboards — an unknown id is ignored (the alert still sends).
 }
 export interface FeedItemsHideFeedItemArgs {
   feedItemId: string; // The feedItemId returned by a prior createFeedItem call — identifies which device notification to clear
@@ -2577,9 +2578,9 @@ export type JiraGetIssueTypesResult = AdapterResultBase<JiraGetIssueTypesData>;
 // Dashboards Response Types
 export interface DashboardCreateData {
   dashboardId: string; // Unique ID of the created dashboard
-  title: string; // Tab label
-  icon?: string; // Ionicons tab icon name
-  order: number; // Tab order among dashboards
+  title: string; // Dashboard title
+  icon?: string; // Ionicons icon name
+  order: number; // Sort order among dashboards
   widgetCount: number; // Number of widgets created
   createdAt: string; // ISO timestamp of creation
 }
@@ -2588,15 +2589,15 @@ export type DashboardsCreateDashboardResult = AdapterResultBase<DashboardCreateD
 
 export interface DashboardSummary {
   dashboardId: string; // Dashboard ID
-  title: string; // Tab label
-  icon?: string; // Ionicons tab icon name
-  order: number; // Tab order
+  title: string; // Dashboard title
+  icon?: string; // Ionicons icon name
+  order: number; // Sort order
   widgetCount: number; // Number of widgets
   updatedAt: string; // ISO timestamp of last change
 }
 
 export interface DashboardListData {
-  dashboards: any; // Dashboards in this context, ordered by tab order
+  dashboards: any; // Dashboards in this context, ordered by sort order
   count: number; // Total number of dashboards returned
 }
 
@@ -2604,9 +2605,9 @@ export type DashboardsListDashboardsResult = AdapterResultBase<DashboardListData
 
 export interface DashboardDetail {
   dashboardId: string; // Dashboard ID
-  title: string; // Tab label
-  icon?: string; // Ionicons tab icon name
-  order: number; // Tab order
+  title: string; // Dashboard title
+  icon?: string; // Ionicons icon name
+  order: number; // Sort order
   widgets: any; // Widgets ordered by their order field
   createdAt: string; // ISO timestamp of creation
   updatedAt: string; // ISO timestamp of last change
@@ -8386,10 +8387,10 @@ function createJiraAdapter(sdk: MirraSDK) {
 function createDashboardsAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a dashboard — a new tab on the user's notifications screen containing a grid of widgets. Pass initial widgets to scaffold the whole dashboard in one call. Each widget needs a stable, caller-chosen widgetId (e.g. "occupancy", "person-jane") so flows can repaint it later with updateWidgetData without tracking server-generated ids. Widget types: "stat" (big number: { value, label?, delta?: { value, direction: "up"|"down"|"flat" }, emphasis?: "default"|"success"|"warning"|"alert" }), "image_card" (snapshot + caption: { image: { url } OR { data: <base64>, mimeType }, title?, caption?, timestamp? }), "list" (compact rows: { items: [{ text, secondaryText?, timestamp?, status?: "ok"|"warn"|"alert"|"neutral", imageUrl? }], maxVisible? }), "progress" (bounded quantity: { value: 0..1, label?, displayText? }), "sparkline" (trend: { points: number[], label?, currentValue? }). Sizes: "full" takes the row, consecutive "half" widgets pair into 2-column rows. Lower order = higher on screen. Widget updates are silent — for notable events (e.g. unknown person detected) also create a feed item, which carries the push notification.
-     * @param args.title - Tab label shown on the notifications screen (e.g. "Security")
-     * @param args.icon - Ionicons icon name for the tab (e.g. "shield-checkmark-outline") (optional)
-     * @param args.order - Tab order among the user's dashboards (default: after existing tabs) (optional)
+     * Create a dashboard — a living artifact in the user's Artifacts library containing a grid of widgets. Pass initial widgets to scaffold the whole dashboard in one call. Each widget needs a stable, caller-chosen widgetId (e.g. "occupancy", "person-jane") so flows can repaint it later with updateWidgetData without tracking server-generated ids. Widget types: "stat" (big number: { value, label?, delta?: { value, direction: "up"|"down"|"flat" }, emphasis?: "default"|"success"|"warning"|"alert" }), "image_card" (snapshot + caption: { image: { url } OR { data: <base64>, mimeType }, title?, caption?, timestamp? }), "list" (compact rows: { items: [{ text, secondaryText?, timestamp?, status?: "ok"|"warn"|"alert"|"neutral", imageUrl? }], maxVisible? }), "progress" (bounded quantity: { value: 0..1, label?, displayText? }), "sparkline" (trend: { points: number[], label?, currentValue? }). Sizes: "full" takes the row, consecutive "half" widgets pair into 2-column rows. Lower order = higher on screen. Widget updates are silent — for notable events (e.g. unknown person detected) also create a feed item, which carries the push notification.
+     * @param args.title - Dashboard title shown in the Artifacts library (e.g. "Security")
+     * @param args.icon - Ionicons icon name for the dashboard (e.g. "shield-checkmark-outline") (optional)
+     * @param args.order - Sort order among the space's dashboards (default: after existing dashboards) (optional)
      * @param args.widgets - Initial widget definitions: [{ widgetId, type, title?, size?, order?, data, staleAfterSeconds?, tapAction? }]. staleAfterSeconds dims the widget and shows its age when the data is older than this. (optional)
      * @returns Promise<DashboardCreateData> Typed flat response with IDE autocomplete
      */
@@ -8427,7 +8428,7 @@ function createDashboardsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Permanently delete a dashboard and all its widgets. The tab disappears from the user's device immediately.
+     * Permanently delete a dashboard and all its widgets. It disappears from the user's Artifacts library immediately.
      * @param args.dashboardId - The dashboardId to delete
      * @returns Promise<DashboardDeleteData> Typed flat response with IDE autocomplete
      */
@@ -9009,7 +9010,7 @@ function createDocumentAdapter(sdk: MirraSDK) {
 function createFeedItemsAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a notification for the user. Shows up in their activity feed and sends a push notification. The feed item appears in the current conversation context (group chat, DM, or personal feed).
+     * Create a notification for the user. Shows up in their activity feed and sends a push notification. The feed item appears in the current conversation context (group chat, DM, or personal feed). Pair with a dashboard: pass dashboardId to make the push tap open a living dashboard artifact — ideal when the alert reflects fresh data you also wrote to that dashboard (e.g. a new camera snapshot).
      * @param args.title - What happened - the main notification text
      * @param args.subtitle - Secondary context shown below the title (optional)
      * @param args.category - Activity type - determines icon and styling (e.g. email, calendar, task, document, reminder, message, crypto, shopping, note, memory, flow, call, error, update)
@@ -9017,6 +9018,7 @@ function createFeedItemsAdapter(sdk: MirraSDK) {
      * @param args.preview - Longer text content shown below details (e.g. email body preview, note content) (optional)
      * @param args.notify - Send push notification (default: true, set false for background updates) (optional)
      * @param args.image - Optional image to attach to the notification, rendered inline in the activity feed. Provide the raw image bytes as base64. Shape: { data: <base64 string>, mimeType: "image/jpeg" | "image/png", alt?: "short description" }. Max ~10MB decoded. (optional)
+     * @param args.dashboardId - Optional landing hint. When set to the id of a dashboard in the current scope, tapping the push opens that dashboard artifact instead of the generic detail screen. Validated against your dashboards — an unknown id is ignored (the alert still sends). (optional)
      * @returns Promise<FeedItemCreateData> Typed flat response with IDE autocomplete
      */
     createFeedItem: async (args: FeedItemsCreateFeedItemArgs): Promise<FeedItemCreateData> => {
