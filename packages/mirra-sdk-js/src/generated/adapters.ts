@@ -146,12 +146,32 @@ export interface JiraExecuteExtendedArgs {
   body?: any; // Request body for POST/PUT/PATCH operations
 }
 
+// Space Channels Adapter Types
+export interface ChannelsCreateDraftSetArgs {
+  sourceCardId: string; // The update card this copy was drafted from (cardId from the items.update.published event)
+  drafts: any[]; // One per channel: [{ channelId, channelType, channelLabel, title?, body }]. channelId/type/label come from listChannels. Respect each channel's character cap — an over-length draft cannot be approved.
+}
+export interface ChannelsGetDraftSetArgs {
+  setId: string; // The draft set id (from the send event)
+}
+export interface ChannelsMarkDraftSentArgs {
+  setId: string; // The draft set id
+  channelId: string; // Which channel was posted to
+  sentUrl: string; // Permalink to the live post
+}
+export interface ChannelsMarkDraftFailedArgs {
+  setId: string; // The draft set id
+  channelId: string; // Which channel failed
+  error: string; // What went wrong, in words a teammate can act on
+}
+
 // Dashboards Adapter Types
 export interface DashboardsCreateDashboardArgs {
-  title: string; // Dashboard title shown in the Artifacts library (e.g. "Security")
+  title: string; // Dashboard title shown on the Home board (e.g. "Security")
   icon?: string; // Ionicons icon name for the dashboard (e.g. "shield-checkmark-outline")
-  order?: number; // Sort order among the space's dashboards (default: after existing dashboards)
+  order?: number; // Position on the Home board among this space's dashboards (default: after existing dashboards)
   widgets?: any[]; // Initial widget definitions: [{ widgetId, type, title?, size?, order?, data, staleAfterSeconds?, tapAction? }]. staleAfterSeconds dims the widget and shows its age when the data is older than this.
+  slice?: any; // What this dashboard shows on the reader's Home screen: { headline?: widgetId, widgets: [widgetId, ...] } — one widget rendered large plus up to 4 supporting tiles, every id referencing a widget defined above. References, not copies: the slice repaints itself as those widgets are updated. Omit it and this dashboard does not appear on Home at all.
 }
 export interface DashboardsGetDashboardArgs {
   dashboardId: string; // The dashboardId returned by createDashboard or listDashboards
@@ -178,6 +198,11 @@ export interface DashboardsUpdateWidgetDataArgs {
 export interface DashboardsRemoveWidgetArgs {
   dashboardId: string; // Dashboard containing the widget
   widgetId: string; // The widget to remove
+}
+export interface DashboardsUpdateSliceArgs {
+  dashboardId: string; // Dashboard whose Home slice is being declared
+  headline?: string; // widgetId rendered large at the top of the slice — the one that answers "is anything wrong?"
+  widgets?: any[]; // Ordered widgetIds shown as supporting tiles beneath the headline (max 4). Default: []
 }
 
 // Data Adapter Types
@@ -2585,13 +2610,89 @@ export interface JiraGetIssueTypesData {
 
 export type JiraGetIssueTypesResult = AdapterResultBase<JiraGetIssueTypesData>;
 
+// Space Channels Response Types
+export interface SpaceChannel {
+  id: string; // Registry id — pass this as channelId
+  type: string; // 'twitter' | 'gmail' | 'telegramBot' | 'pages'
+  label: string; // What the team calls this channel
+  enabled: boolean; // False when someone paused it — do not draft for it
+  healthy: boolean; // False when the last dispatch failed and it has not been reconnected
+  lastError?: string; // Why the last dispatch failed
+  maxBodyLength: number; // Hard character cap for this channel — over-length drafts cannot be approved
+  requiresTitle: boolean; // Whether a title is required
+  voiceHint?: string; // One line on what good copy looks like here
+}
+
+export interface ChannelsListData {
+  channels: any; // Channels this space publishes to
+  count: number; // How many channels
+}
+
+export type ChannelsListChannelsResult = AdapterResultBase<ChannelsListData>;
+
+export interface ChannelsCreateDraftSetData {
+  setId: string; // The draft set awaiting review
+  created: boolean; // False when an existing set for this card revision was returned instead
+  draftCount: number; // How many drafts are in the set
+}
+
+export type ChannelsCreateDraftSetResult = AdapterResultBase<ChannelsCreateDraftSetData>;
+
+export interface ChannelDraft {
+  channelId: string; // Registry id of the channel this draft targets
+  channelType: string; // Channel type: 'twitter' | 'gmail' | 'telegramBot' | 'pages'
+  channelLabel: string; // Human label, kept even if the channel is later disconnected
+  title?: string; // Title, for channels that need one (blog, newsletter)
+  body: string; // The copy, as last edited by a teammate
+  status: string; // 'draft' | 'approved' | 'skipped' | 'queued' | 'sent' | 'failed' — post only what is 'queued'
+  sentUrl?: string; // Permalink, once posted
+  error?: string; // Why the last attempt failed
+}
+
+export interface ChannelsGetDraftSetData {
+  setId: string; // The draft set
+  status: string; // 'pending' | 'partiallySent' | 'sent' | 'discarded'
+  sourceCardId: string; // The update card this copy was drafted from
+  stale: boolean; // True when the source card was revised after drafting — say so rather than posting superseded copy
+  drafts: any; // The drafts and their statuses
+}
+
+export type ChannelsGetDraftSetResult = AdapterResultBase<ChannelsGetDraftSetData>;
+
+export interface ChannelsPendingSetsData {
+  sets: any; // Sets awaiting review [{ setId, status, sourceCardId, createdAt, draftCount }]
+  count: number; // How many sets
+}
+
+export type ChannelsListPendingDraftSetsResult = AdapterResultBase<ChannelsPendingSetsData>;
+
+export interface ChannelsDispatchResultData {
+  setId: string; // The draft set
+  status: string; // The set's status now: 'pending' | 'partiallySent' | 'sent' | 'discarded'
+}
+
+export type ChannelsMarkDraftSentResult = AdapterResultBase<ChannelsDispatchResultData>;
+
+export interface ChannelsDispatchResultData {
+  setId: string; // The draft set
+  status: string; // The set's status now: 'pending' | 'partiallySent' | 'sent' | 'discarded'
+}
+
+export type ChannelsMarkDraftFailedResult = AdapterResultBase<ChannelsDispatchResultData>;
+
 // Dashboards Response Types
+export interface DashboardSlice {
+  headline?: string; // widgetId rendered large on the Home slice
+  widgets: any; // Ordered widgetIds shown as supporting tiles
+}
+
 export interface DashboardCreateData {
   dashboardId: string; // Unique ID of the created dashboard
   title: string; // Dashboard title
   icon?: string; // Ionicons icon name
   order: number; // Sort order among dashboards
   widgetCount: number; // Number of widgets created
+  slice?: any; // The declared Home slice, if one was passed
   createdAt: string; // ISO timestamp of creation
 }
 
@@ -2603,6 +2704,7 @@ export interface DashboardSummary {
   icon?: string; // Ionicons icon name
   order: number; // Sort order
   widgetCount: number; // Number of widgets
+  onHome: boolean; // True if this dashboard has declared a Home slice. False means it never appears on the Home board — call updateSlice to put it there.
   updatedAt: string; // ISO timestamp of last change
 }
 
@@ -2619,6 +2721,7 @@ export interface DashboardDetail {
   icon?: string; // Ionicons icon name
   order: number; // Sort order
   widgets: any; // Widgets ordered by their order field
+  slice?: any; // Author-declared Home slice; absent means this dashboard is not on Home
   createdAt: string; // ISO timestamp of creation
   updatedAt: string; // ISO timestamp of last change
 }
@@ -2671,6 +2774,13 @@ export interface DashboardRemoveWidgetData {
 }
 
 export type DashboardsRemoveWidgetResult = AdapterResultBase<DashboardRemoveWidgetData>;
+
+export interface DashboardUpdateSliceData {
+  dashboardId: string; // Dashboard whose slice was declared
+  slice: any; // The stored slice
+}
+
+export type DashboardsUpdateSliceResult = AdapterResultBase<DashboardUpdateSliceData>;
 
 // Data Response Types
 export interface DataCollectionInfo {
@@ -8401,17 +8511,107 @@ function createJiraAdapter(sdk: MirraSDK) {
 }
 
 /**
+ * Space Channels Adapter
+ * Category: internal
+ */
+function createChannelsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * The channels this space publishes to, with the per-channel limits you must draft within (character cap, whether a title is required). Call this before drafting — a channel that is disabled or carrying lastError should not get copy written for it.
+     * @returns Promise<ChannelsListData> Typed flat response with IDE autocomplete
+     */
+    listChannels: async (args?: {}): Promise<ChannelsListData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'channels',
+        method: 'listChannels',
+        params: args || {}
+      });
+    },
+
+    /**
+     * File drafted copy for review, one draft per channel. Nothing is sent — a teammate edits, approves and presses Send, which calls you back to do the posting. Idempotent per source card revision: calling twice for the same card returns the existing set rather than making a second one. IMPORTANT: bail out before calling this when the triggering event has revised:true, or every revision of a burst card re-drafts the same work.
+     * @param args.sourceCardId - The update card this copy was drafted from (cardId from the items.update.published event)
+     * @param args.drafts - One per channel: [{ channelId, channelType, channelLabel, title?, body }]. channelId/type/label come from listChannels. Respect each channel's character cap — an over-length draft cannot be approved.
+     * @returns Promise<ChannelsCreateDraftSetData> Typed flat response with IDE autocomplete
+     */
+    createDraftSet: async (args: ChannelsCreateDraftSetArgs): Promise<ChannelsCreateDraftSetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'channels',
+        method: 'createDraftSet',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read one draft set, including which drafts are queued for sending. Call this when you receive a channels.send.requested event — it tells you exactly what a person approved and what the final edited copy says.
+     * @param args.setId - The draft set id (from the send event)
+     * @returns Promise<ChannelsGetDraftSetData> Typed flat response with IDE autocomplete
+     */
+    getDraftSet: async (args: ChannelsGetDraftSetArgs): Promise<ChannelsGetDraftSetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'channels',
+        method: 'getDraftSet',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Draft sets in this space still awaiting review or partially sent. Useful for a nightly reminder flow.
+     * @returns Promise<ChannelsPendingSetsData> Typed flat response with IDE autocomplete
+     */
+    listPendingDraftSets: async (args?: {}): Promise<ChannelsPendingSetsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'channels',
+        method: 'listPendingDraftSets',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Record that you posted one draft. This also attaches the live post back to the update card it came from, so the card later reads "shipped this, and here is where we said so". Deduped on url — a retried dispatch adds one link, not two.
+     * @param args.setId - The draft set id
+     * @param args.channelId - Which channel was posted to
+     * @param args.sentUrl - Permalink to the live post
+     * @returns Promise<ChannelsDispatchResultData> Typed flat response with IDE autocomplete
+     */
+    markDraftSent: async (args: ChannelsMarkDraftSentArgs): Promise<ChannelsDispatchResultData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'channels',
+        method: 'markDraftSent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Record that a post failed. Also writes the reason onto the channel itself, which is what surfaces the Reconnect prompt in the app — and is the only trace that survives once the draft set is deleted. Always call this on failure rather than swallowing the error.
+     * @param args.setId - The draft set id
+     * @param args.channelId - Which channel failed
+     * @param args.error - What went wrong, in words a teammate can act on
+     * @returns Promise<ChannelsDispatchResultData> Typed flat response with IDE autocomplete
+     */
+    markDraftFailed: async (args: ChannelsMarkDraftFailedArgs): Promise<ChannelsDispatchResultData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'channels',
+        method: 'markDraftFailed',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
  * Dashboards Adapter
  * Category: internal
  */
 function createDashboardsAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a dashboard — a living artifact in the user's Artifacts library containing a grid of widgets. Pass initial widgets to scaffold the whole dashboard in one call. Each widget needs a stable, caller-chosen widgetId (e.g. "occupancy", "person-jane") so flows can repaint it later with updateWidgetData without tracking server-generated ids. Widget types: "stat" (big number: { value, label?, delta?: { value, direction: "up"|"down"|"flat" }, emphasis?: "default"|"success"|"warning"|"alert" }), "image_card" (snapshot + caption: { image: { url } OR { data: <base64>, mimeType }, title?, caption?, timestamp? }), "list" (compact rows: { items: [{ text, secondaryText?, timestamp?, status?: "ok"|"warn"|"alert"|"neutral", imageUrl?, detail?: { image?: { data: <base64>, mimeType } | { url }, title?, body?, fields?: [{ label, value }] } }], maxVisible? } — a row with a "detail" becomes tappable and opens a modal showing the full capture + metadata, so per-event history like past camera snapshots stays browsable; the detail image is uploaded to the CDN like an image_card and also becomes the row thumbnail when imageUrl is omitted), "progress" (bounded quantity: { value: 0..1, label?, displayText? }), "sparkline" (trend: { points: number[], label?, currentValue? }). Sizes: "full" takes the row, consecutive "half" widgets pair into 2-column rows. Lower order = higher on screen. Widget updates are silent — for notable events (e.g. unknown person detected) also create a feed item, which carries the push notification. Pass this dashboard's dashboardId to createFeedItem so the tap opens the dashboard the alert is about.
-     * @param args.title - Dashboard title shown in the Artifacts library (e.g. "Security")
+     * Create a dashboard — a living artifact for this space: a grid of widgets that flows keep current. Pass initial widgets to scaffold the whole dashboard in one call. Each widget needs a stable, caller-chosen widgetId (e.g. "occupancy", "person-jane") so flows can repaint it later with updateWidgetData without tracking server-generated ids. Widget types: "stat" (big number: { value, label?, delta?: { value, direction: "up"|"down"|"flat" }, emphasis?: "default"|"success"|"warning"|"alert" }), "image_card" (snapshot + caption: { image: { url } OR { data: <base64>, mimeType }, title?, caption?, timestamp? }), "list" (compact rows: { items: [{ text, secondaryText?, timestamp?, status?: "ok"|"warn"|"alert"|"neutral", imageUrl?, detail?: { image?: { data: <base64>, mimeType } | { url }, title?, body?, fields?: [{ label, value }] } }], maxVisible? } — a row with a "detail" becomes tappable and opens a modal showing the full capture + metadata, so per-event history like past camera snapshots stays browsable; the detail image is uploaded to the CDN like an image_card and also becomes the row thumbnail when imageUrl is omitted), "progress" (bounded quantity: { value: 0..1, label?, displayText? }), "sparkline" (trend: { points: number[], label?, currentValue? }). Sizes: "full" takes the row, consecutive "half" widgets pair into 2-column rows. Lower order = higher on screen. Always declare a `slice` — the handful of these widgets shown on the reader's Home screen, which is the only place a dashboard can be browsed to. Skip it and this dashboard never appears on Home; it can then be reached only by a push notification or an update chip, which for something built to be glanced at means it is effectively invisible. A slice is what someone reads in four seconds, so lead with the widget that answers "is anything wrong?" rather than the first one you defined. Widget updates are silent — for notable events (e.g. unknown person detected) also create a feed item, which carries the push notification. Pass this dashboard's dashboardId to createFeedItem so the tap opens the dashboard the alert is about.
+     * @param args.title - Dashboard title shown on the Home board (e.g. "Security")
      * @param args.icon - Ionicons icon name for the dashboard (e.g. "shield-checkmark-outline") (optional)
-     * @param args.order - Sort order among the space's dashboards (default: after existing dashboards) (optional)
+     * @param args.order - Position on the Home board among this space's dashboards (default: after existing dashboards) (optional)
      * @param args.widgets - Initial widget definitions: [{ widgetId, type, title?, size?, order?, data, staleAfterSeconds?, tapAction? }]. staleAfterSeconds dims the widget and shows its age when the data is older than this. (optional)
+     * @param args.slice - What this dashboard shows on the reader's Home screen: { headline?: widgetId, widgets: [widgetId, ...] } — one widget rendered large plus up to 4 supporting tiles, every id referencing a widget defined above. References, not copies: the slice repaints itself as those widgets are updated. Omit it and this dashboard does not appear on Home at all. (optional)
      * @returns Promise<DashboardCreateData> Typed flat response with IDE autocomplete
      */
     createDashboard: async (args: DashboardsCreateDashboardArgs): Promise<DashboardCreateData> => {
@@ -8423,7 +8623,7 @@ function createDashboardsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * List the dashboards in this context (id, title, icon, order, widget count). Use to find an existing dashboard before creating a duplicate.
+     * List the dashboards in this context (id, title, icon, order, widget count). Use to find an existing dashboard before creating a duplicate. Each entry reports onHome — whether that dashboard has declared a Home slice — so you can spot the ones nobody can see. Widget data and the slice itself are not included; call getDashboard for either.
      * @returns Promise<DashboardListData> Typed flat response with IDE autocomplete
      */
     listDashboards: async (args?: {}): Promise<DashboardListData> => {
@@ -8435,7 +8635,7 @@ function createDashboardsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get a full dashboard including every widget's definition and current data. Use to inspect current widget state (e.g. read the existing recent-events list before appending to it).
+     * Get a full dashboard including every widget's definition and current data. Use to inspect current widget state (e.g. read the existing recent-events list before appending to it). The response carries the dashboard's `slice` when one is declared — read it to see exactly what Home shows today before you change it. No `slice` field means this dashboard is not on Home.
      * @param args.dashboardId - The dashboardId returned by createDashboard or listDashboards
      * @returns Promise<DashboardGetData> Typed flat response with IDE autocomplete
      */
@@ -8448,7 +8648,7 @@ function createDashboardsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Permanently delete a dashboard and all its widgets. It disappears from the user's Artifacts library immediately.
+     * Permanently delete a dashboard and all its widgets. It disappears from the Home board immediately, along with any unseen-change marks readers were carrying for it.
      * @param args.dashboardId - The dashboardId to delete
      * @returns Promise<DashboardDeleteData> Typed flat response with IDE autocomplete
      */
@@ -8461,7 +8661,7 @@ function createDashboardsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Create a widget or replace its full definition (type, title, size, order, data, staleAfterSeconds, tapAction). Use for structural changes — adding a person card on arrival, changing a widget's size or position. For routine data repaints on an existing widget, use updateWidgetData instead: it can't clobber layout config. For image_card widgets you may pass image as { data: <base64>, mimeType, alt? } — it is uploaded to the CDN and stored as a URL. Never store base64 in widget data. tapAction (optional) makes the widget tappable: { type: "navigate", screen, params? } or { type: "open_url", url }.
+     * Create a widget or replace its full definition (type, title, size, order, data, staleAfterSeconds, tapAction). Use for structural changes — adding a person card on arrival, changing a widget's size or position. For routine data repaints on an existing widget, use updateWidgetData instead: it can't clobber layout config. For image_card widgets you may pass image as { data: <base64>, mimeType, alt? } — it is uploaded to the CDN and stored as a URL. Never store base64 in widget data. tapAction (optional) makes the widget tappable: { type: "navigate", screen, params? } or { type: "open_url", url }. A new widget lands on the dashboard only — the Home slice is an explicit list, so call updateSlice if this widget also belongs on Home.
      * @param args.dashboardId - Dashboard to modify
      * @param args.widgetId - Stable caller-chosen slug (e.g. "person-jane"). Creates the widget if it doesn't exist, replaces it if it does.
      * @param args.type - Widget type: stat | image_card | list | progress | sparkline
@@ -8482,7 +8682,7 @@ function createDashboardsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Repaint a widget's data — the hot path for keeping a dashboard current. Only the data payload changes; layout config (type, title, size, order) is untouched, so a flow on a loop can't clobber it. Errors if the widget doesn't exist (catches typo'd widgetIds) — use upsertWidget to create widgets. The data shape must match the widget's existing type (see createDashboard description). Updates are silent: no push notification. If the update is notable, also create a feed item — pass this same dashboardId to createFeedItem so the push lands on the widget you just repainted.
+     * Repaint a widget's data — the hot path for keeping a dashboard current. Only the data payload changes; layout config (type, title, size, order) is untouched, so a flow on a loop can't clobber it. Errors if the widget doesn't exist (catches typo'd widgetIds) — use upsertWidget to create widgets. The data shape must match the widget's existing type (see createDashboard description). If this widget is on the dashboard's Home slice, the slice repaints with it — a slice references widgetIds, so there is never a second call to make. Updates are silent: no push notification. If the update is notable, also create a feed item — pass this same dashboardId to createFeedItem so the push lands on the widget you just repainted.
      * @param args.dashboardId - Dashboard containing the widget
      * @param args.widgetId - The widget to repaint — must already exist
      * @param args.data - Full replacement data payload, shaped for the widget's type
@@ -8497,7 +8697,7 @@ function createDashboardsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Remove a widget from a dashboard (e.g. remove a person card when they leave the property). Errors if the widget doesn't exist.
+     * Remove a widget from a dashboard (e.g. remove a person card when they leave the property). Errors if the widget doesn't exist. The same write drops the widget from the dashboard's Home slice, and clears the slice's headline if this widget was it — a slice can never point at a widget that no longer exists. Removing the headline leaves the remaining tiles on Home; if that empties the slice, the dashboard drops off Home until you declare a new one.
      * @param args.dashboardId - Dashboard containing the widget
      * @param args.widgetId - The widget to remove
      * @returns Promise<DashboardRemoveWidgetData> Typed flat response with IDE autocomplete
@@ -8506,6 +8706,21 @@ function createDashboardsAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'dashboards',
         method: 'removeWidget',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Declare what this dashboard shows on the reader's Home screen. Home renders a board of slices above the updates feed; a slice is one headline widget rendered large plus up to 4 supporting tiles, and tapping anywhere on it opens the full dashboard. The slice references widgetIds — it is a view, never a copy, so it stays current with no extra writes and there is nothing to keep in sync. A dashboard with no slice does not appear on Home at all, so declare one for anything meant to be glanced at rather than opened. Choose the headline by what answers "is anything wrong?" at a glance: a live alert list or the most recent capture usually beats a counter that reads zero most days. Rules: every id must already exist on this dashboard (the error names the valid ones), a widget appears once so the headline cannot repeat among the tiles, and there is a hard cap of 4 tiles — leave the rest on the dashboard itself. Removing a widget prunes it from the slice automatically, so a slice can never go stale. This call replaces the whole slice rather than merging into it, and it notifies nobody: declaring what Home shows is authoring, not news. Pass widgets: [] with no headline to take a dashboard back off Home while leaving it fully intact to open.
+     * @param args.dashboardId - Dashboard whose Home slice is being declared
+     * @param args.headline - widgetId rendered large at the top of the slice — the one that answers "is anything wrong?" (optional)
+     * @param args.widgets - Ordered widgetIds shown as supporting tiles beneath the headline (max 4). Default: [] (optional)
+     * @returns Promise<DashboardUpdateSliceData> Typed flat response with IDE autocomplete
+     */
+    updateSlice: async (args: DashboardsUpdateSliceArgs): Promise<DashboardUpdateSliceData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'dashboards',
+        method: 'updateSlice',
         params: args || {}
       });
     }
@@ -15141,6 +15356,7 @@ function createGoogleSheetsAdapter(sdk: MirraSDK) {
 export const generatedAdapters = {
   ai: createAiAdapter,
   jira: createJiraAdapter,
+  channels: createChannelsAdapter,
   dashboards: createDashboardsAdapter,
   data: createDataAdapter,
   desktop: createDesktopAdapter,

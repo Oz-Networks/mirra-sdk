@@ -32,7 +32,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 |-------|---------|------------|---------------|
 | [`mirra-ai`](./mirra-ai/) | AI Services | 5 | No |
 | [`mirra-contacts`](./mirra-contacts/) | Contacts | 9 | No |
-| [`mirra-dashboards`](./mirra-dashboards/) | Dashboards | 7 | No |
+| [`mirra-dashboards`](./mirra-dashboards/) | Dashboards | 8 | No |
 | [`mirra-data`](./mirra-data/) | Data | 14 | No |
 | [`mirra-desktop`](./mirra-desktop/) | Desktop | 10 | No |
 | [`mirra-feed-items`](./mirra-feed-items/) | Feed Items | 2 | No |
@@ -42,6 +42,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-observability`](./mirra-observability/) | Observability | 2 | No |
 | [`mirra-pages`](./mirra-pages/) | Pages | 13 | No |
 | [`mirra-skills`](./mirra-skills/) | Skills | 8 | No |
+| [`mirra-channels`](./mirra-channels/) | Space Channels | 6 | No |
 | [`mirra-user`](./mirra-user/) | User | 6 | No |
 | [`mirra-video-generator`](./mirra-video-generator/) | Video Generator | 5 | No |
 | [`mirra-voice`](./mirra-voice/) | Voice | 6 | No |
@@ -125,7 +126,7 @@ Hand-authored orchestration skills (not tied to a single adapter):
 | [`mirra-cowork`](./mirra-cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, wait for replies in near-real-time (long-poll), and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
 | [`mirra-ledger`](./mirra-ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), relay approvals, close what ships, and publish ONE narrated update card per work burst — revise, never stack. Rides the Mirra items adapter / MCP work-ledger tools. |
 
-**Total: 39 adapters, 445 operations, 3 collaboration skill(s)**
+**Total: 40 adapters, 452 operations, 3 collaboration skill(s)**
 
 ## How It Works
 
