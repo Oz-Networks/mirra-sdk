@@ -6,6 +6,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import {
   MirraSDKConfig,
   MirraResponse,
+  CallResourceParams,
   MemoryEntity,
   MemoryEntityWithId,
   MemorySearchQuery,
@@ -30,14 +31,6 @@ import {
   UpdateScriptParams,
   InvokeScriptParams,
   ScriptInvocationResult,
-  Resource,
-  CallResourceParams,
-  CreateResourceParams,
-  UpdateResourceParams,
-  Template,
-  TemplateInstallation,
-  MarketplaceItem,
-  MarketplaceFilters,
   UploadDocumentParams,
   UploadDocumentResult,
   DocumentGetResult,
@@ -602,12 +595,18 @@ export class MirraSDK {
   };
 
   // ============================================================================
-  // Resource Operations
+  // Adapter Dispatch
   // ============================================================================
 
+  /**
+   * Generic adapter dispatch. `resourceId` is an internal service id — `flows`,
+   * `telegram`, `google-gmail` — not a marketplace resource. Every generated
+   * `sdk.<adapter>.<op>()` call routes through here. The path keeps its
+   * historical `/resources/call` spelling for wire compatibility.
+   */
   resources = {
     /**
-     * Call a resource method (v2 — returns flat payload, matching sandbox behavior)
+     * Call an adapter operation (v2 — returns flat payload, matching sandbox behavior)
      */
     call: async (params: CallResourceParams): Promise<any> => {
       const response = await this.client.post<MirraResponse<any>>(
@@ -622,161 +621,6 @@ export class MirraSDK {
      */
     callDirect: async (params: CallResourceParams): Promise<any> => {
       return this.resources.call(params);
-    },
-
-    /**
-     * List available resources
-     */
-    list: async (): Promise<Resource[]> => {
-      const response = await this.client.get<MirraResponse<Resource[]>>(
-        '/resources'
-      );
-      return response.data.data!;
-    },
-
-    /**
-     * Get a resource by ID
-     */
-    get: async (id: string): Promise<Resource> => {
-      const response = await this.client.get<MirraResponse<Resource>>(
-        `/resources/${id}`
-      );
-      return response.data.data!;
-    },
-
-    /**
-     * Create a new resource
-     */
-    create: async (params: CreateResourceParams): Promise<Resource> => {
-      const response = await this.client.post<MirraResponse<Resource>>(
-        '/resources',
-        params
-      );
-      return response.data.data!;
-    },
-
-    /**
-     * Update an existing resource
-     */
-    update: async (params: UpdateResourceParams): Promise<Resource> => {
-      const { id, ...updateData } = params;
-      const response = await this.client.patch<MirraResponse<Resource>>(
-        `/resources/${id}`,
-        updateData
-      );
-      return response.data.data!;
-    },
-
-    /**
-     * Install a resource for the current user
-     */
-    install: async (id: string): Promise<{ success: boolean }> => {
-      const response = await this.client.post<MirraResponse<{ success: boolean }>>(
-        `/resources/${id}/install`
-      );
-      return response.data.data!;
-    },
-
-    /**
-     * Authenticate a resource installation
-     * Stores credentials for accessing the resource on behalf of the user
-     */
-    authenticate: async (
-      resourceId: string,
-      auth: {
-        type: 'api_key' | 'oauth2' | 'basic' | 'bearer';
-        credentials: Record<string, any>;
-      }
-    ): Promise<{ success: boolean; isAuthenticated: boolean }> => {
-      const response = await this.client.post<
-        MirraResponse<{ message: string; resourceId: string; isAuthenticated: boolean }>
-      >(`/resources/${resourceId}/authenticate`, auth);
-      return {
-        success: true,
-        isAuthenticated: response.data.data!.isAuthenticated,
-      };
-    },
-  };
-
-  // ============================================================================
-  // Template Operations
-  // ============================================================================
-
-  templates = {
-    /**
-     * List available templates
-     */
-    list: async (): Promise<Template[]> => {
-      const response = await this.client.get<MirraResponse<Template[]>>(
-        '/templates'
-      );
-      return response.data.data!;
-    },
-
-    /**
-     * Get a template by ID
-     */
-    get: async (id: string): Promise<Template> => {
-      const response = await this.client.get<MirraResponse<Template>>(
-        `/templates/${id}`
-      );
-      return response.data.data!;
-    },
-
-    /**
-     * Install a template
-     */
-    install: async (id: string): Promise<{ success: boolean }> => {
-      const response = await this.client.post<
-        MirraResponse<{ success: boolean }>
-      >(`/templates/${id}/install`);
-      return response.data.data!;
-    },
-
-    /**
-     * Get the current template installation info
-     * This is only available when using a template API key
-     * Returns the installation details including the userId (owner)
-     * 
-     * @example
-     * ```typescript
-     * const installation = await sdk.templates.getCurrentInstallation();
-     * console.log('Owner ID:', installation.userId);
-     * ```
-     */
-    getCurrentInstallation: async (): Promise<TemplateInstallation> => {
-      const response = await this.client.get<MirraResponse<TemplateInstallation>>(
-        '/templates/installations/current'
-      );
-      return response.data.data!;
-    },
-  };
-
-  // ============================================================================
-  // Marketplace Operations
-  // ============================================================================
-
-  marketplace = {
-    /**
-     * Browse marketplace items
-     */
-    browse: async (filters?: MarketplaceFilters): Promise<MarketplaceItem[]> => {
-      const response = await this.client.get<MirraResponse<MarketplaceItem[]>>(
-        '/marketplace',
-        { params: filters }
-      );
-      return response.data.data!;
-    },
-
-    /**
-     * Search marketplace
-     */
-    search: async (query: string): Promise<MarketplaceItem[]> => {
-      const response = await this.client.get<MirraResponse<MarketplaceItem[]>>(
-        '/marketplace/search',
-        { params: { q: query } }
-      );
-      return response.data.data!;
     },
   };
 

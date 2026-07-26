@@ -48,9 +48,6 @@ Replace `{operation}` with the operation name from the table below.
 | `listScripts` | List all scripts owned by the user. Returns flat script summaries. |
 | `getExecutions` | Get execution history for a script. Returns flat execution summaries. |
 | `getExecution` | Get details of a specific execution. Returns flat execution structure. |
-| `publishScript` | Publish a script to the marketplace. Returns flat publish confirmation. |
-| `unpublishScript` | Remove a script from the marketplace. Returns flat unpublish confirmation. |
-| `listMarketplaceScripts` | Search and list published scripts in the marketplace. Returns flat script summaries with pagination. |
 | `getMetrics` | Get execution metrics for a script. Returns flat metrics structure. |
 | `getFlowScript` | Get the script code for a specific flow. Returns flat flow script structure. |
 | `modifyFlowScript` | Replace the ENTIRE script code for a flow. For small changes, prefer editScriptCode or editFlowSc... |
@@ -492,125 +489,6 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   ],
   "error": "",
   "createdAt": "2024-12-08T15:00:00Z"
-}
-```
-
-### `publishScript`
-
-Publish a script to the marketplace. Returns flat publish confirmation.
-
-**Arguments:**
-
-- `scriptId` (string, **required**): ID of the script to publish
-- `pricing` (object, *optional*): Pricing configuration for the marketplace
-
-**Returns:**
-
-`object`: Returns FLAT structure: { scriptId, isPublished, status, publishedAt }
-
-**Example:**
-
-```bash
-curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"scripts","method":"publishScript","params":{"scriptId":"507f1f77bcf86cd799439011","pricing":{"type":"free"}}}' | jq .
-```
-
-**Example response:**
-
-```json
-{
-  "scriptId": "507f1f77bcf86cd799439011",
-  "isPublished": true,
-  "status": "published",
-  "publishedAt": "2024-12-08T12:00:00Z"
-}
-```
-
-### `unpublishScript`
-
-Remove a script from the marketplace. Returns flat unpublish confirmation.
-
-**Arguments:**
-
-- `scriptId` (string, **required**): ID of the script to unpublish
-
-**Returns:**
-
-`object`: Returns FLAT structure: { scriptId, unpublished }
-
-**Example:**
-
-```bash
-curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"scripts","method":"unpublishScript","params":{"scriptId":"507f1f77bcf86cd799439011"}}' | jq .
-```
-
-**Example response:**
-
-```json
-{
-  "scriptId": "507f1f77bcf86cd799439011",
-  "unpublished": true
-}
-```
-
-### `listMarketplaceScripts`
-
-Search and list published scripts in the marketplace. Returns flat script summaries with pagination.
-
-**Arguments:**
-
-- `name` (string, *optional*): Exact match on script name
-- `system` (boolean, *optional*): Filter by system scripts (scope="system") when true, user scripts when false
-- `search` (string, *optional*): Text search on name and description
-- `tags` (array, *optional*): Filter by tags (matches scripts with any of the specified tags)
-- `category` (string, *optional*): Filter by UI category (notification, data_sync, automation, utility, reporting)
-- `pricingModel` (string, *optional*): Filter by pricing model (free, pay-per-execution, subscription)
-- `staffPick` (boolean, *optional*): Filter to only staff-picked scripts when true
-- `minRating` (number, *optional*): Minimum rating threshold (0-5)
-- `requiredIntegrations` (array, *optional*): Filter by required integrations (e.g., ["telegram", "gmail"])
-- `sortBy` (string, *optional*): Sort field: rating, installCount, trendingScore, publishedAt, name (default: rating)
-- `sortOrder` (string, *optional*): Sort order: asc or desc (default: desc)
-- `limit` (number, *optional*): Maximum number of results to return (default: 50, max: 100)
-- `offset` (number, *optional*): Number of results to skip for pagination (default: 0)
-
-**Returns:**
-
-`object`: Returns { total, limit, offset, scripts[] }. Each script has FLAT fields: id, name, description, activeVersion, isPublished, status, deploymentStatus, totalExecutions, createdAt.
-
-**Example:**
-
-```bash
-curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"scripts","method":"listMarketplaceScripts","params":{}}' | jq .
-```
-
-**Example response:**
-
-```json
-{
-  "total": 25,
-  "limit": 50,
-  "offset": 0,
-  "scripts": [
-    {
-      "id": "...",
-      "name": "Email Validator",
-      "description": "...",
-      "activeVersion": 1,
-      "isPublished": true,
-      "status": "published",
-      "deploymentStatus": "deployed",
-      "totalExecutions": 500,
-      "createdAt": "2024-12-01T10:00:00Z"
-    }
-  ]
 }
 ```
 

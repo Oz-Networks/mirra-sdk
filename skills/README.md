@@ -65,7 +65,7 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-google-calendar`](./mirra-google-calendar/) | Google Calendar | 7 | Yes (OAuth) |
 | [`mirra-google-docs`](./mirra-google-docs/) | Google Docs | 13 | Yes (OAuth) |
 | [`mirra-google-sheets`](./mirra-google-sheets/) | Google Sheets | 17 | Yes (OAuth) |
-| [`mirra-scripts`](./mirra-scripts/) | Scripts | 19 | No |
+| [`mirra-scripts`](./mirra-scripts/) | Scripts | 16 | No |
 | [`mirra-trello`](./mirra-trello/) | Trello | 15 | Yes (OAuth) |
 
 ### Storage
@@ -97,13 +97,6 @@ curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/i
 | [`mirra-telegram`](./mirra-telegram/) | Telegram | 8 | Yes (OAuth) |
 | [`mirra-twitter`](./mirra-twitter/) | Twitter | 4 | Yes (OAuth) |
 
-### Marketplace
-
-| Skill | Adapter | Operations | Auth Required |
-|-------|---------|------------|---------------|
-| [`mirra-marketplace-resources`](./mirra-marketplace-resources/) | Marketplace Resources | 6 | No |
-| [`mirra-marketplace-templates`](./mirra-marketplace-templates/) | Marketplace Templates | 14 | No |
-
 ### Other
 
 | Skill | Adapter | Operations | Auth Required |
@@ -126,7 +119,7 @@ Hand-authored orchestration skills (not tied to a single adapter):
 | [`mirra-cowork`](./mirra-cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, wait for replies in near-real-time (long-poll), and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
 | [`mirra-ledger`](./mirra-ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), relay approvals, close what ships, and publish ONE narrated update card per work burst — revise, never stack. Rides the Mirra items adapter / MCP work-ledger tools. |
 
-**Total: 40 adapters, 452 operations, 3 collaboration skill(s)**
+**Total: 38 adapters, 429 operations, 3 collaboration skill(s)**
 
 ## How It Works
 

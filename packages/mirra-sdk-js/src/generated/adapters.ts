@@ -171,7 +171,7 @@ export interface DashboardsCreateDashboardArgs {
   icon?: string; // Ionicons icon name for the dashboard (e.g. "shield-checkmark-outline")
   order?: number; // Position on the Home board among this space's dashboards (default: after existing dashboards)
   widgets?: any[]; // Initial widget definitions: [{ widgetId, type, title?, size?, order?, data, staleAfterSeconds?, tapAction? }]. staleAfterSeconds dims the widget and shows its age when the data is older than this.
-  slice?: any; // What this dashboard shows on the reader's Home screen: { headline?: widgetId, widgets: [widgetId, ...] } — one widget rendered large plus up to 4 supporting tiles, every id referencing a widget defined above. References, not copies: the slice repaints itself as those widgets are updated. Omit it and this dashboard does not appear on Home at all.
+  slice?: any; // What this dashboard shows on the reader's Home screen: { headline?: widgetId, widgets: [widgetId, ...], size?: "small" | "wide" | "tall" } — one widget rendered large plus supporting tiles, every id referencing a widget defined above. References, not copies: the slice repaints itself as those widgets are updated. size is the card's footprint on the board and caps the tiles: small (default, 2), wide (4, full row), tall (4, double height). Omit slice entirely and this dashboard does not appear on Home at all.
 }
 export interface DashboardsGetDashboardArgs {
   dashboardId: string; // The dashboardId returned by createDashboard or listDashboards
@@ -202,7 +202,8 @@ export interface DashboardsRemoveWidgetArgs {
 export interface DashboardsUpdateSliceArgs {
   dashboardId: string; // Dashboard whose Home slice is being declared
   headline?: string; // widgetId rendered large at the top of the slice — the one that answers "is anything wrong?"
-  widgets?: any[]; // Ordered widgetIds shown as supporting tiles beneath the headline (max 4). Default: []
+  widgets?: any[]; // Ordered widgetIds shown as supporting tiles beside (small/wide) or beneath (tall) the headline. Cap depends on size: 2 at small, 4 at wide, 4 at tall. Default: []
+  size?: string; // Footprint on the Home board: "small" (default — one cell, landscape, 2 tiles), "wide" (full-row, landscape, 4 tiles), "tall" (double-height, headline stacked over 4 tiles). Height comes from this and never from the content.
 }
 
 // Data Adapter Types
@@ -922,118 +923,6 @@ export interface JupiterLaunchTokenArgs {
   telegram?: string; // Telegram URL for token metadata
 }
 
-// Marketplace Resources Adapter Types
-export interface MarketplaceResourcesCallArgs {
-  resourceId: string; // ID of the installed resource
-  method: string; // Method name to call on the resource
-  parameters: any; // Parameters to pass to the method
-}
-export interface MarketplaceResourcesInstallArgs {
-  resourceId: string; // ID of the resource to install
-}
-export interface MarketplaceResourcesUninstallArgs {
-  resourceId: string; // ID of the resource to uninstall
-}
-export interface MarketplaceResourcesAuthenticateArgs {
-  resourceId: string; // ID of the resource to authenticate with
-  type: string; // Authentication type: api_key, oauth2, basic, or bearer
-  credentials: any; // Credentials object (structure depends on auth type)
-}
-export interface MarketplaceResourcesGetInstallationArgs {
-  resourceId: string; // ID of the resource to get installation details for
-}
-
-// Scripts Adapter Types
-export interface ScriptsCreateScriptArgs {
-  name: string; // Name of the script
-  description?: string; // Description of what the script does
-  runtime?: string; // Lambda runtime (default: nodejs18)
-  config?: any; // Script configuration (timeout, memory, maxCostPerExecution, etc.)
-  code?: string; // Initial JavaScript/TypeScript code for the script. Required unless path is provided.
-  path?: string; // Path to a script file in the workspace container (e.g., "/workspace/scripts/handler.js"). If provided, code is read from this file. Optionally reads mirra.json from the same directory for config.
-}
-export interface ScriptsDeleteScriptArgs {
-  scriptId: string; // ID of the script to delete
-}
-export interface ScriptsCreateVersionArgs {
-  scriptId: string; // ID of the script
-  code: string; // Updated code for the new version
-  commitMessage?: string; // Description of changes in this version
-}
-export interface ScriptsListVersionsArgs {
-  scriptId: string; // ID of the script
-}
-export interface ScriptsDeployScriptArgs {
-  scriptId: string; // ID of the script to deploy (from createScript response at data._id)
-  version?: number; // Version number to deploy (default: latest)
-}
-export interface ScriptsExecuteScriptArgs {
-  scriptId: string; // ID of the script to execute (from createScript response at data.id)
-  data?: any; // Input data to pass to the script. Available inside the handler as `event.data` (also aliased to `event.input`, `event.body`, `event.payload`).
-  trigger?: any; // Trigger information (type, source, event)
-}
-export interface ScriptsGetScriptArgs {
-  scriptId: string; // ID of the script
-}
-export interface ScriptsGetExecutionsArgs {
-  scriptId: string; // ID of the script
-  status?: string; // Filter by status (completed, failed, running)
-  limit?: number; // Maximum number of executions to return (default: 100)
-}
-export interface ScriptsGetExecutionArgs {
-  executionId: string; // ID of the execution
-}
-export interface ScriptsPublishScriptArgs {
-  scriptId: string; // ID of the script to publish
-  pricing?: any; // Pricing configuration for the marketplace
-}
-export interface ScriptsUnpublishScriptArgs {
-  scriptId: string; // ID of the script to unpublish
-}
-export interface ScriptsListMarketplaceScriptsArgs {
-  name?: string; // Exact match on script name
-  system?: boolean; // Filter by system scripts (scope="system") when true, user scripts when false
-  search?: string; // Text search on name and description
-  tags?: any[]; // Filter by tags (matches scripts with any of the specified tags)
-  category?: string; // Filter by UI category (notification, data_sync, automation, utility, reporting)
-  pricingModel?: string; // Filter by pricing model (free, pay-per-execution, subscription)
-  staffPick?: boolean; // Filter to only staff-picked scripts when true
-  minRating?: number; // Minimum rating threshold (0-5)
-  requiredIntegrations?: any[]; // Filter by required integrations (e.g., ["telegram", "gmail"])
-  sortBy?: string; // Sort field: rating, installCount, trendingScore, publishedAt, name (default: rating)
-  sortOrder?: string; // Sort order: asc or desc (default: desc)
-  limit?: number; // Maximum number of results to return (default: 50, max: 100)
-  offset?: number; // Number of results to skip for pagination (default: 0)
-}
-export interface ScriptsGetMetricsArgs {
-  scriptId: string; // ID of the script
-}
-export interface ScriptsGetFlowScriptArgs {
-  flowId: string; // ID of the flow to get script code for
-}
-export interface ScriptsModifyFlowScriptArgs {
-  flowId: string; // ID of the flow to modify
-  newCode: string; // New code to deploy
-  commitMessage?: string; // Description of changes
-}
-export interface ScriptsReadScriptCodeArgs {
-  scriptId: string; // Script ID
-  startLine?: number; // First line to return (1-indexed). Default: 1
-  endLine?: number; // Last line to return (inclusive). Default: end of file
-}
-export interface ScriptsEditScriptCodeArgs {
-  scriptId: string; // Script ID
-  edits: any[]; // Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially.
-  commitMessage?: string; // Description of changes
-}
-export interface ScriptsLintScriptArgs {
-  code: string; // The script code to validate
-  eventType?: string; // Event type for event.data field validation (e.g., "telegram.message", "call.ended"). When provided, validates that event.data.fieldName accesses match the event type schema.
-  scriptInputSchema?: any; // Schema of scriptInput fields that will be on event.data at runtime. Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array" }. When provided, event.data field errors are reported as errors instead of warnings.
-}
-
-// Marketplace Templates Adapter Types
-
 // Memory Adapter Types
 export interface MemoryCreateArgs {
   type: string; // Memory subtype: "note" (general notes), "idea" (concepts/ideas), "shopping_item" (shopping list), "topic" (general knowledge), "document" (documents), "contact" (people), "event" (calendar items). For tasks with assignment, use createTask instead.
@@ -1337,6 +1226,73 @@ export interface PolymarketExecuteExtendedArgs {
   pathParams?: any; // Path parameters, e.g., { id: "abc123" }
   queryParams?: any; // Query string parameters
   body?: any; // Request body for POST/PUT/PATCH operations
+}
+
+// Scripts Adapter Types
+export interface ScriptsCreateScriptArgs {
+  name: string; // Name of the script
+  description?: string; // Description of what the script does
+  runtime?: string; // Lambda runtime (default: nodejs18)
+  config?: any; // Script configuration (timeout, memory, maxCostPerExecution, etc.)
+  code?: string; // Initial JavaScript/TypeScript code for the script. Required unless path is provided.
+  path?: string; // Path to a script file in the workspace container (e.g., "/workspace/scripts/handler.js"). If provided, code is read from this file. Optionally reads mirra.json from the same directory for config.
+}
+export interface ScriptsDeleteScriptArgs {
+  scriptId: string; // ID of the script to delete
+}
+export interface ScriptsCreateVersionArgs {
+  scriptId: string; // ID of the script
+  code: string; // Updated code for the new version
+  commitMessage?: string; // Description of changes in this version
+}
+export interface ScriptsListVersionsArgs {
+  scriptId: string; // ID of the script
+}
+export interface ScriptsDeployScriptArgs {
+  scriptId: string; // ID of the script to deploy (from createScript response at data._id)
+  version?: number; // Version number to deploy (default: latest)
+}
+export interface ScriptsExecuteScriptArgs {
+  scriptId: string; // ID of the script to execute (from createScript response at data.id)
+  data?: any; // Input data to pass to the script. Available inside the handler as `event.data` (also aliased to `event.input`, `event.body`, `event.payload`).
+  trigger?: any; // Trigger information (type, source, event)
+}
+export interface ScriptsGetScriptArgs {
+  scriptId: string; // ID of the script
+}
+export interface ScriptsGetExecutionsArgs {
+  scriptId: string; // ID of the script
+  status?: string; // Filter by status (completed, failed, running)
+  limit?: number; // Maximum number of executions to return (default: 100)
+}
+export interface ScriptsGetExecutionArgs {
+  executionId: string; // ID of the execution
+}
+export interface ScriptsGetMetricsArgs {
+  scriptId: string; // ID of the script
+}
+export interface ScriptsGetFlowScriptArgs {
+  flowId: string; // ID of the flow to get script code for
+}
+export interface ScriptsModifyFlowScriptArgs {
+  flowId: string; // ID of the flow to modify
+  newCode: string; // New code to deploy
+  commitMessage?: string; // Description of changes
+}
+export interface ScriptsReadScriptCodeArgs {
+  scriptId: string; // Script ID
+  startLine?: number; // First line to return (1-indexed). Default: 1
+  endLine?: number; // Last line to return (inclusive). Default: end of file
+}
+export interface ScriptsEditScriptCodeArgs {
+  scriptId: string; // Script ID
+  edits: any[]; // Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially.
+  commitMessage?: string; // Description of changes
+}
+export interface ScriptsLintScriptArgs {
+  code: string; // The script code to validate
+  eventType?: string; // Event type for event.data field validation (e.g., "telegram.message", "call.ended"). When provided, validates that event.data.fieldName accesses match the event type schema.
+  scriptInputSchema?: any; // Schema of scriptInput fields that will be on event.data at runtime. Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array" }. When provided, event.data field errors are reported as errors instead of warnings.
 }
 
 // Shopify Adapter Types
@@ -2684,6 +2640,7 @@ export type ChannelsMarkDraftFailedResult = AdapterResultBase<ChannelsDispatchRe
 export interface DashboardSlice {
   headline?: string; // widgetId rendered large on the Home slice
   widgets: any; // Ordered widgetIds shown as supporting tiles
+  size?: any; // Board footprint — absent means "small". Decides the card height and the tile cap.
 }
 
 export interface DashboardCreateData {
@@ -4204,549 +4161,6 @@ export interface JupiterLaunchTokenData {
 
 export type JupiterLaunchTokenResult = AdapterResultBase<JupiterLaunchTokenData>;
 
-// Marketplace Resources Response Types
-export interface ResourceCallData {
-  result: any; // Result data from the resource
-  cost: number; // Cost in USD for this call
-  duration: number; // Execution time in milliseconds
-  statusCode: number; // HTTP status code from resource
-}
-
-export type MarketplaceResourcesCallResult = AdapterResultBase<ResourceCallData>;
-
-export interface ResourceInstallData {
-  installationId: string; // Unique installation ID
-  userId: string; // User ID who installed the resource
-  resourceId: string; // ID of the installed resource
-  alias: string; // User-friendly alias for the resource
-  isAuthenticated: boolean; // Whether resource is authenticated
-  status: string; // Installation status (active, suspended)
-  installedAt: string; // Installation timestamp (ISO 8601)
-  totalCalls: number; // Total number of calls made
-  totalCost: number; // Total cost incurred in USD
-  lastUsedAt: any; // Last usage timestamp (ISO 8601) or null
-}
-
-export type MarketplaceResourcesInstallResult = AdapterResultBase<ResourceInstallData>;
-
-export interface ResourceUninstallData {
-  success: boolean; // Whether uninstall succeeded
-  resourceId: string; // ID of uninstalled resource
-  uninstalledAt: string; // Uninstall timestamp (ISO 8601)
-}
-
-export type MarketplaceResourcesUninstallResult = AdapterResultBase<ResourceUninstallData>;
-
-export interface ResourceAuthenticateData {
-  success: boolean; // Whether authentication succeeded
-  resourceId: string; // ID of authenticated resource
-  isAuthenticated: boolean; // Authentication status
-  authenticatedAt: string; // Authentication timestamp (ISO 8601)
-}
-
-export type MarketplaceResourcesAuthenticateResult = AdapterResultBase<ResourceAuthenticateData>;
-
-export interface ResourceInstallationSummary {
-  installationId: string; // Unique installation ID
-  resourceId: string; // ID of the installed resource
-  alias: string; // User-friendly alias for the resource
-  isAuthenticated: boolean; // Whether resource is authenticated
-  status: string; // Installation status (active, suspended)
-  installedAt: string; // Installation timestamp (ISO 8601)
-  totalCalls: number; // Total number of calls made
-  totalCost: number; // Total cost incurred in USD
-}
-
-export interface ResourceListInstalledData {
-  count: number; // Number of installed resources
-  installations: any; // List of installations
-}
-
-export type MarketplaceResourcesListInstalledResult = AdapterResultBase<ResourceListInstalledData>;
-
-export interface ResourceGetInstallationData {
-  installationId: string; // Unique installation ID
-  userId: string; // User ID who installed the resource
-  resourceId: string; // ID of the installed resource
-  alias: string; // User-friendly alias for the resource
-  isAuthenticated: boolean; // Whether resource is authenticated
-  status: string; // Installation status (active, suspended)
-  installedAt: string; // Installation timestamp (ISO 8601)
-  totalCalls: number; // Total number of calls made
-  totalCost: number; // Total cost incurred in USD
-  lastUsedAt: any; // Last usage timestamp (ISO 8601) or null
-}
-
-export type MarketplaceResourcesGetInstallationResult = AdapterResultBase<ResourceGetInstallationData>;
-
-// Scripts Response Types
-export interface ScriptCreateData {
-  id: string; // Created script ID
-  name: string; // Script name
-  description: string; // Script description
-  runtime: string; // Lambda runtime (e.g., nodejs18)
-  timeout: number; // Timeout in seconds
-  memory: number; // Memory in MB
-  activeVersion: number; // Active version number
-  isPublished: boolean; // Whether published
-  isPrivate: boolean; // Whether private
-  status: string; // Script status
-  deploymentStatus: string; // Deployment status
-  lambdaFunctionName: string; // Lambda function name (empty on creation)
-  lambdaArn: string; // Lambda ARN (empty on creation)
-  totalExecutions: number; // Total executions (0 on creation)
-  totalCost: number; // Total cost in USD (0 on creation)
-  avgDuration: number; // Average duration in ms (0 on creation)
-  errorRate: number; // Error rate 0-1 (0 on creation)
-  createdAt: string; // Created timestamp (ISO 8601)
-  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
-  publishedAt: string; // Published timestamp (ISO 8601) or empty
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
-  apiKey: string; // API key for script execution (only returned on creation)
-  installationId: string; // Auto-created installation ID
-}
-
-export type ScriptsCreateScriptResult = AdapterResultBase<ScriptCreateData>;
-
-export interface ScriptDeleteData {
-  deleted: boolean; // Whether deletion succeeded
-  scriptId: string; // Deleted script ID
-  hardDeleted: boolean; // Whether script was permanently deleted
-  installationsRemoved: number; // Number of installations removed
-  preservedInstallations: number; // Number of installations preserved (soft delete)
-}
-
-export type ScriptsDeleteScriptResult = AdapterResultBase<ScriptDeleteData>;
-
-export interface ScriptVersionCreateData {
-  id: string; // Version document ID
-  scriptId: string; // Parent script ID
-  version: number; // Version number
-  isActive: boolean; // Whether this version is active
-  commitMessage: string; // Commit message for this version
-  codeHash: string; // Hash of the code
-  createdAt: string; // Created timestamp (ISO 8601)
-  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
-}
-
-export type ScriptsCreateVersionResult = AdapterResultBase<ScriptVersionCreateData>;
-
-export interface ScriptVersion {
-  id: string; // Version document ID
-  scriptId: string; // Parent script ID
-  version: number; // Version number
-  isActive: boolean; // Whether this version is active
-  commitMessage: string; // Commit message for this version
-  codeHash: string; // Hash of the code
-  createdAt: string; // Created timestamp (ISO 8601)
-  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
-}
-
-export interface ScriptVersionListData {
-  count: number; // Number of versions
-  versions: any; // List of script versions
-}
-
-export type ScriptsListVersionsResult = AdapterResultBase<ScriptVersionListData>;
-
-export interface ScriptDeployData {
-  scriptId: string; // Deployed script ID
-  version: number; // Deployed version number
-  lambdaFunctionName: string; // AWS Lambda function name
-  lambdaArn: string; // AWS Lambda ARN
-  deployedAt: string; // Deployment timestamp (ISO 8601)
-}
-
-export type ScriptsDeployScriptResult = AdapterResultBase<ScriptDeployData>;
-
-export interface ScriptExecuteData {
-  executionId: string; // Unique execution ID
-  scriptId: string; // Executed script ID
-  status: string; // Execution status
-  output: any; // Script output data
-  duration: number; // Execution duration in milliseconds
-  logs: any; // Execution logs
-  error: string; // Error message (empty if no error)
-  createdAt: string; // Execution timestamp (ISO 8601)
-}
-
-export type ScriptsExecuteScriptResult = AdapterResultBase<ScriptExecuteData>;
-
-export interface ScriptGetData {
-  id: string; // Script ID
-  name: string; // Script name
-  description: string; // Script description
-  runtime: string; // Lambda runtime
-  timeout: number; // Timeout in seconds
-  memory: number; // Memory in MB
-  activeVersion: number; // Active version number
-  isPublished: boolean; // Whether published
-  isPrivate: boolean; // Whether private
-  status: string; // Script status
-  deploymentStatus: string; // Deployment status
-  lambdaFunctionName: string; // Lambda function name
-  lambdaArn: string; // Lambda ARN
-  totalExecutions: number; // Total executions
-  totalCost: number; // Total cost in USD
-  avgDuration: number; // Average duration in ms
-  errorRate: number; // Error rate (0-1)
-  createdAt: string; // Created timestamp (ISO 8601)
-  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
-  publishedAt: string; // Published timestamp (ISO 8601) or empty
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
-}
-
-export type ScriptsGetScriptResult = AdapterResultBase<ScriptGetData>;
-
-export interface ScriptSummary {
-  id: string; // Unique script ID
-  name: string; // Script name
-  description: string; // Script description
-  activeVersion: number; // Currently active version number
-  isPublished: boolean; // Whether script is published to marketplace
-  status: string; // Script status (draft, published, archived)
-  deploymentStatus: string; // Deployment status (pending, deploying, deployed, failed)
-  totalExecutions: number; // Total number of executions
-  createdAt: string; // Created timestamp (ISO 8601)
-}
-
-export interface ScriptListData {
-  count: number; // Number of scripts
-  scripts: any; // List of scripts
-}
-
-export type ScriptsListScriptsResult = AdapterResultBase<ScriptListData>;
-
-export interface ScriptExecutionSummary {
-  executionId: string; // Unique execution ID
-  scriptId: string; // Script that was executed
-  status: string; // Execution status (running, completed, failed)
-  duration: number; // Execution duration in milliseconds
-  createdAt: string; // Execution timestamp (ISO 8601)
-  hasError: boolean; // Whether execution had an error
-}
-
-export interface ScriptExecutionsData {
-  scriptId: string; // Script ID
-  count: number; // Number of executions
-  executions: any; // List of executions
-}
-
-export type ScriptsGetExecutionsResult = AdapterResultBase<ScriptExecutionsData>;
-
-export interface ScriptExecutionData {
-  executionId: string; // Execution ID
-  scriptId: string; // Script ID
-  status: string; // Execution status
-  output: any; // Script output
-  duration: number; // Duration in milliseconds
-  logs: any; // Execution logs
-  error: string; // Error message (empty if no error)
-  createdAt: string; // Execution timestamp (ISO 8601)
-}
-
-export type ScriptsGetExecutionResult = AdapterResultBase<ScriptExecutionData>;
-
-export interface ScriptPublishData {
-  scriptId: string; // Published script ID
-  isPublished: boolean; // Publication status (true)
-  status: string; // Script status
-  publishedAt: string; // Publish timestamp (ISO 8601)
-}
-
-export type ScriptsPublishScriptResult = AdapterResultBase<ScriptPublishData>;
-
-export interface ScriptUnpublishData {
-  scriptId: string; // Unpublished script ID
-  unpublished: boolean; // Whether unpublish succeeded
-}
-
-export type ScriptsUnpublishScriptResult = AdapterResultBase<ScriptUnpublishData>;
-
-export interface ScriptMarketplaceListData {
-  total: number; // Total number of matching scripts
-  limit: number; // Page size limit
-  offset: number; // Current offset
-  scripts: any; // List of marketplace scripts
-}
-
-export type ScriptsListMarketplaceScriptsResult = AdapterResultBase<ScriptMarketplaceListData>;
-
-export interface ScriptMetricsData {
-  scriptId: string; // Script ID
-  totalExecutions: number; // Total number of executions
-  totalCost: number; // Total cost in USD
-  avgDuration: number; // Average duration in ms
-  successRate: number; // Success rate (0-1)
-  errorRate: number; // Error rate (0-1)
-  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
-}
-
-export type ScriptsGetMetricsResult = AdapterResultBase<ScriptMetricsData>;
-
-export interface ScriptFlowGetData {
-  code: string; // Script source code
-  version: number; // Active version number
-  scriptId: string; // Script ID
-  scriptName: string; // Script name
-  description: string; // Script description
-  isOwned: boolean; // Whether user owns the script
-}
-
-export type ScriptsGetFlowScriptResult = AdapterResultBase<ScriptFlowGetData>;
-
-export interface ScriptFlowModifyData {
-  copied: boolean; // Whether a copy was created (user did not own original)
-  scriptId: string; // Script ID (new if copied, original if owned)
-  versionId: string; // New version ID
-  version: number; // New version number
-}
-
-export type ScriptsModifyFlowScriptResult = AdapterResultBase<ScriptFlowModifyData>;
-
-export interface LintIssue {
-  severity: string; // Issue severity (error, warning)
-  message: string; // Issue description
-  line: number; // Line number where issue was found
-  suggestion: string; // Suggested fix
-}
-
-export interface ScriptLintData {
-  valid: boolean; // Whether script is valid
-  issueCount: number; // Number of issues found
-  issues: any; // List of lint issues
-  callAdapterCallsCount: number; // Number of callAdapter calls found
-  mirraSDKCallsCount: number; // Number of mirra SDK calls found
-}
-
-export type ScriptsLintScriptResult = AdapterResultBase<ScriptLintData>;
-
-// Marketplace Templates Response Types
-export interface TemplateCreateData {
-  id: string; // Template ID
-  _id: string; // Template ID (Mongo)
-  name: string; // Template name
-  description: string; // Template description
-  version: string; // Template version (semver)
-  category: string; // Template category
-  tags: any; // Template tags
-  repository: string; // GitHub repository URL
-  templatePath: string; // Path within the repository
-  gitHash: string; // Git commit hash
-  includes: any; // Template includes (page, scripts, resources)
-  pricing: any; // Pricing details (setupFee, monthlyFee, estimatedUsageCost)
-  status: string; // Template status (draft, published)
-  buildStatus: string; // Build status (pending, success, failed)
-  cdnUrl: string; // CDN URL for built template assets
-  installCount: number; // Total number of installations
-  activeInstalls: number; // Number of active installations
-  rating: number; // Average rating
-  createdAt: string; // Created timestamp (ISO 8601)
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  lastSyncedAt?: string; // Last synced timestamp (ISO 8601)
-}
-
-export type MarketplaceTemplatesCreateResult = AdapterResultBase<TemplateCreateData>;
-
-export interface TemplateSyncData {
-  id: string; // Template ID
-  _id: string; // Template ID (Mongo)
-  name: string; // Template name
-  description: string; // Template description
-  version: string; // Template version (semver)
-  category: string; // Template category
-  tags: any; // Template tags
-  repository: string; // GitHub repository URL
-  templatePath: string; // Path within the repository
-  gitHash: string; // Git commit hash
-  includes: any; // Template includes (page, scripts, resources)
-  pricing: any; // Pricing details (setupFee, monthlyFee, estimatedUsageCost)
-  status: string; // Template status (draft, published)
-  buildStatus: string; // Build status (pending, success, failed)
-  cdnUrl: string; // CDN URL for built template assets
-  installCount: number; // Total number of installations
-  activeInstalls: number; // Number of active installations
-  rating: number; // Average rating
-  createdAt: string; // Created timestamp (ISO 8601)
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  lastSyncedAt?: string; // Last synced timestamp (ISO 8601)
-}
-
-export type MarketplaceTemplatesSyncResult = AdapterResultBase<TemplateSyncData>;
-
-export interface TemplateBuildData {
-  buildStatus: string; // Build status (pending, building, success, failed)
-  buildOutput?: string; // Build output path or CDN URL
-  cdnUrl?: string; // CDN URL for built assets
-  logs?: any; // Build log entries
-  error?: string; // Build error message if failed
-}
-
-export type MarketplaceTemplatesBuildResult = AdapterResultBase<TemplateBuildData>;
-
-export interface TemplatePublishData {
-  id: string; // Template ID
-  _id: string; // Template ID (Mongo)
-  name: string; // Template name
-  description: string; // Template description
-  version: string; // Template version (semver)
-  category: string; // Template category
-  tags: any; // Template tags
-  repository: string; // GitHub repository URL
-  templatePath: string; // Path within the repository
-  gitHash: string; // Git commit hash
-  includes: any; // Template includes (page, scripts, resources)
-  pricing: any; // Pricing details (setupFee, monthlyFee, estimatedUsageCost)
-  status: string; // Template status (draft, published)
-  buildStatus: string; // Build status (pending, success, failed)
-  cdnUrl: string; // CDN URL for built template assets
-  installCount: number; // Total number of installations
-  activeInstalls: number; // Number of active installations
-  rating: number; // Average rating
-  createdAt: string; // Created timestamp (ISO 8601)
-  updatedAt: string; // Updated timestamp (ISO 8601)
-  lastSyncedAt?: string; // Last synced timestamp (ISO 8601)
-}
-
-export type MarketplaceTemplatesPublishResult = AdapterResultBase<TemplatePublishData>;
-
-export interface TemplateInstallData {
-  installationId: string; // Created installation ID
-  templateId: string; // Installed template ID
-  pagePath: string; // Base path for the template
-  scriptsInstalled: any; // IDs of scripts installed
-  resourcesInstalled: any; // IDs of resources installed
-  version: string; // Template version installed
-  installedAt: string; // Installation timestamp (ISO 8601)
-  config: any; // User customization values
-  setupFeeCharged?: boolean; // Whether a setup fee was charged
-  buildStatus: string; // Build status (pending, building, success, failed)
-}
-
-export type MarketplaceTemplatesInstallResult = AdapterResultBase<TemplateInstallData>;
-
-export interface TemplateUninstallData {
-  success: boolean; // Whether uninstall succeeded
-}
-
-export type MarketplaceTemplatesUninstallResult = AdapterResultBase<TemplateUninstallData>;
-
-export interface TemplateListInstallationsInstallationsItem {
-  _id: string; // Installation ID
-  templateId: string; // Installed template ID
-  pagePath: string; // Base path for the template (e.g., /home)
-  version: string; // Template version at installation
-  installedAt: string; // Installed timestamp (ISO 8601)
-  config: any; // User customization values
-  scriptsInstalled: any; // IDs of scripts installed from template
-  resourcesInstalled: any; // IDs of resources installed from template
-}
-
-export interface TemplateListInstallationsData {
-  installations: any; // Array of installation summaries
-}
-
-export type MarketplaceTemplatesListInstallationsResult = AdapterResultBase<TemplateListInstallationsData>;
-
-export interface TemplateGetInstallationData {
-  _id: string; // Installation ID
-  userId: string; // Owner user ID
-  templateId: string; // Installed template ID
-  pagePath: string; // Base path for the template
-  scriptsInstalled: any; // IDs of scripts installed
-  resourcesInstalled: any; // IDs of resources installed
-  version: string; // Template version at installation
-  config: any; // User customization values
-  configuration: any; // Template-specific settings
-  configurationStatus: string; // Configuration status (draft, configured, live)
-  status: string; // Installation status (active, paused, uninstalled)
-  installedAt: string; // Installed timestamp (ISO 8601)
-  updatedAt: string; // Updated timestamp (ISO 8601)
-}
-
-export type MarketplaceTemplatesGetInstallationResult = AdapterResultBase<TemplateGetInstallationData>;
-
-export interface TemplateUpdateInstallationData {
-  _id: string; // Installation ID
-  userId: string; // Owner user ID
-  templateId: string; // Installed template ID
-  pagePath: string; // Base path for the template
-  scriptsInstalled: any; // IDs of scripts installed
-  resourcesInstalled: any; // IDs of resources installed
-  version: string; // Updated template version
-  config: any; // User customization values
-  configuration: any; // Template-specific settings
-  configurationStatus: string; // Configuration status (draft, configured, live)
-  status: string; // Installation status (active, paused, uninstalled)
-  installedAt: string; // Installed timestamp (ISO 8601)
-  updatedAt: string; // Updated timestamp (ISO 8601)
-}
-
-export type MarketplaceTemplatesUpdateInstallationResult = AdapterResultBase<TemplateUpdateInstallationData>;
-
-export interface TemplateCheckRequirementsData {
-  requiredResources: any; // Resource IDs required by the template
-  requiredScripts: any; // Script IDs required by the template
-  missingResources: any; // Resource IDs that are not yet installed
-  canInstall: boolean; // Whether all requirements are met for installation
-}
-
-export type MarketplaceTemplatesCheckRequirementsResult = AdapterResultBase<TemplateCheckRequirementsData>;
-
-export interface TemplateEstimateCostData {
-  setupCost: number; // One-time setup cost
-  estimatedMonthlyCost: number; // Estimated monthly usage cost
-}
-
-export type MarketplaceTemplatesEstimateCostResult = AdapterResultBase<TemplateEstimateCostData>;
-
-export interface TemplateListVersionsVersionsItem {
-  _id: string; // Version document ID
-  templateId: string; // Parent template ID
-  version: string; // Semver version string
-  gitHash: string; // Git commit hash
-  buildStatus: string; // Build status (pending, queued, building, success, failed)
-  buildOutput?: string; // Build output path
-  buildError?: string; // Build error message if failed
-  cdnUrl?: string; // CDN URL for this version
-  changelog?: string; // Version changelog
-  isActive: boolean; // Whether this version is currently active
-  createdAt: string; // Created timestamp (ISO 8601)
-  builtAt?: string; // Built timestamp (ISO 8601)
-}
-
-export interface TemplateListVersionsData {
-  versions: any; // Array of template versions
-}
-
-export type MarketplaceTemplatesListVersionsResult = AdapterResultBase<TemplateListVersionsData>;
-
-export interface TemplateCreateVersionData {
-  _id: string; // Version document ID
-  templateId: string; // Parent template ID
-  version: string; // Semver version string
-  gitHash: string; // Git commit hash
-  buildStatus: string; // Build status (pending, queued, building, success, failed)
-  buildOutput?: string; // Build output path
-  buildError?: string; // Build error message if failed
-  cdnUrl?: string; // CDN URL for this version
-  changelog?: string; // Version changelog
-  isActive: boolean; // Whether this version is currently active
-  createdAt: string; // Created timestamp (ISO 8601)
-  builtAt?: string; // Built timestamp (ISO 8601)
-}
-
-export type MarketplaceTemplatesCreateVersionResult = AdapterResultBase<TemplateCreateVersionData>;
-
-export interface TemplateGetBuildStatusData {
-  buildStatus: string; // Build status (pending, queued, building, success, failed)
-  lastBuildAt?: string; // Last build timestamp (ISO 8601)
-  buildError?: string; // Build error message if failed
-  buildLogs?: any; // Build log entries
-}
-
-export type MarketplaceTemplatesGetBuildStatusResult = AdapterResultBase<TemplateGetBuildStatusData>;
-
 // Memory Response Types
 export interface MemoryCreateData {
   id: string; // Entity ID
@@ -5578,6 +4992,223 @@ export interface PolymarketGetBuilderVolumeData {
 }
 
 export type PolymarketGetBuilderVolumeResult = AdapterResultBase<PolymarketGetBuilderVolumeData>;
+
+// Scripts Response Types
+export interface ScriptCreateData {
+  id: string; // Created script ID
+  name: string; // Script name
+  description: string; // Script description
+  runtime: string; // Lambda runtime (e.g., nodejs18)
+  timeout: number; // Timeout in seconds
+  memory: number; // Memory in MB
+  activeVersion: number; // Active version number
+  isPublished: boolean; // Whether published
+  isPrivate: boolean; // Whether private
+  status: string; // Script status
+  deploymentStatus: string; // Deployment status
+  lambdaFunctionName: string; // Lambda function name (empty on creation)
+  lambdaArn: string; // Lambda ARN (empty on creation)
+  totalExecutions: number; // Total executions (0 on creation)
+  totalCost: number; // Total cost in USD (0 on creation)
+  avgDuration: number; // Average duration in ms (0 on creation)
+  errorRate: number; // Error rate 0-1 (0 on creation)
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+  publishedAt: string; // Published timestamp (ISO 8601) or empty
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
+  apiKey: string; // API key for script execution (only returned on creation)
+  installationId: string; // Auto-created installation ID
+}
+
+export type ScriptsCreateScriptResult = AdapterResultBase<ScriptCreateData>;
+
+export interface ScriptDeleteData {
+  deleted: boolean; // Whether deletion succeeded
+  scriptId: string; // Deleted script ID
+  hardDeleted: boolean; // Whether script was permanently deleted
+  installationsRemoved: number; // Number of installations removed
+  preservedInstallations: number; // Number of installations preserved (soft delete)
+}
+
+export type ScriptsDeleteScriptResult = AdapterResultBase<ScriptDeleteData>;
+
+export interface ScriptVersionCreateData {
+  id: string; // Version document ID
+  scriptId: string; // Parent script ID
+  version: number; // Version number
+  isActive: boolean; // Whether this version is active
+  commitMessage: string; // Commit message for this version
+  codeHash: string; // Hash of the code
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+}
+
+export type ScriptsCreateVersionResult = AdapterResultBase<ScriptVersionCreateData>;
+
+export interface ScriptVersion {
+  id: string; // Version document ID
+  scriptId: string; // Parent script ID
+  version: number; // Version number
+  isActive: boolean; // Whether this version is active
+  commitMessage: string; // Commit message for this version
+  codeHash: string; // Hash of the code
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+}
+
+export interface ScriptVersionListData {
+  count: number; // Number of versions
+  versions: any; // List of script versions
+}
+
+export type ScriptsListVersionsResult = AdapterResultBase<ScriptVersionListData>;
+
+export interface ScriptDeployData {
+  scriptId: string; // Deployed script ID
+  version: number; // Deployed version number
+  lambdaFunctionName: string; // AWS Lambda function name
+  lambdaArn: string; // AWS Lambda ARN
+  deployedAt: string; // Deployment timestamp (ISO 8601)
+}
+
+export type ScriptsDeployScriptResult = AdapterResultBase<ScriptDeployData>;
+
+export interface ScriptExecuteData {
+  executionId: string; // Unique execution ID
+  scriptId: string; // Executed script ID
+  status: string; // Execution status
+  output: any; // Script output data
+  duration: number; // Execution duration in milliseconds
+  logs: any; // Execution logs
+  error: string; // Error message (empty if no error)
+  createdAt: string; // Execution timestamp (ISO 8601)
+}
+
+export type ScriptsExecuteScriptResult = AdapterResultBase<ScriptExecuteData>;
+
+export interface ScriptGetData {
+  id: string; // Script ID
+  name: string; // Script name
+  description: string; // Script description
+  runtime: string; // Lambda runtime
+  timeout: number; // Timeout in seconds
+  memory: number; // Memory in MB
+  activeVersion: number; // Active version number
+  isPublished: boolean; // Whether published
+  isPrivate: boolean; // Whether private
+  status: string; // Script status
+  deploymentStatus: string; // Deployment status
+  lambdaFunctionName: string; // Lambda function name
+  lambdaArn: string; // Lambda ARN
+  totalExecutions: number; // Total executions
+  totalCost: number; // Total cost in USD
+  avgDuration: number; // Average duration in ms
+  errorRate: number; // Error rate (0-1)
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+  publishedAt: string; // Published timestamp (ISO 8601) or empty
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
+}
+
+export type ScriptsGetScriptResult = AdapterResultBase<ScriptGetData>;
+
+export interface ScriptSummary {
+  id: string; // Unique script ID
+  name: string; // Script name
+  description: string; // Script description
+  activeVersion: number; // Currently active version number
+  isPublished: boolean; // Whether script is published to marketplace
+  status: string; // Script status (draft, published, archived)
+  deploymentStatus: string; // Deployment status (pending, deploying, deployed, failed)
+  totalExecutions: number; // Total number of executions
+  createdAt: string; // Created timestamp (ISO 8601)
+}
+
+export interface ScriptListData {
+  count: number; // Number of scripts
+  scripts: any; // List of scripts
+}
+
+export type ScriptsListScriptsResult = AdapterResultBase<ScriptListData>;
+
+export interface ScriptExecutionSummary {
+  executionId: string; // Unique execution ID
+  scriptId: string; // Script that was executed
+  status: string; // Execution status (running, completed, failed)
+  duration: number; // Execution duration in milliseconds
+  createdAt: string; // Execution timestamp (ISO 8601)
+  hasError: boolean; // Whether execution had an error
+}
+
+export interface ScriptExecutionsData {
+  scriptId: string; // Script ID
+  count: number; // Number of executions
+  executions: any; // List of executions
+}
+
+export type ScriptsGetExecutionsResult = AdapterResultBase<ScriptExecutionsData>;
+
+export interface ScriptExecutionData {
+  executionId: string; // Execution ID
+  scriptId: string; // Script ID
+  status: string; // Execution status
+  output: any; // Script output
+  duration: number; // Duration in milliseconds
+  logs: any; // Execution logs
+  error: string; // Error message (empty if no error)
+  createdAt: string; // Execution timestamp (ISO 8601)
+}
+
+export type ScriptsGetExecutionResult = AdapterResultBase<ScriptExecutionData>;
+
+export interface ScriptMetricsData {
+  scriptId: string; // Script ID
+  totalExecutions: number; // Total number of executions
+  totalCost: number; // Total cost in USD
+  avgDuration: number; // Average duration in ms
+  successRate: number; // Success rate (0-1)
+  errorRate: number; // Error rate (0-1)
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
+}
+
+export type ScriptsGetMetricsResult = AdapterResultBase<ScriptMetricsData>;
+
+export interface ScriptFlowGetData {
+  code: string; // Script source code
+  version: number; // Active version number
+  scriptId: string; // Script ID
+  scriptName: string; // Script name
+  description: string; // Script description
+  isOwned: boolean; // Whether user owns the script
+}
+
+export type ScriptsGetFlowScriptResult = AdapterResultBase<ScriptFlowGetData>;
+
+export interface ScriptFlowModifyData {
+  copied: boolean; // Whether a copy was created (user did not own original)
+  scriptId: string; // Script ID (new if copied, original if owned)
+  versionId: string; // New version ID
+  version: number; // New version number
+}
+
+export type ScriptsModifyFlowScriptResult = AdapterResultBase<ScriptFlowModifyData>;
+
+export interface LintIssue {
+  severity: string; // Issue severity (error, warning)
+  message: string; // Issue description
+  line: number; // Line number where issue was found
+  suggestion: string; // Suggested fix
+}
+
+export interface ScriptLintData {
+  valid: boolean; // Whether script is valid
+  issueCount: number; // Number of issues found
+  issues: any; // List of lint issues
+  callAdapterCallsCount: number; // Number of callAdapter calls found
+  mirraSDKCallsCount: number; // Number of mirra SDK calls found
+}
+
+export type ScriptsLintScriptResult = AdapterResultBase<ScriptLintData>;
 
 // Shopify Response Types
 export interface ShopifyVariant {
@@ -7505,18 +7136,6 @@ export interface UserGetProfileWalletsItem {
   evm: any; // Ethereum wallet addresses
 }
 
-export interface UserGetProfileDeveloperItemReputationItem {
-  totalResources: number; // Total published resources
-  averageRating: number; // Average resource rating
-  totalCalls: number; // Total API calls across resources
-}
-
-export interface UserGetProfileDeveloperItem {
-  verified: boolean; // Whether developer is verified
-  bio?: string; // Developer bio
-  reputation: any; // Developer reputation stats
-}
-
 export interface UserGetProfileData {
   userId: string; // User ID
   username: string; // Username
@@ -7530,7 +7149,6 @@ export interface UserGetProfileData {
   socials: any; // Social media links
   subscriptionPlan: string; // Subscription plan (e.g., free)
   wallets: any; // Wallet addresses by chain type
-  developer?: any; // Developer profile information
 }
 
 export type UserGetProfileResult = AdapterResultBase<UserGetProfileData>;
@@ -7546,18 +7164,6 @@ export interface UserUpdateProfileWalletsItem {
   evm: any; // Ethereum wallet addresses
 }
 
-export interface UserUpdateProfileDeveloperItemReputationItem {
-  totalResources: number; // Total published resources
-  averageRating: number; // Average resource rating
-  totalCalls: number; // Total API calls across resources
-}
-
-export interface UserUpdateProfileDeveloperItem {
-  verified: boolean; // Whether developer is verified
-  bio?: string; // Developer bio
-  reputation: any; // Developer reputation stats
-}
-
 export interface UserUpdateProfileData {
   userId: string; // User ID
   username: string; // Username
@@ -7571,7 +7177,6 @@ export interface UserUpdateProfileData {
   socials: any; // Social media links
   subscriptionPlan: string; // Subscription plan (e.g., free)
   wallets: any; // Wallet addresses by chain type
-  developer?: any; // Developer profile information
 }
 
 export type UserUpdateProfileResult = AdapterResultBase<UserUpdateProfileData>;
@@ -8611,7 +8216,7 @@ function createDashboardsAdapter(sdk: MirraSDK) {
      * @param args.icon - Ionicons icon name for the dashboard (e.g. "shield-checkmark-outline") (optional)
      * @param args.order - Position on the Home board among this space's dashboards (default: after existing dashboards) (optional)
      * @param args.widgets - Initial widget definitions: [{ widgetId, type, title?, size?, order?, data, staleAfterSeconds?, tapAction? }]. staleAfterSeconds dims the widget and shows its age when the data is older than this. (optional)
-     * @param args.slice - What this dashboard shows on the reader's Home screen: { headline?: widgetId, widgets: [widgetId, ...] } — one widget rendered large plus up to 4 supporting tiles, every id referencing a widget defined above. References, not copies: the slice repaints itself as those widgets are updated. Omit it and this dashboard does not appear on Home at all. (optional)
+     * @param args.slice - What this dashboard shows on the reader's Home screen: { headline?: widgetId, widgets: [widgetId, ...], size?: "small" | "wide" | "tall" } — one widget rendered large plus supporting tiles, every id referencing a widget defined above. References, not copies: the slice repaints itself as those widgets are updated. size is the card's footprint on the board and caps the tiles: small (default, 2), wide (4, full row), tall (4, double height). Omit slice entirely and this dashboard does not appear on Home at all. (optional)
      * @returns Promise<DashboardCreateData> Typed flat response with IDE autocomplete
      */
     createDashboard: async (args: DashboardsCreateDashboardArgs): Promise<DashboardCreateData> => {
@@ -8711,10 +8316,11 @@ function createDashboardsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Declare what this dashboard shows on the reader's Home screen. Home renders a board of slices above the updates feed; a slice is one headline widget rendered large plus up to 4 supporting tiles, and tapping anywhere on it opens the full dashboard. The slice references widgetIds — it is a view, never a copy, so it stays current with no extra writes and there is nothing to keep in sync. A dashboard with no slice does not appear on Home at all, so declare one for anything meant to be glanced at rather than opened. Choose the headline by what answers "is anything wrong?" at a glance: a live alert list or the most recent capture usually beats a counter that reads zero most days. Rules: every id must already exist on this dashboard (the error names the valid ones), a widget appears once so the headline cannot repeat among the tiles, and there is a hard cap of 4 tiles — leave the rest on the dashboard itself. Removing a widget prunes it from the slice automatically, so a slice can never go stale. This call replaces the whole slice rather than merging into it, and it notifies nobody: declaring what Home shows is authoring, not news. Pass widgets: [] with no headline to take a dashboard back off Home while leaving it fully intact to open.
+     * Declare what this dashboard shows on the reader's Home screen. Home renders a board of slices above the updates feed; a slice is one headline widget plus a few supporting tiles, and tapping anywhere on it opens the full dashboard. The slice references widgetIds — it is a view, never a copy, so it stays current with no extra writes and there is nothing to keep in sync. A dashboard with no slice does not appear on Home at all, so declare one for anything meant to be glanced at rather than opened. Choose the headline by what answers "is anything wrong?" at a glance: a live alert list or the most recent capture usually beats a counter that reads zero most days. Size is the card's footprint on a fixed-row board, so it decides the height and caps the tiles: "small" (default) is one cell holding 2 tiles, "wide" spans the full row and holds 4, "tall" is a double-height cell holding 4. Small and wide put the headline beside its tiles; tall stacks them, which is worth the height only when the headline is a capture or an alert list that someone actually reads. Prefer small — a slice that grows pushes the reader's updates down a screen they are trying to scan. Rules: every id must already exist on this dashboard (the error names the valid ones), a widget appears once so the headline cannot repeat among the tiles, and declaring more tiles than the size holds is rejected rather than clipped — raise the size or leave the rest on the dashboard itself. Removing a widget prunes it from the slice automatically, so a slice can never go stale. This call replaces the whole slice rather than merging into it, and it notifies nobody: declaring what Home shows is authoring, not news. Pass widgets: [] with no headline to take a dashboard back off Home while leaving it fully intact to open.
      * @param args.dashboardId - Dashboard whose Home slice is being declared
      * @param args.headline - widgetId rendered large at the top of the slice — the one that answers "is anything wrong?" (optional)
-     * @param args.widgets - Ordered widgetIds shown as supporting tiles beneath the headline (max 4). Default: [] (optional)
+     * @param args.widgets - Ordered widgetIds shown as supporting tiles beside (small/wide) or beneath (tall) the headline. Cap depends on size: 2 at small, 4 at wide, 4 at tall. Default: [] (optional)
+     * @param args.size - Footprint on the Home board: "small" (default — one cell, landscape, 2 tiles), "wide" (full-row, landscape, 4 tiles), "tall" (double-height, headline stacked over 4 tiles). Height comes from this and never from the content. (optional)
      * @returns Promise<DashboardUpdateSliceData> Typed flat response with IDE autocomplete
      */
     updateSlice: async (args: DashboardsUpdateSliceArgs): Promise<DashboardUpdateSliceData> => {
@@ -10865,556 +10471,6 @@ function createJupiterAdapter(sdk: MirraSDK) {
 }
 
 /**
- * Marketplace Resources Adapter
- * Category: marketplace
- */
-function createMarketplaceResourcesAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Call a method on an installed marketplace resource. Returns flat response with result, cost, duration, and statusCode.
-     * @param args.resourceId - ID of the installed resource
-     * @param args.method - Method name to call on the resource
-     * @param args.parameters - Parameters to pass to the method
-     * @returns Promise<ResourceCallData> Typed flat response with IDE autocomplete
-     */
-    call: async (args: MarketplaceResourcesCallArgs): Promise<ResourceCallData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-resources',
-        method: 'call',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Install a marketplace resource for the user. Returns flat installation details.
-     * @param args.resourceId - ID of the resource to install
-     * @returns Promise<ResourceInstallData> Typed flat response with IDE autocomplete
-     */
-    install: async (args: MarketplaceResourcesInstallArgs): Promise<ResourceInstallData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-resources',
-        method: 'install',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Uninstall a marketplace resource. Returns confirmation.
-     * @param args.resourceId - ID of the resource to uninstall
-     * @returns Promise<ResourceUninstallData> Typed flat response with IDE autocomplete
-     */
-    uninstall: async (args: MarketplaceResourcesUninstallArgs): Promise<ResourceUninstallData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-resources',
-        method: 'uninstall',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Authenticate with a marketplace resource that requires credentials.
-     * @param args.resourceId - ID of the resource to authenticate with
-     * @param args.type - Authentication type: api_key, oauth2, basic, or bearer
-     * @param args.credentials - Credentials object (structure depends on auth type)
-     * @returns Promise<ResourceAuthenticateData> Typed flat response with IDE autocomplete
-     */
-    authenticate: async (args: MarketplaceResourcesAuthenticateArgs): Promise<ResourceAuthenticateData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-resources',
-        method: 'authenticate',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List all installed marketplace resources for the user.
-     * @returns Promise<ResourceListInstalledData> Typed flat response with IDE autocomplete
-     */
-    listInstalled: async (args?: {}): Promise<ResourceListInstalledData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-resources',
-        method: 'listInstalled',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get details of a specific resource installation.
-     * @param args.resourceId - ID of the resource to get installation details for
-     * @returns Promise<ResourceGetInstallationData> Typed flat response with IDE autocomplete
-     */
-    getInstallation: async (args: MarketplaceResourcesGetInstallationArgs): Promise<ResourceGetInstallationData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-resources',
-        method: 'getInstallation',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Scripts Adapter
- * Category: productivity
- */
-function createScriptsAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Create a new script with initial version and API key. Returns flat structure with id field for subsequent operations. HANDLER SIGNATURE: export async function handler(event, context, mirra) { ... } READING INPUT (from executeScript's `data` arg, flow triggers, or webhooks): The caller's payload lands on `event.data`. Prefer that — e.g. `const { email } = event.data`. For compatibility, `event.input`, `event.body`, and `event.payload` are also aliased to the same object. The full event shape is: { data, fields, trigger, executionId, userId, scriptId, apiKey, groupId, scope, remainingBudget }. Example handler reading input: export async function handler(event, context, mirra) { const { email, name } = event.data; const user = await mirra.user.getByEmail({ email }); return { success: true, userId: user.id }; } HANDLER RETURN VALUES (when script is used in a flow): The handler's return object controls how the flow executor records the result: - Success: return { success: true, ...data } - No-Op (nothing to do, not an error): return { success: false, noOp: true, reason: "No input data" } No-ops are recorded as successful executions and do NOT count toward the auto-pause threshold. - Failure: return { success: false, reason: "What went wrong" } 3 consecutive failures will auto-pause the flow.
-     * @param args.name - Name of the script
-     * @param args.description - Description of what the script does (optional)
-     * @param args.runtime - Lambda runtime (default: nodejs18) (optional)
-     * @param args.config - Script configuration (timeout, memory, maxCostPerExecution, etc.) (optional)
-     * @param args.code - Initial JavaScript/TypeScript code for the script. Required unless path is provided. (optional)
-     * @param args.path - Path to a script file in the workspace container (e.g., "/workspace/scripts/handler.js"). If provided, code is read from this file. Optionally reads mirra.json from the same directory for config. (optional)
-     * @returns Promise<ScriptCreateData> Typed flat response with IDE autocomplete
-     */
-    createScript: async (args: ScriptsCreateScriptArgs): Promise<ScriptCreateData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'createScript',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Delete a script and all its versions. Returns flat deletion confirmation.
-     * @param args.scriptId - ID of the script to delete
-     * @returns Promise<ScriptDeleteData> Typed flat response with IDE autocomplete
-     */
-    deleteScript: async (args: ScriptsDeleteScriptArgs): Promise<ScriptDeleteData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'deleteScript',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create a new version by replacing the ENTIRE script code. For small changes, prefer editScriptCode instead — it only requires the changed portions. Returns flat version details.
-     * @param args.scriptId - ID of the script
-     * @param args.code - Updated code for the new version
-     * @param args.commitMessage - Description of changes in this version (optional)
-     * @returns Promise<ScriptVersionCreateData> Typed flat response with IDE autocomplete
-     */
-    createVersion: async (args: ScriptsCreateVersionArgs): Promise<ScriptVersionCreateData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'createVersion',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List all versions of a script. Returns flat version structures.
-     * @param args.scriptId - ID of the script
-     * @returns Promise<ScriptVersionListData> Typed flat response with IDE autocomplete
-     */
-    listVersions: async (args: ScriptsListVersionsArgs): Promise<ScriptVersionListData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'listVersions',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Deploy a script version to AWS Lambda. Must be called after createScript to make the script executable.
-     * @param args.scriptId - ID of the script to deploy (from createScript response at data._id)
-     * @param args.version - Version number to deploy (default: latest) (optional)
-     * @returns Promise<ScriptDeployData> Typed flat response with IDE autocomplete
-     */
-    deployScript: async (args: ScriptsDeployScriptArgs): Promise<ScriptDeployData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'deployScript',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Execute a deployed script with custom data. Script must be deployed first via deployScript. Returns flat execution result.
-     * @param args.scriptId - ID of the script to execute (from createScript response at data.id)
-     * @param args.data - Input data to pass to the script. Available inside the handler as `event.data` (also aliased to `event.input`, `event.body`, `event.payload`). (optional)
-     * @param args.trigger - Trigger information (type, source, event) (optional)
-     * @returns Promise<ScriptExecuteData> Typed flat response with IDE autocomplete
-     */
-    executeScript: async (args: ScriptsExecuteScriptArgs): Promise<ScriptExecuteData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'executeScript',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get details of a specific script. Returns flat normalized structure.
-     * @param args.scriptId - ID of the script
-     * @returns Promise<ScriptGetData> Typed flat response with IDE autocomplete
-     */
-    getScript: async (args: ScriptsGetScriptArgs): Promise<ScriptGetData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'getScript',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List all scripts owned by the user. Returns flat script summaries.
-     * @returns Promise<ScriptListData> Typed flat response with IDE autocomplete
-     */
-    listScripts: async (args?: {}): Promise<ScriptListData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'listScripts',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get execution history for a script. Returns flat execution summaries.
-     * @param args.scriptId - ID of the script
-     * @param args.status - Filter by status (completed, failed, running) (optional)
-     * @param args.limit - Maximum number of executions to return (default: 100) (optional)
-     * @returns Promise<ScriptExecutionsData> Typed flat response with IDE autocomplete
-     */
-    getExecutions: async (args: ScriptsGetExecutionsArgs): Promise<ScriptExecutionsData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'getExecutions',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get details of a specific execution. Returns flat execution structure.
-     * @param args.executionId - ID of the execution
-     * @returns Promise<ScriptExecutionData> Typed flat response with IDE autocomplete
-     */
-    getExecution: async (args: ScriptsGetExecutionArgs): Promise<ScriptExecutionData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'getExecution',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Publish a script to the marketplace. Returns flat publish confirmation.
-     * @param args.scriptId - ID of the script to publish
-     * @param args.pricing - Pricing configuration for the marketplace (optional)
-     * @returns Promise<ScriptPublishData> Typed flat response with IDE autocomplete
-     */
-    publishScript: async (args: ScriptsPublishScriptArgs): Promise<ScriptPublishData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'publishScript',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Remove a script from the marketplace. Returns flat unpublish confirmation.
-     * @param args.scriptId - ID of the script to unpublish
-     * @returns Promise<ScriptUnpublishData> Typed flat response with IDE autocomplete
-     */
-    unpublishScript: async (args: ScriptsUnpublishScriptArgs): Promise<ScriptUnpublishData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'unpublishScript',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Search and list published scripts in the marketplace. Returns flat script summaries with pagination.
-     * @param args.name - Exact match on script name (optional)
-     * @param args.system - Filter by system scripts (scope="system") when true, user scripts when false (optional)
-     * @param args.search - Text search on name and description (optional)
-     * @param args.tags - Filter by tags (matches scripts with any of the specified tags) (optional)
-     * @param args.category - Filter by UI category (notification, data_sync, automation, utility, reporting) (optional)
-     * @param args.pricingModel - Filter by pricing model (free, pay-per-execution, subscription) (optional)
-     * @param args.staffPick - Filter to only staff-picked scripts when true (optional)
-     * @param args.minRating - Minimum rating threshold (0-5) (optional)
-     * @param args.requiredIntegrations - Filter by required integrations (e.g., ["telegram", "gmail"]) (optional)
-     * @param args.sortBy - Sort field: rating, installCount, trendingScore, publishedAt, name (default: rating) (optional)
-     * @param args.sortOrder - Sort order: asc or desc (default: desc) (optional)
-     * @param args.limit - Maximum number of results to return (default: 50, max: 100) (optional)
-     * @param args.offset - Number of results to skip for pagination (default: 0) (optional)
-     * @returns Promise<ScriptMarketplaceListData> Typed flat response with IDE autocomplete
-     */
-    listMarketplaceScripts: async (args: ScriptsListMarketplaceScriptsArgs): Promise<ScriptMarketplaceListData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'listMarketplaceScripts',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get execution metrics for a script. Returns flat metrics structure.
-     * @param args.scriptId - ID of the script
-     * @returns Promise<ScriptMetricsData> Typed flat response with IDE autocomplete
-     */
-    getMetrics: async (args: ScriptsGetMetricsArgs): Promise<ScriptMetricsData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'getMetrics',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get the script code for a specific flow. Returns flat flow script structure.
-     * @param args.flowId - ID of the flow to get script code for
-     * @returns Promise<ScriptFlowGetData> Typed flat response with IDE autocomplete
-     */
-    getFlowScript: async (args: ScriptsGetFlowScriptArgs): Promise<ScriptFlowGetData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'getFlowScript',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Replace the ENTIRE script code for a flow. For small changes, prefer editScriptCode or editFlowScript instead — they only require the changed portions. Use this only when rewriting more than ~50% of the code.
-     * @param args.flowId - ID of the flow to modify
-     * @param args.newCode - New code to deploy
-     * @param args.commitMessage - Description of changes (optional)
-     * @returns Promise<ScriptFlowModifyData> Typed flat response with IDE autocomplete
-     */
-    modifyFlowScript: async (args: ScriptsModifyFlowScriptArgs): Promise<ScriptFlowModifyData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'modifyFlowScript',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Read the active version's code for a script with line numbers. Supports optional line range. Use this before editScriptCode to see the current code.
-     * @param args.scriptId - Script ID
-     * @param args.startLine - First line to return (1-indexed). Default: 1 (optional)
-     * @param args.endLine - Last line to return (inclusive). Default: end of file (optional)
-     */
-    readScriptCode: async (args: ScriptsReadScriptCodeArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'readScriptCode',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Apply surgical edits to a script's active code using oldText/newText pairs. Each edit replaces an exact text match. Much more efficient than createVersion for small changes. Use readScriptCode first to see current code.
-     * @param args.scriptId - Script ID
-     * @param args.edits - Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially.
-     * @param args.commitMessage - Description of changes (optional)
-     */
-    editScriptCode: async (args: ScriptsEditScriptCodeArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'editScriptCode',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Validate script code BEFORE creating or deploying. Checks for: 1) Missing async handler wrapper (top-level await errors), 2) Invalid adapter operations, 3) Invalid event.data field access (when eventType provided). Returns flat validation results with suggestions for fixes. ALWAYS use this before createScript/modifyFlowScript.
-     * @param args.code - The script code to validate
-     * @param args.eventType - Event type for event.data field validation (e.g., "telegram.message", "call.ended"). When provided, validates that event.data.fieldName accesses match the event type schema. (optional)
-     * @param args.scriptInputSchema - Schema of scriptInput fields that will be on event.data at runtime. Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array" }. When provided, event.data field errors are reported as errors instead of warnings. (optional)
-     * @returns Promise<ScriptLintData> Typed flat response with IDE autocomplete
-     */
-    lintScript: async (args: ScriptsLintScriptArgs): Promise<ScriptLintData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'scripts',
-        method: 'lintScript',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Marketplace Templates Adapter
- * Category: marketplace
- */
-function createMarketplaceTemplatesAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Create a new template
-     * @returns Promise<TemplateCreateData> Typed flat response with IDE autocomplete
-     */
-    create: async (args?: {}): Promise<TemplateCreateData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'create',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Sync template from GitHub
-     * @returns Promise<TemplateSyncData> Typed flat response with IDE autocomplete
-     */
-    sync: async (args?: {}): Promise<TemplateSyncData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'sync',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Build a template
-     * @returns Promise<TemplateBuildData> Typed flat response with IDE autocomplete
-     */
-    build: async (args?: {}): Promise<TemplateBuildData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'build',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Publish template to marketplace
-     * @returns Promise<TemplatePublishData> Typed flat response with IDE autocomplete
-     */
-    publish: async (args?: {}): Promise<TemplatePublishData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'publish',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Install a template
-     * @returns Promise<TemplateInstallData> Typed flat response with IDE autocomplete
-     */
-    install: async (args?: {}): Promise<TemplateInstallData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'install',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Uninstall a template
-     * @returns Promise<TemplateUninstallData> Typed flat response with IDE autocomplete
-     */
-    uninstall: async (args?: {}): Promise<TemplateUninstallData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'uninstall',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List user template installations
-     * @returns Promise<TemplateListInstallationsData> Typed flat response with IDE autocomplete
-     */
-    listInstallations: async (args?: {}): Promise<TemplateListInstallationsData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'listInstallations',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get installation details
-     * @returns Promise<TemplateGetInstallationData> Typed flat response with IDE autocomplete
-     */
-    getInstallation: async (args?: {}): Promise<TemplateGetInstallationData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'getInstallation',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Update installation to new version
-     * @returns Promise<TemplateUpdateInstallationData> Typed flat response with IDE autocomplete
-     */
-    updateInstallation: async (args?: {}): Promise<TemplateUpdateInstallationData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'updateInstallation',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Check installation requirements
-     * @returns Promise<TemplateCheckRequirementsData> Typed flat response with IDE autocomplete
-     */
-    checkRequirements: async (args?: {}): Promise<TemplateCheckRequirementsData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'checkRequirements',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Estimate installation cost
-     * @returns Promise<TemplateEstimateCostData> Typed flat response with IDE autocomplete
-     */
-    estimateCost: async (args?: {}): Promise<TemplateEstimateCostData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'estimateCost',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List template versions
-     * @returns Promise<TemplateListVersionsData> Typed flat response with IDE autocomplete
-     */
-    listVersions: async (args?: {}): Promise<TemplateListVersionsData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'listVersions',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Create new template version
-     * @returns Promise<TemplateCreateVersionData> Typed flat response with IDE autocomplete
-     */
-    createVersion: async (args?: {}): Promise<TemplateCreateVersionData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'createVersion',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get template build status
-     * @returns Promise<TemplateGetBuildStatusData> Typed flat response with IDE autocomplete
-     */
-    getBuildStatus: async (args?: {}): Promise<TemplateGetBuildStatusData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'marketplace-templates',
-        method: 'getBuildStatus',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
  * Memory Adapter
  * Category: internal
  */
@@ -12291,6 +11347,239 @@ function createPolymarketAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'executeExtended',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Scripts Adapter
+ * Category: productivity
+ */
+function createScriptsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new script with initial version and API key. Returns flat structure with id field for subsequent operations. HANDLER SIGNATURE: export async function handler(event, context, mirra) { ... } READING INPUT (from executeScript's `data` arg, flow triggers, or webhooks): The caller's payload lands on `event.data`. Prefer that — e.g. `const { email } = event.data`. For compatibility, `event.input`, `event.body`, and `event.payload` are also aliased to the same object. The full event shape is: { data, fields, trigger, executionId, userId, scriptId, apiKey, groupId, scope, remainingBudget }. Example handler reading input: export async function handler(event, context, mirra) { const { email, name } = event.data; const user = await mirra.user.getByEmail({ email }); return { success: true, userId: user.id }; } HANDLER RETURN VALUES (when script is used in a flow): The handler's return object controls how the flow executor records the result: - Success: return { success: true, ...data } - No-Op (nothing to do, not an error): return { success: false, noOp: true, reason: "No input data" } No-ops are recorded as successful executions and do NOT count toward the auto-pause threshold. - Failure: return { success: false, reason: "What went wrong" } 3 consecutive failures will auto-pause the flow.
+     * @param args.name - Name of the script
+     * @param args.description - Description of what the script does (optional)
+     * @param args.runtime - Lambda runtime (default: nodejs18) (optional)
+     * @param args.config - Script configuration (timeout, memory, maxCostPerExecution, etc.) (optional)
+     * @param args.code - Initial JavaScript/TypeScript code for the script. Required unless path is provided. (optional)
+     * @param args.path - Path to a script file in the workspace container (e.g., "/workspace/scripts/handler.js"). If provided, code is read from this file. Optionally reads mirra.json from the same directory for config. (optional)
+     * @returns Promise<ScriptCreateData> Typed flat response with IDE autocomplete
+     */
+    createScript: async (args: ScriptsCreateScriptArgs): Promise<ScriptCreateData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'createScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a script and all its versions. Returns flat deletion confirmation.
+     * @param args.scriptId - ID of the script to delete
+     * @returns Promise<ScriptDeleteData> Typed flat response with IDE autocomplete
+     */
+    deleteScript: async (args: ScriptsDeleteScriptArgs): Promise<ScriptDeleteData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'deleteScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new version by replacing the ENTIRE script code. For small changes, prefer editScriptCode instead — it only requires the changed portions. Returns flat version details.
+     * @param args.scriptId - ID of the script
+     * @param args.code - Updated code for the new version
+     * @param args.commitMessage - Description of changes in this version (optional)
+     * @returns Promise<ScriptVersionCreateData> Typed flat response with IDE autocomplete
+     */
+    createVersion: async (args: ScriptsCreateVersionArgs): Promise<ScriptVersionCreateData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'createVersion',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all versions of a script. Returns flat version structures.
+     * @param args.scriptId - ID of the script
+     * @returns Promise<ScriptVersionListData> Typed flat response with IDE autocomplete
+     */
+    listVersions: async (args: ScriptsListVersionsArgs): Promise<ScriptVersionListData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'listVersions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Deploy a script version to AWS Lambda. Must be called after createScript to make the script executable.
+     * @param args.scriptId - ID of the script to deploy (from createScript response at data._id)
+     * @param args.version - Version number to deploy (default: latest) (optional)
+     * @returns Promise<ScriptDeployData> Typed flat response with IDE autocomplete
+     */
+    deployScript: async (args: ScriptsDeployScriptArgs): Promise<ScriptDeployData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'deployScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Execute a deployed script with custom data. Script must be deployed first via deployScript. Returns flat execution result.
+     * @param args.scriptId - ID of the script to execute (from createScript response at data.id)
+     * @param args.data - Input data to pass to the script. Available inside the handler as `event.data` (also aliased to `event.input`, `event.body`, `event.payload`). (optional)
+     * @param args.trigger - Trigger information (type, source, event) (optional)
+     * @returns Promise<ScriptExecuteData> Typed flat response with IDE autocomplete
+     */
+    executeScript: async (args: ScriptsExecuteScriptArgs): Promise<ScriptExecuteData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'executeScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get details of a specific script. Returns flat normalized structure.
+     * @param args.scriptId - ID of the script
+     * @returns Promise<ScriptGetData> Typed flat response with IDE autocomplete
+     */
+    getScript: async (args: ScriptsGetScriptArgs): Promise<ScriptGetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'getScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all scripts owned by the user. Returns flat script summaries.
+     * @returns Promise<ScriptListData> Typed flat response with IDE autocomplete
+     */
+    listScripts: async (args?: {}): Promise<ScriptListData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'listScripts',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get execution history for a script. Returns flat execution summaries.
+     * @param args.scriptId - ID of the script
+     * @param args.status - Filter by status (completed, failed, running) (optional)
+     * @param args.limit - Maximum number of executions to return (default: 100) (optional)
+     * @returns Promise<ScriptExecutionsData> Typed flat response with IDE autocomplete
+     */
+    getExecutions: async (args: ScriptsGetExecutionsArgs): Promise<ScriptExecutionsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'getExecutions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get details of a specific execution. Returns flat execution structure.
+     * @param args.executionId - ID of the execution
+     * @returns Promise<ScriptExecutionData> Typed flat response with IDE autocomplete
+     */
+    getExecution: async (args: ScriptsGetExecutionArgs): Promise<ScriptExecutionData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'getExecution',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get execution metrics for a script. Returns flat metrics structure.
+     * @param args.scriptId - ID of the script
+     * @returns Promise<ScriptMetricsData> Typed flat response with IDE autocomplete
+     */
+    getMetrics: async (args: ScriptsGetMetricsArgs): Promise<ScriptMetricsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'getMetrics',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the script code for a specific flow. Returns flat flow script structure.
+     * @param args.flowId - ID of the flow to get script code for
+     * @returns Promise<ScriptFlowGetData> Typed flat response with IDE autocomplete
+     */
+    getFlowScript: async (args: ScriptsGetFlowScriptArgs): Promise<ScriptFlowGetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'getFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Replace the ENTIRE script code for a flow. For small changes, prefer editScriptCode or editFlowScript instead — they only require the changed portions. Use this only when rewriting more than ~50% of the code.
+     * @param args.flowId - ID of the flow to modify
+     * @param args.newCode - New code to deploy
+     * @param args.commitMessage - Description of changes (optional)
+     * @returns Promise<ScriptFlowModifyData> Typed flat response with IDE autocomplete
+     */
+    modifyFlowScript: async (args: ScriptsModifyFlowScriptArgs): Promise<ScriptFlowModifyData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'modifyFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read the active version's code for a script with line numbers. Supports optional line range. Use this before editScriptCode to see the current code.
+     * @param args.scriptId - Script ID
+     * @param args.startLine - First line to return (1-indexed). Default: 1 (optional)
+     * @param args.endLine - Last line to return (inclusive). Default: end of file (optional)
+     */
+    readScriptCode: async (args: ScriptsReadScriptCodeArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'readScriptCode',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Apply surgical edits to a script's active code using oldText/newText pairs. Each edit replaces an exact text match. Much more efficient than createVersion for small changes. Use readScriptCode first to see current code.
+     * @param args.scriptId - Script ID
+     * @param args.edits - Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially.
+     * @param args.commitMessage - Description of changes (optional)
+     */
+    editScriptCode: async (args: ScriptsEditScriptCodeArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'editScriptCode',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Validate script code BEFORE creating or deploying. Checks for: 1) Missing async handler wrapper (top-level await errors), 2) Invalid adapter operations, 3) Invalid event.data field access (when eventType provided). Returns flat validation results with suggestions for fixes. ALWAYS use this before createScript/modifyFlowScript.
+     * @param args.code - The script code to validate
+     * @param args.eventType - Event type for event.data field validation (e.g., "telegram.message", "call.ended"). When provided, validates that event.data.fieldName accesses match the event type schema. (optional)
+     * @param args.scriptInputSchema - Schema of scriptInput fields that will be on event.data at runtime. Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array" }. When provided, event.data field errors are reported as errors instead of warnings. (optional)
+     * @returns Promise<ScriptLintData> Typed flat response with IDE autocomplete
+     */
+    lintScript: async (args: ScriptsLintScriptArgs): Promise<ScriptLintData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'lintScript',
         params: args || {}
       });
     }
@@ -15372,14 +14661,12 @@ export const generatedAdapters = {
   skills: createSkillsAdapter,
   items: createItemsAdapter,
   jupiter: createJupiterAdapter,
-  marketplaceResources: createMarketplaceResourcesAdapter,
-  scripts: createScriptsAdapter,
-  marketplaceTemplates: createMarketplaceTemplatesAdapter,
   memory: createMemoryAdapter,
   mirraMessaging: createMirraMessagingAdapter,
   observability: createObservabilityAdapter,
   pages: createPagesAdapter,
   polymarket: createPolymarketAdapter,
+  scripts: createScriptsAdapter,
   shopify: createShopifyAdapter,
   socket: createSocketAdapter,
   telegram: createTelegramAdapter,

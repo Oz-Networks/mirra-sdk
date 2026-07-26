@@ -10,13 +10,15 @@ Living dashboards — natively-rendered grids of typed widgets (stat, image_card
 
 **The dashboard** is the full grid: every widget you create lives here. It opens from the Home board, from a push notification, or from an update chip.
 
-**The slice** is that dashboard's card on the reader's Home screen — one headline widget rendered large plus up to 4 supporting tiles, the whole card tapping through to the dashboard. Declare it with the `slice` argument on createDashboard, or any time later with updateSlice.
+**The slice** is that dashboard's card on the reader's Home screen — one headline widget plus a few supporting tiles, the whole card tapping through to the dashboard. Declare it with the `slice` argument on createDashboard, or any time later with updateSlice.
 
 A slice holds widgetIds, not copies of widget data. It is a view, so it repaints itself whenever those widgets are repainted: there is no second write and nothing to keep in sync.
 
 **A dashboard with no slice never appears on Home.** It still exists and still opens, but nothing surfaces it — and for a dashboard built to be glanced at, that is the same as invisible. Declare a slice for anything meant to be checked rather than opened.
 
 Pick the headline by what answers "is anything wrong?" in four seconds. A live alert list or the most recent camera capture almost always beats a counter that reads zero on a normal day.
+
+**Size is a footprint on the board, not a style.** Home is a fixed-row grid, so a slice's height comes from its size and never from how much it has to say: `small` (the default) is one cell and fits 2 tiles, `wide` spans the full row and fits 4, `tall` is a double-height cell and fits 4. Small and wide lay the headline out beside its tiles; tall stacks them, which suits a dashboard whose capture or alert list really is the point. Prefer small — every slice that grows pushes the reader's updates further down a screen they are trying to scan.
 
 Division of labour: widgets for live state, Data collections for durable history, and feed items for notable events that deserve a push notification (pass the dashboardId to createFeedItem so the push opens the dashboard the alert is about).
 
@@ -71,7 +73,7 @@ Create a dashboard — a living artifact for this space: a grid of widgets that 
 - `icon` (string, *optional*): Ionicons icon name for the dashboard (e.g. "shield-checkmark-outline")
 - `order` (number, *optional*): Position on the Home board among this space's dashboards (default: after existing dashboards)
 - `widgets` (array, *optional*): Initial widget definitions: [{ widgetId, type, title?, size?, order?, data, staleAfterSeconds?, tapAction? }]. staleAfterSeconds dims the widget and shows its age when the data is older than this.
-- `slice` (object, *optional*): What this dashboard shows on the reader's Home screen: { headline?: widgetId, widgets: [widgetId, ...] } — one widget rendered large plus up to 4 supporting tiles, every id referencing a widget defined above. References, not copies: the slice repaints itself as those widgets are updated. Omit it and this dashboard does not appear on Home at all.
+- `slice` (object, *optional*): What this dashboard shows on the reader's Home screen: { headline?: widgetId, widgets: [widgetId, ...], size?: "small" | "wide" | "tall" } — one widget rendered large plus supporting tiles, every id referencing a widget defined above. References, not copies: the slice repaints itself as those widgets are updated. size is the card's footprint on the board and caps the tiles: small (default, 2), wide (4, full row), tall (4, double height). Omit slice entirely and this dashboard does not appear on Home at all.
 
 **Returns:**
 
@@ -376,17 +378,18 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `updateSlice`
 
-Declare what this dashboard shows on the reader's Home screen. Home renders a board of slices above the updates feed; a slice is one headline widget rendered large plus up to 4 supporting tiles, and tapping anywhere on it opens the full dashboard. The slice references widgetIds — it is a view, never a copy, so it stays current with no extra writes and there is nothing to keep in sync. A dashboard with no slice does not appear on Home at all, so declare one for anything meant to be glanced at rather than opened. Choose the headline by what answers "is anything wrong?" at a glance: a live alert list or the most recent capture usually beats a counter that reads zero most days. Rules: every id must already exist on this dashboard (the error names the valid ones), a widget appears once so the headline cannot repeat among the tiles, and there is a hard cap of 4 tiles — leave the rest on the dashboard itself. Removing a widget prunes it from the slice automatically, so a slice can never go stale. This call replaces the whole slice rather than merging into it, and it notifies nobody: declaring what Home shows is authoring, not news. Pass widgets: [] with no headline to take a dashboard back off Home while leaving it fully intact to open.
+Declare what this dashboard shows on the reader's Home screen. Home renders a board of slices above the updates feed; a slice is one headline widget plus a few supporting tiles, and tapping anywhere on it opens the full dashboard. The slice references widgetIds — it is a view, never a copy, so it stays current with no extra writes and there is nothing to keep in sync. A dashboard with no slice does not appear on Home at all, so declare one for anything meant to be glanced at rather than opened. Choose the headline by what answers "is anything wrong?" at a glance: a live alert list or the most recent capture usually beats a counter that reads zero most days. Size is the card's footprint on a fixed-row board, so it decides the height and caps the tiles: "small" (default) is one cell holding 2 tiles, "wide" spans the full row and holds 4, "tall" is a double-height cell holding 4. Small and wide put the headline beside its tiles; tall stacks them, which is worth the height only when the headline is a capture or an alert list that someone actually reads. Prefer small — a slice that grows pushes the reader's updates down a screen they are trying to scan. Rules: every id must already exist on this dashboard (the error names the valid ones), a widget appears once so the headline cannot repeat among the tiles, and declaring more tiles than the size holds is rejected rather than clipped — raise the size or leave the rest on the dashboard itself. Removing a widget prunes it from the slice automatically, so a slice can never go stale. This call replaces the whole slice rather than merging into it, and it notifies nobody: declaring what Home shows is authoring, not news. Pass widgets: [] with no headline to take a dashboard back off Home while leaving it fully intact to open.
 
 **Arguments:**
 
 - `dashboardId` (string, **required**): Dashboard whose Home slice is being declared
 - `headline` (string, *optional*): widgetId rendered large at the top of the slice — the one that answers "is anything wrong?"
-- `widgets` (array, *optional*): Ordered widgetIds shown as supporting tiles beneath the headline (max 4). Default: []
+- `widgets` (array, *optional*): Ordered widgetIds shown as supporting tiles beside (small/wide) or beneath (tall) the headline. Cap depends on size: 2 at small, 4 at wide, 4 at tall. Default: []
+- `size` (string, *optional*): Footprint on the Home board: "small" (default — one cell, landscape, 2 tiles), "wide" (full-row, landscape, 4 tiles), "tall" (double-height, headline stacked over 4 tiles). Height comes from this and never from the content.
 
 **Returns:**
 
-`AdapterOperationResult`: Returns: dashboardId, slice ({ headline, widgets })
+`AdapterOperationResult`: Returns: dashboardId, slice ({ headline, widgets, size })
 
 **Example:**
 

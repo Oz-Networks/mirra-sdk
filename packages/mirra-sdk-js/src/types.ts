@@ -282,132 +282,17 @@ export interface ScriptInvocationResult {
 }
 
 // ============================================================================
-// Resource Types
+// Adapter Dispatch Types
 // ============================================================================
 
-export interface Resource {
-  id: string;
-  name: string;
-  description?: string;
-  type: string;
-  config: Record<string, any>;
-  status: 'active' | 'inactive';
-  createdAt: string;
-}
-
+/**
+ * Params for generic adapter dispatch. `resourceId` is an internal service id
+ * (e.g. 'flows', 'telegram', 'google-gmail'), not a marketplace resource.
+ */
 export interface CallResourceParams {
   resourceId: string;
   method: string;
   params?: Record<string, any>;
-}
-
-export interface ResourceMethodExample {
-  description: string;
-  input: Record<string, any>;
-  output: Record<string, any>;
-  note?: string;
-}
-
-export interface ResourceEndpointMethod {
-  name: string;
-  httpMethod: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  path: string;
-  description?: string;
-  parameters?: Record<string, { type: string; required?: boolean; description?: string }>;
-  response?: { type: string; schema?: any; description?: string };
-  examples?: ResourceMethodExample[];
-}
-
-export interface ResourceEndpoint {
-  baseUrl: string;
-  authentication: 'none' | 'api_key' | 'oauth2' | 'bearer';
-  methods: ResourceEndpointMethod[];
-}
-
-export interface CreateResourceParams {
-  name: string;
-  description?: string;
-  resourceType: 'integration' | 'api' | 'webhook' | 'custom';
-  category?: string;
-  isPrivate?: boolean;
-  endpoint: ResourceEndpoint;
-  pricing?: { model: 'free' | 'paid'; price?: number };
-  openApiSpec?: object;
-}
-
-export interface UpdateResourceParams {
-  id: string;
-  name?: string;
-  description?: string;
-  endpoint?: ResourceEndpoint;
-  isPrivate?: boolean;
-}
-
-// ============================================================================
-// Template Types
-// ============================================================================
-
-export interface Template {
-  id: string;
-  name: string;
-  description?: string;
-  category?: string;
-  components: {
-    agents?: string[];
-    scripts?: string[];
-    resources?: string[];
-  };
-  createdAt: string;
-}
-
-export interface TemplatePermissions {
-  memoryAccess?: 'none' | 'filtered' | 'all';
-  memoryTags?: string[];
-  calendarAccess?: 'read-only' | 'read-write';
-  workingHours?: {
-    timezone: string;
-    schedule: Array<{
-      day: number;
-      start: string;
-      end: string;
-    }>;
-  };
-}
-
-export interface TemplateInstallation {
-  installationId: string;
-  userId: string;
-  templateId: string;
-  pagePath: string;
-  version: string;
-  status: string;
-  configurationStatus: string;
-  permissions: TemplatePermissions;
-  config: Record<string, any>;
-  configuration: Record<string, any>;
-}
-
-// ============================================================================
-// Marketplace Types
-// ============================================================================
-
-export interface MarketplaceItem {
-  id: string;
-  name: string;
-  description?: string;
-  type: 'agent' | 'script' | 'resource' | 'template';
-  author: string;
-  price?: number;
-  rating?: number;
-  installs?: number;
-}
-
-export interface MarketplaceFilters {
-  type?: 'agent' | 'script' | 'resource' | 'template';
-  category?: string;
-  search?: string;
-  limit?: number;
-  offset?: number;
 }
 
 // ============================================================================
