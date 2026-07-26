@@ -2574,6 +2574,7 @@ export interface SpaceChannel {
   enabled: boolean; // False when someone paused it — do not draft for it
   healthy: boolean; // False when the last dispatch failed and it has not been reconnected
   lastError?: string; // Why the last dispatch failed
+  target?: string; // Where to post — a Telegram chat id or @handle. Pass it straight to the send op; do not guess one when it is missing
   maxBodyLength: number; // Hard character cap for this channel — over-length drafts cannot be approved
   requiresTitle: boolean; // Whether a title is required
   voiceHint?: string; // One line on what good copy looks like here
@@ -5117,7 +5118,7 @@ export interface ScriptSummary {
   name: string; // Script name
   description: string; // Script description
   activeVersion: number; // Currently active version number
-  isPublished: boolean; // Whether script is published to marketplace
+  isPublished: boolean; // Whether the script is published (activated and deployed)
   status: string; // Script status (draft, published, archived)
   deploymentStatus: string; // Deployment status (pending, deploying, deployed, failed)
   totalExecutions: number; // Total number of executions
