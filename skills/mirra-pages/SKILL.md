@@ -67,7 +67,9 @@ Two consequences worth knowing before you publish:
 - If the page will be an update card's picture it gets screenshotted at
   **900×540** and shown at about a third of that. That is a different design
   problem — start from `poster.jsx` in the `mirra-ledger` skill, which has the
-  measured type scale already set.
+  measured type scale already set, and pass `purpose: "poster"` so it stays out
+  of the artifacts library. A poster is a picture that happens to be built out
+  of a page; the library lists things people open.
 - Use `editPage` for small changes; `updatePage` rewrites the whole source.
 - Structured dashboards over live Data collections don't need hand-written JSX
   at all — `createReportPage` / `upsertReportPage` generate them from a widget
@@ -132,6 +134,7 @@ Create a new page with JSX code. The code is compiled to HTML with React, Tailwi
 - `description` (string, *optional*): Optional description of the page
 - `visibility` (string, *optional*): Page visibility: "private" (default) or "public"
 - `graphId` (string, *optional*): Optional graph ID for the page's data source (e.g. a group graph for memory queries). The page URL stays under the caller's personal subdomain. The caller must be a member of the target graph.
+- `purpose` (string, *optional*): Set to "poster" when the page is the 900x540 picture that leads an update card — one line or one number set very large, meant to be looked at rather than read. Posters are kept out of the artifacts library, because a library lists things people open and a poster is not one of them. Omit for every normal page.
 
 **Returns:**
 

@@ -205,9 +205,14 @@ Two minutes, three calls:
 ```bash
 # 1. Publish the poster. Start from poster.jsx in this skill's directory —
 #    change the four strings at the top, leave the frame alone.
+#    purpose:"poster" is REQUIRED and is not decoration: it is the only way
+#    anything downstream can tell a picture from a page. Without it the poster
+#    joins the artifacts library, where it reads as a document that turns out
+#    to be a billboard when someone opens it.
 ... -d '{ "resourceId": "pages", "method": "createPage", "params": {
       "path": "/store-removal",
       "title": "The store is gone",
+      "purpose": "poster",
       "code": "<the JSX, with your four strings>"
     } }'
 # → { id: "665…", url: "https://anthony.withmirra.com/store-removal", … }
@@ -244,6 +249,12 @@ worth looking at — a real dashboard, a report with the actual numbers in it, a
 comparison of two options for a `needsYou` ask — publish *that* and use it. It
 beats a poster, because it is the thing itself. The poster is for work whose
 result is invisible, which is most work.
+
+That distinction is exactly what `purpose: "poster"` records, so set it on
+posters and **only** on posters. A real dashboard used as a card's picture is
+still a page someone will want to open again later; marking it a poster would
+hide it from the library. The test is not "did this lead a card" — it is
+"would anyone open this on its own?" If no, it is a poster.
 
 ## The publish ritual, end to end
 

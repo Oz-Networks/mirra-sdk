@@ -1087,6 +1087,7 @@ export interface PagesCreatePageArgs {
   description?: string; // Optional description of the page
   visibility?: string; // Page visibility: "private" (default) or "public"
   graphId?: string; // Optional graph ID for the page's data source (e.g. a group graph for memory queries). The page URL stays under the caller's personal subdomain. The caller must be a member of the target graph.
+  purpose?: string; // Set to "poster" when the page is the 900x540 picture that leads an update card — one line or one number set very large, meant to be looked at rather than read. Posters are kept out of the artifacts library, because a library lists things people open and a poster is not one of them. Omit for every normal page.
 }
 export interface PagesCreateReportPageArgs {
   path: string; // URL path for the page (e.g. "/sales-report"). Must start with /, lowercase alphanumeric and hyphens only.
@@ -10912,6 +10913,7 @@ function createPagesAdapter(sdk: MirraSDK) {
      * @param args.description - Optional description of the page (optional)
      * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
      * @param args.graphId - Optional graph ID for the page's data source (e.g. a group graph for memory queries). The page URL stays under the caller's personal subdomain. The caller must be a member of the target graph. (optional)
+     * @param args.purpose - Set to "poster" when the page is the 900x540 picture that leads an update card — one line or one number set very large, meant to be looked at rather than read. Posters are kept out of the artifacts library, because a library lists things people open and a poster is not one of them. Omit for every normal page. (optional)
      * @returns Promise<PagesCreatePageData> Typed flat response with IDE autocomplete
      */
     createPage: async (args: PagesCreatePageArgs): Promise<PagesCreatePageData> => {
