@@ -8,6 +8,71 @@ allowed-tools: Read, Bash(curl:*, jq:*)
 
 Dynamic page creation — create dashboards, reports, and interactive pages with React and Tailwind
 
+## What pages are for
+
+A page is the surface a teammate can actually *look at*. Most work has no
+viewable surface — an API change, a refactor, a migration — and a PR is a
+viewable surface only for the developers on the team. A page fixes that, in two
+different moments:
+
+- **A draft**, published the moment the thing exists: a prototype, a mockup, a
+  plan, two options you want decided between. Teammates pin comments directly
+  onto it, so it comes back as specific feedback on specific parts.
+- **A receipt**, published when work lands: evidence that the invisible thing
+  happened, and the face of your update card.
+
+The ritual for both — which ledger op attaches the page, and when — lives in
+the **`mirra-ledger`** skill. Read it before publishing a page for your team;
+a page nobody attaches or mentions is a page nobody sees.
+
+## Comments come back through the workspace
+
+Pages served in the Mirra app carry a comment widget: a viewer clicks an
+element and leaves a note pinned to it. Each comment is mirrored into the
+workspace of the graph that owns the page — one file per comment, plus a
+rolled-up index of the open ones:
+
+```
+/workspace/feedback/<page-slug>/OPEN.md
+```
+
+Read it with `mirra-workspace`. There is no pages op for comments yet, and
+`mirra-feedback` is unrelated (it files bugs against Mirra itself).
+
+Two consequences worth knowing before you publish:
+
+- **Scope the call the way you scope the ledger.** The page belongs to the
+  graph in your request scope, so a page created with `X-Scope: group` +
+  `X-Group-Id` mirrors its comments into that space's workspace. Create it with
+  a personal scope and the comments land where your teammates' agents are not
+  looking. (The optional `graphId` argument does NOT do this — it only picks
+  the graph a page queries for data.)
+- **Say it wants eyes.** Publishing is silent. Post the link in the space chat
+  (`mirra-mirra-messaging`) and say what you need decided.
+
+## Writing the JSX
+
+- Define a top-level `function App()`. No `import` or `require` — React,
+  Recharts, `lucide.IconName`, Tailwind, and the Mirra design system are all
+  pre-loaded globals.
+- **Use the `m-*` color tokens, not Tailwind's palette.** `bg-m-bg`,
+  `bg-m-surface`, `bg-m-surface-alt`, `border-m-border`, `text-m-text`,
+  `text-m-text-secondary`, `text-m-text-muted`, `text-m-accent`,
+  `bg-m-accent-soft`, `text-m-accent-text`; type is `font-display` /
+  `font-body` / `font-mono`; `MIRRA_COLORS` is the chart palette. Pages render
+  **dark by default**, so `text-gray-800` or `bg-white` quietly produces
+  unreadable text on a viewer's screen.
+- One screenful beats a long scroll. A teammate opens it on a phone, from a
+  feed, and gives it a glance.
+- If the page will be an update card's picture it gets screenshotted at
+  **900×540** and shown at about a third of that. That is a different design
+  problem — start from `poster.jsx` in the `mirra-ledger` skill, which has the
+  measured type scale already set.
+- Use `editPage` for small changes; `updatePage` rewrites the whole source.
+- Structured dashboards over live Data collections don't need hand-written JSX
+  at all — `createReportPage` / `upsertReportPage` generate them from a widget
+  spec.
+
 ## Prerequisites
 
 You need the user's **API key**. Ask for these if not provided:

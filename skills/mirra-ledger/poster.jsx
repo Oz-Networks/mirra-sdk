@@ -6,10 +6,10 @@
 // actually seen, 14px body copy renders as five pixels of grey texture — which
 // is why there is no body copy here and you should not add any.
 //
-// Three type sizes, and the template picks between them for you:
+// Three roles, and the template picks the statement's size for you:
 //   STATEMENT  158px for a number (up to 8 characters, so 179,644 fits),
 //              104px for a few words, stepping down as the line gets longer
-//   CAPTION     47px — what the statement means
+//   CAPTION     47px — what the statement means, on ONE line
 //   EYEBROW /   26px — the kind of thing this is, and where it came from
 //   FOOTER
 //
@@ -21,16 +21,21 @@ function App() {
   // ── Fill these in ──────────────────────────────────────────────────────
   var EYEBROW   = 'SHIPPED';                        // SHIPPED / NEXT / NEEDS YOU
   var STATEMENT = 'The store is gone';              // ONE thing. A number, or ≤6 words.
-  var CAPTION   = '179,644 lines removed, nothing broke';  // what it means, ≤10 words
+  var CAPTION   = '179,644 lines removed';          // what it means, ≤30 CHARACTERS
   var FOOTER    = 'FXN · 26 Jul';                   // space and date, quietly
   // ───────────────────────────────────────────────────────────────────────
 
+  // Keep the caption to ~30 characters. At 47px in 772px of usable width that
+  // is one line, and one line is the budget: a second caption line pushes the
+  // block into the footer at every statement size but the smallest. "≤30
+  // chars" is the rule; word count is not, because words vary in width.
+
   // Fit the statement to the frame. Thresholds are measured, not guessed: at
-  // 772px of usable width one line holds 8 chars at 158px, 12 at 104, 17 at 72.
-  // Wrapping to a SECOND line is fine and still reads well — doubling those is
-  // the real budget (16 / 24 / 35). A third line overflows 540 and gets clipped,
-  // so the last tier exists to keep a long statement inside the frame. If you
-  // land there, shorten the statement instead — that is the actual fix.
+  // 772px one line holds 8 chars at 158px, 12 at 104, 17 at 72. The lower two
+  // tiers may wrap to a SECOND line and still read well, which is why their
+  // budgets are doubled (24 and 35). 158px may NOT wrap — two lines at that
+  // size overflow 540 and get clipped — so its budget stays at one line's 8.
+  // Landing in the last tier means the statement is too long; shorten it.
   var n = STATEMENT.length;
   var statementSize = n <= 8 ? 158 : n <= 24 ? 104 : n <= 35 ? 72 : 56;
 

@@ -117,7 +117,7 @@ Hand-authored orchestration skills (not tied to a single adapter):
 |-------|--------------|
 | [`mirra`](./mirra/) | START HERE for anything Mirra. Load this whenever the repo you're working in has a .mirra/ directory (it's linked to a Mirra team space), or your human mentions their Mirra space, teammates' updates, or the team ledger. Directs the ambient team rituals — record work in the shared ledger, publish update cards, ask the space before expanding scope — and indexes every detail-level mirra-* skill. |
 | [`mirra-cowork`](./mirra-cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, wait for replies in near-real-time (long-poll), and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
-| [`mirra-ledger`](./mirra-ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), relay approvals, close what ships with a page a teammate can actually open, and publish ONE narrated update card per work burst — led by a picture, revised, never stacked. Rides the Mirra items adapter / MCP work-ledger tools. |
+| [`mirra-ledger`](./mirra-ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), share drafts for comment while the work is still open, close what ships with a page a teammate can actually open, and publish ONE narrated update card per work burst — led by a picture, revised, never stacked. Rides the Mirra items adapter / MCP work-ledger tools. |
 
 **Total: 38 adapters, 429 operations, 3 collaboration skill(s)**
 
@@ -135,6 +135,7 @@ Skills use `curl` so they work everywhere with no dependencies to install.
 
 Most skills are auto-generated from adapter operation schemas — do not edit those here (this directory is wiped on each run).
 Hand-authored collaboration skills live in `tools/llm-api-generator/static-skills/` and are copied in verbatim.
+A `static-skills/<skill>/PREAMBLE.md` with no SKILL.md beside it is inlined at the top of that *generated* skill instead — use it for guidance schemas cannot express.
 To regenerate after adapter or static-skill changes:
 
 ```bash

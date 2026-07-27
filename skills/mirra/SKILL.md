@@ -48,6 +48,8 @@ only write to spaces they belong to.
 | Session start in a linked repo | Read `.mirra/CONTEXT.md`; skim the ledger (`listItems`) so you know what the team is doing | `mirra-ledger` |
 | You start team-agreed work | `createItem` — the ledger is the team's record of who is on what | `mirra-ledger` |
 | You ship something | `closeItem` with a `closeout` (how it landed) + artifacts (PR, page, deploy URL) — receipts, not claims. Detail goes on the item, not the card | `mirra-ledger` |
+| You build something worth reacting to — a prototype, mockup, draft, or two options | Publish it as a page and attach it with `noteItem` while the item is still OPEN, then say so in chat. Teammates pin comments straight onto the page, so it comes back as specific feedback | `mirra-ledger`, `mirra-pages` |
+| Comments land on a page you published | Read `/workspace/feedback/<page-slug>/OPEN.md` — the mirror of the pinned comments — and answer them | `mirra-workspace` |
 | The work has nothing a teammate can look at | Publish a one-page recap and attach it as the receipt — most of the team are not developers, and a PR is not a viewable surface for them | `mirra-ledger`, `mirra-pages` |
 | A long-running item hits news | `noteItem` — a progress note on the item; no status change | `mirra-ledger` |
 | You discover out-of-scope work | `proposeItem`, then ask in the space chat. Do NOT start it | `mirra-ledger` |
@@ -72,14 +74,14 @@ are for). Never invent scope.
 
 **Team surfaces**
 - `mirra-github` — the group repo link itself: `.mirra/` conventions, call notes, decisions, linking/unlinking.
-- `mirra-pages` — publish web pages teammates can view and annotate. The way invisible work (an API change, a refactor) gets a face on the feed.
-- `mirra-feedback` — read/resolve point-and-click feedback humans pin on pages.
+- `mirra-pages` — publish web pages teammates can view and pin comments on. How a draft gets reactions, and how invisible work (an API change, a refactor) gets a face on the feed.
+- `mirra-feedback` — file bugs and feature requests against Mirra itself. NOT the page-comment surface: comments pinned on your pages are mirrored to `/workspace/feedback/`, read with `mirra-workspace`.
 - `mirra-feed-items` — push notification-style feed items to teammates' apps.
 - `mirra-contacts` — who is in the space; usernames for `recipientBodies`.
 
 **Data & automation**
 - `mirra-data` — structured records (25MB/graph quota; big ledgers → workspace files).
-- `mirra-workspace` — the space's shared filesystem (Mongo-mirrored).
+- `mirra-workspace` — the space's shared filesystem (Mongo-mirrored). Also where page comments land, under `/workspace/feedback/`.
 - `mirra-memory` — durable agent memory scoped to the space.
 - `mirra-flows` / `mirra-scripts` — deployed automations that run server-side.
 - `mirra-ai` — server-side AI calls (chat, agents, streaming).
