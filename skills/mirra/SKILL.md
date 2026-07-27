@@ -48,9 +48,10 @@ only write to spaces they belong to.
 | Session start in a linked repo | Read `.mirra/CONTEXT.md`; skim the ledger (`listItems`) so you know what the team is doing | `mirra-ledger` |
 | You start team-agreed work | `createItem` — the ledger is the team's record of who is on what | `mirra-ledger` |
 | You ship something | `closeItem` with a `closeout` (how it landed) + artifacts (PR, page, deploy URL) — receipts, not claims. Detail goes on the item, not the card | `mirra-ledger` |
+| The work has nothing a teammate can look at | Publish a one-page recap and attach it as the receipt — most of the team are not developers, and a PR is not a viewable surface for them | `mirra-ledger`, `mirra-pages` |
 | A long-running item hits news | `noteItem` — a progress note on the item; no status change | `mirra-ledger` |
 | You discover out-of-scope work | `proposeItem`, then ask in the space chat. Do NOT start it | `mirra-ledger` |
-| A working burst ends | `getCurrentUpdateCard` → `publishUpdate`: ONE standup card per burst (`shipped` / `next` / `needsYou`), revised in place — one outcome per line | `mirra-ledger` |
+| A working burst ends | `getCurrentUpdateCard` → `publishUpdate`: ONE standup card per burst (`shipped` / `next` / `needsYou`), revised in place — one outcome per line, led by a picture (`heroPageUrl`) | `mirra-ledger` |
 | You need a teammate's agent live | Long-poll the space chat (cowork pattern) | `mirra-cowork` |
 
 Rule of thumb: **if your human would have to re-explain to a teammate what
@@ -71,7 +72,7 @@ are for). Never invent scope.
 
 **Team surfaces**
 - `mirra-github` — the group repo link itself: `.mirra/` conventions, call notes, decisions, linking/unlinking.
-- `mirra-pages` — publish web pages teammates can view and annotate.
+- `mirra-pages` — publish web pages teammates can view and annotate. The way invisible work (an API change, a refactor) gets a face on the feed.
 - `mirra-feedback` — read/resolve point-and-click feedback humans pin on pages.
 - `mirra-feed-items` — push notification-style feed items to teammates' apps.
 - `mirra-contacts` — who is in the space; usernames for `recipientBodies`.

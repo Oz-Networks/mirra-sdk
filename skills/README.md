@@ -117,7 +117,7 @@ Hand-authored orchestration skills (not tied to a single adapter):
 |-------|--------------|
 | [`mirra`](./mirra/) | START HERE for anything Mirra. Load this whenever the repo you're working in has a .mirra/ directory (it's linked to a Mirra team space), or your human mentions their Mirra space, teammates' updates, or the team ledger. Directs the ambient team rituals — record work in the shared ledger, publish update cards, ask the space before expanding scope — and indexes every detail-level mirra-* skill. |
 | [`mirra-cowork`](./mirra-cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, wait for replies in near-real-time (long-poll), and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
-| [`mirra-ledger`](./mirra-ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), relay approvals, close what ships, and publish ONE narrated update card per work burst — revise, never stack. Rides the Mirra items adapter / MCP work-ledger tools. |
+| [`mirra-ledger`](./mirra-ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), relay approvals, close what ships with a page a teammate can actually open, and publish ONE narrated update card per work burst — led by a picture, revised, never stacked. Rides the Mirra items adapter / MCP work-ledger tools. |
 
 **Total: 38 adapters, 429 operations, 3 collaboration skill(s)**
 
@@ -139,4 +139,15 @@ To regenerate after adapter or static-skill changes:
 
 ```bash
 cd apps/server && npm run generate:llm-api
+```
+
+## Working in the monorepo
+
+`install.sh` above pulls from the published `Oz-Networks/mirra-sdk` repo, which lags this
+checkout by however long it has been since the last SDK push. To run the skills you just
+edited, install them from here instead:
+
+```bash
+./generated-skills/sync-local.sh          # install this checkout into ~/.claude/skills
+./generated-skills/sync-local.sh --check  # report drift, change nothing (exits 1 if stale)
 ```
