@@ -5,5 +5,21 @@
     "name": "Mirra",
     "url": "https://getmirra.app"
   },
-  "plugins": []
+  "plugins": [
+    {
+      "name": "mirra",
+      "description": "Program Mirra from Claude Code — the team work-ledger, pages teammates can comment on, and every Mirra integration as a skill.",
+      "source": "./plugins/mirra",
+      "category": "productivity",
+      "homepage": "https://docs.getmirra.app"
+    },
+    {
+      "name": "mirra-cc-bridge",
+      "version": "1.6.0",
+      "description": "Bridge Claude Code to Mirra Messenger - control coding sessions from your phone via text and voice",
+      "source": "./packages/mirra-cc-bridge",
+      "category": "productivity",
+      "homepage": "https://docs.getmirra.app/claude-code"
+    }
+  ]
 }

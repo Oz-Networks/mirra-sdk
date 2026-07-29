@@ -22,11 +22,20 @@ Pre-built templates for common use cases:
 - **Location**: [`templates/`](./templates/)
 - **Browse**: [Templates Directory](./templates/)
 
-### Claude Code Skills
-- **Location**: [`skills/`](./skills/)
-- Auto-generated skills for every Mirra adapter
-- Copy any skill folder into your `.claude/skills/` to teach Claude Code how to use that Mirra integration
-- **Install**: `cp -r skills/mirra-google-gmail ~/.claude/skills/`
+## 🔌 Claude Code Plugin
+
+The team work-ledger, pages teammates can comment on, and every Mirra
+integration as a skill — namespaced as `/mirra:ledger`, `/mirra:google-gmail`,
+and so on.
+
+```bash
+claude plugin marketplace add Oz-Networks/mirra-sdk
+claude plugin install mirra@mirra
+```
+
+- **Location**: [`plugins/mirra/`](./plugins/mirra/)
+- Updates arrive on their own — Claude Code refreshes the marketplace at session start
+- Upgrading from the old loose skills? `curl -fsSL https://raw.githubusercontent.com/Oz-Networks/mirra-sdk/main/skills/install.sh | bash`
 
 ## 📚 Documentation
 

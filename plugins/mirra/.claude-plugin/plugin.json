@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "mirra",
+  "description": "Program Mirra from Claude Code — the team work-ledger, pages teammates can comment on, and every Mirra integration as a skill.",
+  "author": {
+    "name": "Mirra",
+    "url": "https://getmirra.app"
+  },
+  "homepage": "https://docs.getmirra.app",
+  "repository": "https://github.com/Oz-Networks/mirra-sdk",
+  "license": "MIT",
+  "keywords": [
+    "mirra",
+    "team",
+    "ledger",
+    "integrations",
+    "sdk"
+  ]
+}
