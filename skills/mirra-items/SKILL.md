@@ -235,7 +235,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `noteItem`
 
-Add a progress note to an open or proposed item that has real news but is not finished — the long-running case (a months-long prospecting item, a multi-week build), and the review case: you built a prototype, mockup or draft and want the team to react before it ships. Pass artifacts to attach it — publish it as a page first (pages createPage) so teammates can pin comments straight onto it, then read those comments back from the space workspace at /workspace/feedback/<page-slug>/OPEN.md. This is the ONLY way to attach something to an item without closing it. The note lands on the item (shown in its detail view, exported to the repo), never on the home card. Does NOT change status. Rejected on done items — a note after the fact is a closeout revision, which is a repo-side edit. To finish work, use closeItem with a closeout instead.
+Add a progress note to an open or proposed item that has real news but is not finished — the long-running case (a months-long prospecting item, a multi-week build), and the review case: you built a prototype, mockup or draft and want the team to react before it ships. Pass artifacts to attach it — publish it as a page first (pages createPage) so teammates can pin comments straight onto it, then read those comments back with pages listFeedback. This is the ONLY way to attach something to an item without closing it. The note lands on the item (shown in its detail view, exported to the repo), never on the home card. Does NOT change status. Rejected on done items — a note after the fact is a closeout revision, which is a repo-side edit. To finish work, use closeItem with a closeout instead.
 
 **Arguments:**
 

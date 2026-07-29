@@ -25,28 +25,32 @@ The ritual for both — which ledger op attaches the page, and when — lives in
 the **`mirra-ledger`** skill. Read it before publishing a page for your team;
 a page nobody attaches or mentions is a page nobody sees.
 
-## Comments come back through the workspace
+## Read the comments back with `listFeedback`
 
 Pages served in the Mirra app carry a comment widget: a viewer clicks an
-element and leaves a note pinned to it. Each comment is mirrored into the
-workspace of the graph that owns the page — one file per comment, plus a
-rolled-up index of the open ones:
+element and leaves a note pinned to it. Read them with the pages op:
 
 ```
-/workspace/feedback/<page-slug>/OPEN.md
+listFeedback({ path: "/calendar-design-lab" })   # or { pageId }
+resolveFeedback({ feedbackId })                  # once you have made the change
 ```
 
-Read it with `mirra-workspace`. There is no pages op for comments yet, and
-`mirra-feedback` is unrelated (it files bugs against Mirra itself).
+Each comment carries the words the viewer wrote AND the element they were
+pointing at, so treat it as a specific change request. `stale: true` means the
+page has been edited since — re-read it before assuming the comment still
+applies. `mirra-feedback` is unrelated (it files bugs against Mirra itself).
 
-Two consequences worth knowing before you publish:
+Do this on the way IN as well as out: before editing a page a teammate has been
+reviewing, read the open comments first, or you will overwrite the thing they
+asked for.
+
+Two things worth knowing before you publish:
 
 - **Scope the call the way you scope the ledger.** The page belongs to the
-  graph in your request scope, so a page created with `X-Scope: group` +
-  `X-Group-Id` mirrors its comments into that space's workspace. Create it with
-  a personal scope and the comments land where your teammates' agents are not
-  looking. (The optional `graphId` argument does NOT do this — it only picks
-  the graph a page queries for data.)
+  graph in your request scope, so publish a team page with `X-Scope: group` +
+  `X-Group-Id`. Created under a personal scope it is a personal page, and your
+  teammates cannot open it or comment on it. (The optional `graphId` argument
+  does NOT do this — it only picks the graph a page queries for data.)
 - **Say it wants eyes.** Publishing is silent. Post the link in the space chat
   (`mirra-mirra-messaging`) and say what you need decided.
 
@@ -74,6 +78,22 @@ Two consequences worth knowing before you publish:
 - Structured dashboards over live Data collections don't need hand-written JSX
   at all — `createReportPage` / `upsertReportPage` generate them from a widget
   spec.
+
+## When a write is rejected
+
+Every write op — create, edit, update, and the report-page pair — type-checks
+and compiles the source before it saves anything. Source that doesn't compile
+comes back as **`400 VALIDATION_ERROR`**, and the error is the fix: the message
+carries the formatted diagnostics, and `error.details.issues` carries them
+structured — `{ severity, message, line, column }`, with `line` counted in your
+own source. Nothing is written when a page fails to compile, so correct the code
+and resend the same call. A `500` from these ops means a server fault, not your
+JSX.
+
+The trap on the edit path is changing a helper's signature: adding a parameter
+without a default breaks every call site you didn't touch, and the compiler
+reports it as `TS2554: Expected 2 arguments, but got 1`. Read the current source
+with `getPage` before an `editPage` if you are unsure what else calls it.
 
 ## Prerequisites
 
@@ -118,6 +138,8 @@ Replace `{operation}` with the operation name from the table below.
 | `unpublishPage` | Unpublish a page, making it private. |
 | `sharePage` | Share a private page with another graph (group). Members of the target graph will be able to view... |
 | `getPageUrl` | Get the public URL for a page. |
+| `listFeedback` | Read the comments teammates pinned onto one of your pages. A viewer clicks an element on the page... |
+| `resolveFeedback` | Close a page comment once you have acted on it, so it stops coming back from listFeedback. Resolv... |
 
 ## Operation Details
 
@@ -129,8 +151,9 @@ Create a new page with JSX code. The code is compiled to HTML with React, Tailwi
 
 - `path` (string, **required**): URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
 - `title` (string, *optional*): Display title for the page. Required unless codePath is provided (can be read from .meta.json).
-- `code` (string, *optional*): JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals. Required unless codePath is provided.
-- `codePath` (string, *optional*): Path to a JSX file in the workspace container (e.g., "/workspace/pages/dashboard.jsx"). If provided, code is read from this file. Optionally reads .meta.json from the same directory for title/visibility.
+- `code` (string, *optional*): Page source, in either format. JSX: must define a top-level function App() component, no import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are pre-loaded globals. HTML: a self-contained document with inline CSS/JS and no external requests — the Claude Artifact shape, stored and served verbatim, with no page shell and no data hooks. The format is detected automatically; pass `format` to be explicit. Required unless codePath is provided.
+- `format` (string, *optional*): Force the source format: "jsx" or "html". Normally omitted — a document starting with <!doctype html> or <html> is treated as HTML and everything else as JSX.
+- `codePath` (string, *optional*): Path to a source file in the workspace container (e.g., "/workspace/pages/dashboard.jsx" or ".../page.html"). If provided, code is read from this file. Optionally reads .meta.json from the same directory for title/visibility.
 - `description` (string, *optional*): Optional description of the page
 - `visibility` (string, *optional*): Page visibility: "private" (default) or "public"
 - `graphId` (string, *optional*): Optional graph ID for the page's data source (e.g. a group graph for memory queries). The page URL stays under the caller's personal subdomain. The caller must be a member of the target graph.
@@ -282,8 +305,9 @@ Replace the entire page code. Use editPage instead for small changes — it is m
 **Arguments:**
 
 - `pageId` (string, **required**): The page ID to update
-- `code` (string, *optional*): New JSX source code
-- `codePath` (string, *optional*): Path to a JSX file in the workspace container. If provided, code is read from this file.
+- `code` (string, *optional*): New page source, JSX or a self-contained HTML document. The format is detected automatically and may differ from the page's current one — replacing a JSX page with an artifact is a valid update.
+- `format` (string, *optional*): Force the source format: "jsx" or "html". Normally omitted — see createPage.
+- `codePath` (string, *optional*): Path to a source file in the workspace container. If provided, code is read from this file.
 - `title` (string, *optional*): New title
 - `description` (string, *optional*): New description
 
@@ -470,6 +494,51 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"pages","method":"getPageUrl","params":{"pageId":"6650abcd1234ef5678901234"}}' | jq .
+```
+
+### `listFeedback`
+
+Read the comments teammates pinned onto one of your pages. A viewer clicks an element on the page and leaves a note attached to it, so each comment comes back with the text they wrote AND the part of the page they were pointing at — treat it as a specific change request, not general feedback.
+
+**Arguments:**
+
+- `pageId` (string, *optional*): The page ID. Get one from listPages or from the createPage result.
+- `path` (string, *optional*): The page path instead of an ID (e.g. "/calendar-design-lab"), resolved within the current graph.
+- `status` (string, *optional*): Which comments to return: "open" (default), "resolved", or "all".
+
+**Returns:**
+
+`object`: Page identity plus a comments array (text, who wrote it, what they pointed at, whether it is stale) and open/resolved counts
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"pages","method":"listFeedback","params":{"path":"/calendar-design-lab"}}' | jq .
+```
+
+### `resolveFeedback`
+
+Close a page comment once you have acted on it, so it stops coming back from listFeedback. Resolve it when the change is actually made — not when you have read it. Pass status "open" to reopen one you closed too early.
+
+**Arguments:**
+
+- `feedbackId` (string, **required**): The comment ID, from listFeedback.
+- `status` (string, *optional*): "resolved" (default) or "open" to reopen.
+
+**Returns:**
+
+`object`: The comment with its new status and the page it belongs to
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"pages","method":"resolveFeedback","params":{"feedbackId":"6a6a3e8876d577eaae1c3d3c"}}' | jq .
 ```
 
 ## Response Format

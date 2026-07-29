@@ -176,16 +176,18 @@ what people can react to, and feedback collected after shipping is not feedback.
 #    need decided. A page nobody knows about collects no comments.
 ```
 
-**Reading the comments back.** There is no items or pages op for them yet. Each
-comment is mirrored into the space's workspace — one file per comment, plus a
-rolled-up index of the open ones for that page:
+**Reading the comments back.** Use the pages ops — `listFeedback` for what is
+outstanding, `resolveFeedback` once you have actually made a change:
 
-```
-/workspace/feedback/<page-slug>/OPEN.md
+```bash
+curl -sS -X POST "$MIRRA_API/api/sdk/execute" -H "Authorization: Bearer $MIRRA_TOKEN" \
+  -H "X-Scope: group" -H "X-Group-Id: $GROUP_ID" -H 'Content-Type: application/json' \
+  -d '{ "resourceId": "pages", "method": "listFeedback", "params": { "path": "/checkout-v2" } }'
 ```
 
-Read it with `mirra-workspace`, and answer in chat or in your next note as you
-handle each one. (`mirra-feedback` is a different thing — the bug and
+Each comment tells you what the person wrote and which element they clicked, so
+answer the specific thing. Resolve them as you go and say what you changed, in
+chat or in your next note. (`mirra-feedback` is a different thing — the bug and
 feature-request tracker — and has nothing to do with page comments.)
 
 The item stays open through all of this. When the work does land, close it with
