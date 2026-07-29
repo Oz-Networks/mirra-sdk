@@ -1,12 +1,12 @@
 ---
 name: skills
-description: "Use Mirra to manage reusable instruction bundles for agent execution. Covers all Skills SDK operations via REST API."
+description: "Use Mirra to read and write the procedures this space shares with its members' claude. Covers all Skills SDK operations via REST API."
 allowed-tools: Read, Bash(curl:*, jq:*)
 ---
 
 # Mirra Skills
 
-Manage reusable instruction bundles for agent execution
+read and write the procedures this space shares with its members' Claude
 
 ## Prerequisites
 
@@ -38,28 +38,21 @@ Replace `{operation}` with the operation name from the table below.
 
 | Operation | Description |
 |-----------|-------------|
-| `listSkills` | List skills available to the user (built-in + user-created). |
-| `getSkill` | Get full details of a skill by ID. |
-| `createSkill` | Create a new user skill. |
-| `updateSkill` | Update a user skill procedure, templates, or metadata. |
-| `deleteSkill` | Delete a user skill. Cannot delete built-in skills. |
-| `selectSkills` | Select relevant skills for an agent iteration. Returns ranked skills with full procedure text. |
-| `recordSkillUsage` | Record that a skill was used during agent execution. |
-| `getSkillUsage` | Get usage records for a skill or flow. |
+| `listSkills` | List this space's procedures as a menu — one trigger line each, no bodies. Call this once per ses... |
+| `getSkill` | Load one procedure by name. Returns the full markdown body — follow it. |
+| `createSkill` | Write a new procedure into this space so teammates’ agents can run it. Write it from what actuall... |
+| `updateSkill` | Revise a procedure in place. Any member of the space can improve any procedure. |
+| `deleteSkill` | Delete a procedure from this space. |
 
 ## Operation Details
 
 ### `listSkills`
 
-List skills available to the user (built-in + user-created).
-
-**Arguments:**
-
-- `category` (string, *optional*): Filter by category
+List this space's procedures as a menu — one trigger line each, no bodies. Call this once per session; load a body with getSkill only when a description matches what you are about to do.
 
 **Returns:**
 
-`AdapterOperationResult`: Returns { count, skills[] }. Each skill: { skillId, name, title, description, category, builtIn, usageCount }.
+`AdapterOperationResult`: Returns { count, skills[] }. Each entry: { name, description, tags, updatedAt }.
 
 **Example:**
 
@@ -72,15 +65,15 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `getSkill`
 
-Get full details of a skill by ID.
+Load one procedure by name. Returns the full markdown body — follow it.
 
 **Arguments:**
 
-- `skillId` (string, **required**): ID of the skill
+- `name` (string, **required**): The procedure name, as returned by listSkills
 
 **Returns:**
 
-`AdapterOperationResult`: Returns full skill with procedure, templates, and examples.
+`AdapterOperationResult`: Returns { name, description, body, tags, authorUserId, updatedAt }.
 
 **Example:**
 
@@ -88,27 +81,23 @@ Get full details of a skill by ID.
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"skills","method":"getSkill","params":{"skillId":"<ID>"}}' | jq .
+  -d '{"resourceId":"skills","method":"getSkill","params":{"name":"<value>"}}' | jq .
 ```
 
 ### `createSkill`
 
-Create a new user skill.
+Write a new procedure into this space so teammates’ agents can run it. Write it from what actually just happened, in the second person, addressed to another Claude.
 
 **Arguments:**
 
-- `name` (string, **required**): Unique kebab-case name
-- `title` (string, **required**): Human-readable title
-- `description` (string, **required**): What this skill does
-- `whenToUse` (string, **required**): Conditions for using this skill
-- `whenNotToUse` (string, **required**): Conditions to avoid this skill
-- `procedure` (array, **required**): Step-by-step procedure
-- `category` (string, **required**): Skill category
+- `name` (string, **required**): kebab-case, unique within the space (e.g. "qualify-inbound-lead")
+- `description` (string, **required**): The trigger line: when another agent should load this. One sentence, concrete.
+- `body` (string, **required**): Markdown. The procedure itself — steps, gotchas, what "done" looks like.
 - `tags` (array, *optional*): Tags for discovery
 
 **Returns:**
 
-`AdapterOperationResult`: Returns the created skill.
+`AdapterOperationResult`: Returns the created procedure.
 
 **Example:**
 
@@ -116,21 +105,23 @@ Create a new user skill.
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"skills","method":"createSkill","params":{"name":"<value>","title":"<value>","description":"<value>","whenToUse":"<value>","whenNotToUse":"<value>","procedure":[],"category":"<value>"}}' | jq .
+  -d '{"resourceId":"skills","method":"createSkill","params":{"name":"<value>","description":"<value>","body":"<value>"}}' | jq .
 ```
 
 ### `updateSkill`
 
-Update a user skill procedure, templates, or metadata.
+Revise a procedure in place. Any member of the space can improve any procedure.
 
 **Arguments:**
 
-- `skillId` (string, **required**): ID of the skill to update
-- `updates` (object, **required**): Fields to update
+- `name` (string, **required**): The procedure to update
+- `description` (string, *optional*): New trigger line
+- `body` (string, *optional*): New markdown body
+- `tags` (array, *optional*): New tags
 
 **Returns:**
 
-`AdapterOperationResult`: Returns the updated skill.
+`AdapterOperationResult`: Returns the updated procedure.
 
 **Example:**
 
@@ -138,16 +129,16 @@ Update a user skill procedure, templates, or metadata.
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"skills","method":"updateSkill","params":{"skillId":"<ID>","updates":{}}}' | jq .
+  -d '{"resourceId":"skills","method":"updateSkill","params":{"name":"<value>"}}' | jq .
 ```
 
 ### `deleteSkill`
 
-Delete a user skill. Cannot delete built-in skills.
+Delete a procedure from this space.
 
 **Arguments:**
 
-- `skillId` (string, **required**): ID of the skill to delete
+- `name` (string, **required**): The procedure to delete
 
 **Returns:**
 
@@ -159,81 +150,7 @@ Delete a user skill. Cannot delete built-in skills.
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"skills","method":"deleteSkill","params":{"skillId":"<ID>"}}' | jq .
-```
-
-### `selectSkills`
-
-Select relevant skills for an agent iteration. Returns ranked skills with full procedure text.
-
-**Arguments:**
-
-- `agentObjective` (string, **required**): The objective being pursued
-- `currentPhase` (string, *optional*): Current execution phase
-- `isLooping` (boolean, *optional*): Whether loop detection is active
-- `budgetPercentage` (number, *optional*): Token budget used (0-100)
-- `recentFailureCount` (number, *optional*): Number of recent failures
-- `hasDelegation` (boolean, *optional*): Whether delegation is configured
-
-**Returns:**
-
-`AdapterOperationResult`: Returns { count, skills[] } with full procedure text for LLM context injection. Max 10 skills.
-
-**Example:**
-
-```bash
-curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"skills","method":"selectSkills","params":{"agentObjective":"<value>"}}' | jq .
-```
-
-### `recordSkillUsage`
-
-Record that a skill was used during agent execution.
-
-**Arguments:**
-
-- `skillId` (string, **required**): ID of the skill used
-- `flowId` (string, **required**): ID of the agent flow
-- `iteration` (number, **required**): Iteration number
-- `outcome` (string, **required**): success or failure
-- `notes` (string, *optional*): Optional notes
-
-**Returns:**
-
-`AdapterOperationResult`: Returns the created usage record.
-
-**Example:**
-
-```bash
-curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"skills","method":"recordSkillUsage","params":{"skillId":"<ID>","flowId":"<ID>","iteration":10,"outcome":"<value>"}}' | jq .
-```
-
-### `getSkillUsage`
-
-Get usage records for a skill or flow.
-
-**Arguments:**
-
-- `skillId` (string, *optional*): Filter by skill ID
-- `flowId` (string, *optional*): Filter by flow ID
-- `limit` (number, *optional*): Max records to return (default 20)
-
-**Returns:**
-
-`AdapterOperationResult`: Returns { count, usageRecords[] }.
-
-**Example:**
-
-```bash
-curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"skills","method":"getSkillUsage","params":{}}' | jq .
+  -d '{"resourceId":"skills","method":"deleteSkill","params":{"name":"<value>"}}' | jq .
 ```
 
 ## Response Format

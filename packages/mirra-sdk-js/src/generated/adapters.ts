@@ -795,48 +795,23 @@ export interface HypertradeGetTradeHistoryArgs {
 }
 
 // Skills Adapter Types
-export interface SkillsListSkillsArgs {
-  category?: string; // Filter by category
-}
 export interface SkillsGetSkillArgs {
-  skillId: string; // ID of the skill
+  name: string; // The procedure name, as returned by listSkills
 }
 export interface SkillsCreateSkillArgs {
-  name: string; // Unique kebab-case name
-  title: string; // Human-readable title
-  description: string; // What this skill does
-  whenToUse: string; // Conditions for using this skill
-  whenNotToUse: string; // Conditions to avoid this skill
-  procedure: any[]; // Step-by-step procedure
-  category: string; // Skill category
+  name: string; // kebab-case, unique within the space (e.g. "qualify-inbound-lead")
+  description: string; // The trigger line: when another agent should load this. One sentence, concrete.
+  body: string; // Markdown. The procedure itself — steps, gotchas, what "done" looks like.
   tags?: any[]; // Tags for discovery
 }
 export interface SkillsUpdateSkillArgs {
-  skillId: string; // ID of the skill to update
-  updates: any; // Fields to update
+  name: string; // The procedure to update
+  description?: string; // New trigger line
+  body?: string; // New markdown body
+  tags?: any[]; // New tags
 }
 export interface SkillsDeleteSkillArgs {
-  skillId: string; // ID of the skill to delete
-}
-export interface SkillsSelectSkillsArgs {
-  agentObjective: string; // The objective being pursued
-  currentPhase?: string; // Current execution phase
-  isLooping?: boolean; // Whether loop detection is active
-  budgetPercentage?: number; // Token budget used (0-100)
-  recentFailureCount?: number; // Number of recent failures
-  hasDelegation?: boolean; // Whether delegation is configured
-}
-export interface SkillsRecordSkillUsageArgs {
-  skillId: string; // ID of the skill used
-  flowId: string; // ID of the agent flow
-  iteration: number; // Iteration number
-  outcome: string; // success or failure
-  notes?: string; // Optional notes
-}
-export interface SkillsGetSkillUsageArgs {
-  skillId?: string; // Filter by skill ID
-  flowId?: string; // Filter by flow ID
-  limit?: number; // Max records to return (default 20)
+  name: string; // The procedure to delete
 }
 
 // Work Items Adapter Types
@@ -1082,8 +1057,9 @@ export interface ObservabilityGetTraceArgs {
 export interface PagesCreatePageArgs {
   path: string; // URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
   title?: string; // Display title for the page. Required unless codePath is provided (can be read from .meta.json).
-  code?: string; // JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals. Required unless codePath is provided.
-  codePath?: string; // Path to a JSX file in the workspace container (e.g., "/workspace/pages/dashboard.jsx"). If provided, code is read from this file. Optionally reads .meta.json from the same directory for title/visibility.
+  code?: string; // Page source, in either format. JSX: must define a top-level function App() component, no import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are pre-loaded globals. HTML: a self-contained document with inline CSS/JS and no external requests — the Claude Artifact shape, stored and served verbatim, with no page shell and no data hooks. The format is detected automatically; pass `format` to be explicit. Required unless codePath is provided.
+  format?: string; // Force the source format: "jsx" or "html". Normally omitted — a document starting with <!doctype html> or <html> is treated as HTML and everything else as JSX.
+  codePath?: string; // Path to a source file in the workspace container (e.g., "/workspace/pages/dashboard.jsx" or ".../page.html"). If provided, code is read from this file. Optionally reads .meta.json from the same directory for title/visibility.
   description?: string; // Optional description of the page
   visibility?: string; // Page visibility: "private" (default) or "public"
   graphId?: string; // Optional graph ID for the page's data source (e.g. a group graph for memory queries). The page URL stays under the caller's personal subdomain. The caller must be a member of the target graph.
@@ -1114,8 +1090,9 @@ export interface PagesEditPageArgs {
 }
 export interface PagesUpdatePageArgs {
   pageId: string; // The page ID to update
-  code?: string; // New JSX source code
-  codePath?: string; // Path to a JSX file in the workspace container. If provided, code is read from this file.
+  code?: string; // New page source, JSX or a self-contained HTML document. The format is detected automatically and may differ from the page's current one — replacing a JSX page with an artifact is a valid update.
+  format?: string; // Force the source format: "jsx" or "html". Normally omitted — see createPage.
+  codePath?: string; // Path to a source file in the workspace container. If provided, code is read from this file.
   title?: string; // New title
   description?: string; // New description
 }
@@ -1146,6 +1123,15 @@ export interface PagesSharePageArgs {
 }
 export interface PagesGetPageUrlArgs {
   pageId: string; // The page ID
+}
+export interface PagesListFeedbackArgs {
+  pageId?: string; // The page ID. Get one from listPages or from the createPage result.
+  path?: string; // The page path instead of an ID (e.g. "/calendar-design-lab"), resolved within the current graph.
+  status?: string; // Which comments to return: "open" (default), "resolved", or "all".
+}
+export interface PagesResolveFeedbackArgs {
+  feedbackId: string; // The comment ID, from listFeedback.
+  status?: string; // "resolved" (default) or "open" to reopen.
 }
 
 // Polymarket Adapter Types
@@ -1929,6 +1915,45 @@ export interface VoiceSearchTranscriptsArgs {
 export interface VoiceGetActiveCallArgs {
   chatInstanceId?: string; // Check for an active call in a specific chat instance.
   groupId?: string; // Check for an active call in a specific group. Provide either chatInstanceId or groupId.
+}
+export interface VoiceGetCalendarArgs {
+  from?: string; // Window start, ISO date. Defaults to now.
+  to?: string; // Window end, ISO date. Defaults to 14 days after from. Window may span at most 92 days.
+  groupId?: string; // Restrict to one space. Omit for everything across the user's spaces plus personal items.
+}
+export interface VoiceScheduleMeetingArgs {
+  title?: string; // Meeting title. Defaults to "Mirra Meeting".
+  groupId?: string; // Space to attach the meeting to. Omit for a personal meeting.
+  startAt: string; // First occurrence, ISO date, must be in the future.
+  durationMinutes?: number; // Length in minutes, 15 to 480. Default 30.
+  timezone: string; // IANA timezone the meeting is scheduled in (recurrence follows this wall clock), e.g. "America/New_York".
+  recurrence?: string; // One of "none", "daily", "weekly", "monthly". Default "none".
+}
+export interface VoiceCancelScheduledMeetingArgs {
+  uuid: string; // The meeting's public uuid (10 characters, from getCalendar or the share link).
+}
+export interface VoiceCreateCalendarEventArgs {
+  title: string; // Event title.
+  groupId?: string; // Space the event belongs to. Omit for a personal event.
+  startAt: string; // Start, ISO date.
+  durationMinutes?: number; // Length in minutes, 5 to 1440. Default 60.
+  allDay?: boolean; // All-day event (no specific time). Default false.
+  timezone: string; // IANA timezone, e.g. "America/New_York".
+  recurrence?: string; // One of "none", "daily", "weekly", "monthly". Default "none".
+  notes?: string; // Optional notes, up to 2000 characters.
+}
+export interface VoiceUpdateCalendarEventArgs {
+  eventId: string; // The event id from getCalendar.
+  title?: string; // New title.
+  startAt?: string; // New start, ISO date.
+  durationMinutes?: number; // New length in minutes, 5 to 1440.
+  allDay?: boolean; // All-day flag.
+  timezone?: string; // New IANA timezone.
+  recurrence?: string; // One of "none", "daily", "weekly", "monthly".
+  notes?: string; // New notes.
+}
+export interface VoiceDeleteCalendarEventArgs {
+  eventId: string; // The event id from getCalendar.
 }
 
 // Workspace Adapter Types
@@ -3830,75 +3855,48 @@ export type HypertradeGetTradeHistoryResult = AdapterResultBase<HypertradeGetTra
 
 // Skills Response Types
 export interface SkillSummary {
-  skillId: string; // Unique skill ID
-  name: string; // Kebab-case name
-  title: string; // Human-readable title
-  description: string; // What the skill does
-  category: string; // Skill category
-  builtIn: boolean; // Whether this is a built-in skill
-  usageCount: number; // Times this skill has been used
+  name: string; // kebab-case procedure name
+  description: string; // The trigger line — when this procedure applies
+  tags: any; // Tags for discovery
+  updatedAt: string; // Last revision timestamp (ISO 8601)
 }
 
 export interface SkillListData {
-  count: number; // Number of skills returned
-  skills: any; // List of skills
+  count: number; // Number of procedures in this space
+  skills: any; // The menu — one trigger line per procedure, no bodies
 }
 
 export type SkillsListSkillsResult = AdapterResultBase<SkillListData>;
 
 export interface SkillDetailData {
-  skillId: string; // Unique skill ID
-  name: string; // Kebab-case name
-  title: string; // Human-readable title
-  description: string; // What the skill does
-  category: string; // Skill category
-  builtIn: boolean; // Whether this is a built-in skill
-  usageCount: number; // Times this skill has been used
-  whenToUse: string; // When to use this skill
-  whenNotToUse: string; // When not to use this skill
-  procedure: any; // Step-by-step procedure
-  requiredAdapters: any; // Adapters required by this skill
-  version: string; // Skill version
+  name: string; // kebab-case procedure name
+  description: string; // The trigger line — when this procedure applies
   tags: any; // Tags for discovery
-  createdAt: string; // Creation timestamp (ISO 8601)
+  updatedAt: string; // Last revision timestamp (ISO 8601)
+  body: string; // The procedure, as markdown
+  authorUserId: string; // User who last wrote this procedure
 }
 
 export type SkillsGetSkillResult = AdapterResultBase<SkillDetailData>;
 
 export interface SkillCreateData {
-  skillId: string; // Unique skill ID
-  name: string; // Kebab-case name
-  title: string; // Human-readable title
-  description: string; // What the skill does
-  category: string; // Skill category
-  builtIn: boolean; // Whether this is a built-in skill
-  usageCount: number; // Times this skill has been used
-  whenToUse: string; // When to use this skill
-  whenNotToUse: string; // When not to use this skill
-  procedure: any; // Step-by-step procedure
-  requiredAdapters: any; // Adapters required by this skill
-  version: string; // Skill version
+  name: string; // kebab-case procedure name
+  description: string; // The trigger line — when this procedure applies
   tags: any; // Tags for discovery
-  createdAt: string; // Creation timestamp (ISO 8601)
+  updatedAt: string; // Last revision timestamp (ISO 8601)
+  body: string; // The procedure, as markdown
+  authorUserId: string; // User who last wrote this procedure
 }
 
 export type SkillsCreateSkillResult = AdapterResultBase<SkillCreateData>;
 
 export interface SkillUpdateData {
-  skillId: string; // Unique skill ID
-  name: string; // Kebab-case name
-  title: string; // Human-readable title
-  description: string; // What the skill does
-  category: string; // Skill category
-  builtIn: boolean; // Whether this is a built-in skill
-  usageCount: number; // Times this skill has been used
-  whenToUse: string; // When to use this skill
-  whenNotToUse: string; // When not to use this skill
-  procedure: any; // Step-by-step procedure
-  requiredAdapters: any; // Adapters required by this skill
-  version: string; // Skill version
+  name: string; // kebab-case procedure name
+  description: string; // The trigger line — when this procedure applies
   tags: any; // Tags for discovery
-  createdAt: string; // Creation timestamp (ISO 8601)
+  updatedAt: string; // Last revision timestamp (ISO 8601)
+  body: string; // The procedure, as markdown
+  authorUserId: string; // User who last wrote this procedure
 }
 
 export type SkillsUpdateSkillResult = AdapterResultBase<SkillUpdateData>;
@@ -3909,57 +3907,6 @@ export interface SkillDeleteData {
 }
 
 export type SkillsDeleteSkillResult = AdapterResultBase<SkillDeleteData>;
-
-export interface SkillDetail {
-  skillId: string; // Unique skill ID
-  name: string; // Kebab-case name
-  title: string; // Human-readable title
-  description: string; // What the skill does
-  category: string; // Skill category
-  builtIn: boolean; // Whether this is a built-in skill
-  usageCount: number; // Times this skill has been used
-  whenToUse: string; // When to use this skill
-  whenNotToUse: string; // When not to use this skill
-  procedure: any; // Step-by-step procedure
-  requiredAdapters: any; // Adapters required by this skill
-  version: string; // Skill version
-  tags: any; // Tags for discovery
-  createdAt: string; // Creation timestamp (ISO 8601)
-}
-
-export interface SkillSelectData {
-  count: number; // Number of skills selected
-  skills: any; // Selected skills with full procedure
-}
-
-export type SkillsSelectSkillsResult = AdapterResultBase<SkillSelectData>;
-
-export interface SkillRecordUsageData {
-  usageId: string; // Unique usage record ID
-  skillId: string; // Skill that was used
-  flowId: string; // Flow that used the skill
-  iteration: number; // Iteration number
-  outcome: string; // success or failure
-  timestamp: string; // Usage timestamp (ISO 8601)
-}
-
-export type SkillsRecordSkillUsageResult = AdapterResultBase<SkillRecordUsageData>;
-
-export interface SkillUsageRecord {
-  usageId: string; // Unique usage record ID
-  skillId: string; // Skill that was used
-  flowId: string; // Flow that used the skill
-  iteration: number; // Iteration number
-  outcome: string; // success or failure
-  timestamp: string; // Usage timestamp (ISO 8601)
-}
-
-export interface SkillUsageListData {
-  count: number; // Number of usage records
-  usageRecords: any; // List of usage records
-}
-
-export type SkillsGetSkillUsageResult = AdapterResultBase<SkillUsageListData>;
 
 // Work Items Response Types
 export interface WorkItem {
@@ -4731,6 +4678,41 @@ export interface PagesGetPageUrlData {
 }
 
 export type PagesGetPageUrlResult = AdapterResultBase<PagesGetPageUrlData>;
+
+export interface PagesListFeedbackCommentsItem {
+  id: string; // Comment identifier, used with resolveFeedback
+  text: string; // What the commenter wrote
+  authorName?: string; // Display name of the commenter
+  authorUserId: string; // User ID of the commenter
+  status: string; // Comment status: "open" or "resolved"
+  quotedText?: string; // Text of the page element the comment is pinned to
+  selector: string; // CSS selector of the element the comment is pinned to
+  stale: boolean; // True when the page has been edited since this comment was left, so the element it points at may have moved or gone
+  createdAt: string; // When the comment was left
+  resolvedAt?: string; // When the comment was resolved, if it was
+}
+
+export interface PagesListFeedbackData {
+  pageId: string; // Page identifier
+  path: string; // URL path of the page
+  title: string; // Display title of the page
+  url: string; // Public URL for the page
+  comments: any; // Comments pinned onto the page, oldest first
+  openCount: number; // Number of open comments on the page
+  resolvedCount: number; // Number of resolved comments on the page
+}
+
+export type PagesListFeedbackResult = AdapterResultBase<PagesListFeedbackData>;
+
+export interface PagesResolveFeedbackData {
+  id: string; // Comment identifier
+  pageId: string; // Page the comment belongs to
+  status: string; // New status: "open" or "resolved"
+  text: string; // What the commenter wrote
+  openCount: number; // Comments still open on the page after this change
+}
+
+export type PagesResolveFeedbackResult = AdapterResultBase<PagesResolveFeedbackData>;
 
 // Polymarket Response Types
 export interface PolymarketMarket {
@@ -10115,11 +10097,10 @@ function createHypertradeAdapter(sdk: MirraSDK) {
 function createSkillsAdapter(sdk: MirraSDK) {
   return {
     /**
-     * List skills available to the user (built-in + user-created).
-     * @param args.category - Filter by category (optional)
+     * List this space's procedures as a menu — one trigger line each, no bodies. Call this once per session; load a body with getSkill only when a description matches what you are about to do.
      * @returns Promise<SkillListData> Typed flat response with IDE autocomplete
      */
-    listSkills: async (args: SkillsListSkillsArgs): Promise<SkillListData> => {
+    listSkills: async (args?: {}): Promise<SkillListData> => {
       return sdk.resources.callDirect({
         resourceId: 'skills',
         method: 'listSkills',
@@ -10128,8 +10109,8 @@ function createSkillsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get full details of a skill by ID.
-     * @param args.skillId - ID of the skill
+     * Load one procedure by name. Returns the full markdown body — follow it.
+     * @param args.name - The procedure name, as returned by listSkills
      * @returns Promise<SkillDetailData> Typed flat response with IDE autocomplete
      */
     getSkill: async (args: SkillsGetSkillArgs): Promise<SkillDetailData> => {
@@ -10141,14 +10122,10 @@ function createSkillsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Create a new user skill.
-     * @param args.name - Unique kebab-case name
-     * @param args.title - Human-readable title
-     * @param args.description - What this skill does
-     * @param args.whenToUse - Conditions for using this skill
-     * @param args.whenNotToUse - Conditions to avoid this skill
-     * @param args.procedure - Step-by-step procedure
-     * @param args.category - Skill category
+     * Write a new procedure into this space so teammates’ agents can run it. Write it from what actually just happened, in the second person, addressed to another Claude.
+     * @param args.name - kebab-case, unique within the space (e.g. "qualify-inbound-lead")
+     * @param args.description - The trigger line: when another agent should load this. One sentence, concrete.
+     * @param args.body - Markdown. The procedure itself — steps, gotchas, what "done" looks like.
      * @param args.tags - Tags for discovery (optional)
      * @returns Promise<SkillCreateData> Typed flat response with IDE autocomplete
      */
@@ -10161,9 +10138,11 @@ function createSkillsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Update a user skill procedure, templates, or metadata.
-     * @param args.skillId - ID of the skill to update
-     * @param args.updates - Fields to update
+     * Revise a procedure in place. Any member of the space can improve any procedure.
+     * @param args.name - The procedure to update
+     * @param args.description - New trigger line (optional)
+     * @param args.body - New markdown body (optional)
+     * @param args.tags - New tags (optional)
      * @returns Promise<SkillUpdateData> Typed flat response with IDE autocomplete
      */
     updateSkill: async (args: SkillsUpdateSkillArgs): Promise<SkillUpdateData> => {
@@ -10175,64 +10154,14 @@ function createSkillsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Delete a user skill. Cannot delete built-in skills.
-     * @param args.skillId - ID of the skill to delete
+     * Delete a procedure from this space.
+     * @param args.name - The procedure to delete
      * @returns Promise<SkillDeleteData> Typed flat response with IDE autocomplete
      */
     deleteSkill: async (args: SkillsDeleteSkillArgs): Promise<SkillDeleteData> => {
       return sdk.resources.callDirect({
         resourceId: 'skills',
         method: 'deleteSkill',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Select relevant skills for an agent iteration. Returns ranked skills with full procedure text.
-     * @param args.agentObjective - The objective being pursued
-     * @param args.currentPhase - Current execution phase (optional)
-     * @param args.isLooping - Whether loop detection is active (optional)
-     * @param args.budgetPercentage - Token budget used (0-100) (optional)
-     * @param args.recentFailureCount - Number of recent failures (optional)
-     * @param args.hasDelegation - Whether delegation is configured (optional)
-     * @returns Promise<SkillSelectData> Typed flat response with IDE autocomplete
-     */
-    selectSkills: async (args: SkillsSelectSkillsArgs): Promise<SkillSelectData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'skills',
-        method: 'selectSkills',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Record that a skill was used during agent execution.
-     * @param args.skillId - ID of the skill used
-     * @param args.flowId - ID of the agent flow
-     * @param args.iteration - Iteration number
-     * @param args.outcome - success or failure
-     * @param args.notes - Optional notes (optional)
-     * @returns Promise<SkillRecordUsageData> Typed flat response with IDE autocomplete
-     */
-    recordSkillUsage: async (args: SkillsRecordSkillUsageArgs): Promise<SkillRecordUsageData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'skills',
-        method: 'recordSkillUsage',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get usage records for a skill or flow.
-     * @param args.skillId - Filter by skill ID (optional)
-     * @param args.flowId - Filter by flow ID (optional)
-     * @param args.limit - Max records to return (default 20) (optional)
-     * @returns Promise<SkillUsageListData> Typed flat response with IDE autocomplete
-     */
-    getSkillUsage: async (args: SkillsGetSkillUsageArgs): Promise<SkillUsageListData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'skills',
-        method: 'getSkillUsage',
         params: args || {}
       });
     }
@@ -10307,7 +10236,7 @@ function createItemsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Add a progress note to an open or proposed item that has real news but is not finished — the long-running case (a months-long prospecting item, a multi-week build), and the review case: you built a prototype, mockup or draft and want the team to react before it ships. Pass artifacts to attach it — publish it as a page first (pages createPage) so teammates can pin comments straight onto it, then read those comments back from the space workspace at /workspace/feedback/<page-slug>/OPEN.md. This is the ONLY way to attach something to an item without closing it. The note lands on the item (shown in its detail view, exported to the repo), never on the home card. Does NOT change status. Rejected on done items — a note after the fact is a closeout revision, which is a repo-side edit. To finish work, use closeItem with a closeout instead.
+     * Add a progress note to an open or proposed item that has real news but is not finished — the long-running case (a months-long prospecting item, a multi-week build), and the review case: you built a prototype, mockup or draft and want the team to react before it ships. Pass artifacts to attach it — publish it as a page first (pages createPage) so teammates can pin comments straight onto it, then read those comments back with pages listFeedback. This is the ONLY way to attach something to an item without closing it. The note lands on the item (shown in its detail view, exported to the repo), never on the home card. Does NOT change status. Rejected on done items — a note after the fact is a closeout revision, which is a repo-side edit. To finish work, use closeItem with a closeout instead.
      * @param args.itemKey - The item key to note (find it with listItems)
      * @param args.note - The progress note — what advanced, in plain language (max 4000 chars, newlines fine). Not a status change; just news worth recording on the item.
      * @param args.artifacts - Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Every link must be something a teammate can open in a browser and SEE — a page, mockup, image, PR/commit, deploy, or doc. Never API routes, code file paths, localhost URLs, or anything that renders raw JSON. Most work has no viewable surface (an API change, a refactor, a migration) and a PR is viewable only to the developers on the team: for those, publish a short page (pages createPage) and attach it as kind "page". Never close real work with nothing attached. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps. (optional)
@@ -10905,11 +10834,12 @@ function createObservabilityAdapter(sdk: MirraSDK) {
 function createPagesAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Create a new page with JSX code. The code is compiled to HTML with React, Tailwind CSS, Recharts, and Lucide icons available as globals. Define a top-level `function App()` component as the entry point. Do NOT use import/require statements — all libraries are pre-loaded via CDN. Use Recharts components directly (e.g. `<BarChart>`, `<ResponsiveContainer>`) and Lucide icons via `lucide.IconName`. ═══════════════════════════════════════════════════════════════ MIRRA STYLE GUIDE — READ BEFORE WRITING A SINGLE LINE OF JSX ═══════════════════════════════════════════════════════════════ Mirra's aesthetic is "Warm Digital Companion" — refined, confident, warm, human. Think editorial magazine meets premium consumer product. NOT generic SaaS dashboard. NOT AI-assistant-purple. NOT Linear-clone-dark-gray. Warmth and intentionality in every detail. Pages render as **web pages** viewed on mobile AND desktop (not native apps). Design responsive-first with a clear content hierarchy. ── BRAND IDENTITY ────────────────────────────────────────────── Primary accent: CORAL-ORANGE (#F43D44) — never purple, never blue. Used for CTAs, key data points, active states, chart highlights. Use it SPARINGLY for maximum impact — 5-10% of visible surface area, not 30%. Dark surfaces: warm near-black (#1A1B1F / #252630), NOT pure black, NOT cool slate. Light surfaces: warm sand (#F2EDE8 / #FAFAFA), NOT pure white, NOT cool gray. Text: warm charcoal (#2E2F38) on light, warm off-white (#ECECEC) on dark. ── THEME TOKENS (use these, never raw colors) ────────────────── Backgrounds: bg-m-bg (page), bg-m-surface (cards), bg-m-surface-alt (nested) Text: text-m-text (primary), text-m-text-secondary, text-m-text-muted Borders: border-m-border (subtle, always), border-m-border-strong (emphasis) Accent: text-m-accent-text, bg-m-accent, bg-m-accent-soft (tinted wash) Status: text-emerald-500 (up), text-rose-400 (down), text-amber-400 (warn) Charts: MIRRA_COLORS[0..7] — never hardcode hex fills Dark mode is DEFAULT. For light pages add data-theme="light" on the root div. ── TYPOGRAPHY ────────────────────────────────────────────────── font-display (Syne) — headings, hero numbers, stat values. Bold/extrabold. font-body (Inter) — body copy, labels, descriptions (default). font-mono — numeric data, percentages, timestamps, ids, code. Scale (web): hero 48-72px, h1 36-48px, h2 28-36px, h3 20-24px, body 15-17px, caption 12-13px. Tight tracking on headlines (tracking-tight or -0.02em). Sentence case, never ALL CAPS for headings. Short uppercase tracking-wide only for small labels. Line-height: 1.2-1.3 headings, 1.6-1.7 body. ── LAYOUT & SPACING (8pt grid) ───────────────────────────────── Centered content, max-w-6xl or max-w-7xl on desktop (1100-1280px), never edge-to-edge full-bleed text. Page padding: p-6 md:p-10 lg:p-16 — generous whitespace is the #1 visual difference between Mirra and AI-generated pages. Section rhythm: mb-12 md:mb-20 between major sections. Never cramped. Grid gaps: gap-4 (tight), gap-6 (standard), gap-8 (airy). Never gap-2 between cards. Corner radius: rounded-lg (8px) for small elements, rounded-xl (12-16px) for cards, rounded-2xl (20-24px) for feature blocks, rounded-full for pills/avatars. Consistent per page. ── SURFACES & DEPTH ──────────────────────────────────────────── Prefer 1px subtle borders (border border-m-border) over shadows — shadows read as "AI generic." When using shadow, go low-opacity and warm: shadow-sm or shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)]. Skip if unsure. Layering: bg-m-bg → bg-m-surface (card) → bg-m-surface-alt (nested row/chip). Don't stack more than 3 levels. ── MOTION ────────────────────────────────────────────────────── Use sparingly. transition-colors duration-200 on hover is enough. One well-orchestrated page-load stagger (opacity + translateY 8px, delay per index) > scattered micro-interactions. NEVER hover:scale-105 on cards — it's AI-tell #1. ── COMMIT TO A DIRECTION ─────────────────────────────────────── Before writing JSX, pick a concrete aesthetic stance for THIS page: editorial/magazine, data-dense terminal, minimal report, warm dashboard, playful toy, etc. Execute that stance consistently. Intentionality beats novelty. ── DO ────────────────────────────────────────────────────────── ✓ Use m-* tokens for every color. If you type "bg-slate" or "bg-gray" you're wrong. ✓ Use font-mono for EVERY number the user reads: prices, percentages, counts, dates, ids. ✓ Use generous padding (p-8 md:p-12) and max-width centering. ✓ Use the accent color as a highlight, not a fill. One or two accent moments per viewport. ✓ Use MIRRA_COLORS for chart fills/strokes, var(--m-border) for chart gridlines, var(--m-text-muted) for axis labels. ✓ Use tabular-nums on numeric columns in tables. ✓ Use sentence case for all headings and labels. ✓ Build responsive-first: mobile stack → tablet 2-col → desktop 3-4 col. ── DO NOT (these are AI-generic "slop" tells) ────────────────── ✗ NO purple-to-blue gradients. NO "from-purple-500 to-blue-500." This is the #1 AI-slop giveaway. ✗ NO pure white (#FFFFFF) page backgrounds or pure black (#000). Always warm neutrals. ✗ NO hover:scale-105, hover:-translate-y-1, or bouncy card hover effects. ✗ NO emoji as bullet points or UI decoration (✨🚀💡). Use Lucide icons. ✗ NO bg-slate, bg-zinc, bg-gray, bg-neutral — use bg-m-* tokens. ✗ NO generic card grids of 3 identical boxes with icon-title-description. Vary sizes, weights, layouts. ✗ NO Space Grotesk, no Poppins, no Montserrat. Use font-display (Syne) / font-body (Inter) / font-mono. ✗ NO drop-shadow-2xl, no ring-4, no excessive glow/blur. Restraint. ✗ NO all-caps h1/h2. Reserve uppercase for tiny tracking-wide labels. ✗ NO centered body copy paragraphs. Center headings, left-align prose. ✗ NO placeholder lorem ipsum — use real content or the user's data. ✗ NO flashy intro animations or scroll-jacking. If a page would look at home in a GPT-generated "SaaS landing page" demo, REJECT and redesign. Mirra pages should feel like a thoughtful designer crafted them.
+     * Create a new page with JSX code. The code is compiled to HTML with React, Tailwind CSS, Recharts, and Lucide icons available as globals. Define a top-level `function App()` component as the entry point. Do NOT use import/require statements — all libraries are pre-loaded via CDN. Use Recharts components directly (e.g. `<BarChart>`, `<ResponsiveContainer>`) and Lucide icons via `lucide.IconName`. ═══════════════════════════════════════════════════════════════ MIRRA STYLE GUIDE — READ BEFORE WRITING A SINGLE LINE OF JSX ═══════════════════════════════════════════════════════════════ Mirra's aesthetic is "Corporate Burple" — confident, restrained, modern. Think premium product surface meets editorial clarity. NOT generic SaaS dashboard. NOT Linear-clone-dark-gray. The brand is the only saturated thing on the page; everything else is a quiet neutral. Intentionality in every detail. Pages render as **web pages** viewed on mobile AND desktop (not native apps). Design responsive-first with a clear content hierarchy. ── BRAND IDENTITY ────────────────────────────────────────────── Primary accent: BURPLE (#793BFF) — the brand violet. Used for CTAs, key data points, active states, chart highlights. Use it SPARINGLY for maximum impact — 5-10% of visible surface area, not 30%. Secondary accent: MINT (#A0F0D2 on dark). Optional, for a positive delta or a second emphasis. Never a third hue. Dark surfaces: near-neutral charcoal (#1A1A1E / #212126 / #2A2A30), NOT pure black, NOT navy, NOT violet-tinted — the neutrals sit near 7% saturation so the brand stays the only saturated thing on screen. Light surfaces: cool off-white (#F6F7FB / #FFFFFF), NOT pure gray, NOT cream. Text: #111318 on light, #EDEDF0 on dark. ── THEME TOKENS (use these, never raw colors) ────────────────── Backgrounds: bg-m-bg (page), bg-m-surface (cards), bg-m-surface-alt (nested) Text: text-m-text (primary), text-m-text-secondary, text-m-text-muted Borders: border-m-border (subtle, always), border-m-border-strong (emphasis) Accent: text-m-accent-text, bg-m-accent, bg-m-accent-soft (tinted wash) Secondary: text-m-mint, bg-m-mint — theme-aware, safe on both surfaces Brand ramp: bg-mirra-50 … bg-mirra-950 when you need a tint or shade of the brand Status: text-emerald-500 (up), text-rose-400 (down), text-amber-400 (warn) Charts: MIRRA_COLORS[0..7] — never hardcode hex fills Dark mode is DEFAULT. For light pages add data-theme="light" on the root div. ── TYPOGRAPHY ────────────────────────────────────────────────── font-display (Syne) — headings, hero numbers, stat values. Bold/extrabold. font-body (Inter) — body copy, labels, descriptions (default). font-mono — numeric data, percentages, timestamps, ids, code. Scale (web): hero 48-72px, h1 36-48px, h2 28-36px, h3 20-24px, body 15-17px, caption 12-13px. Tight tracking on headlines (tracking-tight or -0.02em). Sentence case, never ALL CAPS for headings. Short uppercase tracking-wide only for small labels. Line-height: 1.2-1.3 headings, 1.6-1.7 body. ── LAYOUT & SPACING (8pt grid) ───────────────────────────────── Centered content, max-w-6xl or max-w-7xl on desktop (1100-1280px), never edge-to-edge full-bleed text. Page padding: p-6 md:p-10 lg:p-16 — generous whitespace is the #1 visual difference between Mirra and AI-generated pages. Section rhythm: mb-12 md:mb-20 between major sections. Never cramped. Grid gaps: gap-4 (tight), gap-6 (standard), gap-8 (airy). Never gap-2 between cards. Corner radius: rounded-lg (8px) for small elements, rounded-xl (12-16px) for cards, rounded-2xl (20-24px) for feature blocks, rounded-full for pills/avatars. Consistent per page. ── SURFACES & DEPTH ──────────────────────────────────────────── Depth is structural, not drawn: stack the planes bg-m-bg → bg-m-surface → bg-m-surface-alt and let the step in value carry it. Borders only refine that seam. Prefer 1px subtle borders (border border-m-border) over shadows — shadows read as "AI generic." When using shadow, go low-opacity and neutral: shadow-sm or shadow-[0_1px_2px_rgba(0,0,0,0.06),0_8px_24px_rgba(0,0,0,0.08)]. Skip if unsure. Layering: bg-m-bg → bg-m-surface (card) → bg-m-surface-alt (nested row/chip). Don't stack more than 3 levels. ── MOTION ────────────────────────────────────────────────────── Use sparingly. transition-colors duration-200 on hover is enough. One well-orchestrated page-load stagger (opacity + translateY 8px, delay per index) > scattered micro-interactions. NEVER hover:scale-105 on cards — it's AI-tell #1. ── COMMIT TO A DIRECTION ─────────────────────────────────────── Before writing JSX, pick a concrete aesthetic stance for THIS page: editorial/magazine, data-dense terminal, minimal report, warm dashboard, playful toy, etc. Execute that stance consistently. Intentionality beats novelty. ── DO ────────────────────────────────────────────────────────── ✓ Use m-* tokens for every color. If you type "bg-slate" or "bg-gray" you're wrong. ✓ Use font-mono for EVERY number the user reads: prices, percentages, counts, dates, ids. ✓ Use generous padding (p-8 md:p-12) and max-width centering. ✓ Use the accent color as a highlight, not a fill. One or two accent moments per viewport. ✓ Use MIRRA_COLORS for chart fills/strokes, var(--m-border) for chart gridlines, var(--m-text-muted) for axis labels. ✓ Assign MIRRA_COLORS in slot order (0, 1, 2, …) and never cycle or shuffle — the order is what keeps series distinguishable to colorblind readers. Two series take slots 0 and 1, not "two colors that look nice together". A single series takes slot 0 and needs no legend. For scatter/bubble/small-multiples only the first THREE slots are safe; past that, fold the tail into "Other" or facet. ✓ Give any chart with 2+ series a legend, and direct-label up to 4 — identity must never rest on color alone. ✓ Use tabular-nums on numeric columns in tables. ✓ Use sentence case for all headings and labels. ✓ Build responsive-first: mobile stack → tablet 2-col → desktop 3-4 col. ── DO NOT (these are AI-generic "slop" tells) ────────────────── ✗ NO purple-to-blue or pink-to-purple gradients. NO "from-purple-500 to-blue-500." This is the #1 AI-slop giveaway — and it is NOT excused by the brand being violet. Burple is a flat accent, never a gradient stop. ✗ NO Tailwind's purple-500 / violet-500 / indigo-500 as a stand-in for the brand. The brand is bg-m-accent or the mirra-* ramp; a generic purple reads as the AI default, which is the opposite of branded. ✗ NO pure white (#FFFFFF) page backgrounds or pure black (#000). The page plane is bg-m-bg; #FFFFFF is a card surface in light mode, not a page. ✗ NO warm/sand/cream neutrals and NO violet-tinted greys. The neutral spine is near-neutral charcoal on dark, cool off-white on light — the brand is the only saturated thing on the page. ✗ NO hover:scale-105, hover:-translate-y-1, or bouncy card hover effects. ✗ NO emoji as bullet points or UI decoration (✨🚀💡). Use Lucide icons. ✗ NO bg-slate, bg-zinc, bg-gray, bg-neutral — use bg-m-* tokens. ✗ NO generic card grids of 3 identical boxes with icon-title-description. Vary sizes, weights, layouts. ✗ NO Space Grotesk, no Poppins, no Montserrat. Use font-display (Syne) / font-body (Inter) / font-mono. ✗ NO drop-shadow-2xl, no ring-4, no excessive glow/blur. Restraint. ✗ NO all-caps h1/h2. Reserve uppercase for tiny tracking-wide labels. ✗ NO centered body copy paragraphs. Center headings, left-align prose. ✗ NO placeholder lorem ipsum — use real content or the user's data. ✗ NO flashy intro animations or scroll-jacking. If a page would look at home in a GPT-generated "SaaS landing page" demo, REJECT and redesign. Mirra pages should feel like a thoughtful designer crafted them.
      * @param args.path - URL path for the page (e.g. "/dashboard"). Must start with /, lowercase alphanumeric and hyphens only, 2-50 chars.
      * @param args.title - Display title for the page. Required unless codePath is provided (can be read from .meta.json). (optional)
-     * @param args.code - JSX source code. Must define a top-level function App() component. Do NOT use import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are all pre-loaded globals. Required unless codePath is provided. (optional)
-     * @param args.codePath - Path to a JSX file in the workspace container (e.g., "/workspace/pages/dashboard.jsx"). If provided, code is read from this file. Optionally reads .meta.json from the same directory for title/visibility. (optional)
+     * @param args.code - Page source, in either format. JSX: must define a top-level function App() component, no import/require — React, ReactDOM, Recharts (BarChart, PieChart, LineChart, ResponsiveContainer, etc.), lucide-react, Tailwind CSS, and the Mirra design system (m-* color tokens, font-display/font-body/font-mono, MIRRA_COLORS array) are pre-loaded globals. HTML: a self-contained document with inline CSS/JS and no external requests — the Claude Artifact shape, stored and served verbatim, with no page shell and no data hooks. The format is detected automatically; pass `format` to be explicit. Required unless codePath is provided. (optional)
+     * @param args.format - Force the source format: "jsx" or "html". Normally omitted — a document starting with <!doctype html> or <html> is treated as HTML and everything else as JSX. (optional)
+     * @param args.codePath - Path to a source file in the workspace container (e.g., "/workspace/pages/dashboard.jsx" or ".../page.html"). If provided, code is read from this file. Optionally reads .meta.json from the same directory for title/visibility. (optional)
      * @param args.description - Optional description of the page (optional)
      * @param args.visibility - Page visibility: "private" (default) or "public" (optional)
      * @param args.graphId - Optional graph ID for the page's data source (e.g. a group graph for memory queries). The page URL stays under the caller's personal subdomain. The caller must be a member of the target graph. (optional)
@@ -10980,8 +10910,9 @@ function createPagesAdapter(sdk: MirraSDK) {
     /**
      * Replace the entire page code. Use editPage instead for small changes — it is more efficient. Only use updatePage when rewriting most of the page.
      * @param args.pageId - The page ID to update
-     * @param args.code - New JSX source code (optional)
-     * @param args.codePath - Path to a JSX file in the workspace container. If provided, code is read from this file. (optional)
+     * @param args.code - New page source, JSX or a self-contained HTML document. The format is detected automatically and may differ from the page's current one — replacing a JSX page with an artifact is a valid update. (optional)
+     * @param args.format - Force the source format: "jsx" or "html". Normally omitted — see createPage. (optional)
+     * @param args.codePath - Path to a source file in the workspace container. If provided, code is read from this file. (optional)
      * @param args.title - New title (optional)
      * @param args.description - New description (optional)
      * @returns Promise<PagesUpdatePageData> Typed flat response with IDE autocomplete
@@ -11098,6 +11029,35 @@ function createPagesAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'pages',
         method: 'getPageUrl',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read the comments teammates pinned onto one of your pages. A viewer clicks an element on the page and leaves a note attached to it, so each comment comes back with the text they wrote AND the part of the page they were pointing at — treat it as a specific change request, not general feedback. Call this after you publish a page for review, and again before you edit a page someone has been commenting on. Comments default to open; resolveFeedback closes one once you have acted on it, so what comes back here is the work still outstanding. A comment carries the codeHash of the page version it was left on. When `stale` is true the page has been edited since — the quoted element may have moved or gone, so re-read the page before assuming the comment still applies.
+     * @param args.pageId - The page ID. Get one from listPages or from the createPage result. (optional)
+     * @param args.path - The page path instead of an ID (e.g. "/calendar-design-lab"), resolved within the current graph. (optional)
+     * @param args.status - Which comments to return: "open" (default), "resolved", or "all". (optional)
+     * @returns Promise<PagesListFeedbackData> Typed flat response with IDE autocomplete
+     */
+    listFeedback: async (args: PagesListFeedbackArgs): Promise<PagesListFeedbackData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'pages',
+        method: 'listFeedback',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Close a page comment once you have acted on it, so it stops coming back from listFeedback. Resolve it when the change is actually made — not when you have read it. Pass status "open" to reopen one you closed too early.
+     * @param args.feedbackId - The comment ID, from listFeedback.
+     * @param args.status - "resolved" (default) or "open" to reopen. (optional)
+     * @returns Promise<PagesResolveFeedbackData> Typed flat response with IDE autocomplete
+     */
+    resolveFeedback: async (args: PagesResolveFeedbackArgs): Promise<PagesResolveFeedbackData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'pages',
+        method: 'resolveFeedback',
         params: args || {}
       });
     }
@@ -13471,6 +13431,99 @@ function createVoiceAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'voice',
         method: 'getActiveCall',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read the user's Mirra calendar: upcoming scheduled meetings (recurring series expanded into concrete instances), past calls, and native calendar events, date-sorted. Use this to answer "what does my week look like", find free time, or locate a specific meeting before changing it.
+     * @param args.from - Window start, ISO date. Defaults to now. (optional)
+     * @param args.to - Window end, ISO date. Defaults to 14 days after from. Window may span at most 92 days. (optional)
+     * @param args.groupId - Restrict to one space. Omit for everything across the user's spaces plus personal items. (optional)
+     */
+    getCalendar: async (args: VoiceGetCalendarArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'getCalendar',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Schedule a Mirra meeting ahead of time (Google Meet style). Returns a stable share link immediately; reminders fire automatically 10 minutes before and at start. Supports recurrence. The meeting appears on the calendar and in the space.
+     * @param args.title - Meeting title. Defaults to "Mirra Meeting". (optional)
+     * @param args.groupId - Space to attach the meeting to. Omit for a personal meeting. (optional)
+     * @param args.startAt - First occurrence, ISO date, must be in the future.
+     * @param args.durationMinutes - Length in minutes, 15 to 480. Default 30. (optional)
+     * @param args.timezone - IANA timezone the meeting is scheduled in (recurrence follows this wall clock), e.g. "America/New_York".
+     * @param args.recurrence - One of "none", "daily", "weekly", "monthly". Default "none". (optional)
+     */
+    scheduleMeeting: async (args: VoiceScheduleMeetingArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'scheduleMeeting',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Cancel a scheduled meeting series (host only). Cancels every future occurrence. Use getCalendar first to find the meeting's uuid.
+     * @param args.uuid - The meeting's public uuid (10 characters, from getCalendar or the share link).
+     */
+    cancelScheduledMeeting: async (args: VoiceCancelScheduledMeetingArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'cancelScheduledMeeting',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a native calendar event (a plain entry: title, time, optional repeat and notes; no call attached). Use for blocks like "deep work Thursday 2 to 4" or appointments. For anything people should join, use scheduleMeeting instead.
+     * @param args.title - Event title.
+     * @param args.groupId - Space the event belongs to. Omit for a personal event. (optional)
+     * @param args.startAt - Start, ISO date.
+     * @param args.durationMinutes - Length in minutes, 5 to 1440. Default 60. (optional)
+     * @param args.allDay - All-day event (no specific time). Default false. (optional)
+     * @param args.timezone - IANA timezone, e.g. "America/New_York".
+     * @param args.recurrence - One of "none", "daily", "weekly", "monthly". Default "none". (optional)
+     * @param args.notes - Optional notes, up to 2000 characters. (optional)
+     */
+    createCalendarEvent: async (args: VoiceCreateCalendarEventArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'createCalendarEvent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a native calendar event the user owns. Only pass the fields being changed. Use getCalendar first to find the eventId.
+     * @param args.eventId - The event id from getCalendar.
+     * @param args.title - New title. (optional)
+     * @param args.startAt - New start, ISO date. (optional)
+     * @param args.durationMinutes - New length in minutes, 5 to 1440. (optional)
+     * @param args.allDay - All-day flag. (optional)
+     * @param args.timezone - New IANA timezone. (optional)
+     * @param args.recurrence - One of "none", "daily", "weekly", "monthly". (optional)
+     * @param args.notes - New notes. (optional)
+     */
+    updateCalendarEvent: async (args: VoiceUpdateCalendarEventArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'updateCalendarEvent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a native calendar event the user owns. Meetings are cancelled with cancelScheduledMeeting, not this.
+     * @param args.eventId - The event id from getCalendar.
+     */
+    deleteCalendarEvent: async (args: VoiceDeleteCalendarEventArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'voice',
+        method: 'deleteCalendarEvent',
         params: args || {}
       });
     }

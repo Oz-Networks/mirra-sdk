@@ -1,6 +1,6 @@
 ---
 name: mirra
-description: "START HERE for anything Mirra. Load this whenever the repo you're working in has a .mirra/ directory (it's linked to a Mirra team space), or your human mentions their Mirra space, teammates' updates, or the team ledger. Directs the ambient team rituals — record work in the shared ledger, publish update cards, ask the space before expanding scope — and indexes every detail-level mirra-* skill."
+description: "START HERE for anything Mirra. Load this whenever the repo you're working in has a .mirra/ directory (it's linked to a Mirra team space), or your human mentions their Mirra space, teammates' updates, the team ledger, or a procedure their team has written down. Directs the ambient team rituals — record work in the shared ledger, publish update cards, follow the team's own procedures, ask the space before expanding scope — and indexes every detail-level mirra-* skill."
 allowed-tools: Read, Bash(curl:*, jq:*)
 ---
 
@@ -46,6 +46,7 @@ only write to spaces they belong to.
 | Moment | Do this | Details in |
 |---|---|---|
 | Session start in a linked repo | Read `.mirra/CONTEXT.md`; skim the ledger (`listItems`) so you know what the team is doing | `mirra:ledger` |
+| Your human asks for something the team has a written procedure for | Load it and follow it instead of improvising — see **Team procedures** below | this skill |
 | You start team-agreed work | `createItem` — the ledger is the team's record of who is on what | `mirra:ledger` |
 | You ship something | `closeItem` with a `closeout` (how it landed) + artifacts (PR, page, deploy URL) — receipts, not claims. Detail goes on the item, not the card | `mirra:ledger` |
 | You build something worth reacting to — a prototype, mockup, draft, or two options | Publish it as a page and attach it with `noteItem` while the item is still OPEN, then say so in chat. Teammates pin comments straight onto the page, so it comes back as specific feedback | `mirra:ledger`, `mirra:pages` |
@@ -65,6 +66,58 @@ What does NOT go in the ledger: exploratory poking, work your human asked
 you to keep local, anything the team didn't agree to (that's what proposals
 are for). Never invent scope.
 
+## Team procedures — skills your human's teammates wrote for you
+
+A space stores **procedures**: skills written by one member for every other
+member's agent. Anthony writes down how something is actually done once, and
+Merle's Claude runs it correctly without Anthony in the room. They are written
+for Claude, in Claude's own SKILL.md shape — a name, a trigger line, and a
+markdown body.
+
+**Read them menu-first.** Once per session in a linked repo, list the menu —
+one trigger line each, no bodies:
+
+```bash
+curl -s -X POST "https://api.fxn.world/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" -H "x-api-key: ${MIRRA_API_KEY}" \
+  -H "X-Scope: group" -H "X-Group-Id: ${MIRRA_GROUP_ID}" \
+  -d '{ "resourceId": "skills", "method": "listSkills", "params": {} }' | jq '.data.skills'
+```
+
+When one `description` matches what you are about to do, load that body with
+`getSkill` (`{ "name": "qualify-inbound-lead" }`) and **follow it** — it is your
+human's team telling you how they do this, which beats your default approach
+even when your default is good. If nothing matches, proceed normally; do not
+stretch a procedure to fit.
+
+**Write them at the moment they are cheapest.** When your human says *"make
+that a team procedure"*, *"save this for the team"*, or *"Merle should be able
+to do this"* — write it with `createSkill` from what just happened, while the
+steps and the gotchas are still in front of you:
+
+```json
+{ "resourceId": "skills", "method": "createSkill", "params": {
+  "name": "qualify-inbound-lead",
+  "description": "When a new inbound lead arrives and you need to decide whether it is worth a call",
+  "body": "## Steps\n1. …",
+  "tags": ["sales"] } }
+```
+
+Write the body **addressed to another Claude, in the second person** — steps,
+the gotchas that actually bit, and what "done" looks like. Not a description of
+what you did; instructions for doing it again. `name` is kebab-case and unique
+in the space; `description` is the trigger line, so make it concrete about the
+*situation*, not the topic — it is the only thing another agent sees before
+deciding whether to load the body.
+
+Also: `updateSkill` (any member can improve any procedure — revise in place
+rather than writing a near-duplicate) and `deleteSkill`. Full op reference in
+`mirra:skills`.
+
+Teammates on claude.ai get the same procedures through the Mirra connector,
+which lists them in its instructions and loads bodies via `get_team_context`.
+Writing one here is writing it for everyone.
+
 ## Skill index — job to be done → skill
 
 **Core rituals**
@@ -78,6 +131,7 @@ are for). Never invent scope.
 - `mirra:feedback` — file bugs and feature requests against Mirra itself. NOT the page-comment surface: comments pinned on your pages are read with `mirra:pages` (`listFeedback`).
 - `mirra:feed-items` — push notification-style feed items to teammates' apps.
 - `mirra:contacts` — who is in the space; usernames for `recipientBodies`.
+- `mirra:skills` — the team procedures above, op by op: list, get, create, update, delete.
 
 **Data & automation**
 - `mirra:data` — structured records (25MB/graph quota; big ledgers → workspace files).
