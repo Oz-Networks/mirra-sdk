@@ -1,12 +1,12 @@
 ---
 name: observability
-description: "Use Mirra to query audit events and traces for the current user or group. provides full observability into adapter operations, llm tool calls, and desktop operations.. Covers all Observability SDK operations via REST API."
+description: "Use Mirra to query audit events and traces for the current user or group. provides full observability into adapter operations and llm tool calls.. Covers all Observability SDK operations via REST API."
 allowed-tools: Read, Bash(curl:*, jq:*)
 ---
 
 # Mirra Observability
 
-Query audit events and traces for the current user or group. Provides full observability into adapter operations, LLM tool calls, and desktop operations.
+Query audit events and traces for the current user or group. Provides full observability into adapter operations and LLM tool calls.
 
 ## Prerequisites
 
@@ -38,19 +38,19 @@ Replace `{operation}` with the operation name from the table below.
 
 | Operation | Description |
 |-----------|-------------|
-| `queryEvents` | Query audit events with flexible filters. Returns structured audit events for adapter operations,... |
+| `queryEvents` | Query audit events with flexible filters. Returns structured audit events for adapter operations ... |
 | `getTrace` | Reconstruct the full operation chain for a given trace ID. Returns all events in chronological or... |
 
 ## Operation Details
 
 ### `queryEvents`
 
-Query audit events with flexible filters. Returns structured audit events for adapter operations, LLM tool calls, and desktop operations. Use this to investigate errors, see what happened recently, or trace a specific operation chain.
+Query audit events with flexible filters. Returns structured audit events for adapter operations and LLM tool calls. Use this to investigate errors, see what happened recently, or trace a specific operation chain.
 
 **Arguments:**
 
 - `timeRange` (object, *optional*): Time range filter with start/end ISO 8601 strings. Defaults to last 24 hours.
-- `adapter` (string, *optional*): Filter by adapter service ID (e.g. "data", "flows", "desktop")
+- `adapter` (string, *optional*): Filter by adapter service ID (e.g. "data", "flows", "pages")
 - `operation` (string, *optional*): Filter by exact operation name (e.g. "insertRecord", "executeFlow")
 - `outcome` (string, *optional*): Filter by outcome: "success", "failure", or "pending"
 - `severity` (string, *optional*): Filter by severity: "debug", "info", "warn", or "error"
@@ -129,8 +129,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
       "duration": 42
     },
     {
-      "adapter": "desktop",
-      "operation": "executeCommand",
+      "adapter": "pages",
+      "operation": "createPage",
       "outcome": "failure",
       "duration": 12
     }
@@ -139,7 +139,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
     "totalDuration": 54,
     "adaptersCalled": [
       "data",
-      "desktop"
+      "pages"
     ],
     "outcome": "mixed",
     "errorCount": 1

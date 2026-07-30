@@ -137,6 +137,7 @@ Replace `{operation}` with the operation name from the table below.
 | `publishPage` | Publish a page, making it publicly accessible. Generates an API key for the page. |
 | `unpublishPage` | Unpublish a page, making it private. |
 | `sharePage` | Share a private page with another graph (group). Members of the target graph will be able to view... |
+| `shareToOrg` | Share one of this space's pages with the whole organization. By default a page this space publish... |
 | `getPageUrl` | Get the public URL for a page. |
 | `listFeedback` | Read the comments teammates pinned onto one of your pages. A viewer clicks an element on the page... |
 | `resolveFeedback` | Close a page comment once you have acted on it, so it stops coming back from listFeedback. Resolv... |
@@ -473,6 +474,27 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"pages","method":"sharePage","params":{"pageId":"6650abcd1234ef5678901234","graphId":"6650abcd1234ef5678905678"}}' | jq .
+```
+
+### `shareToOrg`
+
+Share one of this space's pages with the whole organization. By default a page this space publishes is readable only inside this space, even though it is stored in the organization's namespace — sibling spaces cannot see it. Use this for the pages that genuinely are company-wide. There is no un-share op yet; treat it as a one-way decision.
+
+**Arguments:**
+
+- `pageId` (string, **required**): The page ID to share with the organization
+
+**Returns:**
+
+`object`: Updated page with id, title, visibility, sharedWithGraphIds, and accessInfo
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"pages","method":"shareToOrg","params":{"pageId":"6650abcd1234ef5678901234"}}' | jq .
 ```
 
 ### `getPageUrl`

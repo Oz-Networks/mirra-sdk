@@ -45,7 +45,7 @@ Replace `{operation}` with the operation name from the table below.
 | `findOne` | Find a single entity by ID or name. Returns the FULL untruncated entity content. Use this after `... |
 | `update` | Update an existing memory entity. Works with all memory types including tasks created via createT... |
 | `delete` | Delete a memory entity. Works with all memory types including tasks, notes, ideas, etc. |
-| `share` | Share a memory entity with another graph (group or contact). Only the creator can share memories.... |
+| `share` | Share a memory entity with another graph: a space, a person, or the organization a space belongs ... |
 | `unshare` | Remove sharing of a memory entity from a graph. Only the creator can unshare. Cannot unshare from... |
 | `listGraphs` | List all graphs a memory entity is shared with, including share history and metadata. |
 
@@ -376,12 +376,12 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `share`
 
-Share a memory entity with another graph (group or contact). Only the creator can share memories. Recipients can view and complete tasks but cannot edit or delete.
+Share a memory entity with another graph: a space, a person, or the organization a space belongs to. Sharing into the organization puts it in the pool every space in that organization reads. Only the creator can share memories. Recipients can view and complete tasks but cannot edit or delete.
 
 **Arguments:**
 
 - `entityId` (string, **required**): Entity ID to share
-- `targetGraphId` (string, **required**): Target graph ID to share with (group ID or user contact graph ID)
+- `targetGraphId` (string, **required**): Target graph ID to share with: a space ID, a user contact graph ID, or an organization ID (the shared pool for that organization's spaces)
 - `shareReason` (string, *optional*): Optional reason for sharing
 
 **Returns:**

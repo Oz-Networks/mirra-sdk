@@ -49,13 +49,12 @@ claimed that name.
 | [`/mirra:contacts`](./skills/contacts/) | Contacts | 9 | No |
 | [`/mirra:dashboards`](./skills/dashboards/) | Dashboards | 8 | No |
 | [`/mirra:data`](./skills/data/) | Data | 14 | No |
-| [`/mirra:desktop`](./skills/desktop/) | Desktop | 10 | No |
 | [`/mirra:feed-items`](./skills/feed-items/) | Feed Items | 2 | No |
 | [`/mirra:feedback`](./skills/feedback/) | Feedback | 5 | No |
 | [`/mirra:flows`](./skills/flows/) | Flows | 21 | No |
 | [`/mirra:memory`](./skills/memory/) | Memory | 10 | No |
 | [`/mirra:observability`](./skills/observability/) | Observability | 2 | No |
-| [`/mirra:pages`](./skills/pages/) | Pages | 15 | No |
+| [`/mirra:pages`](./skills/pages/) | Pages | 16 | No |
 | [`/mirra:skills`](./skills/skills/) | Skills | 5 | No |
 | [`/mirra:channels`](./skills/channels/) | Space Channels | 6 | No |
 | [`/mirra:user`](./skills/user/) | User | 6 | No |
@@ -70,7 +69,7 @@ claimed that name.
 |-------|---------|------------|---------------|
 | [`/mirra:google-gmail`](./skills/google-gmail/) | Gmail | 10 | Yes (OAuth) |
 | [`/mirra:messaging`](./skills/messaging/) | Mirra Messaging | 13 | No |
-| [`/mirra:telegram-bot`](./skills/telegram-bot/) | Telegram Bot | 14 | Yes (OAuth) |
+| [`/mirra:telegram-bot`](./skills/telegram-bot/) | Telegram Bot | 15 | Yes (OAuth) |
 
 ### Productivity
 
@@ -110,7 +109,7 @@ claimed that name.
 | Skill | Adapter | Operations | Auth Required |
 |-------|---------|------------|---------------|
 | [`/mirra:telegram`](./skills/telegram/) | Telegram | 8 | Yes (OAuth) |
-| [`/mirra:twitter`](./skills/twitter/) | Twitter | 4 | Yes (OAuth) |
+| [`/mirra:twitter`](./skills/twitter/) | Twitter | 5 | Yes (OAuth) |
 
 ### Other
 
@@ -134,7 +133,7 @@ Hand-authored orchestration skills (not tied to a single adapter):
 | [`/mirra:ledger`](./skills/ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), share drafts for comment while the work is still open, close what ships with a page a teammate can actually open, and publish ONE narrated update card per work burst — led by a picture, revised, never stacked. Rides the Mirra items adapter / MCP work-ledger tools. |
 | [`/mirra:mirra`](./skills/mirra/) | START HERE for anything Mirra. Load this whenever the repo you're working in has a .mirra/ directory (it's linked to a Mirra team space), or your human mentions their Mirra space, teammates' updates, the team ledger, or a procedure their team has written down. Directs the ambient team rituals — record work in the shared ledger, publish update cards, follow the team's own procedures, ask the space before expanding scope — and indexes every detail-level mirra-* skill. |
 
-**Total: 38 adapters, 436 operations, 3 collaboration skill(s)**
+**Total: 37 adapters, 429 operations, 3 collaboration skill(s)**
 
 ## How It Works
 

@@ -89,6 +89,63 @@ export interface AiTranscribeAudioArgs {
   prompt?: string; // Optional text prompt to bias the transcription (e.g. expected vocabulary, names, or prior context).
 }
 
+// Jira Adapter Types
+export interface JiraCreateIssueArgs {
+  projectKey: string; // Jira project key (e.g., "PROJ")
+  summary: string; // Issue summary/title
+  description?: string; // Issue description
+  issueType?: string; // Issue type (Task, Bug, Story, etc.)
+}
+export interface JiraSearchIssuesArgs {
+  jql: string; // JQL query string
+  maxResults?: number; // Maximum number of results (default: 50, max: 100)
+}
+export interface JiraGetIssueArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123") or ID
+}
+export interface JiraUpdateIssueArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+  summary?: string; // New issue summary/title
+  description?: string; // New issue description
+}
+export interface JiraDeleteIssueArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+}
+export interface JiraAddCommentArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+  comment: string; // Comment text
+}
+export interface JiraTransitionIssueArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+  transitionId: string; // ID of the transition to perform
+}
+export interface JiraAssignIssueArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+  accountId: string; // Atlassian account ID of the assignee
+}
+export interface JiraGetProjectMetadataArgs {
+  projectKey: string; // Project key (e.g., "PROJ")
+}
+export interface JiraGetTransitionsArgs {
+  issueKey: string; // Issue key (e.g., "PROJ-123")
+}
+export interface JiraListAssignableUsersArgs {
+  projectKey: string; // Project key (e.g., "PROJ")
+}
+export interface JiraGetIssueTypesArgs {
+  projectKey: string; // Project key (e.g., "PROJ")
+}
+export interface JiraDiscoverExtendedArgs {
+  query: string; // Describe what you want to do (e.g., "add label to card")
+  limit?: number; // Max results to return (default 5)
+}
+export interface JiraExecuteExtendedArgs {
+  operationId: string; // The operationId from discoverExtended results
+  pathParams?: any; // Path parameters, e.g., { id: "abc123" }
+  queryParams?: any; // Query string parameters
+  body?: any; // Request body for POST/PUT/PATCH operations
+}
+
 // Space Channels Adapter Types
 export interface ChannelsCreateDraftSetArgs {
   sourceCardId: string; // The update card this copy was drafted from (cardId from the items.update.published event)
@@ -209,47 +266,6 @@ export interface DataAggregateArgs {
   collection: string; // The collection slug
   groupBy?: string; // Field name to group by. Omit for overall aggregation.
   metrics: any[]; // Array of { field, op } where op is one of "sum", "avg", "count", "min", "max". For "count", field can be omitted.
-}
-
-// Desktop Adapter Types
-export interface DesktopExecuteCommandArgs {
-  command: string; // Shell command to execute (e.g., "ls -la ~/Documents")
-  cwd?: string; // Working directory for the command (defaults to user home)
-  timeoutMs?: number; // Timeout in milliseconds (defaults to 120000)
-}
-export interface DesktopReadFileArgs {
-  path: string; // Path to the file. Supports ~ for home directory (e.g., "~/Documents/data.json")
-  offset?: number; // Line number to start reading from (1-indexed, defaults to 1)
-  limit?: number; // Maximum number of lines to return (defaults to 200)
-  maxBytes?: number; // Maximum file size in bytes before rejecting (defaults to 10485760 = 10 MB)
-}
-export interface DesktopWriteFileArgs {
-  path: string; // Path to the file. Supports ~ for home directory (e.g., "~/scripts/hello.sh")
-  content: string; // Text content to write to the file
-  append?: boolean; // If true, append to existing file instead of overwriting (defaults to false)
-}
-export interface DesktopEditFileArgs {
-  path: string; // Path to the file. Supports ~ for home directory (e.g., "~/projects/config.json")
-  oldString: string; // The exact text to find and replace (must match verbatim)
-  newString: string; // The replacement text (use empty string to delete the matched text)
-  replaceAll?: boolean; // If true, replace every occurrence of oldString. Defaults to false (single match required).
-}
-export interface DesktopListDirectoryArgs {
-  path: string; // Path to the directory. Supports ~ for home directory (e.g., "~/Documents")
-  recursive?: boolean; // If true, list recursively (max depth 3). Defaults to false.
-  includeHidden?: boolean; // If true, include hidden files (starting with .). Defaults to false.
-}
-export interface DesktopSpawnProcessArgs {
-  command: string; // Path to the executable to run (e.g., "node", "python3", "/usr/local/bin/my-app")
-  args?: any[]; // Command-line arguments to pass to the process
-  env?: any; // Additional environment variables to set for the process
-  cwd?: string; // Working directory for the process (defaults to system default)
-}
-export interface DesktopKillProcessArgs {
-  processId: string; // The process ID returned by spawnProcess
-}
-export interface DesktopSelectMachineArgs {
-  deviceId: string; // The deviceId of the machine to select (from listMachines output)
 }
 
 // Documents Adapter Types
@@ -394,6 +410,295 @@ export interface GithubDeleteFileArgs {
 export interface GithubGetRecentCommitsArgs {
   path?: string; // Only commits touching this path (e.g. ".mirra/" or "src/")
   limit?: number; // Max commits to return (default 10, max 50)
+}
+
+// Google Ads Adapter Types
+export interface GoogleAdsGetAccountOverviewArgs {
+  customerId: string; // Google Ads account ID (e.g., '123-456-7890')
+  dateRange?: string; // Named date range (e.g., LAST_30_DAYS, LAST_7_DAYS, THIS_MONTH) or custom range YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS
+}
+export interface GoogleAdsListCampaignsArgs {
+  customerId: string; // Google Ads account ID
+  dateRange?: string; // Named range or custom YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS
+  status?: string; // Filter by status: ENABLED, PAUSED, or ALL. Default: ALL
+  limit?: number; // Max campaigns to return. Default: 200, max: 200
+  orderBy?: string; // Sort field: cost, conversions, roas, cpa, impressions, clicks. Default: cost
+}
+export interface GoogleAdsGetCampaignDetailsArgs {
+  customerId: string; // Google Ads account ID
+  campaignId: string; // Campaign ID from listCampaigns
+  dateRange?: string; // Named range or custom. Default: LAST_30_DAYS
+}
+export interface GoogleAdsUpdateCampaignStatusArgs {
+  customerId: string; // Google Ads account ID
+  campaignId: string; // Campaign ID to modify
+  status: string; // New status: PAUSED or ENABLED (not REMOVED)
+  reason?: string; // Optional reason for the change (stored in adapter audit log, not sent to Google)
+}
+export interface GoogleAdsUpdateCampaignBudgetArgs {
+  customerId: string; // Google Ads account ID
+  campaignId: string; // Campaign ID (used to look up the associated budget)
+  dailyBudgetAmount: number; // New daily budget in account currency (e.g., 150.00 for $150/day)
+}
+export interface GoogleAdsListAdGroupsArgs {
+  customerId: string; // Google Ads account ID
+  campaignId: string; // Filter to ad groups within this campaign
+  dateRange?: string; // Default: LAST_30_DAYS
+  status?: string; // ENABLED, PAUSED, or ALL. Default: ALL
+}
+export interface GoogleAdsGetAdGroupDetailsArgs {
+  customerId: string; // Google Ads account ID
+  adGroupId: string; // Ad group ID
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsUpdateAdGroupStatusArgs {
+  customerId: string; // Google Ads account ID
+  adGroupId: string; // Ad group ID
+  status: string; // PAUSED or ENABLED
+}
+export interface GoogleAdsUpdateAdGroupBidArgs {
+  customerId: string; // Google Ads account ID
+  adGroupId: string; // Ad group ID
+  cpcBidAmount: number; // New default CPC bid in account currency
+}
+export interface GoogleAdsListKeywordsArgs {
+  customerId: string; // Google Ads account ID
+  adGroupId?: string; // Filter to one ad group. If omitted, scope to campaignId
+  campaignId?: string; // Filter to all ad groups within a campaign. One of adGroupId or campaignId required
+  dateRange?: string; // Default: LAST_30_DAYS
+  status?: string; // ENABLED, PAUSED, or ALL. Default: ENABLED
+  limit?: number; // Default: 200, max: 500
+  orderBy?: string; // cost, conversions, cpa, impressions. Default: cost
+}
+export interface GoogleAdsGetKeywordDetailsArgs {
+  customerId: string; // Google Ads account ID
+  keywordId: string; // Keyword criterion ID
+  adGroupId: string; // Ad group containing the keyword (required by GAQL scoping)
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsUpdateKeywordStatusArgs {
+  customerId: string; // Google Ads account ID
+  keywordId: string; // Keyword criterion ID
+  adGroupId: string; // Ad group containing the keyword
+  status: string; // PAUSED or ENABLED
+}
+export interface GoogleAdsGetSearchTermReportArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign
+  adGroupId?: string; // Filter to a specific ad group
+  dateRange?: string; // Default: LAST_30_DAYS
+  minImpressions?: number; // Filter out terms with fewer impressions. Default: 0
+  limit?: number; // Default: 200, max: 500
+  orderBy?: string; // cost, conversions, impressions, cpa. Default: cost
+}
+export interface GoogleAdsGetKeywordIdeasArgs {
+  customerId: string; // Google Ads account ID
+  seedKeywords?: any[]; // Array of seed keyword strings (max 20). One of seedKeywords or pageUrl required
+  pageUrl?: string; // Landing page URL to generate ideas from. One of seedKeywords or pageUrl required
+  language?: string; // Language resource name (default: English — languageConstants/1000)
+  geoTargets?: any[]; // Array of geo target constant resource names. Default: all locations
+  limit?: number; // Max ideas to return. Default: 100, max: 1000
+}
+export interface GoogleAdsListAdsArgs {
+  customerId: string; // Google Ads account ID
+  adGroupId: string; // Ad group to list ads from
+  dateRange?: string; // Default: LAST_30_DAYS
+  status?: string; // ENABLED, PAUSED, or ALL. Default: ALL
+}
+export interface GoogleAdsGetAdDetailsArgs {
+  customerId: string; // Google Ads account ID
+  adId: string; // Ad ID
+  adGroupId: string; // Ad group containing the ad
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsGetPerformanceReportArgs {
+  customerId: string; // Google Ads account ID
+  dimensions: any[]; // Dimensions to segment by: campaign, adGroup, keyword, device, network, date, dayOfWeek, hour, geo, matchType. At least one required
+  metrics?: any[]; // Metrics to include: impressions, clicks, cost, conversions, conversionsValue, ctr, avgCpc, cpa, roas. Default: all standard metrics
+  dateRange?: string; // Default: LAST_30_DAYS
+  campaignId?: string; // Filter to a specific campaign
+  filters?: any; // Additional GAQL WHERE conditions as key-value pairs
+  orderBy?: string; // Metric to sort by (descending). Default: cost
+  limit?: number; // Default: 200, max: 500
+}
+export interface GoogleAdsGetAuctionInsightsArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Scope to a campaign. One of campaignId or adGroupId required
+  adGroupId?: string; // Scope to an ad group
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsGetChangeHistoryArgs {
+  customerId: string; // Google Ads account ID
+  dateRange?: string; // Default: LAST_7_DAYS. Max lookback: 90 days
+  resourceTypes?: any[]; // Filter to specific types: CAMPAIGN, AD_GROUP, AD, AD_GROUP_CRITERION. Default: all
+  limit?: number; // Default: 100, max: 500
+}
+export interface GoogleAdsGetConversionReportArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsGetGeographicReportArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign
+  granularity?: string; // COUNTRY, REGION, or CITY. Default: REGION
+  dateRange?: string; // Default: LAST_30_DAYS
+  limit?: number; // Default: 100
+}
+export interface GoogleAdsGetDeviceReportArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign. Default: account-level
+  dateRange?: string; // Default: LAST_30_DAYS
+}
+export interface GoogleAdsGetHourOfDayReportArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign
+  dateRange?: string; // Recommend at least LAST_30_DAYS for meaningful hourly data. Default: LAST_30_DAYS
+}
+export interface GoogleAdsListBudgetsArgs {
+  customerId: string; // Google Ads account ID
+  includeRemoved?: boolean; // Include removed budgets. Default: false
+}
+export interface GoogleAdsGetBudgetRecommendationsArgs {
+  customerId: string; // Google Ads account ID
+  campaignId?: string; // Filter to a specific campaign
+}
+
+// Google Calendar Adapter Types
+export interface GoogleCalendarCreateEventArgs {
+  summary: string; // Event title/summary
+  start: any; // Start time object with dateTime and optional timeZone
+  end: any; // End time object with dateTime and optional timeZone
+  description?: string; // Event description
+  location?: string; // Event location
+  attendees?: any[]; // Array of attendee email addresses
+}
+export interface GoogleCalendarListEventsArgs {
+  timeMin?: string; // Start time for events to list (ISO 8601)
+  timeMax?: string; // End time for events to list (ISO 8601)
+  maxResults?: number; // Maximum number of events to return (default: 50, max: 100)
+  query?: string; // Search query to filter events
+}
+export interface GoogleCalendarGetEventsArgs {
+  timeMin?: string; // Start time for events to list (ISO 8601)
+  timeMax?: string; // End time for events to list (ISO 8601)
+  maxResults?: number; // Maximum number of events to return (default: 50, max: 100)
+  query?: string; // Search query to filter events
+}
+export interface GoogleCalendarGetEventArgs {
+  eventId: string; // Calendar event ID
+}
+export interface GoogleCalendarUpdateEventArgs {
+  eventId: string; // Calendar event ID to update
+  summary?: string; // Updated event title/summary
+  description?: string; // Updated event description
+  location?: string; // Updated event location
+  start?: any; // Updated start time object with dateTime and optional timeZone
+  end?: any; // Updated end time object with dateTime and optional timeZone
+}
+export interface GoogleCalendarDeleteEventArgs {
+  eventId: string; // Calendar event ID to delete
+}
+export interface GoogleCalendarSearchEventsArgs {
+  query: string; // Search query to filter events
+  timeMin?: string; // Start time for events to search (ISO 8601)
+  timeMax?: string; // End time for events to search (ISO 8601)
+  maxResults?: number; // Maximum number of events to return (default: 50, max: 100)
+}
+
+// Google Drive Adapter Types
+export interface GoogleDriveListFilesArgs {
+  query?: string; // Search query (Google Drive query syntax)
+  pageSize?: number; // Maximum number of files to return (default: 20)
+}
+export interface GoogleDriveCreateFileArgs {
+  name: string; // Name of the file
+  mimeType: string; // MIME type of the file
+  folderId?: string; // Parent folder ID (optional)
+}
+export interface GoogleDriveCreateFolderArgs {
+  name: string; // Name of the folder
+  parentFolderId?: string; // Parent folder ID (optional)
+}
+export interface GoogleDriveGetFileInfoArgs {
+  fileId: string; // ID of the file
+}
+export interface GoogleDriveShareFileArgs {
+  fileId: string; // ID of the file to share
+  email?: string; // Email address to share with (optional)
+  role?: string; // Permission role: reader, writer, commenter (default: reader)
+}
+export interface GoogleDriveDownloadFileArgs {
+  fileId: string; // ID of the file to download
+}
+export interface GoogleDriveMoveFileArgs {
+  fileId: string; // ID of the file to move
+  folderId: string; // ID of the destination folder
+}
+export interface GoogleDriveDeleteFileArgs {
+  fileId: string; // ID of the file or folder to delete
+  permanently?: boolean; // If true, permanently delete instead of moving to trash (default: false)
+}
+export interface GoogleDriveSearchFilesArgs {
+  query: string; // Search query using Drive syntax (e.g., "name contains 'report'", "mimeType='application/pdf'")
+  pageSize?: number; // Maximum number of files to return (default: 20)
+}
+export interface GoogleDriveUpdateFileArgs {
+  fileId: string; // ID of the file to update
+  name?: string; // New name for the file
+  description?: string; // New description for the file
+}
+
+// Gmail Adapter Types
+export interface GoogleGmailSendEmailArgs {
+  to: string; // Valid email address
+  subject: string; // Email subject line
+  body: string; // Email body content
+  cc?: string; // CC recipients (comma-separated email addresses)
+  bcc?: string; // BCC recipients (comma-separated email addresses)
+  isHtml?: boolean; // Whether body is HTML format
+}
+export interface GoogleGmailSearchEmailsArgs {
+  query: string; // Gmail search query (e.g., "from:user@example.com is:unread")
+  maxResults?: number; // Maximum number of results to return (default: 50, max: 100)
+}
+export interface GoogleGmailListEmailsArgs {
+  maxResults?: number; // Maximum number of results to return (default: 50, max: 100)
+}
+export interface GoogleGmailGetEmailArgs {
+  messageId: string; // Gmail message ID
+  includeHtml?: boolean; // Include HTML body content (default: false)
+  includeAttachments?: boolean; // Include attachment metadata (default: false)
+}
+export interface GoogleGmailCreateDraftArgs {
+  to: string; // Valid email address
+  subject: string; // Email subject line
+  body: string; // Email body content
+  cc?: string; // CC recipients (comma-separated email addresses)
+  bcc?: string; // BCC recipients (comma-separated email addresses)
+  isHtml?: boolean; // Whether body is HTML format
+}
+export interface GoogleGmailUpdateDraftArgs {
+  draftId: string; // Gmail draft ID to update
+  to?: string; // Updated recipient email address(es)
+  subject?: string; // Updated email subject line
+  body?: string; // Updated email body content
+  cc?: string; // Updated CC recipients
+  bcc?: string; // Updated BCC recipients
+  isHtml?: boolean; // Whether body is HTML format
+}
+export interface GoogleGmailDeleteDraftArgs {
+  draftId: string; // Gmail draft ID to delete
+}
+export interface GoogleGmailListDraftsArgs {
+  maxResults?: number; // Maximum number of drafts to return (default: 10)
+}
+export interface GoogleGmailDeleteEmailArgs {
+  messageId: string; // Gmail message ID to delete
+}
+export interface GoogleGmailBulkDeleteEmailsArgs {
+  messageIds: any[]; // Array of Gmail message IDs to delete (max 1000 per request)
+  permanently?: boolean; // If true, permanently delete. If false (default), move to trash.
 }
 
 // Hypertrade Adapter Types
@@ -702,7 +1007,7 @@ export interface MirraMessagingWaitForMessagesArgs {
 // Observability Adapter Types
 export interface ObservabilityQueryEventsArgs {
   timeRange?: any; // Time range filter with start/end ISO 8601 strings. Defaults to last 24 hours.
-  adapter?: string; // Filter by adapter service ID (e.g. "data", "flows", "desktop")
+  adapter?: string; // Filter by adapter service ID (e.g. "data", "flows", "pages")
   operation?: string; // Filter by exact operation name (e.g. "insertRecord", "executeFlow")
   outcome?: string; // Filter by outcome: "success", "failure", or "pending"
   severity?: string; // Filter by severity: "debug", "info", "warn", or "error"
@@ -880,6 +1185,73 @@ export interface PolymarketExecuteExtendedArgs {
   pathParams?: any; // Path parameters, e.g., { id: "abc123" }
   queryParams?: any; // Query string parameters
   body?: any; // Request body for POST/PUT/PATCH operations
+}
+
+// Scripts Adapter Types
+export interface ScriptsCreateScriptArgs {
+  name: string; // Name of the script
+  description?: string; // Description of what the script does
+  runtime?: string; // Lambda runtime (default: nodejs18)
+  config?: any; // Script configuration (timeout, memory, maxCostPerExecution, etc.)
+  code?: string; // Initial JavaScript/TypeScript code for the script. Required unless path is provided.
+  path?: string; // Path to a script file in the workspace container (e.g., "/workspace/scripts/handler.js"). If provided, code is read from this file. Optionally reads mirra.json from the same directory for config.
+}
+export interface ScriptsDeleteScriptArgs {
+  scriptId: string; // ID of the script to delete
+}
+export interface ScriptsCreateVersionArgs {
+  scriptId: string; // ID of the script
+  code: string; // Updated code for the new version
+  commitMessage?: string; // Description of changes in this version
+}
+export interface ScriptsListVersionsArgs {
+  scriptId: string; // ID of the script
+}
+export interface ScriptsDeployScriptArgs {
+  scriptId: string; // ID of the script to deploy (from createScript response at data._id)
+  version?: number; // Version number to deploy (default: latest)
+}
+export interface ScriptsExecuteScriptArgs {
+  scriptId: string; // ID of the script to execute (from createScript response at data.id)
+  data?: any; // Input data to pass to the script. Available inside the handler as `event.data` (also aliased to `event.input`, `event.body`, `event.payload`).
+  trigger?: any; // Trigger information (type, source, event)
+}
+export interface ScriptsGetScriptArgs {
+  scriptId: string; // ID of the script
+}
+export interface ScriptsGetExecutionsArgs {
+  scriptId: string; // ID of the script
+  status?: string; // Filter by status (completed, failed, running)
+  limit?: number; // Maximum number of executions to return (default: 100)
+}
+export interface ScriptsGetExecutionArgs {
+  executionId: string; // ID of the execution
+}
+export interface ScriptsGetMetricsArgs {
+  scriptId: string; // ID of the script
+}
+export interface ScriptsGetFlowScriptArgs {
+  flowId: string; // ID of the flow to get script code for
+}
+export interface ScriptsModifyFlowScriptArgs {
+  flowId: string; // ID of the flow to modify
+  newCode: string; // New code to deploy
+  commitMessage?: string; // Description of changes
+}
+export interface ScriptsReadScriptCodeArgs {
+  scriptId: string; // Script ID
+  startLine?: number; // First line to return (1-indexed). Default: 1
+  endLine?: number; // Last line to return (inclusive). Default: end of file
+}
+export interface ScriptsEditScriptCodeArgs {
+  scriptId: string; // Script ID
+  edits: any[]; // Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially.
+  commitMessage?: string; // Description of changes
+}
+export interface ScriptsLintScriptArgs {
+  code: string; // The script code to validate
+  eventType?: string; // Event type for event.data field validation (e.g., "telegram.message", "call.ended"). When provided, validates that event.data.fieldName accesses match the event type schema.
+  scriptInputSchema?: any; // Schema of scriptInput fields that will be on event.data at runtime. Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array" }. When provided, event.data field errors are reported as errors instead of warnings.
 }
 
 // Shopify Adapter Types
@@ -1236,6 +1608,58 @@ export interface SocketNotifySubscriberArgs {
   text?: string; // Text content for assistant/error messages
 }
 
+// Telegram Adapter Types
+export interface TelegramSendMessageArgs {
+  chatId: string; // Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from searchChats operation.
+  text: string; // The text content of the message to send
+}
+export interface TelegramSearchChatsArgs {
+  query?: string; // Text to search in chat names/usernames. Supports fuzzy matching with relevance scoring.
+  type?: string; // Filter by chat type: "private", "group", "channel", or "all" (default: "all"). IMPORTANT: Telegram community chats and supergroups are type "group", NOT "channel". Only broadcast-only channels are type "channel". When unsure, omit this filter or use "all".
+  inactiveSince?: string; // Find chats with no activity since date. Accepts ISO date or relative like "30 days ago", "1 week ago"
+  activeSince?: string; // Find chats with activity since date. Accepts ISO date or relative like "7 days ago"
+  hasUnread?: boolean; // Filter by unread status: true = only unread, false = only read
+  archived?: boolean; // Filter by archived status
+  pinned?: boolean; // Filter by pinned status
+  sortBy?: string; // Sort results: "relevance" (default with query), "lastActivity" (default without query), "unreadCount", "name"
+  limit?: number; // Max results (default: 50, max: 100)
+  offset?: number; // Pagination offset (default: 0)
+  forceRefresh?: boolean; // Bypass cache and fetch fresh data
+}
+export interface TelegramSearchMessagesArgs {
+  query: string; // Text query to search for in messages
+  chatIds?: any[]; // Array of chat IDs to search within. Omit for global search across all chats.
+  chatType?: string; // Filter by chat type (for global search): "private", "group", or "channel". IMPORTANT: Community chats and supergroups are "group", NOT "channel".
+  fromDate?: string; // ISO date string for start of date range
+  toDate?: string; // ISO date string for end of date range
+  limit?: number; // Maximum number of messages to return (default: 100, max: 100)
+  senderId?: string; // Filter messages by sender ID
+}
+export interface TelegramGetChatMessagesArgs {
+  chatId: string; // Chat ID to retrieve messages from
+  limit?: number; // Maximum number of messages to return (default: 50, max: 100)
+  offsetId?: number; // Message ID to use as pagination offset
+  minDate?: string; // ISO date string for minimum message date
+  maxDate?: string; // ISO date string for maximum message date
+}
+export interface TelegramGetUnreadSummaryArgs {
+  chatIds?: any[]; // Array of chat IDs to filter by. If not provided, checks all chats.
+  priorityOnly?: boolean; // If true, only return chats with unread messages
+  groupBy?: string; // Group results by "chat" or "sender"
+}
+export interface TelegramMarkAsReadArgs {
+  chatId: string; // Chat ID to mark messages as read in
+  maxMessageId?: number; // Maximum message ID to mark as read. If not provided, marks all messages as read.
+}
+export interface TelegramGetMentionsArgs {
+  chatIds?: any[]; // Array of chat IDs to filter mentions by
+  sinceDate?: string; // ISO date string - only return mentions since this date
+  onlyUnread?: boolean; // If true, only return unread mentions
+}
+export interface TelegramLeaveGroupArgs {
+  chatId: string; // The ID of the group, supergroup, or channel to leave. Can be obtained from searchChats operation.
+}
+
 // Telegram Bot Adapter Types
 export interface TelegramBotSendMessageArgs {
   botUsername: string; // Username of the bot to send from (without @)
@@ -1319,6 +1743,93 @@ export interface TelegramBotDeleteMessageArgs {
 export interface TelegramBotDownloadFileArgs {
   botUsername: string; // Username of the bot that received the file (without @). Must be the bot that the file_id was issued to — file_ids are bot-scoped.
   fileId: string; // Telegram file_id from an incoming media event (event.data.bot.fileId). For photos with multiple sizes, the event already contains the largest size.
+}
+
+// Trello Adapter Types
+export interface TrelloGetBoardArgs {
+  boardId: string; // The ID of the board to retrieve
+}
+export interface TrelloCreateCardArgs {
+  name: string; // Card name/title
+  idList: string; // ID of the list to add the card to
+  desc?: string; // Card description (supports markdown)
+  description?: string; // Card description (alias for "desc", supports markdown)
+}
+export interface TrelloGetCardArgs {
+  cardId: string; // The ID of the card to retrieve
+}
+export interface TrelloUpdateCardArgs {
+  cardId: string; // The ID of the card to update
+  name?: string; // New card name
+  desc?: string; // New card description
+  description?: string; // New card description (alias for "desc", supports markdown)
+  idList?: string; // Move card to a different list
+  closed?: boolean; // Archive the card
+}
+export interface TrelloDeleteCardArgs {
+  cardId: string; // The ID of the card to delete
+}
+export interface TrelloCreateChecklistArgs {
+  cardId: string; // The ID of the card to add the checklist to
+  name: string; // Checklist name
+}
+export interface TrelloGetChecklistArgs {
+  checklistId: string; // The ID of the checklist to retrieve
+}
+export interface TrelloUpdateChecklistArgs {
+  checklistId: string; // The ID of the checklist to update
+  name: string; // New checklist name
+}
+export interface TrelloDeleteChecklistArgs {
+  checklistId: string; // The ID of the checklist to delete
+}
+export interface TrelloAddCheckItemArgs {
+  checklistId: string; // The ID of the checklist to add the item to
+  name: string; // Check item text
+}
+export interface TrelloUpdateCheckItemArgs {
+  cardId: string; // The ID of the card containing the check item
+  checkItemId: string; // The ID of the check item to update
+  name?: string; // New check item text
+  state?: string; // Check state: "complete" or "incomplete"
+}
+export interface TrelloDeleteCheckItemArgs {
+  checklistId: string; // The ID of the checklist containing the item
+  checkItemId: string; // The ID of the check item to delete
+}
+export interface TrelloDiscoverExtendedArgs {
+  query: string; // Describe what you want to do (e.g., "add label to card")
+  limit?: number; // Max results to return (default 5)
+}
+export interface TrelloExecuteExtendedArgs {
+  operationId: string; // The operationId from discoverExtended results
+  pathParams?: any; // Path parameters, e.g., { id: "abc123" }
+  queryParams?: any; // Query string parameters
+  body?: any; // Request body for POST/PUT/PATCH operations
+}
+
+// Twitter Adapter Types
+export interface TwitterPostTweetArgs {
+  text: string; // Tweet text (max 280 characters)
+  mediaIds?: any[]; // Up to 4 media ids from uploadMedia. Images do not consume characters.
+}
+export interface TwitterUploadMediaArgs {
+  imageUrl: string; // Public https URL of the image to upload
+  altText?: string; // Alt text describing the image, for people using a screen reader (max 1000 chars)
+}
+export interface TwitterGetUserTweetsArgs {
+  userId?: string; // Twitter user ID (recommended for stability and speed). Provide userId OR userName, not both.
+  userName?: string; // Twitter username/handle without @ symbol (e.g., "elonmusk"). Provide userName OR userId, not both.
+  cursor?: string; // Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values.
+  includeReplies?: boolean; // Whether to include replies in results. Defaults to false (only original tweets).
+}
+export interface TwitterAdvancedSearchArgs {
+  query: string; // Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR \"machine learning\"". Supported operators: from:user, to:user, since:YYYY-MM-DD, until:YYYY-MM-DD, lang:xx, filter:media, filter:links, -filter:retweets, AND, OR, -keyword, "exact phrase".
+  queryType?: string; // Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". Only these two values are valid.
+  cursor?: string; // Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values.
+}
+export interface TwitterGetTweetByIdArgs {
+  tweetIds: string; // One or more tweet IDs, comma-separated. Example: "1846987139428634858" or "1846987139428634858,1866332309399781537"
 }
 
 // Video Generator Adapter Types
@@ -1438,6 +1949,135 @@ export interface WorkspaceExecArgs {
   sandboxData?: string; // How to get files INTO an ephemeral sandbox. Absolute path to a directory inside YOUR workspace volume (under /workspace) to mount READ-ONLY into the sandbox at the same path, so code run with sandboxed:true can read files you staged earlier while still having no network and no credentials. Canonical pattern: (1) stage the data with a normal (non-sandboxed) exec so it lands on the persistent volume, e.g. /workspace/run/<id>/data/*.json; (2) run the analysis with sandboxed:true and sandboxData set to that directory. Mount the DATA dir only — never a directory that also holds secrets (e.g. a temp token file), because anything under the mounted path is readable by the sandboxed code; only that one subpath is exposed, so the rest of the volume (including /workspace/.env) stays hidden. The mount is read-only, so the sandbox cannot modify your files. Honored only when you OWN the workspace; ignored for a forced (non-owner) sandbox, which stays data-less by design.
 }
 
+// Flows Adapter Types
+export interface FlowsCreateFlowArgs {
+  title?: string; // Flow title. Required if providing inline code.
+  description?: string; // Detailed description of what the flow does
+  code?: string; // Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId or path.
+  path?: string; // Path to a script file in the workspace container (e.g., "/workspace/flows/handler.js"). If provided, code is read from this file. Optionally reads flow.json from the same directory for trigger config. Cannot use with code or scriptId.
+  scriptId?: string; // ID of existing deployed script. Cannot use with code or path.
+  schedule?: string; // Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone.
+  eventType?: string; // Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead.
+  eventFilter?: any; // Event filter for pre-filtering events before the script runs (evaluated in-memory, free). SIMPLE FORMAT (recommended): Pass a flat object with "when" set to the event type, then field aliases as keys. { "when": "telegram.bot_message", "chat_id": "-1001234567890", "message_text_contains": "urgent" } Add _contains, _gt, _lt, _not, _starts_with, _ends_with, _matches, _in suffixes for non-equals operators. Default operator is equals when no suffix is given. Arrays auto-detect as "in" operator. VALID FIELD ALIASES per event type (use these — do NOT use event.data.* paths here): telegram.bot_message: chat_id, chat_type, sender_username, sender_user_id, message_text, bot_username, has_media, media_type telegram.bot_command: command, chat_id, chat_type, sender_username, sender_user_id, bot_username telegram.bot_callback_query: chat_id, callback_data, sender_username, bot_username telegram.message: chat_id, is_group_chat, has_media, message_text gmail.email_received: from_email, from_name, subject, has_attachments, is_unread, body_text call.ended: duration_seconds, was_recorded, scope crypto_price_update: price_usd, token_address, chain recording.transcribed: duration_seconds, speaker_count, transcript_text flow.complete: flow_title, flow_success, flow_type All event types: event_type, sender_name, sender_id, content_text, channel_id, channel_name ADVANCED FORMAT (full condition tree — for OR logic, regex, or nested conditions): { "operator": "or", "conditions": [ { "operator": "equals", "field": "bot.chatId", "value": "123" }, { "operator": "equals", "field": "bot.chatId", "value": "456" } ]} Valid operators: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, in, notIn, exists, notExists, matchesRegex, and, or, not
+  trigger?: any; // Legacy nested trigger structure. Prefer eventType or eventFilter instead.
+  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields.
+  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings.
+  enabled?: boolean; // Whether the flow is enabled (default: true)
+  webhook?: boolean; // Set to true to create a webhook-triggered flow. Returns a webhookUrl in the response. External services POST to this URL to trigger the flow. The request body is available as event.fields.body in the handler (event.data.body is NOT populated for webhook flows).
+  parentSpaceId?: string; // Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. If omitted, auto-inherited from the current group context (if any).
+}
+export interface FlowsCreateTimeFlowArgs {
+  title: string; // Flow title
+  description: string; // Detailed description of what the flow does
+  schedule: string; // Cron expression for scheduling (e.g., "0 9 * * *" for daily at 9am)
+  scriptId: string; // ID of the script to execute when triggered
+  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler).
+  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }.
+}
+export interface FlowsCreateEventFlowArgs {
+  title: string; // Flow title
+  description: string; // Detailed description of what the flow does
+  trigger: any; // Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
+  scriptId: string; // ID of the script to execute when triggered
+  scriptInput?: any; // Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler).
+  scriptInputSchema?: any; // Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }.
+}
+export interface FlowsGetFlowArgs {
+  id: string; // Flow ID (24-character hex string returned by createFlow/createEventFlow). Get IDs from the flow creation response or by searching flows.
+  includeScript?: boolean; // Include the flow's script code in the response. Default: false.
+}
+export interface FlowsUpdateFlowArgs {
+  id: string; // Flow ID to update (24-character hex string returned by createFlow/createEventFlow)
+  title?: string; // New title
+  description?: string; // New description
+  trigger?: any; // New trigger configuration
+  scriptId?: string; // New script ID
+  scriptInput?: any; // New static input data for the script. Fields are spread into event.data in handler code.
+  scriptInputSchema?: any; // Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }.
+  status?: string; // New status: active, paused, completed, failed
+  parentSpaceId?: string; // Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. Set to empty string to remove group scope.
+  schedule?: string; // Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone.
+  eventType?: string; // Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead.
+  eventFilter?: any; // Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] }
+}
+export interface FlowsModifyFlowScriptArgs {
+  flowId: string; // Flow ID to modify (24-character hex string)
+  newCode?: string; // New handler code. Must include export async function handler(event, context, mirra) wrapper. Required unless path is provided.
+  path?: string; // Path to a script file in the workspace container (e.g., "/workspace/flows/my-handler/handler.js"). If provided, code is read from this file instead of newCode.
+  commitMessage?: string; // Description of changes (optional)
+}
+export interface FlowsReadFlowScriptArgs {
+  flowId: string; // Flow ID (24-character hex string)
+  startLine?: number; // First line to return (1-indexed). Default: 1
+  endLine?: number; // Last line to return (inclusive). Default: end of file
+}
+export interface FlowsEditFlowScriptArgs {
+  flowId: string; // Flow ID (24-character hex string)
+  edits: any[]; // Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially. oldText must be unique in the code — include enough surrounding context.
+  commitMessage?: string; // Description of changes
+}
+export interface FlowsExecuteFlowArgs {
+  flowId: string; // Flow ID to execute (24-character hex string)
+  input?: any; // Dynamic input object passed to the flow handler via event.data. Fields are merged with the flow's static scriptInput (dynamic input takes precedence).
+}
+export interface FlowsDeleteFlowArgs {
+  id: string; // Flow ID to delete (24-character hex string returned by createFlow/createEventFlow)
+}
+export interface FlowsPauseFlowArgs {
+  id: string; // Flow ID to pause (24-character hex string)
+}
+export interface FlowsResumeFlowArgs {
+  id: string; // Flow ID to resume (24-character hex string)
+}
+export interface FlowsSearchFlowsArgs {
+  status?: string; // Filter by status (or array of statuses)
+  triggerType?: string; // Filter by trigger type: time or event
+  parentSpaceId?: string; // Filter flows by space/group ID. Only returns flows assigned to this space.
+  detail?: string; // Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt.
+  limit?: number; // Maximum number of results (default: 20)
+  offset?: number; // Pagination offset (default: 0)
+}
+export interface FlowsRecordExecutionArgs {
+  id: string; // Flow ID
+  success: boolean; // Whether execution succeeded
+  result?: any; // Execution result data
+  error?: string; // Error message if execution failed
+}
+export interface FlowsListEventTypesArgs {
+  source?: string; // Filter by source/category (e.g., "telegram", "gmail", "calendar"). Returns only event types from this source.
+  sources?: any[]; // Array of sources to filter by (e.g., ["telegram", "gmail"]). More efficient than separate calls.
+  includeTemplates?: boolean; // Include condition templates for each event type
+  includeSchema?: boolean; // Include field schema showing available paths for script access. RECOMMENDED when writing scripts to see correct field access patterns.
+}
+export interface FlowsTestFlowArgs {
+  flowId: string; // ID of the flow to test
+  dryRun?: boolean; // If true (default), only validate trigger matching without executing script. If false, execute the script (causes side effects).
+  eventOverrides?: any; // Custom field values to merge into the generated test event (e.g., {"content.text": "custom message"})
+}
+export interface FlowsValidateTriggerArgs {
+  flowId: string; // ID of the flow
+  event: any; // Event object to test against the trigger (must match IntegrationEvent structure)
+}
+export interface FlowsGetFlowsByEventTypeArgs {
+  eventType: string; // Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
+  detail?: string; // Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt.
+}
+export interface FlowsCreateBatchOperationArgs {
+  title: string; // Human-readable title for this batch operation (e.g., "Leave 100 Telegram groups")
+  operations: any[]; // Array of operations to execute. Each item must have adapter, operation, and args properties.
+  batchSize?: number; // Number of operations to process per execution (default: 5)
+  intervalSeconds?: number; // Seconds between batch executions (default: 60, minimum: 60)
+}
+export interface FlowsPublishFlowArgs {
+  flowId: string; // ID of the flow to publish
+  pricing?: any; // Pricing configuration. Defaults to { model: "free" }. Supported models: "free", "pay-per-execution". For paid models, include basePrice.
+  tags?: any[]; // Tags for marketplace discovery (e.g., ["telegram", "automation"])
+  category?: string; // Marketplace category (e.g., "messaging", "productivity"). Defaults to "uncategorized".
+}
+export interface FlowsUnpublishFlowArgs {
+  flowId: string; // ID of the flow to unpublish
+}
+
 // User Adapter Types
 export interface UserUpdateProfileArgs {
   username?: string; // New username (3-30 characters, alphanumeric with underscores/hyphens)
@@ -1522,6 +2162,177 @@ export interface CryptoRefreshTransactionArgs {
   tokenDecimals?: number; // Token decimals (optional)
 }
 
+// Google Docs Adapter Types
+export interface GoogleDocsCreateDocumentArgs {
+  title: string; // Title of the document
+}
+export interface GoogleDocsGetDocumentArgs {
+  documentId: string; // ID of the document
+}
+export interface GoogleDocsAppendTextArgs {
+  documentId: string; // ID of the document
+  text: string; // Text to append
+}
+export interface GoogleDocsReplaceTextArgs {
+  documentId: string; // ID of the document
+  searchText: string; // Text to search for
+  replaceText: string; // Text to replace with
+}
+export interface GoogleDocsGetDocumentContentArgs {
+  documentId: string; // ID of the document
+}
+export interface GoogleDocsInsertTextAtPositionArgs {
+  documentId: string; // ID of the document
+  text: string; // Text to insert
+  position: number; // Character position to insert at (1-indexed)
+}
+export interface GoogleDocsInsertTextAfterArgs {
+  documentId: string; // ID of the document
+  searchText: string; // Text to search for
+  textToInsert: string; // Text to insert after the search text
+  occurrence?: number; // Which occurrence to insert after (default: 1)
+}
+export interface GoogleDocsInsertHeadingArgs {
+  documentId: string; // ID of the document
+  text: string; // Heading text
+  level: number; // Heading level (1-6)
+  position?: number; // Character position to insert at
+  insertAfterText?: string; // Insert after this text instead of at position
+}
+export interface GoogleDocsInsertListArgs {
+  documentId: string; // ID of the document
+  items: any[]; // Array of list items
+  listType: string; // Type of list: "bulleted" or "numbered"
+  position?: number; // Character position to insert at
+  insertAfterText?: string; // Insert after this text instead of at position
+}
+export interface GoogleDocsInsertTableArgs {
+  documentId: string; // ID of the document
+  data: any[]; // 2D array of table data (rows x columns)
+  hasHeader?: boolean; // Whether the first row is a header (default: true)
+  position?: number; // Character position to insert at
+  insertAfterText?: string; // Insert after this text instead of at position
+}
+export interface GoogleDocsUpdateDocumentContentArgs {
+  documentId: string; // ID of the document
+  newContent: string; // New content to replace existing content
+}
+export interface GoogleDocsCreateSectionArgs {
+  documentId: string; // ID of the document
+  heading: string; // Section heading text
+  content: string; // Section content text
+}
+export interface GoogleDocsFindInsertionPointArgs {
+  documentId: string; // ID of the document
+  position: number; // Position to find (1 for start, -1 for end)
+  searchText?: string; // Text to search for (returns position after this text)
+}
+
+// Google Sheets Adapter Types
+export interface GoogleSheetsCreateSpreadsheetArgs {
+  title: string; // Title of the spreadsheet
+}
+export interface GoogleSheetsReadRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  range: string; // Cell range (e.g., "Sheet1!A1:B10")
+}
+export interface GoogleSheetsWriteRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  range: string; // Cell range (e.g., "Sheet1!A1:B10")
+  values: any[]; // Data to write (2D array)
+}
+export interface GoogleSheetsAppendRowArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetName: string; // Name of the sheet
+  values: any[]; // Row values to append
+}
+export interface GoogleSheetsGetSpreadsheetArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+}
+export interface GoogleSheetsInsertAtCellArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  cell: string; // Cell reference in format SheetName!A1
+  value: string; // Value to insert
+  bold?: boolean; // Make text bold
+  italic?: boolean; // Make text italic
+  foregroundColor?: string; // Text color (hex or named color)
+  backgroundColor?: string; // Cell background color (hex or named color)
+}
+export interface GoogleSheetsInsertFormulaArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  cell: string; // Cell reference in format SheetName!A1
+  formula: string; // Formula to insert (with or without leading =)
+  note?: string; // Optional note to add to the cell
+}
+export interface GoogleSheetsFormatRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  range: string; // Range in format SheetName!A1:B10
+  bold?: boolean; // Make text bold
+  italic?: boolean; // Make text italic
+  foregroundColor?: string; // Text color (hex or named color)
+  backgroundColor?: string; // Cell background color (hex or named color)
+  borders?: boolean; // Add borders to cells
+}
+export interface GoogleSheetsCreateChartArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // ID of the sheet containing data
+  dataRange: string; // Data range for the chart (e.g., A1:B10)
+  chartType: string; // Chart type: BAR, LINE, AREA, PIE, or SCATTER
+  title: string; // Chart title
+  position: any; // Chart position with row, column, rowCount, columnCount
+}
+export interface GoogleSheetsFindAndReplaceArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  findText: string; // Text to find
+  replaceText: string; // Text to replace with
+  sheetName?: string; // Limit search to specific sheet
+  matchCase?: boolean; // Case-sensitive search
+  matchEntireCell?: boolean; // Match entire cell content only
+}
+export interface GoogleSheetsInsertMultipleRowsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetName: string; // Name of the sheet
+  rowsData: any[]; // 2D array of row data to insert
+  startingRow?: number; // Row number to start insertion (1-indexed). If not provided, appends to end
+  formattingOptions?: any; // Optional formatting to apply (bold, italic, foregroundColor, backgroundColor, borders)
+}
+export interface GoogleSheetsClearRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetName: string; // Name of the sheet
+  range: string; // Range to clear (e.g., A1:B10)
+}
+export interface GoogleSheetsInsertRowsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startRowIndex: number; // Row index to start inserting at (0-indexed). To insert before row 5 in the UI, use index 4.
+  numRows: number; // Number of rows to insert
+}
+export interface GoogleSheetsDeleteRowsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startRowIndex: number; // Row index to start deleting from (0-indexed). To delete row 5 in the UI, use index 4.
+  numRows: number; // Number of rows to delete
+}
+export interface GoogleSheetsInsertColumnsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startColumnIndex: number; // Column index to start inserting at (0-indexed: A=0, B=1, C=2, D=3, etc.). To insert before column D, use index 3.
+  numColumns: number; // Number of columns to insert
+}
+export interface GoogleSheetsDeleteColumnsArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sheetId: number; // Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+  startColumnIndex: number; // Column index to start deleting from (0-indexed: A=0, B=1, C=2, D=3, etc.). To delete column D, use index 3.
+  numColumns: number; // Number of columns to delete
+}
+export interface GoogleSheetsCopyRangeArgs {
+  spreadsheetId: string; // ID of the spreadsheet
+  sourceSheetId: number; // Numeric sheet ID of the source sheet (get from getSpreadsheet response: sheets[n].properties.sheetId)
+  sourceRange: string; // Source range in A1 notation WITHOUT sheet name (e.g., "A1:C5", not "Sheet1!A1:C5")
+  targetSheetId: number; // Numeric sheet ID of the target sheet (can be same as sourceSheetId to copy within same sheet)
+  targetStartCell: string; // Target start cell in A1 notation (e.g., "E1"). The copied data will fill cells starting from this position.
+}
+
 
 // ============================================================================
 // Response Type Definitions
@@ -1583,6 +2394,193 @@ export interface AITranscribeAudioData {
 
 export type AiTranscribeAudioResult = AdapterResultBase<AITranscribeAudioData>;
 
+// Jira Response Types
+export interface JiraGetIssueData {
+  id: string; // Unique issue ID
+  key: string; // Issue key (e.g., PROJ-123)
+  summary: string; // Issue summary/title
+  description: string; // Issue description (extracted from ADF)
+  status: string; // Status name
+  statusId: string; // Status ID
+  issueType: string; // Issue type name
+  issueTypeId: string; // Issue type ID
+  priority: string; // Priority name
+  priorityId: string; // Priority ID
+  assignee: string; // Assignee display name
+  assigneeAccountId: string; // Assignee account ID
+  reporter: string; // Reporter display name
+  reporterAccountId: string; // Reporter account ID
+  projectKey: string; // Project key
+  projectName: string; // Project name
+  projectId: string; // Project ID
+  labels: any; // Issue labels
+  created: string; // Created timestamp (ISO 8601)
+  updated: string; // Updated timestamp (ISO 8601)
+  isAssigned: boolean; // Whether issue has an assignee
+  hasLabels: boolean; // Whether issue has labels
+}
+
+export type JiraGetIssueResult = AdapterResultBase<JiraGetIssueData>;
+
+export interface JiraIssueSummary {
+  id: string; // Unique issue ID
+  key: string; // Issue key (e.g., PROJ-123)
+  summary: string; // Issue summary/title
+  status: string; // Status name
+  statusId: string; // Status ID
+  issueType: string; // Issue type name
+  issueTypeId: string; // Issue type ID
+  priority: string; // Priority name
+  priorityId: string; // Priority ID
+  assignee: string; // Assignee display name
+  assigneeAccountId: string; // Assignee account ID
+  projectKey: string; // Project key
+  projectName: string; // Project name
+  labels: any; // Issue labels
+  created: string; // Created timestamp (ISO 8601)
+  updated: string; // Updated timestamp (ISO 8601)
+  isAssigned: boolean; // Whether issue has an assignee
+}
+
+export interface JiraSearchIssuesData {
+  jql: string; // JQL query used
+  count: number; // Number of results
+  issues: any; // List of matching issues
+}
+
+export type JiraSearchIssuesResult = AdapterResultBase<JiraSearchIssuesData>;
+
+export interface JiraCreateIssueData {
+  issueKey: string; // Created issue key
+  issueId: string; // Created issue ID
+  summary: string; // Issue summary
+}
+
+export type JiraCreateIssueResult = AdapterResultBase<JiraCreateIssueData>;
+
+export interface JiraUpdateIssueData {
+  issueKey: string; // Updated issue key
+  updated: boolean; // Whether update succeeded
+}
+
+export type JiraUpdateIssueResult = AdapterResultBase<JiraUpdateIssueData>;
+
+export interface JiraDeleteIssueData {
+  issueKey: string; // Deleted issue key
+  deleted: boolean; // Whether deletion succeeded
+}
+
+export type JiraDeleteIssueResult = AdapterResultBase<JiraDeleteIssueData>;
+
+export interface JiraAddCommentData {
+  issueKey: string; // Issue key
+  commentId: string; // Created comment ID
+  added: boolean; // Whether comment was added
+}
+
+export type JiraAddCommentResult = AdapterResultBase<JiraAddCommentData>;
+
+export interface JiraTransitionIssueData {
+  issueKey: string; // Issue key
+  transitioned: boolean; // Whether transition succeeded
+  transitionId: string; // Transition ID used
+}
+
+export type JiraTransitionIssueResult = AdapterResultBase<JiraTransitionIssueData>;
+
+export interface JiraAssignIssueData {
+  issueKey: string; // Issue key
+  accountId: string; // Assigned user account ID
+  assigned: boolean; // Whether assignment succeeded
+}
+
+export type JiraAssignIssueResult = AdapterResultBase<JiraAssignIssueData>;
+
+export interface JiraProject {
+  id: string; // Project ID
+  key: string; // Project key
+  name: string; // Project name
+  projectTypeKey: string; // Project type key
+  leadName: string; // Project lead name
+  leadAccountId: string; // Project lead account ID
+}
+
+export interface JiraGetProjectsData {
+  count: number; // Number of projects
+  projects: any; // List of projects
+}
+
+export type JiraGetProjectsResult = AdapterResultBase<JiraGetProjectsData>;
+
+export interface JiraListProjectsData {
+  count: number; // Number of projects
+  projects: any; // List of projects
+}
+
+export type JiraListProjectsResult = AdapterResultBase<JiraListProjectsData>;
+
+export interface JiraIssueType {
+  id: string; // Issue type ID
+  name: string; // Issue type name
+  description: string; // Issue type description
+  isSubtask: boolean; // Whether this is a subtask type
+}
+
+export interface JiraPriority {
+  id: string; // Priority ID
+  name: string; // Priority name
+  description: string; // Priority description
+}
+
+export interface JiraGetProjectMetadataData {
+  projectKey: string; // Project key
+  projectName: string; // Project name
+  issueTypeCount: number; // Number of issue types
+  issueTypes: any; // Available issue types
+  priorityCount: number; // Number of priorities
+  priorities: any; // Available priorities
+}
+
+export type JiraGetProjectMetadataResult = AdapterResultBase<JiraGetProjectMetadataData>;
+
+export interface JiraTransition {
+  id: string; // Transition ID
+  name: string; // Transition name
+  toStatus: string; // Target status name
+  toStatusId: string; // Target status ID
+}
+
+export interface JiraGetTransitionsData {
+  issueKey: string; // Issue key
+  count: number; // Number of transitions
+  transitions: any; // Available transitions
+}
+
+export type JiraGetTransitionsResult = AdapterResultBase<JiraGetTransitionsData>;
+
+export interface JiraUser {
+  accountId: string; // User account ID
+  displayName: string; // User display name
+  emailAddress?: string; // User email address
+  active: boolean; // Whether user is active
+}
+
+export interface JiraListAssignableUsersData {
+  projectKey: string; // Project key
+  count: number; // Number of users
+  users: any; // Assignable users
+}
+
+export type JiraListAssignableUsersResult = AdapterResultBase<JiraListAssignableUsersData>;
+
+export interface JiraGetIssueTypesData {
+  projectKey: string; // Project key
+  count: number; // Number of issue types
+  issueTypes: any; // Available issue types
+}
+
+export type JiraGetIssueTypesResult = AdapterResultBase<JiraGetIssueTypesData>;
+
 // Space Channels Response Types
 export interface SpaceChannel {
   id: string; // Registry id — pass this as channelId
@@ -1592,6 +2590,7 @@ export interface SpaceChannel {
   healthy: boolean; // False when the last dispatch failed and it has not been reconnected
   lastError?: string; // Why the last dispatch failed
   target?: string; // Where to post — a Telegram chat id or @handle. Pass it straight to the send op; do not guess one when it is missing
+  botUsername?: string; // Which bot posts here, bare (no @). Telegram send ops require it: target says where, this says who. When absent, fall back to the identity's single enabled bot via telegramBot.listBots — do not invent one
   maxBodyLength: number; // Hard character cap for this channel — over-length drafts cannot be approved
   maxBodyLengthWithMedia?: number; // The cap that applies instead once a picture is attached. Telegram drops from 4096 to 1024, because the body becomes a photo caption
   maxMedia: number; // How many pictures one post may carry. 0 means this channel takes none
@@ -1899,110 +2898,6 @@ export interface DataGetQuotaUsageData {
 }
 
 export type DataGetQuotaUsageResult = AdapterResultBase<DataGetQuotaUsageData>;
-
-// Desktop Response Types
-export interface DesktopExecuteCommandData {
-  stdout: string; // Standard output from the command
-  stderr: string; // Standard error from the command
-  exitCode: number; // Process exit code (0 = success)
-  executionTimeMs: number; // Command execution time in milliseconds
-}
-
-export type DesktopExecuteCommandResult = AdapterResultBase<DesktopExecuteCommandData>;
-
-export interface DesktopReadFileData {
-  content: string; // File contents with line numbers in cat -n format
-  rawContent: string; // File contents WITHOUT line numbers — use this for JSON.parse(), CSV parsing, or any programmatic processing
-  path: string; // Absolute path of the file that was read
-  sizeBytes: number; // File size in bytes
-  totalLines: number; // Total number of lines in the file
-  startLine: number; // First line number returned (1-indexed)
-  endLine: number; // Last line number returned
-  hasMore: boolean; // Whether more lines follow after endLine
-}
-
-export type DesktopReadFileResult = AdapterResultBase<DesktopReadFileData>;
-
-export interface DesktopWriteFileData {
-  path: string; // Absolute path of the file that was written
-  bytesWritten: number; // Number of bytes written to the file
-}
-
-export type DesktopWriteFileResult = AdapterResultBase<DesktopWriteFileData>;
-
-export interface DesktopEditFileData {
-  path: string; // Absolute path of the file that was edited
-  bytesWritten: number; // New file size in bytes after the edit
-  matchCount: number; // Number of replacements made
-}
-
-export type DesktopEditFileResult = AdapterResultBase<DesktopEditFileData>;
-
-export interface DesktopDirectoryEntry {
-  name: string; // File or directory name
-  entryType: string; // Entry type (file or directory)
-  size: number; // Size in bytes
-  modified: any; // Last modified timestamp (Unix seconds) or null
-}
-
-export interface DesktopListDirectoryData {
-  path: string; // Absolute path of the listed directory
-  entries: any; // Array of directory entries
-  count: number; // Total number of entries returned
-}
-
-export type DesktopListDirectoryResult = AdapterResultBase<DesktopListDirectoryData>;
-
-export interface DesktopGetSystemInfoData {
-  hostname: string; // Machine hostname
-  os: string; // Operating system name (e.g. macOS, Linux, Windows)
-  osVersion: string; // Operating system version
-  arch: string; // CPU architecture (e.g. aarch64, x86_64)
-  cpuCount: number; // Number of CPU cores
-  totalMemoryMb: number; // Total system memory in megabytes
-  homeDir: string; // Path to the user home directory
-}
-
-export type DesktopGetSystemInfoResult = AdapterResultBase<DesktopGetSystemInfoData>;
-
-export interface DesktopSpawnProcessData {
-  processId: string; // Unique process identifier for later management
-  pid: number; // Operating system process ID
-}
-
-export type DesktopSpawnProcessResult = AdapterResultBase<DesktopSpawnProcessData>;
-
-export interface DesktopKillProcessData {
-  killed: boolean; // Whether the process was found and killed
-}
-
-export type DesktopKillProcessResult = AdapterResultBase<DesktopKillProcessData>;
-
-export interface DesktopMachineInfo {
-  deviceId: string; // Unique device identifier
-  hostname: string; // Machine hostname
-  platform: string; // Platform string (e.g. MacIntel)
-  arch: string; // CPU architecture
-  appVersion: string; // Desktop app version
-  isActive: boolean; // Whether this machine is the active target
-  connectedAt: number; // Connection timestamp in milliseconds
-  capabilities: any; // Supported operation names
-}
-
-export interface DesktopListMachinesData {
-  machines: any; // Array of connected desktop machines
-  activeDeviceId: any; // Device ID of the currently active machine, or null if none selected
-}
-
-export type DesktopListMachinesResult = AdapterResultBase<DesktopListMachinesData>;
-
-export interface DesktopSelectMachineData {
-  deviceId: string; // Device ID of the newly selected machine
-  hostname: string; // Hostname of the newly selected machine
-  previousDeviceId: any; // Device ID of the previously selected machine, or null
-}
-
-export type DesktopSelectMachineResult = AdapterResultBase<DesktopSelectMachineData>;
 
 // Documents Response Types
 export interface DocumentUploadData {
@@ -2342,6 +3237,329 @@ export interface GithubRecentCommitsData {
 }
 
 export type GithubGetRecentCommitsResult = AdapterResultBase<GithubRecentCommitsData>;
+
+// Google Calendar Response Types
+export interface GoogleCalendarAttendee {
+  email: string; // Attendee email address
+  name?: string; // Attendee display name
+  responseStatus?: string; // Response status: needsAction, declined, tentative, accepted
+  isOrganizer?: boolean; // Whether this attendee is the organizer
+  isSelf?: boolean; // Whether this is the authenticated user
+}
+
+export interface GoogleCalendarGetEventData {
+  id: string; // Calendar event ID
+  summary: string; // Event title
+  description: string; // Event description
+  location: string; // Event location
+  startTime: string; // Start time (ISO 8601)
+  endTime: string; // End time (ISO 8601)
+  isAllDay: boolean; // Whether this is an all-day event
+  timeZone: string; // Event timezone
+  creator: any; // Event creator
+  organizer: any; // Event organizer
+  attendees: any; // List of attendees
+  attendeeCount: number; // Number of attendees
+  status: string; // Event status: confirmed, tentative, cancelled
+  htmlLink: string; // Link to view event in Google Calendar
+  isRecurring: boolean; // Whether this is a recurring event
+  recurringEventId?: string; // ID of the recurring event series
+  created: string; // When the event was created (ISO 8601)
+  updated: string; // When the event was last updated (ISO 8601)
+}
+
+export type GoogleCalendarGetEventResult = AdapterResultBase<GoogleCalendarGetEventData>;
+
+export interface GoogleCalendarEventSummary {
+  id: string; // Calendar event ID
+  summary: string; // Event title
+  location: string; // Event location
+  startTime: string; // Start time (ISO 8601)
+  endTime: string; // End time (ISO 8601)
+  isAllDay: boolean; // Whether this is an all-day event
+  status: string; // Event status: confirmed, tentative, cancelled
+  htmlLink: string; // Link to view event in Google Calendar
+  isRecurring: boolean; // Whether this is a recurring event
+  attendeeCount: number; // Number of attendees
+}
+
+export interface GoogleCalendarListEventsData {
+  count: number; // Number of events returned
+  query?: string; // Search query used
+  timeMin?: string; // Start of time range
+  timeMax?: string; // End of time range
+  events: any; // List of calendar events
+}
+
+export type GoogleCalendarListEventsResult = AdapterResultBase<GoogleCalendarListEventsData>;
+
+export interface GoogleCalendarListEventsData {
+  count: number; // Number of events returned
+  query?: string; // Search query used
+  timeMin?: string; // Start of time range
+  timeMax?: string; // End of time range
+  events: any; // List of calendar events
+}
+
+export type GoogleCalendarGetEventsResult = AdapterResultBase<GoogleCalendarListEventsData>;
+
+export interface GoogleCalendarSearchEventsData {
+  count: number; // Number of events returned
+  query: string; // Search query used
+  timeMin?: string; // Start of time range
+  timeMax?: string; // End of time range
+  events: any; // List of matching calendar events
+}
+
+export type GoogleCalendarSearchEventsResult = AdapterResultBase<GoogleCalendarSearchEventsData>;
+
+export interface GoogleCalendarCreateEventData {
+  eventId: string; // Created event ID
+  summary: string; // Event title
+  start: any; // Event start time
+  end: any; // Event end time
+  htmlLink: string; // Link to view event in Google Calendar
+}
+
+export type GoogleCalendarCreateEventResult = AdapterResultBase<GoogleCalendarCreateEventData>;
+
+export interface GoogleCalendarUpdateEventData {
+  eventId: string; // Updated event ID
+  summary: string; // Event title
+  updated: boolean; // Whether the update succeeded
+}
+
+export type GoogleCalendarUpdateEventResult = AdapterResultBase<GoogleCalendarUpdateEventData>;
+
+export interface GoogleCalendarDeleteEventData {
+  eventId: string; // Deleted event ID
+  deleted: boolean; // Whether the deletion succeeded
+}
+
+export type GoogleCalendarDeleteEventResult = AdapterResultBase<GoogleCalendarDeleteEventData>;
+
+// Google Drive Response Types
+export interface GoogleDriveFileSummary {
+  id: string; // File ID
+  name: string; // File name
+  mimeType: string; // MIME type
+  mimeTypeReadable: string; // Human-readable file type
+  createdAt: string; // ISO 8601 creation date
+  modifiedAt: string; // ISO 8601 modification date
+  isFolder: boolean; // Whether this is a folder
+}
+
+export interface GoogleDriveListFilesData {
+  count: number; // Number of files returned
+  query?: string; // Search query used
+  files: any; // Array of file summaries
+}
+
+export type GoogleDriveListFilesResult = AdapterResultBase<GoogleDriveListFilesData>;
+
+export interface GoogleDriveSearchFilesData {
+  count: number; // Number of files returned
+  query: string; // Search query used
+  files: any; // Array of matching file summaries
+}
+
+export type GoogleDriveSearchFilesResult = AdapterResultBase<GoogleDriveSearchFilesData>;
+
+export interface GoogleDriveOwner {
+  name: string; // Owner name
+  email: string; // Owner email
+}
+
+export interface GoogleDriveGetFileInfoData {
+  id: string; // File ID
+  name: string; // File name
+  mimeType: string; // MIME type
+  mimeTypeReadable: string; // Human-readable file type
+  size: number; // File size in bytes
+  createdAt: string; // ISO 8601 creation date
+  modifiedAt: string; // ISO 8601 modification date
+  webViewLink: any; // Web view URL
+  parents: any; // Parent folder IDs
+  owner: any; // File owner
+  isFolder: boolean; // Whether this is a folder
+  isTrashed: boolean; // Whether file is in trash
+}
+
+export type GoogleDriveGetFileInfoResult = AdapterResultBase<GoogleDriveGetFileInfoData>;
+
+export interface GoogleDriveCreateFileData {
+  fileId: string; // Created file ID
+  name: string; // File name
+  mimeType: string; // MIME type
+  webViewLink?: string; // Web view URL
+}
+
+export type GoogleDriveCreateFileResult = AdapterResultBase<GoogleDriveCreateFileData>;
+
+export interface GoogleDriveCreateFolderData {
+  folderId: string; // Created folder ID
+  name: string; // Folder name
+  webViewLink?: string; // Web view URL
+}
+
+export type GoogleDriveCreateFolderResult = AdapterResultBase<GoogleDriveCreateFolderData>;
+
+export interface GoogleDriveDownloadFileData {
+  data: string; // Base64-encoded file content
+  mimeType: string; // MIME type of downloaded file
+}
+
+export type GoogleDriveDownloadFileResult = AdapterResultBase<GoogleDriveDownloadFileData>;
+
+export interface GoogleDriveMoveFileData {
+  fileId: string; // Moved file ID
+  name: string; // File name
+  moved: boolean; // Whether move succeeded
+}
+
+export type GoogleDriveMoveFileResult = AdapterResultBase<GoogleDriveMoveFileData>;
+
+export interface GoogleDriveShareFileData {
+  fileId: string; // Shared file ID
+  permissionId: string; // Created permission ID
+  role: string; // Permission role granted
+  shared: boolean; // Whether share succeeded
+}
+
+export type GoogleDriveShareFileResult = AdapterResultBase<GoogleDriveShareFileData>;
+
+export interface GoogleDriveDeleteFileData {
+  fileId: string; // Deleted file ID
+  deleted: string; // Deletion type: permanent or trash
+}
+
+export type GoogleDriveDeleteFileResult = AdapterResultBase<GoogleDriveDeleteFileData>;
+
+export interface GoogleDriveUpdateFileData {
+  fileId: string; // Updated file ID
+  name: string; // File name
+  updated: boolean; // Whether update succeeded
+}
+
+export type GoogleDriveUpdateFileResult = AdapterResultBase<GoogleDriveUpdateFileData>;
+
+// Gmail Response Types
+export interface GoogleGmailSendEmailData {
+  messageId: string; // ID of the sent message
+  to: string; // Recipient email address
+  subject: string; // Email subject
+  sentAt: string; // ISO timestamp when sent
+}
+
+export type GoogleGmailSendEmailResult = AdapterResultBase<GoogleGmailSendEmailData>;
+
+export interface GoogleGmailAttachment {
+  filename: string; // Attachment filename
+  mimeType: string; // MIME type
+  size: number; // Size in bytes
+  attachmentId: string; // Attachment ID
+}
+
+export interface GoogleGmailGetEmailData {
+  id: string; // Unique email ID
+  threadId: string; // Thread ID
+  subject: string; // Email subject
+  from: string; // Sender email address
+  to: string; // Recipient email address
+  cc?: string; // CC recipients
+  bcc?: string; // BCC recipients
+  date: string; // ISO timestamp of email
+  body: string; // Plain text body content
+  bodyHtml?: string; // HTML body content
+  snippet: string; // Email preview snippet
+  labelIds: any; // Gmail label IDs
+  isUnread: boolean; // Whether email is unread
+  hasAttachments: boolean; // Whether email has attachments
+  attachments?: any; // Attachment metadata
+}
+
+export type GoogleGmailGetEmailResult = AdapterResultBase<GoogleGmailGetEmailData>;
+
+export interface GoogleGmailEmailSummary {
+  id: string; // Unique email ID
+  threadId: string; // Thread ID
+  subject: string; // Email subject
+  from: string; // Sender email address
+  to: string; // Recipient email address
+  date: string; // ISO timestamp
+  snippet: string; // Preview snippet
+  labelIds: any; // Gmail label IDs
+  isUnread: boolean; // Whether email is unread
+  hasAttachments: boolean; // Whether email has attachments
+}
+
+export interface GoogleGmailSearchEmailsData {
+  query: string; // Search query used
+  count: number; // Number of results
+  emails: any; // List of matching emails
+}
+
+export type GoogleGmailSearchEmailsResult = AdapterResultBase<GoogleGmailSearchEmailsData>;
+
+export interface GoogleGmailListEmailsData {
+  query: string; // Search query used
+  count: number; // Number of results
+  emails: any; // List of emails
+}
+
+export type GoogleGmailListEmailsResult = AdapterResultBase<GoogleGmailListEmailsData>;
+
+export interface GoogleGmailCreateDraftData {
+  draftId: string; // ID of created draft
+  subject: string; // Draft subject
+  to: string; // Recipient email address
+}
+
+export type GoogleGmailCreateDraftResult = AdapterResultBase<GoogleGmailCreateDraftData>;
+
+export interface GoogleGmailUpdateDraftData {
+  draftId: string; // ID of updated draft
+  updated: boolean; // Whether update succeeded
+}
+
+export type GoogleGmailUpdateDraftResult = AdapterResultBase<GoogleGmailUpdateDraftData>;
+
+export interface GoogleGmailDeleteDraftData {
+  draftId: string; // ID of deleted draft
+  deleted: boolean; // Whether deletion succeeded
+}
+
+export type GoogleGmailDeleteDraftResult = AdapterResultBase<GoogleGmailDeleteDraftData>;
+
+export interface GoogleGmailDraftSummary {
+  id: string; // Draft ID
+  messageId: string; // Associated message ID
+  subject: string; // Draft subject
+  to: string; // Recipient email
+  snippet: string; // Preview snippet
+}
+
+export interface GoogleGmailListDraftsData {
+  count: number; // Number of drafts
+  drafts: any; // List of drafts
+}
+
+export type GoogleGmailListDraftsResult = AdapterResultBase<GoogleGmailListDraftsData>;
+
+export interface GoogleGmailDeleteEmailData {
+  messageId: string; // ID of deleted email
+  deleted: any; // Type of deletion
+}
+
+export type GoogleGmailDeleteEmailResult = AdapterResultBase<GoogleGmailDeleteEmailData>;
+
+export interface GoogleGmailBulkDeleteEmailsData {
+  deletedCount: number; // Number of emails deleted
+  messageIds: any; // IDs of deleted emails
+  deleted: any; // Type of deletion
+}
+
+export type GoogleGmailBulkDeleteEmailsResult = AdapterResultBase<GoogleGmailBulkDeleteEmailsData>;
 
 // Hypertrade Response Types
 export interface HypertradePlaceOrderData {
@@ -3685,6 +4903,223 @@ export interface PolymarketGetBuilderVolumeData {
 
 export type PolymarketGetBuilderVolumeResult = AdapterResultBase<PolymarketGetBuilderVolumeData>;
 
+// Scripts Response Types
+export interface ScriptCreateData {
+  id: string; // Created script ID
+  name: string; // Script name
+  description: string; // Script description
+  runtime: string; // Lambda runtime (e.g., nodejs18)
+  timeout: number; // Timeout in seconds
+  memory: number; // Memory in MB
+  activeVersion: number; // Active version number
+  isPublished: boolean; // Whether published
+  isPrivate: boolean; // Whether private
+  status: string; // Script status
+  deploymentStatus: string; // Deployment status
+  lambdaFunctionName: string; // Lambda function name (empty on creation)
+  lambdaArn: string; // Lambda ARN (empty on creation)
+  totalExecutions: number; // Total executions (0 on creation)
+  totalCost: number; // Total cost in USD (0 on creation)
+  avgDuration: number; // Average duration in ms (0 on creation)
+  errorRate: number; // Error rate 0-1 (0 on creation)
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+  publishedAt: string; // Published timestamp (ISO 8601) or empty
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
+  apiKey: string; // API key for script execution (only returned on creation)
+  installationId: string; // Auto-created installation ID
+}
+
+export type ScriptsCreateScriptResult = AdapterResultBase<ScriptCreateData>;
+
+export interface ScriptDeleteData {
+  deleted: boolean; // Whether deletion succeeded
+  scriptId: string; // Deleted script ID
+  hardDeleted: boolean; // Whether script was permanently deleted
+  installationsRemoved: number; // Number of installations removed
+  preservedInstallations: number; // Number of installations preserved (soft delete)
+}
+
+export type ScriptsDeleteScriptResult = AdapterResultBase<ScriptDeleteData>;
+
+export interface ScriptVersionCreateData {
+  id: string; // Version document ID
+  scriptId: string; // Parent script ID
+  version: number; // Version number
+  isActive: boolean; // Whether this version is active
+  commitMessage: string; // Commit message for this version
+  codeHash: string; // Hash of the code
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+}
+
+export type ScriptsCreateVersionResult = AdapterResultBase<ScriptVersionCreateData>;
+
+export interface ScriptVersion {
+  id: string; // Version document ID
+  scriptId: string; // Parent script ID
+  version: number; // Version number
+  isActive: boolean; // Whether this version is active
+  commitMessage: string; // Commit message for this version
+  codeHash: string; // Hash of the code
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+}
+
+export interface ScriptVersionListData {
+  count: number; // Number of versions
+  versions: any; // List of script versions
+}
+
+export type ScriptsListVersionsResult = AdapterResultBase<ScriptVersionListData>;
+
+export interface ScriptDeployData {
+  scriptId: string; // Deployed script ID
+  version: number; // Deployed version number
+  lambdaFunctionName: string; // AWS Lambda function name
+  lambdaArn: string; // AWS Lambda ARN
+  deployedAt: string; // Deployment timestamp (ISO 8601)
+}
+
+export type ScriptsDeployScriptResult = AdapterResultBase<ScriptDeployData>;
+
+export interface ScriptExecuteData {
+  executionId: string; // Unique execution ID
+  scriptId: string; // Executed script ID
+  status: string; // Execution status
+  output: any; // Script output data
+  duration: number; // Execution duration in milliseconds
+  logs: any; // Execution logs
+  error: string; // Error message (empty if no error)
+  createdAt: string; // Execution timestamp (ISO 8601)
+}
+
+export type ScriptsExecuteScriptResult = AdapterResultBase<ScriptExecuteData>;
+
+export interface ScriptGetData {
+  id: string; // Script ID
+  name: string; // Script name
+  description: string; // Script description
+  runtime: string; // Lambda runtime
+  timeout: number; // Timeout in seconds
+  memory: number; // Memory in MB
+  activeVersion: number; // Active version number
+  isPublished: boolean; // Whether published
+  isPrivate: boolean; // Whether private
+  status: string; // Script status
+  deploymentStatus: string; // Deployment status
+  lambdaFunctionName: string; // Lambda function name
+  lambdaArn: string; // Lambda ARN
+  totalExecutions: number; // Total executions
+  totalCost: number; // Total cost in USD
+  avgDuration: number; // Average duration in ms
+  errorRate: number; // Error rate (0-1)
+  createdAt: string; // Created timestamp (ISO 8601)
+  deployedAt: string; // Deployed timestamp (ISO 8601) or empty
+  publishedAt: string; // Published timestamp (ISO 8601) or empty
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
+}
+
+export type ScriptsGetScriptResult = AdapterResultBase<ScriptGetData>;
+
+export interface ScriptSummary {
+  id: string; // Unique script ID
+  name: string; // Script name
+  description: string; // Script description
+  activeVersion: number; // Currently active version number
+  isPublished: boolean; // Whether the script is published (activated and deployed)
+  status: string; // Script status (draft, published, archived)
+  deploymentStatus: string; // Deployment status (pending, deploying, deployed, failed)
+  totalExecutions: number; // Total number of executions
+  createdAt: string; // Created timestamp (ISO 8601)
+}
+
+export interface ScriptListData {
+  count: number; // Number of scripts
+  scripts: any; // List of scripts
+}
+
+export type ScriptsListScriptsResult = AdapterResultBase<ScriptListData>;
+
+export interface ScriptExecutionSummary {
+  executionId: string; // Unique execution ID
+  scriptId: string; // Script that was executed
+  status: string; // Execution status (running, completed, failed)
+  duration: number; // Execution duration in milliseconds
+  createdAt: string; // Execution timestamp (ISO 8601)
+  hasError: boolean; // Whether execution had an error
+}
+
+export interface ScriptExecutionsData {
+  scriptId: string; // Script ID
+  count: number; // Number of executions
+  executions: any; // List of executions
+}
+
+export type ScriptsGetExecutionsResult = AdapterResultBase<ScriptExecutionsData>;
+
+export interface ScriptExecutionData {
+  executionId: string; // Execution ID
+  scriptId: string; // Script ID
+  status: string; // Execution status
+  output: any; // Script output
+  duration: number; // Duration in milliseconds
+  logs: any; // Execution logs
+  error: string; // Error message (empty if no error)
+  createdAt: string; // Execution timestamp (ISO 8601)
+}
+
+export type ScriptsGetExecutionResult = AdapterResultBase<ScriptExecutionData>;
+
+export interface ScriptMetricsData {
+  scriptId: string; // Script ID
+  totalExecutions: number; // Total number of executions
+  totalCost: number; // Total cost in USD
+  avgDuration: number; // Average duration in ms
+  successRate: number; // Success rate (0-1)
+  errorRate: number; // Error rate (0-1)
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601) or empty
+}
+
+export type ScriptsGetMetricsResult = AdapterResultBase<ScriptMetricsData>;
+
+export interface ScriptFlowGetData {
+  code: string; // Script source code
+  version: number; // Active version number
+  scriptId: string; // Script ID
+  scriptName: string; // Script name
+  description: string; // Script description
+  isOwned: boolean; // Whether user owns the script
+}
+
+export type ScriptsGetFlowScriptResult = AdapterResultBase<ScriptFlowGetData>;
+
+export interface ScriptFlowModifyData {
+  copied: boolean; // Whether a copy was created (user did not own original)
+  scriptId: string; // Script ID (new if copied, original if owned)
+  versionId: string; // New version ID
+  version: number; // New version number
+}
+
+export type ScriptsModifyFlowScriptResult = AdapterResultBase<ScriptFlowModifyData>;
+
+export interface LintIssue {
+  severity: string; // Issue severity (error, warning)
+  message: string; // Issue description
+  line: number; // Line number where issue was found
+  suggestion: string; // Suggested fix
+}
+
+export interface ScriptLintData {
+  valid: boolean; // Whether script is valid
+  issueCount: number; // Number of issues found
+  issues: any; // List of lint issues
+  callAdapterCallsCount: number; // Number of callAdapter calls found
+  mirraSDKCallsCount: number; // Number of mirra SDK calls found
+}
+
+export type ScriptsLintScriptResult = AdapterResultBase<ScriptLintData>;
+
 // Shopify Response Types
 export interface ShopifyVariant {
   id: string; // Variant ID
@@ -4732,6 +6167,115 @@ export interface SocketNotifySubscriberData {
 
 export type SocketNotifySubscriberResult = AdapterResultBase<SocketNotifySubscriberData>;
 
+// Telegram Response Types
+export interface TelegramSendMessageData {
+  messageId: number; // ID of the sent message
+  chatId: string; // Chat ID where message was sent
+  text: string; // Message text that was sent
+  sentAt: string; // ISO 8601 timestamp when sent
+}
+
+export type TelegramSendMessageResult = AdapterResultBase<TelegramSendMessageData>;
+
+export interface TelegramChat {
+  id: string; // Chat ID
+  title: string; // Chat title/name
+  type: any; // Chat type
+  username: any; // Chat username (if available)
+  lastMessageDate: any; // ISO 8601 date of last message
+  unreadCount: number; // Number of unread messages
+  unreadMentionsCount: number; // Number of unread mentions
+  pinned: boolean; // Whether chat is pinned
+  archived: boolean; // Whether chat is archived
+  memberCount: number; // Number of members (for groups/channels)
+  relevanceScore?: number; // Relevance score when query is provided
+}
+
+export interface TelegramPaginationInfo {
+  totalCount: number; // Total number of matching chats
+  limit: number; // Maximum items per page
+  offset: number; // Current offset
+  hasMore: boolean; // Whether more results are available
+}
+
+export interface TelegramSearchChatsData {
+  items: any; // List of matching chats
+  pagination: any; // Pagination metadata
+}
+
+export type TelegramSearchChatsResult = AdapterResultBase<TelegramSearchChatsData>;
+
+export interface TelegramMessage {
+  id: string; // Message ID
+  text: string; // Message text content
+  caption: any; // Caption for media messages
+  date: string; // ISO 8601 timestamp
+  chatId: string; // Chat ID where message was sent
+  senderId: string; // Sender user ID
+  senderName: string; // Sender display name
+  hasMedia: boolean; // Whether message has media attachment
+  mediaType: any; // Media type: photo, video, document, etc.
+  isOutgoing: boolean; // Whether message was sent by the user
+  replyToMessageId: any; // ID of message being replied to
+}
+
+export interface TelegramSearchMessagesData {
+  messages: any; // List of matching messages
+  count: number; // Number of messages returned
+}
+
+export type TelegramSearchMessagesResult = AdapterResultBase<TelegramSearchMessagesData>;
+
+export interface TelegramGetChatMessagesData {
+  messages: any; // List of messages from the chat
+  count: number; // Number of messages returned
+  chatId?: string; // Chat ID the messages are from
+}
+
+export type TelegramGetChatMessagesResult = AdapterResultBase<TelegramGetChatMessagesData>;
+
+export interface TelegramUnreadSummaryEntry {
+  chatId: string; // Chat ID
+  chatName: string; // Chat display name
+  chatType: any; // Chat type
+  unreadCount: number; // Number of unread messages
+  hasMention: boolean; // Whether there are unread mentions
+  lastMessageText: any; // Text of last message
+  lastMessageSender: any; // Sender of last message
+  lastMessageDate: any; // ISO 8601 date of last message
+}
+
+export interface TelegramUnreadSummaryData {
+  chats: any; // List of chats with unread information
+  totalUnread: number; // Total unread messages across all chats
+  chatsWithUnread: number; // Number of chats with unread messages
+}
+
+export type TelegramGetUnreadSummaryResult = AdapterResultBase<TelegramUnreadSummaryData>;
+
+export interface TelegramMarkAsReadData {
+  success: boolean; // Whether the operation succeeded
+  chatId: string; // Chat ID that was marked as read
+  markedAt: string; // ISO 8601 timestamp when marked
+}
+
+export type TelegramMarkAsReadResult = AdapterResultBase<TelegramMarkAsReadData>;
+
+export interface TelegramMentionsData {
+  mentions: any; // List of messages with mentions
+  count: number; // Number of mentions returned
+}
+
+export type TelegramGetMentionsResult = AdapterResultBase<TelegramMentionsData>;
+
+export interface TelegramLeaveGroupData {
+  success: boolean; // Whether the operation succeeded
+  chatId: string; // Chat ID that was left
+  leftAt: string; // ISO 8601 timestamp when left
+}
+
+export type TelegramLeaveGroupResult = AdapterResultBase<TelegramLeaveGroupData>;
+
 // Telegram Bot Response Types
 export interface TelegramBotSendMessageData {
   messageId: number; // ID of the sent message
@@ -4881,6 +6425,224 @@ export interface TelegramBotDownloadFileData {
 
 export type TelegramBotDownloadFileResult = AdapterResultBase<TelegramBotDownloadFileData>;
 
+// Trello Response Types
+export interface TrelloBoard {
+  id: string; // Board ID
+  name: string; // Board name
+  description: string; // Board description
+  url: string; // Board URL
+  closed: boolean; // Whether board is closed/archived
+  starred: boolean; // Whether board is starred
+  listCount: number; // Number of lists in the board
+}
+
+export interface TrelloGetBoardsData {
+  boards: any; // List of boards
+  count: number; // Number of boards returned
+}
+
+export type TrelloGetBoardsResult = AdapterResultBase<TrelloGetBoardsData>;
+
+export interface TrelloList {
+  id: string; // List ID
+  name: string; // List name
+  closed: boolean; // Whether list is closed/archived
+  position: number; // List position
+  boardId: string; // ID of the parent board
+}
+
+export interface TrelloGetBoardData {
+  id: string; // Board ID
+  name: string; // Board name
+  description: string; // Board description
+  url: string; // Board URL
+  closed: boolean; // Whether board is closed
+  starred: boolean; // Whether board is starred
+  lists: any; // Lists in the board
+  listCount: number; // Number of lists
+}
+
+export type TrelloGetBoardResult = AdapterResultBase<TrelloGetBoardData>;
+
+export interface TrelloCard {
+  id: string; // Card ID
+  name: string; // Card name/title
+  description: string; // Card description
+  url: string; // Card URL
+  shortUrl: string; // Short card URL
+  closed: boolean; // Whether card is archived
+  position: number; // Card position in list
+  listId: string; // ID of the parent list
+  boardId: string; // ID of the parent board
+  dueDate: any; // Due date in ISO 8601 format
+  dueComplete: boolean; // Whether due date is marked complete
+  labels: any; // Array of label names
+  checklistCount: number; // Number of checklists on the card
+  attachmentCount: number; // Number of attachments
+  commentCount: number; // Number of comments
+}
+
+export interface TrelloCreateCardData {
+  card: any; // Created card
+}
+
+export type TrelloCreateCardResult = AdapterResultBase<TrelloCreateCardData>;
+
+export interface TrelloGetCardData {
+  card: any; // Card details
+}
+
+export type TrelloGetCardResult = AdapterResultBase<TrelloGetCardData>;
+
+export interface TrelloUpdateCardData {
+  card: any; // Updated card
+}
+
+export type TrelloUpdateCardResult = AdapterResultBase<TrelloUpdateCardData>;
+
+export interface TrelloDeleteCardData {
+  success: boolean; // Whether deletion succeeded
+  deletedId: string; // ID of the deleted entity
+  deletedAt: string; // ISO 8601 timestamp of deletion
+}
+
+export type TrelloDeleteCardResult = AdapterResultBase<TrelloDeleteCardData>;
+
+export interface TrelloChecklist {
+  id: string; // Checklist ID
+  name: string; // Checklist name
+  cardId: string; // ID of the parent card
+  boardId: string; // ID of the parent board
+  position: number; // Checklist position
+  checkItemCount: number; // Total number of check items
+  checkItemsChecked: number; // Number of completed check items
+}
+
+export interface TrelloCheckItem {
+  id: string; // Check item ID
+  name: string; // Check item text
+  checklistId: string; // ID of the parent checklist
+  state: any; // Completion state
+  position: number; // Check item position
+}
+
+export interface TrelloCreateChecklistData {
+  checklist: any; // Created checklist
+  checkItems: any; // Check items in the checklist
+}
+
+export type TrelloCreateChecklistResult = AdapterResultBase<TrelloCreateChecklistData>;
+
+export interface TrelloGetChecklistData {
+  checklist: any; // Checklist details
+  checkItems: any; // Check items in the checklist
+}
+
+export type TrelloGetChecklistResult = AdapterResultBase<TrelloGetChecklistData>;
+
+export interface TrelloUpdateChecklistData {
+  checklist: any; // Updated checklist
+  checkItems: any; // Check items in the checklist
+}
+
+export type TrelloUpdateChecklistResult = AdapterResultBase<TrelloUpdateChecklistData>;
+
+export interface TrelloDeleteChecklistData {
+  success: boolean; // Whether deletion succeeded
+  deletedId: string; // ID of the deleted entity
+  deletedAt: string; // ISO 8601 timestamp of deletion
+}
+
+export type TrelloDeleteChecklistResult = AdapterResultBase<TrelloDeleteChecklistData>;
+
+export interface TrelloAddCheckItemData {
+  checkItem: any; // Created check item
+}
+
+export type TrelloAddCheckItemResult = AdapterResultBase<TrelloAddCheckItemData>;
+
+export interface TrelloUpdateCheckItemData {
+  checkItem: any; // Updated check item
+}
+
+export type TrelloUpdateCheckItemResult = AdapterResultBase<TrelloUpdateCheckItemData>;
+
+export interface TrelloDeleteCheckItemData {
+  success: boolean; // Whether deletion succeeded
+  deletedId: string; // ID of the deleted entity
+  deletedAt: string; // ISO 8601 timestamp of deletion
+}
+
+export type TrelloDeleteCheckItemResult = AdapterResultBase<TrelloDeleteCheckItemData>;
+
+// Twitter Response Types
+export interface TwitterPostTweetData {
+  tweetId: string; // ID of the posted tweet
+  text: string; // Text content of the posted tweet
+}
+
+export type TwitterPostTweetResult = AdapterResultBase<TwitterPostTweetData>;
+
+export interface TwitterUploadMediaData {
+  mediaId: string; // Media id to pass to postTweet as mediaIds
+}
+
+export type TwitterUploadMediaResult = AdapterResultBase<TwitterUploadMediaData>;
+
+export interface TwitterNormalizedTweet {
+  id: string; // Tweet ID
+  text: string; // Tweet text content
+  url: string; // Direct URL to the tweet
+  createdAt: string; // Tweet creation time (ISO 8601)
+  lang?: string; // Tweet language code
+  likeCount: number; // Number of likes
+  retweetCount: number; // Number of retweets
+  replyCount: number; // Number of replies
+  quoteCount: number; // Number of quote tweets
+  viewCount: number; // Number of views
+  bookmarkCount: number; // Number of bookmarks
+  isReply: boolean; // Whether this is a reply to another tweet
+  isRetweet: boolean; // Whether this is a retweet
+  inReplyToTweetId?: string; // ID of the tweet this is replying to (only present for replies)
+  conversationId?: string; // Conversation thread ID (same as root tweet ID)
+  source?: string; // Source application of the tweet
+  authorId: string; // Author user ID
+  authorName: string; // Author display name
+  authorUserName: string; // Author username/handle
+  authorFollowers: number; // Author follower count
+  authorFollowing: number; // Author following count
+  authorIsVerified: boolean; // Whether the author is verified
+  authorVerifiedType?: string; // Type of verification (blue, business, government)
+  authorCreatedAt?: string; // Author account creation date
+}
+
+export interface TwitterGetUserTweetsData {
+  tweets: any; // List of normalized tweets
+  hasNextPage: boolean; // Whether more tweets are available
+  nextCursor: string; // Cursor for fetching the next page
+  totalRetrieved: number; // Number of tweets retrieved in this response
+}
+
+export type TwitterGetUserTweetsResult = AdapterResultBase<TwitterGetUserTweetsData>;
+
+export interface TwitterAdvancedSearchData {
+  query: string; // Search query used
+  queryType: string; // Type of search: Latest or Top
+  tweets: any; // List of matching tweets
+  hasNextPage: boolean; // Whether more results are available
+  nextCursor: string; // Cursor for fetching the next page
+  totalRetrieved: number; // Number of tweets retrieved in this response
+}
+
+export type TwitterAdvancedSearchResult = AdapterResultBase<TwitterAdvancedSearchData>;
+
+export interface TwitterGetTweetByIdData {
+  tweets: any; // List of retrieved tweets
+  totalRetrieved: number; // Number of tweets retrieved
+}
+
+export type TwitterGetTweetByIdResult = AdapterResultBase<TwitterGetTweetByIdData>;
+
 // Video Generator Response Types
 export interface VideoTemplateSummary {
   templateId: string; // Unique template identifier
@@ -4944,6 +6706,348 @@ export interface WorkspaceExecData {
 }
 
 export type WorkspaceExecResult = AdapterResultBase<WorkspaceExecData>;
+
+// Flows Response Types
+export interface FlowsCreateFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsCreateFlowResult = AdapterResultBase<FlowsCreateFlowData>;
+
+export interface FlowsCreateTimeFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsCreateTimeFlowResult = AdapterResultBase<FlowsCreateTimeFlowData>;
+
+export interface FlowsCreateEventFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsCreateEventFlowResult = AdapterResultBase<FlowsCreateEventFlowData>;
+
+export interface FlowsGetFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsGetFlowResult = AdapterResultBase<FlowsGetFlowData>;
+
+export interface FlowsUpdateFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsUpdateFlowResult = AdapterResultBase<FlowsUpdateFlowData>;
+
+export interface FlowsDeleteFlowData {
+  flowId: string; // Deleted flow ID
+  deleted: boolean; // Whether deletion succeeded
+}
+
+export type FlowsDeleteFlowResult = AdapterResultBase<FlowsDeleteFlowData>;
+
+export interface FlowsPauseFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsPauseFlowResult = AdapterResultBase<FlowsPauseFlowData>;
+
+export interface FlowsResumeFlowData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsResumeFlowResult = AdapterResultBase<FlowsResumeFlowData>;
+
+export interface FlowsRecordExecutionData {
+  id: string; // Flow ID
+  title: string; // Flow title
+  description: string; // Truncated description
+  status: string; // Flow status (active, paused, completed, failed)
+  userId: string; // Owner user ID
+  triggerType: string; // Trigger type (time or event)
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+  isActive: boolean; // Whether flow is active
+  scope: string; // Flow scope (user or system)
+  timezone: string; // Timezone for time-based flows
+  eventFilter?: any; // Event filter for event-based flows
+  scriptInstallationId: string; // Script installation ID
+  scriptInput?: any; // Script input data
+  updatedAt: string; // Updated timestamp (ISO 8601)
+  version: number; // Flow version number
+  feedItemId: string; // Associated feed item ID
+  isTimeBased: boolean; // Whether flow is time-based
+  isEventBased: boolean; // Whether flow is event-based
+}
+
+export type FlowsRecordExecutionResult = AdapterResultBase<FlowsRecordExecutionData>;
+
+export interface FlowListItem {
+  id: string; // Flow ID
+  title: string; // Flow title
+  status: string; // Flow status (active, paused, completed, failed)
+  triggerType: string; // Trigger type (time or event)
+  isActive: boolean; // Whether flow is active
+  description: string; // Truncated description
+  userId: string; // Owner user ID
+  cronExpression: string; // Cron expression for time-based flows
+  scriptId: string; // Associated script ID
+  executionCount: number; // Number of executions
+  lastExecutedAt: string; // Last execution timestamp (ISO 8601)
+  createdAt: string; // Created timestamp (ISO 8601)
+}
+
+export interface FlowsSearchFlowsData {
+  count: number; // Number of matching flows
+  flows: any; // List of matching flows (minimal by default, summary with detail: "summary")
+}
+
+export type FlowsSearchFlowsResult = AdapterResultBase<FlowsSearchFlowsData>;
+
+export interface FlowsGetFlowsByEventTypeData {
+  eventType: string; // Queried event type
+  count: number; // Number of flows
+  flows: any; // List of flows for event type (minimal by default, summary with detail: "summary")
+}
+
+export type FlowsGetFlowsByEventTypeResult = AdapterResultBase<FlowsGetFlowsByEventTypeData>;
+
+export interface EventType {
+  constant: string; // Event type constant name
+  eventType: string; // Full event type string
+  source: string; // Event source/category
+  description: string; // Event description
+  hasTemplates: boolean; // Whether templates are available
+}
+
+export interface FlowsListEventTypesData {
+  count: number; // Number of event types
+  eventTypes: any; // List of event types
+}
+
+export type FlowsListEventTypesResult = AdapterResultBase<FlowsListEventTypesData>;
+
+export interface ConditionResult {
+  field: string; // Field name
+  operator: string; // Operator used
+  expected: string; // Expected value (stringified)
+  actual: string; // Actual value (stringified)
+  passed: boolean; // Whether condition passed
+}
+
+export interface TestEvent {
+  id: string; // Test event ID
+  type: string; // Event type
+  source: string; // Event source
+  summary: string; // Human-readable summary
+}
+
+export interface FlowsTestFlowData {
+  success: boolean; // Overall test success
+  flowId: string; // Tested flow ID
+  mode: string; // Test mode (dryRun or fullExecution)
+  triggerMatched: boolean; // Whether trigger conditions matched
+  conditionResults: any; // Individual condition results
+  testEvent: any; // Generated test event info
+  executionId: string; // Execution ID (if executed)
+  executionStatus: string; // Execution status (success, error, timeout)
+  executionDuration: number; // Execution duration in ms
+  executionError: string; // Error message if failed
+  tokensConsumed: number; // Tokens consumed
+  recommendations: any; // Actionable recommendations
+}
+
+export type FlowsTestFlowResult = AdapterResultBase<FlowsTestFlowData>;
+
+export interface FlowsValidateTriggerData {
+  flowId: string; // Flow ID
+  matched: boolean; // Whether trigger matched
+  conditionResults: any; // Individual condition results
+}
+
+export type FlowsValidateTriggerResult = AdapterResultBase<FlowsValidateTriggerData>;
+
+export interface FlowsCreateBatchOperationData {
+  flowId: string; // Created batch flow ID
+  title: string; // Batch operation title
+  operationCount: number; // Total operations to process
+  batchSize: number; // Operations per execution
+  intervalSeconds: number; // Seconds between batches
+  estimatedCompletionMinutes: number; // Estimated completion time
+  message: string; // Confirmation message
+  createdAt: string; // Created timestamp (ISO 8601)
+}
+
+export type FlowsCreateBatchOperationResult = AdapterResultBase<FlowsCreateBatchOperationData>;
+
+export interface FlowsPublishFlowData {
+  flowId: string; // Published flow ID
+  isPublished: boolean; // Whether flow is published
+  status: string; // Published status
+  publishedAt: string; // Published timestamp (ISO 8601)
+  pricing: any; // Pricing configuration
+  category: string; // Marketplace category
+  tags: any; // Marketplace tags
+}
+
+export type FlowsPublishFlowResult = AdapterResultBase<FlowsPublishFlowData>;
+
+export interface FlowsUnpublishFlowData {
+  flowId: string; // Unpublished flow ID
+  isPublished: boolean; // Whether flow is published (false)
+  status: string; // Published status (archived)
+}
+
+export type FlowsUnpublishFlowResult = AdapterResultBase<FlowsUnpublishFlowData>;
 
 // User Response Types
 export interface UserGetProfileProfilePhotoItem {
@@ -5307,6 +7411,308 @@ export interface CryptoRefreshTransactionData {
 
 export type CryptoRefreshTransactionResult = AdapterResultBase<CryptoRefreshTransactionData>;
 
+// Google Docs Response Types
+export interface GoogleDocsCreateDocumentData {
+  documentId: string; // ID of the created document
+  title: string; // Title of the created document
+}
+
+export type GoogleDocsCreateDocumentResult = AdapterResultBase<GoogleDocsCreateDocumentData>;
+
+export interface GoogleDocsDocumentData {
+  documentId: string; // ID of the document
+  title: string; // Title of the document
+  revisionId: string; // Current revision ID
+  body: string; // Plain text content of the document
+  bodyLength: number; // Character count of the body
+  lastEditedTime?: string; // ISO 8601 timestamp of last edit
+  url: string; // URL to the document
+  hasContent: boolean; // Whether document has any text content
+}
+
+export type GoogleDocsGetDocumentResult = AdapterResultBase<GoogleDocsDocumentData>;
+
+export interface GoogleDocsContentData {
+  documentId: string; // ID of the document
+  content: string; // Plain text content of the document
+}
+
+export type GoogleDocsGetDocumentContentResult = AdapterResultBase<GoogleDocsContentData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsAppendTextResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsInsertTextAtPositionResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsInsertTextAfterResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsInsertHeadingResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsInsertListResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsInsertTableResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsReplaceTextResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsWriteResultData {
+  documentId: string; // ID of the document
+  success: boolean; // Whether the operation succeeded
+  feedback: string; // Human-readable feedback about the operation
+}
+
+export type GoogleDocsUpdateDocumentContentResult = AdapterResultBase<GoogleDocsWriteResultData>;
+
+export interface GoogleDocsSectionResultData {
+  documentId: string; // ID of the document
+  title: string; // Title of the document
+  url: string; // URL to the document
+  heading: string; // The heading text that was created
+  insertionIndex: number; // Character position where section was inserted
+  success: boolean; // Whether the operation succeeded
+}
+
+export type GoogleDocsCreateSectionResult = AdapterResultBase<GoogleDocsSectionResultData>;
+
+export interface GoogleDocsInsertionPointData {
+  documentId: string; // ID of the document
+  title: string; // Title of the document
+  url: string; // URL to the document
+  position: number; // Character position for insertion
+  context: string; // Text context around the insertion point
+  documentLength: number; // Total character length of the document
+}
+
+export type GoogleDocsFindInsertionPointResult = AdapterResultBase<GoogleDocsInsertionPointData>;
+
+// Google Sheets Response Types
+export interface GoogleSheetsCreateSpreadsheetData {
+  spreadsheetId: string; // Created spreadsheet ID
+  title: string; // Spreadsheet title
+  url: string; // URL to open spreadsheet in browser
+}
+
+export type GoogleSheetsCreateSpreadsheetResult = AdapterResultBase<GoogleSheetsCreateSpreadsheetData>;
+
+export interface GoogleSheetsSheetInfo {
+  sheetId: number; // Numeric sheet ID
+  title: string; // Sheet tab name
+  index: number; // Sheet index (0-based)
+  rowCount: number; // Total rows in sheet
+  columnCount: number; // Total columns in sheet
+  isHidden: boolean; // Whether sheet is hidden
+}
+
+export interface GoogleSheetsNamedRange {
+  name: string; // Named range identifier
+  range: string; // Range in A1 notation
+  sheetId?: number; // Sheet ID containing the range
+}
+
+export interface GoogleSheetsGetSpreadsheetData {
+  spreadsheetId: string; // Spreadsheet ID
+  title: string; // Spreadsheet title
+  url: string; // URL to open spreadsheet
+  locale: string; // Spreadsheet locale (e.g., en_US)
+  timeZone: string; // Spreadsheet timezone
+  sheets: any; // List of sheets in the spreadsheet
+  namedRanges: any; // List of named ranges
+}
+
+export type GoogleSheetsGetSpreadsheetResult = AdapterResultBase<GoogleSheetsGetSpreadsheetData>;
+
+export interface GoogleSheetsReadRangeData {
+  spreadsheetId: string; // Spreadsheet ID
+  range: string; // Range that was read
+  values: any; // 2D array of cell values
+  rowCount: number; // Number of rows returned
+  columnCount: number; // Number of columns in widest row
+  isEmpty: boolean; // Whether the range is empty
+}
+
+export type GoogleSheetsReadRangeResult = AdapterResultBase<GoogleSheetsReadRangeData>;
+
+export interface GoogleSheetsWriteRangeData {
+  spreadsheetId: string; // Spreadsheet ID
+  updatedRange: string; // Range that was updated
+  updatedRows: number; // Number of rows updated
+  updatedColumns: number; // Number of columns updated
+  updatedCells: number; // Total cells updated
+}
+
+export type GoogleSheetsWriteRangeResult = AdapterResultBase<GoogleSheetsWriteRangeData>;
+
+export interface GoogleSheetsAppendRowData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetName: string; // Sheet name
+  appendedRange: string; // Range where data was appended
+  appendedRows: number; // Number of rows appended
+  appendedCells: number; // Total cells appended
+  values: any; // Values that were appended
+}
+
+export type GoogleSheetsAppendRowResult = AdapterResultBase<GoogleSheetsAppendRowData>;
+
+export interface GoogleSheetsInsertAtCellData {
+  spreadsheetId: string; // Spreadsheet ID
+  cell: string; // Cell reference (e.g., Sheet1!A1)
+  value: any; // Value that was inserted
+  previousValue?: any; // Previous cell value if any
+  formatted: boolean; // Whether formatting was applied
+}
+
+export type GoogleSheetsInsertAtCellResult = AdapterResultBase<GoogleSheetsInsertAtCellData>;
+
+export interface GoogleSheetsInsertFormulaData {
+  spreadsheetId: string; // Spreadsheet ID
+  cell: string; // Cell reference
+  formula: string; // Formula that was inserted
+}
+
+export type GoogleSheetsInsertFormulaResult = AdapterResultBase<GoogleSheetsInsertFormulaData>;
+
+export interface GoogleSheetsFormatRangeData {
+  spreadsheetId: string; // Spreadsheet ID
+  range: string; // Range that was formatted
+  formattingApplied: any; // List of formatting options applied
+}
+
+export type GoogleSheetsFormatRangeResult = AdapterResultBase<GoogleSheetsFormatRangeData>;
+
+export interface GoogleSheetsCreateChartData {
+  spreadsheetId: string; // Spreadsheet ID
+  chartType: string; // Type of chart created
+  title: string; // Chart title
+  dataRange: string; // Data range used for chart
+  positionRow: number; // Row where chart is anchored
+  positionColumn: string; // Column where chart is anchored
+}
+
+export type GoogleSheetsCreateChartResult = AdapterResultBase<GoogleSheetsCreateChartData>;
+
+export interface GoogleSheetsFindAndReplaceData {
+  spreadsheetId: string; // Spreadsheet ID
+  findText: string; // Text that was searched for
+  replaceText: string; // Replacement text
+  occurrencesReplaced: number; // Number of replacements made
+  sheetName?: string; // Sheet searched (null for all)
+  matchCase: boolean; // Whether search was case-sensitive
+  matchEntireCell: boolean; // Whether entire cell match required
+}
+
+export type GoogleSheetsFindAndReplaceResult = AdapterResultBase<GoogleSheetsFindAndReplaceData>;
+
+export interface GoogleSheetsInsertMultipleRowsData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetName: string; // Sheet name
+  rowsInserted: number; // Number of rows inserted
+  cellsInserted: number; // Total cells inserted
+  startingRow?: number; // Starting row (null if appended)
+  formatted: boolean; // Whether formatting was applied
+}
+
+export type GoogleSheetsInsertMultipleRowsResult = AdapterResultBase<GoogleSheetsInsertMultipleRowsData>;
+
+export interface GoogleSheetsClearRangeData {
+  spreadsheetId: string; // Spreadsheet ID
+  range: string; // Range that was cleared
+  cellsCleared: number; // Number of cells cleared
+}
+
+export type GoogleSheetsClearRangeResult = AdapterResultBase<GoogleSheetsClearRangeData>;
+
+export interface GoogleSheetsInsertRowsData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetId: number; // Numeric sheet ID
+  operation: string; // Operation type (insert)
+  startRowIndex: number; // Row index where insertion started (0-indexed)
+  numRows: number; // Number of rows inserted
+}
+
+export type GoogleSheetsInsertRowsResult = AdapterResultBase<GoogleSheetsInsertRowsData>;
+
+export interface GoogleSheetsDeleteRowsData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetId: number; // Numeric sheet ID
+  operation: string; // Operation type (delete)
+  startRowIndex: number; // Row index where deletion started (0-indexed)
+  numRows: number; // Number of rows deleted
+}
+
+export type GoogleSheetsDeleteRowsResult = AdapterResultBase<GoogleSheetsDeleteRowsData>;
+
+export interface GoogleSheetsInsertColumnsData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetId: number; // Numeric sheet ID
+  operation: string; // Operation type (insert)
+  startColumnIndex: number; // Column index where insertion started (0-indexed)
+  startColumnLetter: string; // Column letter where insertion started
+  numColumns: number; // Number of columns inserted
+}
+
+export type GoogleSheetsInsertColumnsResult = AdapterResultBase<GoogleSheetsInsertColumnsData>;
+
+export interface GoogleSheetsDeleteColumnsData {
+  spreadsheetId: string; // Spreadsheet ID
+  sheetId: number; // Numeric sheet ID
+  operation: string; // Operation type (delete)
+  startColumnIndex: number; // Column index where deletion started (0-indexed)
+  startColumnLetter: string; // Column letter where deletion started
+  numColumns: number; // Number of columns deleted
+}
+
+export type GoogleSheetsDeleteColumnsResult = AdapterResultBase<GoogleSheetsDeleteColumnsData>;
+
+export interface GoogleSheetsCopyRangeData {
+  spreadsheetId: string; // Spreadsheet ID
+  sourceSheetId: number; // Source sheet ID
+  sourceRange: string; // Source range in A1 notation
+  targetSheetId: number; // Target sheet ID
+  targetStartCell: string; // Target start cell
+}
+
+export type GoogleSheetsCopyRangeResult = AdapterResultBase<GoogleSheetsCopyRangeData>;
+
 
 // ============================================================================
 // Adapter Factory Functions
@@ -5403,6 +7809,231 @@ function createAiAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'ai',
         method: 'transcribeAudio',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Jira Adapter
+ * Category: project
+ */
+function createJiraAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new Jira issue
+     * @param args.projectKey - Jira project key (e.g., "PROJ")
+     * @param args.summary - Issue summary/title
+     * @param args.description - Issue description (optional)
+     * @param args.issueType - Issue type (Task, Bug, Story, etc.) (optional)
+     * @returns Promise<JiraCreateIssueData> Typed flat response with IDE autocomplete
+     */
+    createIssue: async (args: JiraCreateIssueArgs): Promise<JiraCreateIssueData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'createIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search Jira issues using JQL. Returns normalized flat issue summaries.
+     * @param args.jql - JQL query string
+     * @param args.maxResults - Maximum number of results (default: 50, max: 100) (optional)
+     * @returns Promise<JiraSearchIssuesData> Typed flat response with IDE autocomplete
+     */
+    searchIssues: async (args: JiraSearchIssuesArgs): Promise<JiraSearchIssuesData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'searchIssues',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific Jira issue by key or ID. Returns normalized flat structure.
+     * @param args.issueKey - Issue key (e.g., "PROJ-123") or ID
+     * @returns Promise<JiraGetIssueData> Typed flat response with IDE autocomplete
+     */
+    getIssue: async (args: JiraGetIssueArgs): Promise<JiraGetIssueData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'getIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing Jira issue
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @param args.summary - New issue summary/title (optional)
+     * @param args.description - New issue description (optional)
+     * @returns Promise<JiraUpdateIssueData> Typed flat response with IDE autocomplete
+     */
+    updateIssue: async (args: JiraUpdateIssueArgs): Promise<JiraUpdateIssueData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'updateIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a Jira issue
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @returns Promise<JiraDeleteIssueData> Typed flat response with IDE autocomplete
+     */
+    deleteIssue: async (args: JiraDeleteIssueArgs): Promise<JiraDeleteIssueData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'deleteIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Add a comment to a Jira issue
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @param args.comment - Comment text
+     * @returns Promise<JiraAddCommentData> Typed flat response with IDE autocomplete
+     */
+    addComment: async (args: JiraAddCommentArgs): Promise<JiraAddCommentData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'addComment',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Transition a Jira issue to a different status
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @param args.transitionId - ID of the transition to perform
+     * @returns Promise<JiraTransitionIssueData> Typed flat response with IDE autocomplete
+     */
+    transitionIssue: async (args: JiraTransitionIssueArgs): Promise<JiraTransitionIssueData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'transitionIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Assign a Jira issue to a user
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @param args.accountId - Atlassian account ID of the assignee
+     * @returns Promise<JiraAssignIssueData> Typed flat response with IDE autocomplete
+     */
+    assignIssue: async (args: JiraAssignIssueArgs): Promise<JiraAssignIssueData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'assignIssue',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get all accessible Jira projects. Returns normalized flat project structures.
+     * @returns Promise<JiraGetProjectsData> Typed flat response with IDE autocomplete
+     */
+    getProjects: async (args?: {}): Promise<JiraGetProjectsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'getProjects',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all accessible Jira projects (alias for getProjects). Returns normalized flat structures.
+     * @returns Promise<JiraListProjectsData> Typed flat response with IDE autocomplete
+     */
+    listProjects: async (args?: {}): Promise<JiraListProjectsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'listProjects',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get metadata for a specific Jira project. Returns normalized flat structures.
+     * @param args.projectKey - Project key (e.g., "PROJ")
+     * @returns Promise<JiraGetProjectMetadataData> Typed flat response with IDE autocomplete
+     */
+    getProjectMetadata: async (args: JiraGetProjectMetadataArgs): Promise<JiraGetProjectMetadataData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'getProjectMetadata',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get available transitions for a Jira issue. Returns normalized flat structures.
+     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * @returns Promise<JiraGetTransitionsData> Typed flat response with IDE autocomplete
+     */
+    getTransitions: async (args: JiraGetTransitionsArgs): Promise<JiraGetTransitionsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'getTransitions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List users that can be assigned to issues in a project
+     * @param args.projectKey - Project key (e.g., "PROJ")
+     * @returns Promise<JiraListAssignableUsersData> Typed flat response with IDE autocomplete
+     */
+    listAssignableUsers: async (args: JiraListAssignableUsersArgs): Promise<JiraListAssignableUsersData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'listAssignableUsers',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get available issue types for a project. Returns normalized flat structures.
+     * @param args.projectKey - Project key (e.g., "PROJ")
+     * @returns Promise<JiraGetIssueTypesData> Typed flat response with IDE autocomplete
+     */
+    getIssueTypes: async (args: JiraGetIssueTypesArgs): Promise<JiraGetIssueTypesData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'getIssueTypes',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search Jira API for available operations beyond core tools
+     * @param args.query - Describe what you want to do (e.g., "add label to card")
+     * @param args.limit - Max results to return (default 5) (optional)
+     */
+    discoverExtended: async (args: JiraDiscoverExtendedArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'discoverExtended',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Execute a Jira API operation by operationId
+     * @param args.operationId - The operationId from discoverExtended results
+     * @param args.pathParams - Path parameters, e.g., { id: "abc123" } (optional)
+     * @param args.queryParams - Query string parameters (optional)
+     * @param args.body - Request body for POST/PUT/PATCH operations (optional)
+     */
+    executeExtended: async (args: JiraExecuteExtendedArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'jira',
+        method: 'executeExtended',
         params: args || {}
       });
     }
@@ -5831,157 +8462,6 @@ function createDataAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'data',
         method: 'getQuotaUsage',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Desktop Adapter
- * Category: internal
- */
-function createDesktopAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Run a shell command on the user's desktop and return stdout, stderr, and exit code. The command runs DIRECTLY in the user's configured shell (zsh, bash, PowerShell, WSL, or cmd) — there is no extra shell layer. Do NOT wrap your script in another shell invocation (e.g. `powershell -Command "..."`, `bash -c "..."`): that double-evaluates it, so the outer shell strips your `$variables`/`%vars%` to empty before the inner shell runs — send native commands for the active shell instead. For multi-line scripts, prefer writeFile to save a script file (avoids all quoting/escaping) and then run that file. Call list_workspace_operations({ adapter: "desktop", operation: "executeCommand" }) to see which shell is active. Output is truncated to 1 MB.
-     * @param args.command - Shell command to execute (e.g., "ls -la ~/Documents")
-     * @param args.cwd - Working directory for the command (defaults to user home) (optional)
-     * @param args.timeoutMs - Timeout in milliseconds (defaults to 120000) (optional)
-     * @returns Promise<DesktopExecuteCommandData> Typed flat response with IDE autocomplete
-     */
-    executeCommand: async (args: DesktopExecuteCommandArgs): Promise<DesktopExecuteCommandData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'desktop',
-        method: 'executeCommand',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Read the text contents of a file on the user's desktop with line-based pagination. Returns 200 lines by default starting from line 1. The "content" field has line numbers in "cat -n" format for display; the "rawContent" field has clean text for programmatic use (JSON.parse, CSV parsing, etc). Supports ~ for home directory. Use offset/limit to paginate through large files. Check hasMore to know if more content follows.
-     * @param args.path - Path to the file. Supports ~ for home directory (e.g., "~/Documents/data.json")
-     * @param args.offset - Line number to start reading from (1-indexed, defaults to 1) (optional)
-     * @param args.limit - Maximum number of lines to return (defaults to 200) (optional)
-     * @param args.maxBytes - Maximum file size in bytes before rejecting (defaults to 10485760 = 10 MB) (optional)
-     * @returns Promise<DesktopReadFileData> Typed flat response with IDE autocomplete
-     */
-    readFile: async (args: DesktopReadFileArgs): Promise<DesktopReadFileData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'desktop',
-        method: 'readFile',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Write or create a file on the user's desktop. Parent directories are created automatically. Requires user consent.
-     * @param args.path - Path to the file. Supports ~ for home directory (e.g., "~/scripts/hello.sh")
-     * @param args.content - Text content to write to the file
-     * @param args.append - If true, append to existing file instead of overwriting (defaults to false) (optional)
-     * @returns Promise<DesktopWriteFileData> Typed flat response with IDE autocomplete
-     */
-    writeFile: async (args: DesktopWriteFileArgs): Promise<DesktopWriteFileData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'desktop',
-        method: 'writeFile',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Make a targeted text replacement in a file on the user's desktop. Read the file first with readFile to find the exact text, then use editFile to surgically replace it. old_string must appear verbatim in the file. If it matches multiple locations the edit fails unless replaceAll is true. Requires user consent.
-     * @param args.path - Path to the file. Supports ~ for home directory (e.g., "~/projects/config.json")
-     * @param args.oldString - The exact text to find and replace (must match verbatim)
-     * @param args.newString - The replacement text (use empty string to delete the matched text)
-     * @param args.replaceAll - If true, replace every occurrence of oldString. Defaults to false (single match required). (optional)
-     * @returns Promise<DesktopEditFileData> Typed flat response with IDE autocomplete
-     */
-    editFile: async (args: DesktopEditFileArgs): Promise<DesktopEditFileData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'desktop',
-        method: 'editFile',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List files and directories at a given path on the user's desktop. Returns name, type, size, and modification time for each entry.
-     * @param args.path - Path to the directory. Supports ~ for home directory (e.g., "~/Documents")
-     * @param args.recursive - If true, list recursively (max depth 3). Defaults to false. (optional)
-     * @param args.includeHidden - If true, include hidden files (starting with .). Defaults to false. (optional)
-     * @returns Promise<DesktopListDirectoryData> Typed flat response with IDE autocomplete
-     */
-    listDirectory: async (args: DesktopListDirectoryArgs): Promise<DesktopListDirectoryData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'desktop',
-        method: 'listDirectory',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Get system information from the user's desktop: hostname, OS, CPU, memory, home directory.
-     * @returns Promise<DesktopGetSystemInfoData> Typed flat response with IDE autocomplete
-     */
-    getSystemInfo: async (args?: {}): Promise<DesktopGetSystemInfoData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'desktop',
-        method: 'getSystemInfo',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Spawn a long-running background process on the user's desktop. The process runs detached with no stdin/stdout (all communication via --sdk-url). Returns a process ID for later management. Requires user consent. A desktop:process_exited event is emitted when the process terminates.
-     * @param args.command - Path to the executable to run (e.g., "node", "python3", "/usr/local/bin/my-app")
-     * @param args.args - Command-line arguments to pass to the process (optional)
-     * @param args.env - Additional environment variables to set for the process (optional)
-     * @param args.cwd - Working directory for the process (defaults to system default) (optional)
-     * @returns Promise<DesktopSpawnProcessData> Typed flat response with IDE autocomplete
-     */
-    spawnProcess: async (args: DesktopSpawnProcessArgs): Promise<DesktopSpawnProcessData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'desktop',
-        method: 'spawnProcess',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Kill a previously spawned background process by its process ID.
-     * @param args.processId - The process ID returned by spawnProcess
-     * @returns Promise<DesktopKillProcessData> Typed flat response with IDE autocomplete
-     */
-    killProcess: async (args: DesktopKillProcessArgs): Promise<DesktopKillProcessData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'desktop',
-        method: 'killProcess',
-        params: args || {}
-      });
-    },
-
-    /**
-     * List all desktop machines currently connected for the user. Shows hostname, platform, capabilities, and which machine is actively selected for operations.
-     * @returns Promise<DesktopListMachinesData> Typed flat response with IDE autocomplete
-     */
-    listMachines: async (args?: {}): Promise<DesktopListMachinesData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'desktop',
-        method: 'listMachines',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Select a specific desktop machine to receive all subsequent operations. Required when multiple desktops are connected. Use listMachines first to see available devices.
-     * @param args.deviceId - The deviceId of the machine to select (from listMachines output)
-     * @returns Promise<DesktopSelectMachineData> Typed flat response with IDE autocomplete
-     */
-    selectMachine: async (args: DesktopSelectMachineArgs): Promise<DesktopSelectMachineData> => {
-      return sdk.resources.callDirect({
-        resourceId: 'desktop',
-        method: 'selectMachine',
         params: args || {}
       });
     }
@@ -6423,6 +8903,814 @@ function createGithubAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'github',
         method: 'getRecentCommits',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Google Ads Adapter
+ * Category: advertising
+ */
+function createGoogleAdsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Returns high-level account metrics and a quick snapshot of account health for a given date range. Use this as the entry point for any account-level analysis — it gives you total spend, overall ROAS/CPA, and surfaces top/bottom campaigns so you know where to drill in. Start here when the user asks something like "how are my ads doing?" or "give me a summary of my Google Ads account."
+     * @param args.customerId - Google Ads account ID (e.g., '123-456-7890')
+     * @param args.dateRange - Named date range (e.g., LAST_30_DAYS, LAST_7_DAYS, THIS_MONTH) or custom range YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS (optional)
+     */
+    getAccountOverview: async (args: GoogleAdsGetAccountOverviewArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getAccountOverview',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Lists all non-removed campaigns with their performance metrics for the given date range. Use this to rank campaigns by ROAS, CPA, spend, or conversion volume and quickly identify which are performing and which are bleeding budget. Returns up to 200 campaigns sorted by spend descending by default. Each campaign includes a metrics object — check roas, cpa, and searchImpressionShare to understand performance gaps.
+     * @param args.customerId - Google Ads account ID
+     * @param args.dateRange - Named range or custom YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS (optional)
+     * @param args.status - Filter by status: ENABLED, PAUSED, or ALL. Default: ALL (optional)
+     * @param args.limit - Max campaigns to return. Default: 200, max: 200 (optional)
+     * @param args.orderBy - Sort field: cost, conversions, roas, cpa, impressions, clicks. Default: cost (optional)
+     */
+    listCampaigns: async (args: GoogleAdsListCampaignsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'listCampaigns',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Returns detailed metrics for a single campaign, including a day-by-day breakdown for the date range. Use this after listCampaigns to drill into a specific campaign — check the daily trend to spot when performance changed. The dailyMetrics array shows exactly which days had high CPA or low ROAS, helping attribute changes to external events, bid changes, or budget issues.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Campaign ID from listCampaigns
+     * @param args.dateRange - Named range or custom. Default: LAST_30_DAYS (optional)
+     */
+    getCampaignDetails: async (args: GoogleAdsGetCampaignDetailsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getCampaignDetails',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Pauses or enables a campaign. Pausing immediately stops all ads in the campaign from serving. Enabling resumes delivery (subject to budget and bid eligibility). Always show the user the campaign name and current budget before confirming. This change is reversible but takes effect within minutes. RISKY — requires explicit user confirmation before calling.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Campaign ID to modify
+     * @param args.status - New status: PAUSED or ENABLED (not REMOVED)
+     * @param args.reason - Optional reason for the change (stored in adapter audit log, not sent to Google) (optional)
+     */
+    updateCampaignStatus: async (args: GoogleAdsUpdateCampaignStatusArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'updateCampaignStatus',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Modifies the daily budget for a campaign's associated budget. Note: if multiple campaigns share a budget (shared budget), this will affect all of them — the response includes sharedWithCampaigns to warn the user. Always confirm the exact dollar amount and, if shared, which other campaigns will be affected. RISKY — requires explicit user confirmation.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Campaign ID (used to look up the associated budget)
+     * @param args.dailyBudgetAmount - New daily budget in account currency (e.g., 150.00 for $150/day)
+     */
+    updateCampaignBudget: async (args: GoogleAdsUpdateCampaignBudgetArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'updateCampaignBudget',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Lists all ad groups within a campaign with performance metrics. Use this after identifying an underperforming campaign to understand which ad groups are dragging down the campaign's numbers. An ad group's metrics aggregate all keywords and ads within it. Check defaultCpcBid vs actual avgCpc — a large gap may indicate the auto-bidding is diverging from manual intent.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to ad groups within this campaign
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.status - ENABLED, PAUSED, or ALL. Default: ALL (optional)
+     */
+    listAdGroups: async (args: GoogleAdsListAdGroupsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'listAdGroups',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Detailed metrics for a single ad group with daily breakdown. Use this when an ad group's aggregate metrics look problematic — the daily trend will show whether the issue is recent or chronic.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adGroupId - Ad group ID
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getAdGroupDetails: async (args: GoogleAdsGetAdGroupDetailsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getAdGroupDetails',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Pauses or enables an ad group. Pausing stops all ads and keywords within it from serving. Same semantics as updateCampaignStatus but scoped to an ad group. RISKY — requires explicit user confirmation.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adGroupId - Ad group ID
+     * @param args.status - PAUSED or ENABLED
+     */
+    updateAdGroupStatus: async (args: GoogleAdsUpdateAdGroupStatusArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'updateAdGroupStatus',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Modifies the default CPC bid for an ad group. This affects all keywords in the ad group that don't have individual keyword-level bids. Verify bidding strategy before calling — this only applies to manual CPC campaigns or campaigns with bidding strategies that respect manual bid overrides. RISKY — requires explicit user confirmation.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adGroupId - Ad group ID
+     * @param args.cpcBidAmount - New default CPC bid in account currency
+     */
+    updateAdGroupBid: async (args: GoogleAdsUpdateAdGroupBidArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'updateAdGroupBid',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Lists all keywords in an ad group (or across a campaign) with performance metrics and quality scores. This is one of the most informative operations — quality score components (expectedCtr, adRelevance, landingPageExperience) reveal structural issues in the account. Keywords with high cost and zero conversions are the primary target for the wasteful-spend-detection skill. Note: quality score is only available when there is sufficient impression volume.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adGroupId - Filter to one ad group. If omitted, scope to campaignId (optional)
+     * @param args.campaignId - Filter to all ad groups within a campaign. One of adGroupId or campaignId required (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.status - ENABLED, PAUSED, or ALL. Default: ENABLED (optional)
+     * @param args.limit - Default: 200, max: 500 (optional)
+     * @param args.orderBy - cost, conversions, cpa, impressions. Default: cost (optional)
+     */
+    listKeywords: async (args: GoogleAdsListKeywordsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'listKeywords',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Detailed metrics for a single keyword with daily breakdown. Use this to understand the performance trend for a specific keyword — especially useful when a keyword's cost is spiking or conversion rate is dropping.
+     * @param args.customerId - Google Ads account ID
+     * @param args.keywordId - Keyword criterion ID
+     * @param args.adGroupId - Ad group containing the keyword (required by GAQL scoping)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getKeywordDetails: async (args: GoogleAdsGetKeywordDetailsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getKeywordDetails',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Pauses or enables a specific keyword. Use this to stop a specific keyword from spending without touching the ad group. Always confirm the keyword text, match type, and current cost before pausing. RISKY — requires explicit user confirmation.
+     * @param args.customerId - Google Ads account ID
+     * @param args.keywordId - Keyword criterion ID
+     * @param args.adGroupId - Ad group containing the keyword
+     * @param args.status - PAUSED or ENABLED
+     */
+    updateKeywordStatus: async (args: GoogleAdsUpdateKeywordStatusArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'updateKeywordStatus',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Returns the actual search queries that users typed which triggered your ads. This is the single most actionable report in Google Ads — it shows you what you're actually paying for. Look for: (1) irrelevant queries that should become negative keywords, (2) high-performing queries not yet added as exact-match keywords, (3) expensive queries with no conversions. The status field shows whether a term has already been added as a keyword (ADDED) or excluded as a negative (EXCLUDED).
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     * @param args.adGroupId - Filter to a specific ad group (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.minImpressions - Filter out terms with fewer impressions. Default: 0 (optional)
+     * @param args.limit - Default: 200, max: 500 (optional)
+     * @param args.orderBy - cost, conversions, impressions, cpa. Default: cost (optional)
+     */
+    getSearchTermReport: async (args: GoogleAdsGetSearchTermReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getSearchTermReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Uses the Google Keyword Planner API to generate keyword ideas from seed keywords or a landing page URL. Returns estimated monthly search volume, competition level, and bid estimates for each idea. Use this to find untapped keyword opportunities — compare lowTopOfPageBid vs your current avgCpc to find underpriced opportunities. Rate limited to 100 requests/day — use sparingly.
+     * @param args.customerId - Google Ads account ID
+     * @param args.seedKeywords - Array of seed keyword strings (max 20). One of seedKeywords or pageUrl required (optional)
+     * @param args.pageUrl - Landing page URL to generate ideas from. One of seedKeywords or pageUrl required (optional)
+     * @param args.language - Language resource name (default: English — languageConstants/1000) (optional)
+     * @param args.geoTargets - Array of geo target constant resource names. Default: all locations (optional)
+     * @param args.limit - Max ideas to return. Default: 100, max: 1000 (optional)
+     */
+    getKeywordIdeas: async (args: GoogleAdsGetKeywordIdeasArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getKeywordIdeas',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Lists all ads within an ad group with performance metrics and quality signals. For Responsive Search Ads (RSA), includes the headlines and descriptions as arrays. Use this to identify top-performing ad copy — compare CTR and conversion rate across variants to understand what messaging resonates. adStrength (EXCELLENT/GOOD/POOR) is Google's own quality signal for RSA.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adGroupId - Ad group to list ads from
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.status - ENABLED, PAUSED, or ALL. Default: ALL (optional)
+     */
+    listAds: async (args: GoogleAdsListAdsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'listAds',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Detailed metrics for a single ad with daily breakdown. Most useful for spotting when an ad's CTR or conversion rate changed — the daily trend reveals if a recent landing page change or ad copy edit correlated with a performance shift.
+     * @param args.customerId - Google Ads account ID
+     * @param args.adId - Ad ID
+     * @param args.adGroupId - Ad group containing the ad
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getAdDetails: async (args: GoogleAdsGetAdDetailsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getAdDetails',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Flexible performance report with custom dimension and metric selection. Use this for custom analyses not covered by the dedicated reports — e.g., performance by network, by day of week, or a combined campaign+device breakdown. Returns a flat array of rows with whatever dimensions/metrics were requested. Prefer the dedicated reports (getDeviceReport, getHourOfDayReport, etc.) for their respective use cases.
+     * @param args.customerId - Google Ads account ID
+     * @param args.dimensions - Dimensions to segment by: campaign, adGroup, keyword, device, network, date, dayOfWeek, hour, geo, matchType. At least one required
+     * @param args.metrics - Metrics to include: impressions, clicks, cost, conversions, conversionsValue, ctr, avgCpc, cpa, roas. Default: all standard metrics (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     * @param args.filters - Additional GAQL WHERE conditions as key-value pairs (optional)
+     * @param args.orderBy - Metric to sort by (descending). Default: cost (optional)
+     * @param args.limit - Default: 200, max: 500 (optional)
+     */
+    getPerformanceReport: async (args: GoogleAdsGetPerformanceReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getPerformanceReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Returns auction insights showing how your ads compete against other advertisers in the same auctions. This is your window into the competitive landscape. Key metrics: impressionShare (your slice), overlapRate (how often you compete directly), outRankingShare (how often you beat them). Scoped to a campaign or ad group.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Scope to a campaign. One of campaignId or adGroupId required (optional)
+     * @param args.adGroupId - Scope to an ad group (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getAuctionInsights: async (args: GoogleAdsGetAuctionInsightsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getAuctionInsights',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Returns a log of changes made to the account within the date range. Essential for diagnosing sudden performance shifts — check change history for that date to see if someone adjusted bids, paused keywords, or changed budget. Also useful for governance: knowing who changed what and when. Max lookback: 90 days.
+     * @param args.customerId - Google Ads account ID
+     * @param args.dateRange - Default: LAST_7_DAYS. Max lookback: 90 days (optional)
+     * @param args.resourceTypes - Filter to specific types: CAMPAIGN, AD_GROUP, AD, AD_GROUP_CRITERION. Default: all (optional)
+     * @param args.limit - Default: 100, max: 500 (optional)
+     */
+    getChangeHistory: async (args: GoogleAdsGetChangeHistoryArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getChangeHistory',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Reports on conversion performance broken down by conversion action (e.g., "Purchase", "Lead Form Submit", "Phone Call"). Use this to understand which types of conversions your campaigns are driving and whether your conversion tracking is set up correctly. Missing conversion actions with zero data can indicate tracking gaps.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getConversionReport: async (args: GoogleAdsGetConversionReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getConversionReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Performance broken down by country, region, or city. Use this to find geographic concentrations of conversions or waste. A campaign running nationally but converting only in two metros is a candidate for geo-targeting refinement.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     * @param args.granularity - COUNTRY, REGION, or CITY. Default: REGION (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     * @param args.limit - Default: 100 (optional)
+     */
+    getGeographicReport: async (args: GoogleAdsGetGeographicReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getGeographicReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Performance broken down by device type (desktop, mobile, tablet). Use this to identify device-specific performance gaps — a campaign with 80% of spend on mobile but 90% of conversions on desktop has a misaligned device bid modifier. Check if searchImpressionShare varies significantly by device — that indicates a bidding opportunity.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign. Default: account-level (optional)
+     * @param args.dateRange - Default: LAST_30_DAYS (optional)
+     */
+    getDeviceReport: async (args: GoogleAdsGetDeviceReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getDeviceReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Performance segmented by hour of day AND day of week. Use this to identify optimal ad scheduling windows and discover hours with high spend but low conversion rates. A peak-hour analysis often reveals that campaigns running 24/7 are wasting budget between midnight and 6am with no conversions.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     * @param args.dateRange - Recommend at least LAST_30_DAYS for meaningful hourly data. Default: LAST_30_DAYS (optional)
+     */
+    getHourOfDayReport: async (args: GoogleAdsGetHourOfDayReportArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getHourOfDayReport',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Lists all campaign budgets in the account, including shared budgets and how many campaigns are using each budget. Shared budgets are often a source of unexpected spend distribution — if three campaigns share one budget, Google will allocate it across all three based on predicted performance, not evenly. Returns current utilization for each budget.
+     * @param args.customerId - Google Ads account ID
+     * @param args.includeRemoved - Include removed budgets. Default: false (optional)
+     */
+    listBudgets: async (args: GoogleAdsListBudgetsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'listBudgets',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Returns Google's automated budget recommendations for campaigns that are budget-constrained. Google identifies campaigns where impression share loss due to budget would improve if budget were increased, and estimates the incremental conversions/clicks from the recommended increase. Use this to inform budget reallocation decisions — but always verify with your own ROAS analysis rather than relying solely on Google's estimates.
+     * @param args.customerId - Google Ads account ID
+     * @param args.campaignId - Filter to a specific campaign (optional)
+     */
+    getBudgetRecommendations: async (args: GoogleAdsGetBudgetRecommendationsArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-ads',
+        method: 'getBudgetRecommendations',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Google Calendar Adapter
+ * Category: productivity
+ */
+function createGoogleCalendarAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new calendar event
+     * @param args.summary - Event title/summary
+     * @param args.start - Start time object with dateTime and optional timeZone
+     * @param args.end - End time object with dateTime and optional timeZone
+     * @param args.description - Event description (optional)
+     * @param args.location - Event location (optional)
+     * @param args.attendees - Array of attendee email addresses (optional)
+     * @returns Promise<GoogleCalendarCreateEventData> Typed flat response with IDE autocomplete
+     */
+    createEvent: async (args: GoogleCalendarCreateEventArgs): Promise<GoogleCalendarCreateEventData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-calendar',
+        method: 'createEvent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List calendar events
+     * @param args.timeMin - Start time for events to list (ISO 8601) (optional)
+     * @param args.timeMax - End time for events to list (ISO 8601) (optional)
+     * @param args.maxResults - Maximum number of events to return (default: 50, max: 100) (optional)
+     * @param args.query - Search query to filter events (optional)
+     * @returns Promise<GoogleCalendarListEventsData> Typed flat response with IDE autocomplete
+     */
+    listEvents: async (args: GoogleCalendarListEventsArgs): Promise<GoogleCalendarListEventsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-calendar',
+        method: 'listEvents',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get calendar events (alias for listEvents)
+     * @param args.timeMin - Start time for events to list (ISO 8601) (optional)
+     * @param args.timeMax - End time for events to list (ISO 8601) (optional)
+     * @param args.maxResults - Maximum number of events to return (default: 50, max: 100) (optional)
+     * @param args.query - Search query to filter events (optional)
+     * @returns Promise<GoogleCalendarListEventsData> Typed flat response with IDE autocomplete
+     */
+    getEvents: async (args: GoogleCalendarGetEventsArgs): Promise<GoogleCalendarListEventsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-calendar',
+        method: 'getEvents',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific calendar event by ID
+     * @param args.eventId - Calendar event ID
+     * @returns Promise<GoogleCalendarGetEventData> Typed flat response with IDE autocomplete
+     */
+    getEvent: async (args: GoogleCalendarGetEventArgs): Promise<GoogleCalendarGetEventData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-calendar',
+        method: 'getEvent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing calendar event
+     * @param args.eventId - Calendar event ID to update
+     * @param args.summary - Updated event title/summary (optional)
+     * @param args.description - Updated event description (optional)
+     * @param args.location - Updated event location (optional)
+     * @param args.start - Updated start time object with dateTime and optional timeZone (optional)
+     * @param args.end - Updated end time object with dateTime and optional timeZone (optional)
+     * @returns Promise<GoogleCalendarUpdateEventData> Typed flat response with IDE autocomplete
+     */
+    updateEvent: async (args: GoogleCalendarUpdateEventArgs): Promise<GoogleCalendarUpdateEventData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-calendar',
+        method: 'updateEvent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a calendar event
+     * @param args.eventId - Calendar event ID to delete
+     * @returns Promise<GoogleCalendarDeleteEventData> Typed flat response with IDE autocomplete
+     */
+    deleteEvent: async (args: GoogleCalendarDeleteEventArgs): Promise<GoogleCalendarDeleteEventData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-calendar',
+        method: 'deleteEvent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search calendar events by text query
+     * @param args.query - Search query to filter events
+     * @param args.timeMin - Start time for events to search (ISO 8601) (optional)
+     * @param args.timeMax - End time for events to search (ISO 8601) (optional)
+     * @param args.maxResults - Maximum number of events to return (default: 50, max: 100) (optional)
+     * @returns Promise<GoogleCalendarSearchEventsData> Typed flat response with IDE autocomplete
+     */
+    searchEvents: async (args: GoogleCalendarSearchEventsArgs): Promise<GoogleCalendarSearchEventsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-calendar',
+        method: 'searchEvents',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Google Drive Adapter
+ * Category: storage
+ */
+function createGoogleDriveAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * List files in Google Drive
+     * @param args.query - Search query (Google Drive query syntax) (optional)
+     * @param args.pageSize - Maximum number of files to return (default: 20) (optional)
+     * @returns Promise<GoogleDriveListFilesData> Typed flat response with IDE autocomplete
+     */
+    listFiles: async (args: GoogleDriveListFilesArgs): Promise<GoogleDriveListFilesData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-drive',
+        method: 'listFiles',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new file in Google Drive
+     * @param args.name - Name of the file
+     * @param args.mimeType - MIME type of the file
+     * @param args.folderId - Parent folder ID (optional) (optional)
+     * @returns Promise<GoogleDriveCreateFileData> Typed flat response with IDE autocomplete
+     */
+    createFile: async (args: GoogleDriveCreateFileArgs): Promise<GoogleDriveCreateFileData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-drive',
+        method: 'createFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new folder in Google Drive
+     * @param args.name - Name of the folder
+     * @param args.parentFolderId - Parent folder ID (optional) (optional)
+     * @returns Promise<GoogleDriveCreateFolderData> Typed flat response with IDE autocomplete
+     */
+    createFolder: async (args: GoogleDriveCreateFolderArgs): Promise<GoogleDriveCreateFolderData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-drive',
+        method: 'createFolder',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get information about a file
+     * @param args.fileId - ID of the file
+     * @returns Promise<GoogleDriveGetFileInfoData> Typed flat response with IDE autocomplete
+     */
+    getFileInfo: async (args: GoogleDriveGetFileInfoArgs): Promise<GoogleDriveGetFileInfoData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-drive',
+        method: 'getFileInfo',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Share a file with others
+     * @param args.fileId - ID of the file to share
+     * @param args.email - Email address to share with (optional) (optional)
+     * @param args.role - Permission role: reader, writer, commenter (default: reader) (optional)
+     * @returns Promise<GoogleDriveShareFileData> Typed flat response with IDE autocomplete
+     */
+    shareFile: async (args: GoogleDriveShareFileArgs): Promise<GoogleDriveShareFileData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-drive',
+        method: 'shareFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Download a file from Google Drive. For Google Docs/Sheets, exports as PDF/XLSX. Returns base64-encoded data.
+     * @param args.fileId - ID of the file to download
+     * @returns Promise<GoogleDriveDownloadFileData> Typed flat response with IDE autocomplete
+     */
+    downloadFile: async (args: GoogleDriveDownloadFileArgs): Promise<GoogleDriveDownloadFileData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-drive',
+        method: 'downloadFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Move a file to a different folder
+     * @param args.fileId - ID of the file to move
+     * @param args.folderId - ID of the destination folder
+     * @returns Promise<GoogleDriveMoveFileData> Typed flat response with IDE autocomplete
+     */
+    moveFile: async (args: GoogleDriveMoveFileArgs): Promise<GoogleDriveMoveFileData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-drive',
+        method: 'moveFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a file or folder. By default moves to trash; set permanently=true to delete forever.
+     * @param args.fileId - ID of the file or folder to delete
+     * @param args.permanently - If true, permanently delete instead of moving to trash (default: false) (optional)
+     * @returns Promise<GoogleDriveDeleteFileData> Typed flat response with IDE autocomplete
+     */
+    deleteFile: async (args: GoogleDriveDeleteFileArgs): Promise<GoogleDriveDeleteFileData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-drive',
+        method: 'deleteFile',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search for files using Google Drive query syntax
+     * @param args.query - Search query using Drive syntax (e.g., "name contains 'report'", "mimeType='application/pdf'")
+     * @param args.pageSize - Maximum number of files to return (default: 20) (optional)
+     * @returns Promise<GoogleDriveSearchFilesData> Typed flat response with IDE autocomplete
+     */
+    searchFiles: async (args: GoogleDriveSearchFilesArgs): Promise<GoogleDriveSearchFilesData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-drive',
+        method: 'searchFiles',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update file metadata (name, description)
+     * @param args.fileId - ID of the file to update
+     * @param args.name - New name for the file (optional)
+     * @param args.description - New description for the file (optional)
+     * @returns Promise<GoogleDriveUpdateFileData> Typed flat response with IDE autocomplete
+     */
+    updateFile: async (args: GoogleDriveUpdateFileArgs): Promise<GoogleDriveUpdateFileData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-drive',
+        method: 'updateFile',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Gmail Adapter
+ * Category: communication
+ */
+function createGoogleGmailAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Send an email via Gmail
+     * @param args.to - Valid email address
+     * @param args.subject - Email subject line
+     * @param args.body - Email body content
+     * @param args.cc - CC recipients (comma-separated email addresses) (optional)
+     * @param args.bcc - BCC recipients (comma-separated email addresses) (optional)
+     * @param args.isHtml - Whether body is HTML format (optional)
+     * @returns Promise<GoogleGmailSendEmailData> Typed flat response with IDE autocomplete
+     */
+    sendEmail: async (args: GoogleGmailSendEmailArgs): Promise<GoogleGmailSendEmailData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-gmail',
+        method: 'sendEmail',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search emails with Gmail query syntax. Returns normalized email summaries.
+     * @param args.query - Gmail search query (e.g., "from:user@example.com is:unread")
+     * @param args.maxResults - Maximum number of results to return (default: 50, max: 100) (optional)
+     * @returns Promise<GoogleGmailSearchEmailsData> Typed flat response with IDE autocomplete
+     */
+    searchEmails: async (args: GoogleGmailSearchEmailsArgs): Promise<GoogleGmailSearchEmailsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-gmail',
+        method: 'searchEmails',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List recent emails from inbox. Returns normalized email summaries.
+     * @param args.maxResults - Maximum number of results to return (default: 50, max: 100) (optional)
+     * @returns Promise<GoogleGmailListEmailsData> Typed flat response with IDE autocomplete
+     */
+    listEmails: async (args: GoogleGmailListEmailsArgs): Promise<GoogleGmailListEmailsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-gmail',
+        method: 'listEmails',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get full details of a specific email by ID. Returns normalized flat structure.
+     * @param args.messageId - Gmail message ID
+     * @param args.includeHtml - Include HTML body content (default: false) (optional)
+     * @param args.includeAttachments - Include attachment metadata (default: false) (optional)
+     * @returns Promise<GoogleGmailGetEmailData> Typed flat response with IDE autocomplete
+     */
+    getEmail: async (args: GoogleGmailGetEmailArgs): Promise<GoogleGmailGetEmailData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-gmail',
+        method: 'getEmail',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a draft email in Gmail
+     * @param args.to - Valid email address
+     * @param args.subject - Email subject line
+     * @param args.body - Email body content
+     * @param args.cc - CC recipients (comma-separated email addresses) (optional)
+     * @param args.bcc - BCC recipients (comma-separated email addresses) (optional)
+     * @param args.isHtml - Whether body is HTML format (optional)
+     * @returns Promise<GoogleGmailCreateDraftData> Typed flat response with IDE autocomplete
+     */
+    createDraft: async (args: GoogleGmailCreateDraftArgs): Promise<GoogleGmailCreateDraftData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-gmail',
+        method: 'createDraft',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing draft email
+     * @param args.draftId - Gmail draft ID to update
+     * @param args.to - Updated recipient email address(es) (optional)
+     * @param args.subject - Updated email subject line (optional)
+     * @param args.body - Updated email body content (optional)
+     * @param args.cc - Updated CC recipients (optional)
+     * @param args.bcc - Updated BCC recipients (optional)
+     * @param args.isHtml - Whether body is HTML format (optional)
+     * @returns Promise<GoogleGmailUpdateDraftData> Typed flat response with IDE autocomplete
+     */
+    updateDraft: async (args: GoogleGmailUpdateDraftArgs): Promise<GoogleGmailUpdateDraftData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-gmail',
+        method: 'updateDraft',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a draft email
+     * @param args.draftId - Gmail draft ID to delete
+     * @returns Promise<GoogleGmailDeleteDraftData> Typed flat response with IDE autocomplete
+     */
+    deleteDraft: async (args: GoogleGmailDeleteDraftArgs): Promise<GoogleGmailDeleteDraftData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-gmail',
+        method: 'deleteDraft',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all draft emails. Returns normalized draft summaries.
+     * @param args.maxResults - Maximum number of drafts to return (default: 10) (optional)
+     * @returns Promise<GoogleGmailListDraftsData> Typed flat response with IDE autocomplete
+     */
+    listDrafts: async (args: GoogleGmailListDraftsArgs): Promise<GoogleGmailListDraftsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-gmail',
+        method: 'listDrafts',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete an email
+     * @param args.messageId - Gmail message ID to delete
+     * @returns Promise<GoogleGmailDeleteEmailData> Typed flat response with IDE autocomplete
+     */
+    deleteEmail: async (args: GoogleGmailDeleteEmailArgs): Promise<GoogleGmailDeleteEmailData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-gmail',
+        method: 'deleteEmail',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete multiple emails at once. Uses Gmail batchDelete API for efficiency.
+     * @param args.messageIds - Array of Gmail message IDs to delete (max 1000 per request)
+     * @param args.permanently - If true, permanently delete. If false (default), move to trash. (optional)
+     * @returns Promise<GoogleGmailBulkDeleteEmailsData> Typed flat response with IDE autocomplete
+     */
+    bulkDeleteEmails: async (args: GoogleGmailBulkDeleteEmailsArgs): Promise<GoogleGmailBulkDeleteEmailsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-gmail',
+        method: 'bulkDeleteEmails',
         params: args || {}
       });
     }
@@ -7319,9 +10607,9 @@ function createMirraMessagingAdapter(sdk: MirraSDK) {
 function createObservabilityAdapter(sdk: MirraSDK) {
   return {
     /**
-     * Query audit events with flexible filters. Returns structured audit events for adapter operations, LLM tool calls, and desktop operations. Use this to investigate errors, see what happened recently, or trace a specific operation chain.
+     * Query audit events with flexible filters. Returns structured audit events for adapter operations and LLM tool calls. Use this to investigate errors, see what happened recently, or trace a specific operation chain.
      * @param args.timeRange - Time range filter with start/end ISO 8601 strings. Defaults to last 24 hours. (optional)
-     * @param args.adapter - Filter by adapter service ID (e.g. "data", "flows", "desktop") (optional)
+     * @param args.adapter - Filter by adapter service ID (e.g. "data", "flows", "pages") (optional)
      * @param args.operation - Filter by exact operation name (e.g. "insertRecord", "executeFlow") (optional)
      * @param args.outcome - Filter by outcome: "success", "failure", or "pending" (optional)
      * @param args.severity - Filter by severity: "debug", "info", "warn", or "error" (optional)
@@ -7855,6 +11143,239 @@ function createPolymarketAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'polymarket',
         method: 'executeExtended',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Scripts Adapter
+ * Category: productivity
+ */
+function createScriptsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new script with initial version and API key. Returns flat structure with id field for subsequent operations. HANDLER SIGNATURE: export async function handler(event, context, mirra) { ... } READING INPUT (from executeScript's `data` arg, flow triggers, or webhooks): The caller's payload lands on `event.data`. Prefer that — e.g. `const { email } = event.data`. For compatibility, `event.input`, `event.body`, and `event.payload` are also aliased to the same object. The full event shape is: { data, fields, trigger, executionId, userId, scriptId, apiKey, groupId, scope, remainingBudget }. Example handler reading input: export async function handler(event, context, mirra) { const { email, name } = event.data; const user = await mirra.user.getByEmail({ email }); return { success: true, userId: user.id }; } HANDLER RETURN VALUES (when script is used in a flow): The handler's return object controls how the flow executor records the result: - Success: return { success: true, ...data } - No-Op (nothing to do, not an error): return { success: false, noOp: true, reason: "No input data" } No-ops are recorded as successful executions and do NOT count toward the auto-pause threshold. - Failure: return { success: false, reason: "What went wrong" } 3 consecutive failures will auto-pause the flow.
+     * @param args.name - Name of the script
+     * @param args.description - Description of what the script does (optional)
+     * @param args.runtime - Lambda runtime (default: nodejs18) (optional)
+     * @param args.config - Script configuration (timeout, memory, maxCostPerExecution, etc.) (optional)
+     * @param args.code - Initial JavaScript/TypeScript code for the script. Required unless path is provided. (optional)
+     * @param args.path - Path to a script file in the workspace container (e.g., "/workspace/scripts/handler.js"). If provided, code is read from this file. Optionally reads mirra.json from the same directory for config. (optional)
+     * @returns Promise<ScriptCreateData> Typed flat response with IDE autocomplete
+     */
+    createScript: async (args: ScriptsCreateScriptArgs): Promise<ScriptCreateData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'createScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a script and all its versions. Returns flat deletion confirmation.
+     * @param args.scriptId - ID of the script to delete
+     * @returns Promise<ScriptDeleteData> Typed flat response with IDE autocomplete
+     */
+    deleteScript: async (args: ScriptsDeleteScriptArgs): Promise<ScriptDeleteData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'deleteScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new version by replacing the ENTIRE script code. For small changes, prefer editScriptCode instead — it only requires the changed portions. Returns flat version details.
+     * @param args.scriptId - ID of the script
+     * @param args.code - Updated code for the new version
+     * @param args.commitMessage - Description of changes in this version (optional)
+     * @returns Promise<ScriptVersionCreateData> Typed flat response with IDE autocomplete
+     */
+    createVersion: async (args: ScriptsCreateVersionArgs): Promise<ScriptVersionCreateData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'createVersion',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all versions of a script. Returns flat version structures.
+     * @param args.scriptId - ID of the script
+     * @returns Promise<ScriptVersionListData> Typed flat response with IDE autocomplete
+     */
+    listVersions: async (args: ScriptsListVersionsArgs): Promise<ScriptVersionListData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'listVersions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Deploy a script version to AWS Lambda. Must be called after createScript to make the script executable.
+     * @param args.scriptId - ID of the script to deploy (from createScript response at data._id)
+     * @param args.version - Version number to deploy (default: latest) (optional)
+     * @returns Promise<ScriptDeployData> Typed flat response with IDE autocomplete
+     */
+    deployScript: async (args: ScriptsDeployScriptArgs): Promise<ScriptDeployData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'deployScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Execute a deployed script with custom data. Script must be deployed first via deployScript. Returns flat execution result.
+     * @param args.scriptId - ID of the script to execute (from createScript response at data.id)
+     * @param args.data - Input data to pass to the script. Available inside the handler as `event.data` (also aliased to `event.input`, `event.body`, `event.payload`). (optional)
+     * @param args.trigger - Trigger information (type, source, event) (optional)
+     * @returns Promise<ScriptExecuteData> Typed flat response with IDE autocomplete
+     */
+    executeScript: async (args: ScriptsExecuteScriptArgs): Promise<ScriptExecuteData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'executeScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get details of a specific script. Returns flat normalized structure.
+     * @param args.scriptId - ID of the script
+     * @returns Promise<ScriptGetData> Typed flat response with IDE autocomplete
+     */
+    getScript: async (args: ScriptsGetScriptArgs): Promise<ScriptGetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'getScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List all scripts owned by the user. Returns flat script summaries.
+     * @returns Promise<ScriptListData> Typed flat response with IDE autocomplete
+     */
+    listScripts: async (args?: {}): Promise<ScriptListData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'listScripts',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get execution history for a script. Returns flat execution summaries.
+     * @param args.scriptId - ID of the script
+     * @param args.status - Filter by status (completed, failed, running) (optional)
+     * @param args.limit - Maximum number of executions to return (default: 100) (optional)
+     * @returns Promise<ScriptExecutionsData> Typed flat response with IDE autocomplete
+     */
+    getExecutions: async (args: ScriptsGetExecutionsArgs): Promise<ScriptExecutionsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'getExecutions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get details of a specific execution. Returns flat execution structure.
+     * @param args.executionId - ID of the execution
+     * @returns Promise<ScriptExecutionData> Typed flat response with IDE autocomplete
+     */
+    getExecution: async (args: ScriptsGetExecutionArgs): Promise<ScriptExecutionData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'getExecution',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get execution metrics for a script. Returns flat metrics structure.
+     * @param args.scriptId - ID of the script
+     * @returns Promise<ScriptMetricsData> Typed flat response with IDE autocomplete
+     */
+    getMetrics: async (args: ScriptsGetMetricsArgs): Promise<ScriptMetricsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'getMetrics',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the script code for a specific flow. Returns flat flow script structure.
+     * @param args.flowId - ID of the flow to get script code for
+     * @returns Promise<ScriptFlowGetData> Typed flat response with IDE autocomplete
+     */
+    getFlowScript: async (args: ScriptsGetFlowScriptArgs): Promise<ScriptFlowGetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'getFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Replace the ENTIRE script code for a flow. For small changes, prefer editScriptCode or editFlowScript instead — they only require the changed portions. Use this only when rewriting more than ~50% of the code.
+     * @param args.flowId - ID of the flow to modify
+     * @param args.newCode - New code to deploy
+     * @param args.commitMessage - Description of changes (optional)
+     * @returns Promise<ScriptFlowModifyData> Typed flat response with IDE autocomplete
+     */
+    modifyFlowScript: async (args: ScriptsModifyFlowScriptArgs): Promise<ScriptFlowModifyData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'modifyFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read the active version's code for a script with line numbers. Supports optional line range. Use this before editScriptCode to see the current code.
+     * @param args.scriptId - Script ID
+     * @param args.startLine - First line to return (1-indexed). Default: 1 (optional)
+     * @param args.endLine - Last line to return (inclusive). Default: end of file (optional)
+     */
+    readScriptCode: async (args: ScriptsReadScriptCodeArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'readScriptCode',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Apply surgical edits to a script's active code using oldText/newText pairs. Each edit replaces an exact text match. Much more efficient than createVersion for small changes. Use readScriptCode first to see current code.
+     * @param args.scriptId - Script ID
+     * @param args.edits - Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially.
+     * @param args.commitMessage - Description of changes (optional)
+     */
+    editScriptCode: async (args: ScriptsEditScriptCodeArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'editScriptCode',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Validate script code BEFORE creating or deploying. Checks for: 1) Missing async handler wrapper (top-level await errors), 2) Invalid adapter operations, 3) Invalid event.data field access (when eventType provided). Returns flat validation results with suggestions for fixes. ALWAYS use this before createScript/modifyFlowScript.
+     * @param args.code - The script code to validate
+     * @param args.eventType - Event type for event.data field validation (e.g., "telegram.message", "call.ended"). When provided, validates that event.data.fieldName accesses match the event type schema. (optional)
+     * @param args.scriptInputSchema - Schema of scriptInput fields that will be on event.data at runtime. Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array" }. When provided, event.data field errors are reported as errors instead of warnings. (optional)
+     * @returns Promise<ScriptLintData> Typed flat response with IDE autocomplete
+     */
+    lintScript: async (args: ScriptsLintScriptArgs): Promise<ScriptLintData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'scripts',
+        method: 'lintScript',
         params: args || {}
       });
     }
@@ -8910,6 +12431,144 @@ function createSocketAdapter(sdk: MirraSDK) {
 }
 
 /**
+ * Telegram Adapter
+ * Category: social
+ */
+function createTelegramAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Send a text message to a Telegram chat or user. Supports both chat IDs and usernames.
+     * @param args.chatId - Chat ID (numeric) or username (e.g., @username) to send the message to. Chat IDs can be obtained from searchChats operation.
+     * @param args.text - The text content of the message to send
+     * @returns Promise<TelegramSendMessageData> Typed flat response with IDE autocomplete
+     */
+    sendMessage: async (args: TelegramSendMessageArgs): Promise<TelegramSendMessageData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'telegram',
+        method: 'sendMessage',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Powerful unified chat search with filtering, sorting, and activity tracking. Replaces getChats, findChatByName, and getRecentContacts. Use with no filters to list all chats. NOTE: Community chats and supergroups are type "group", not "channel" — avoid filtering by type unless you are sure of the exact type.
+     * @param args.query - Text to search in chat names/usernames. Supports fuzzy matching with relevance scoring. (optional)
+     * @param args.type - Filter by chat type: "private", "group", "channel", or "all" (default: "all"). IMPORTANT: Telegram community chats and supergroups are type "group", NOT "channel". Only broadcast-only channels are type "channel". When unsure, omit this filter or use "all". (optional)
+     * @param args.inactiveSince - Find chats with no activity since date. Accepts ISO date or relative like "30 days ago", "1 week ago" (optional)
+     * @param args.activeSince - Find chats with activity since date. Accepts ISO date or relative like "7 days ago" (optional)
+     * @param args.hasUnread - Filter by unread status: true = only unread, false = only read (optional)
+     * @param args.archived - Filter by archived status (optional)
+     * @param args.pinned - Filter by pinned status (optional)
+     * @param args.sortBy - Sort results: "relevance" (default with query), "lastActivity" (default without query), "unreadCount", "name" (optional)
+     * @param args.limit - Max results (default: 50, max: 100) (optional)
+     * @param args.offset - Pagination offset (default: 0) (optional)
+     * @param args.forceRefresh - Bypass cache and fetch fresh data (optional)
+     * @returns Promise<TelegramSearchChatsData> Typed flat response with IDE autocomplete
+     */
+    searchChats: async (args: TelegramSearchChatsArgs): Promise<TelegramSearchChatsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'telegram',
+        method: 'searchChats',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search for messages across Telegram chats. When chatIds is omitted, performs global search across all chats (replaces globalSearch operation).
+     * @param args.query - Text query to search for in messages
+     * @param args.chatIds - Array of chat IDs to search within. Omit for global search across all chats. (optional)
+     * @param args.chatType - Filter by chat type (for global search): "private", "group", or "channel". IMPORTANT: Community chats and supergroups are "group", NOT "channel". (optional)
+     * @param args.fromDate - ISO date string for start of date range (optional)
+     * @param args.toDate - ISO date string for end of date range (optional)
+     * @param args.limit - Maximum number of messages to return (default: 100, max: 100) (optional)
+     * @param args.senderId - Filter messages by sender ID (optional)
+     * @returns Promise<TelegramSearchMessagesData> Typed flat response with IDE autocomplete
+     */
+    searchMessages: async (args: TelegramSearchMessagesArgs): Promise<TelegramSearchMessagesData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'telegram',
+        method: 'searchMessages',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get message history from a specific Telegram chat with pagination and date filtering.
+     * @param args.chatId - Chat ID to retrieve messages from
+     * @param args.limit - Maximum number of messages to return (default: 50, max: 100) (optional)
+     * @param args.offsetId - Message ID to use as pagination offset (optional)
+     * @param args.minDate - ISO date string for minimum message date (optional)
+     * @param args.maxDate - ISO date string for maximum message date (optional)
+     * @returns Promise<TelegramGetChatMessagesData> Typed flat response with IDE autocomplete
+     */
+    getChatMessages: async (args: TelegramGetChatMessagesArgs): Promise<TelegramGetChatMessagesData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'telegram',
+        method: 'getChatMessages',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get summary of unread messages across Telegram chats, including mentions and flattened last message info.
+     * @param args.chatIds - Array of chat IDs to filter by. If not provided, checks all chats. (optional)
+     * @param args.priorityOnly - If true, only return chats with unread messages (optional)
+     * @param args.groupBy - Group results by "chat" or "sender" (optional)
+     * @returns Promise<TelegramUnreadSummaryData> Typed flat response with IDE autocomplete
+     */
+    getUnreadSummary: async (args: TelegramGetUnreadSummaryArgs): Promise<TelegramUnreadSummaryData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'telegram',
+        method: 'getUnreadSummary',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Mark messages as read in a Telegram chat up to a specific message ID.
+     * @param args.chatId - Chat ID to mark messages as read in
+     * @param args.maxMessageId - Maximum message ID to mark as read. If not provided, marks all messages as read. (optional)
+     * @returns Promise<TelegramMarkAsReadData> Typed flat response with IDE autocomplete
+     */
+    markAsRead: async (args: TelegramMarkAsReadArgs): Promise<TelegramMarkAsReadData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'telegram',
+        method: 'markAsRead',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get messages where the user is mentioned in Telegram chats.
+     * @param args.chatIds - Array of chat IDs to filter mentions by (optional)
+     * @param args.sinceDate - ISO date string - only return mentions since this date (optional)
+     * @param args.onlyUnread - If true, only return unread mentions (optional)
+     * @returns Promise<TelegramMentionsData> Typed flat response with IDE autocomplete
+     */
+    getMentions: async (args: TelegramGetMentionsArgs): Promise<TelegramMentionsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'telegram',
+        method: 'getMentions',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Leave a Telegram group, supergroup, or channel. Removes the user from the group and clears it from the local cache.
+     * @param args.chatId - The ID of the group, supergroup, or channel to leave. Can be obtained from searchChats operation.
+     * @returns Promise<TelegramLeaveGroupData> Typed flat response with IDE autocomplete
+     */
+    leaveGroup: async (args: TelegramLeaveGroupArgs): Promise<TelegramLeaveGroupData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'telegram',
+        method: 'leaveGroup',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
  * Telegram Bot Adapter
  * Category: communication
  */
@@ -9146,6 +12805,305 @@ function createTelegramBotAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'telegramBot',
         method: 'downloadFile',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Trello Adapter
+ * Category: productivity
+ */
+function createTrelloAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Get all boards for the authenticated user
+     * @returns Promise<TrelloGetBoardsData> Typed flat response with IDE autocomplete
+     */
+    getBoards: async (args?: {}): Promise<TrelloGetBoardsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'getBoards',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific board by ID including its lists
+     * @param args.boardId - The ID of the board to retrieve
+     * @returns Promise<TrelloGetBoardData> Typed flat response with IDE autocomplete
+     */
+    getBoard: async (args: TrelloGetBoardArgs): Promise<TrelloGetBoardData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'getBoard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new card in a Trello list
+     * @param args.name - Card name/title
+     * @param args.idList - ID of the list to add the card to
+     * @param args.desc - Card description (supports markdown) (optional)
+     * @param args.description - Card description (alias for "desc", supports markdown) (optional)
+     * @returns Promise<TrelloCreateCardData> Typed flat response with IDE autocomplete
+     */
+    createCard: async (args: TrelloCreateCardArgs): Promise<TrelloCreateCardData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'createCard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific card by ID
+     * @param args.cardId - The ID of the card to retrieve
+     * @returns Promise<TrelloGetCardData> Typed flat response with IDE autocomplete
+     */
+    getCard: async (args: TrelloGetCardArgs): Promise<TrelloGetCardData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'getCard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing card
+     * @param args.cardId - The ID of the card to update
+     * @param args.name - New card name (optional)
+     * @param args.desc - New card description (optional)
+     * @param args.description - New card description (alias for "desc", supports markdown) (optional)
+     * @param args.idList - Move card to a different list (optional)
+     * @param args.closed - Archive the card (optional)
+     * @returns Promise<TrelloUpdateCardData> Typed flat response with IDE autocomplete
+     */
+    updateCard: async (args: TrelloUpdateCardArgs): Promise<TrelloUpdateCardData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'updateCard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a card permanently
+     * @param args.cardId - The ID of the card to delete
+     * @returns Promise<TrelloDeleteCardData> Typed flat response with IDE autocomplete
+     */
+    deleteCard: async (args: TrelloDeleteCardArgs): Promise<TrelloDeleteCardData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'deleteCard',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new checklist on a card
+     * @param args.cardId - The ID of the card to add the checklist to
+     * @param args.name - Checklist name
+     * @returns Promise<TrelloCreateChecklistData> Typed flat response with IDE autocomplete
+     */
+    createChecklist: async (args: TrelloCreateChecklistArgs): Promise<TrelloCreateChecklistData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'createChecklist',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific checklist by ID
+     * @param args.checklistId - The ID of the checklist to retrieve
+     * @returns Promise<TrelloGetChecklistData> Typed flat response with IDE autocomplete
+     */
+    getChecklist: async (args: TrelloGetChecklistArgs): Promise<TrelloGetChecklistData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'getChecklist',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a checklist name
+     * @param args.checklistId - The ID of the checklist to update
+     * @param args.name - New checklist name
+     * @returns Promise<TrelloUpdateChecklistData> Typed flat response with IDE autocomplete
+     */
+    updateChecklist: async (args: TrelloUpdateChecklistArgs): Promise<TrelloUpdateChecklistData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'updateChecklist',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a checklist from a card
+     * @param args.checklistId - The ID of the checklist to delete
+     * @returns Promise<TrelloDeleteChecklistData> Typed flat response with IDE autocomplete
+     */
+    deleteChecklist: async (args: TrelloDeleteChecklistArgs): Promise<TrelloDeleteChecklistData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'deleteChecklist',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Add a check item to a checklist
+     * @param args.checklistId - The ID of the checklist to add the item to
+     * @param args.name - Check item text
+     * @returns Promise<TrelloAddCheckItemData> Typed flat response with IDE autocomplete
+     */
+    addCheckItem: async (args: TrelloAddCheckItemArgs): Promise<TrelloAddCheckItemData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'addCheckItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update a check item (name or completion state)
+     * @param args.cardId - The ID of the card containing the check item
+     * @param args.checkItemId - The ID of the check item to update
+     * @param args.name - New check item text (optional)
+     * @param args.state - Check state: "complete" or "incomplete" (optional)
+     * @returns Promise<TrelloUpdateCheckItemData> Typed flat response with IDE autocomplete
+     */
+    updateCheckItem: async (args: TrelloUpdateCheckItemArgs): Promise<TrelloUpdateCheckItemData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'updateCheckItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a check item from a checklist
+     * @param args.checklistId - The ID of the checklist containing the item
+     * @param args.checkItemId - The ID of the check item to delete
+     * @returns Promise<TrelloDeleteCheckItemData> Typed flat response with IDE autocomplete
+     */
+    deleteCheckItem: async (args: TrelloDeleteCheckItemArgs): Promise<TrelloDeleteCheckItemData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'deleteCheckItem',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search Trello API for available operations beyond core tools
+     * @param args.query - Describe what you want to do (e.g., "add label to card")
+     * @param args.limit - Max results to return (default 5) (optional)
+     */
+    discoverExtended: async (args: TrelloDiscoverExtendedArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'discoverExtended',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Execute a Trello API operation by operationId
+     * @param args.operationId - The operationId from discoverExtended results
+     * @param args.pathParams - Path parameters, e.g., { id: "abc123" } (optional)
+     * @param args.queryParams - Query string parameters (optional)
+     * @param args.body - Request body for POST/PUT/PATCH operations (optional)
+     */
+    executeExtended: async (args: TrelloExecuteExtendedArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'trello',
+        method: 'executeExtended',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Twitter Adapter
+ * Category: social
+ */
+function createTwitterAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Post a tweet, optionally with up to 4 images. Upload each image with uploadMedia first and pass the ids it returns.
+     * @param args.text - Tweet text (max 280 characters)
+     * @param args.mediaIds - Up to 4 media ids from uploadMedia. Images do not consume characters. (optional)
+     * @returns Promise<TwitterPostTweetData> Typed flat response with IDE autocomplete
+     */
+    postTweet: async (args: TwitterPostTweetArgs): Promise<TwitterPostTweetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'twitter',
+        method: 'postTweet',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Upload one image to X and get back a media id for postTweet. Takes a public https URL — X is not sent the link, the bytes are fetched and uploaded. Max 5MB; JPEG, PNG, WebP or GIF. Requires the media.write scope: a connection authorized before image posting shipped must be reconnected first.
+     * @param args.imageUrl - Public https URL of the image to upload
+     * @param args.altText - Alt text describing the image, for people using a screen reader (max 1000 chars) (optional)
+     * @returns Promise<TwitterUploadMediaData> Typed flat response with IDE autocomplete
+     */
+    uploadMedia: async (args: TwitterUploadMediaArgs): Promise<TwitterUploadMediaData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'twitter',
+        method: 'uploadMedia',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Retrieve tweets from a Twitter user. Must provide either userId OR userName (not both). NOTE: This operation ONLY accepts the 4 parameters listed below. There is NO maxResults, limit, count, or similar parameters - the API returns ~20 tweets per page, use cursor for pagination.
+     * @param args.userId - Twitter user ID (recommended for stability and speed). Provide userId OR userName, not both. (optional)
+     * @param args.userName - Twitter username/handle without @ symbol (e.g., "elonmusk"). Provide userName OR userId, not both. (optional)
+     * @param args.cursor - Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values. (optional)
+     * @param args.includeReplies - Whether to include replies in results. Defaults to false (only original tweets). (optional)
+     * @returns Promise<TwitterGetUserTweetsData> Typed flat response with IDE autocomplete
+     */
+    getUserTweets: async (args: TwitterGetUserTweetsArgs): Promise<TwitterGetUserTweetsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'twitter',
+        method: 'getUserTweets',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search tweets using advanced Twitter search syntax. Supports operators like from:username, since:date, until:date, lang:en, and boolean operators (AND, OR). NOTE: This operation ONLY accepts the 3 parameters listed below (query, queryType, cursor). There is NO minFollowers, maxResults, limit, or other filtering parameters - filter results client-side after fetching.
+     * @param args.query - Search query with advanced syntax. Examples: "from:elonmusk", "bitcoin since:2024-01-01", "AI OR \"machine learning\"". Supported operators: from:user, to:user, since:YYYY-MM-DD, until:YYYY-MM-DD, lang:xx, filter:media, filter:links, -filter:retweets, AND, OR, -keyword, "exact phrase".
+     * @param args.queryType - Type of search results: "Latest" (most recent) or "Top" (most relevant). Defaults to "Latest". Only these two values are valid. (optional)
+     * @param args.cursor - Pagination cursor from previous response's nextCursor field. Do not fabricate cursor values. (optional)
+     * @returns Promise<TwitterAdvancedSearchData> Typed flat response with IDE autocomplete
+     */
+    advancedSearch: async (args: TwitterAdvancedSearchArgs): Promise<TwitterAdvancedSearchData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'twitter',
+        method: 'advancedSearch',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Fetch one or more tweets by their IDs. Useful for retrieving parent/original tweets when processing replies. Accepts a single ID or comma-separated list of IDs (max 100).
+     * @param args.tweetIds - One or more tweet IDs, comma-separated. Example: "1846987139428634858" or "1846987139428634858,1866332309399781537"
+     * @returns Promise<TwitterGetTweetByIdData> Typed flat response with IDE autocomplete
+     */
+    getTweetById: async (args: TwitterGetTweetByIdArgs): Promise<TwitterGetTweetByIdData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'twitter',
+        method: 'getTweetById',
         params: args || {}
       });
     }
@@ -9451,6 +13409,347 @@ function createWorkspaceAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'workspace',
         method: 'exec',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Flows Adapter
+ * Category: internal
+ */
+function createFlowsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a flow (event-triggered or time-scheduled). This is the unified, simplified interface for flow creation. TRIGGER TYPE (provide exactly one): - schedule: Cron expression for time-based flows (e.g., "0 9 * * *"). Times are automatically in the user's local timezone. - eventType: Event type shorthand for event flows that process ALL events of that type (e.g., "telegram.message") - eventFilter: Full filter object for event flows that need pre-filtering (RECOMMENDED for most event flows) - webhook: Set to true to create a webhook-triggered flow. Returns a webhookUrl that external services POST to. - trigger: Legacy nested structure (still supported) EFFICIENCY RULE FOR EVENT FLOWS: Always filter in eventFilter conditions, NEVER in the script. - eventFilter conditions: FREE (evaluated in-memory before script runs) - Script filtering: EXPENSIVE (invokes Lambda for every single event, even ones you discard) BAD — triggers Lambda for every Telegram message, script checks if it's a command: { eventType: "telegram.message", code: "...if (!text.startsWith('/')) return { success: false, noOp: true, reason: 'Not a command' }..." } GOOD — only triggers Lambda when matching events (flat format): { eventFilter: { when: "telegram.bot_command", command: "/weather" }, code: "...handle the command..." } GOOD — condition tree format (for advanced OR/regex logic): { eventFilter: { operator: "and", conditions: [ { operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" } ]}, code: "...handle the command..." } Use eventType ONLY when you want to process every single event of that type. Use eventFilter when you need to react to a subset of events (specific sender, content pattern, etc.). VALID FILTER OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, in, notIn, exists, notExists, matchesRegex, and, or, not SCRIPT (provide exactly one): - code: Inline script code - will auto-create, deploy, and link the script - scriptId: ID of an existing deployed script EXAMPLES: Time flow with inline code: { title: "Daily Report", schedule: "0 9 * * *", code: "export async function handler(event, context, mirra) { await mirra.telegram.sendMessage({...}); return { done: true }; }" } Event flow — process ALL messages (only if you truly need every message): { title: "Message Logger", eventType: "telegram.message", code: "export async function handler(event, context, mirra) { console.log(event.fields.content_text); return { logged: true }; }" } Event flow — flat format (PREFERRED for most event flows): { title: "Bot Command Handler", eventFilter: { when: "telegram.bot_command", command: "/start" }, code: "export async function handler(event, context, mirra) { const chatId = event.fields.chat_id; await mirra.telegramBot.replyToMessage({ chatId, text: 'Welcome!' }); return { handled: true }; }" } Event flow — condition tree format (for OR logic, regex, nested conditions): { title: "Command Handler", eventFilter: { operator: "and", conditions: [ { operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" } ]}, code: "export async function handler(event, context, mirra) { const cmd = event.fields.message_text.split(' ')[0]; return { command: cmd }; }" } Event flow with existing script: { eventType: "gmail.email_received", scriptId: "existing-script-id" } HANDLER RETURN VALUES: The handler's return object controls how the flow executor records the result: Success — work was done: return { success: true, ...data } No-Op — nothing to do (not an error): return { success: false, noOp: true, reason: "No transcript available" } Use for unavoidable cases where the handler has no work (e.g., time-based flow finds no new data, external API returned empty results). No-ops are recorded as successful executions and do NOT count toward the 3-consecutive-failure auto-pause threshold. WARNING: If your event flow returns noOp frequently, your eventFilter is too broad. Move the filtering logic into eventFilter conditions instead of checking inside the script. Failure — something went wrong: return { success: false, reason: "What went wrong" } Use for actual errors. 3 consecutive failures will auto-pause the flow. HANDLER EVENT DATA ACCESS: PREFERRED — event.fields.* (same alias names as eventFilter): Scripts can access event.fields.* using the SAME names as eventFilter conditions. This means the LLM uses one vocabulary for both filters and handler code. Examples: event.fields.chat_id, event.fields.message_text, event.fields.sender_username, event.fields.content_text, event.fields.subject, event.fields.price_usd ADVANCED — event.data.* (normalized fields, all event types): - event.data.text (string) — message/content text - event.data.sender (string) — sender name - event.data.senderId (string) — sender ID - event.data.timestamp (Date) — event timestamp - event.data.event (IntegrationEvent) — full event for fields without aliases For fields with NO alias (e.g., messageId, callbackQueryId, entities), use event.data.bot.* or event.data.event.*: - Telegram Bot: event.data.bot.messageId, .callbackQueryId, .entities - Calls: event.data.event.call.participants, .recentTranscripts DO NOT use "event.data.*" paths in eventFilter — those are script-only. DO NOT access platform fields at top level — event.data.chat, event.data.botUsername DO NOT exist. LOOP PREVENTION: Flows have built-in loop prevention. When a flow sends a message (e.g. via Telegram), the resulting event is tagged with the originating flow ID so it won't re-trigger the same flow. A circuit breaker also auto-pauses flows that fire too rapidly (10+ times in 60s).
+     * @param args.title - Flow title. Required if providing inline code. (optional)
+     * @param args.description - Detailed description of what the flow does (optional)
+     * @param args.code - Inline script code. If provided, auto-creates, deploys, and links the script. Cannot use with scriptId or path. (optional)
+     * @param args.path - Path to a script file in the workspace container (e.g., "/workspace/flows/handler.js"). If provided, code is read from this file. Optionally reads flow.json from the same directory for trigger config. Cannot use with code or scriptId. (optional)
+     * @param args.scriptId - ID of existing deployed script. Cannot use with code or path. (optional)
+     * @param args.schedule - Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone. (optional)
+     * @param args.eventType - Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead. (optional)
+     * @param args.eventFilter - Event filter for pre-filtering events before the script runs (evaluated in-memory, free). SIMPLE FORMAT (recommended): Pass a flat object with "when" set to the event type, then field aliases as keys. { "when": "telegram.bot_message", "chat_id": "-1001234567890", "message_text_contains": "urgent" } Add _contains, _gt, _lt, _not, _starts_with, _ends_with, _matches, _in suffixes for non-equals operators. Default operator is equals when no suffix is given. Arrays auto-detect as "in" operator. VALID FIELD ALIASES per event type (use these — do NOT use event.data.* paths here): telegram.bot_message: chat_id, chat_type, sender_username, sender_user_id, message_text, bot_username, has_media, media_type telegram.bot_command: command, chat_id, chat_type, sender_username, sender_user_id, bot_username telegram.bot_callback_query: chat_id, callback_data, sender_username, bot_username telegram.message: chat_id, is_group_chat, has_media, message_text gmail.email_received: from_email, from_name, subject, has_attachments, is_unread, body_text call.ended: duration_seconds, was_recorded, scope crypto_price_update: price_usd, token_address, chain recording.transcribed: duration_seconds, speaker_count, transcript_text flow.complete: flow_title, flow_success, flow_type All event types: event_type, sender_name, sender_id, content_text, channel_id, channel_name ADVANCED FORMAT (full condition tree — for OR logic, regex, or nested conditions): { "operator": "or", "conditions": [ { "operator": "equals", "field": "bot.chatId", "value": "123" }, { "operator": "equals", "field": "bot.chatId", "value": "456" } ]} Valid operators: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, in, notIn, exists, notExists, matchesRegex, and, or, not (optional)
+     * @param args.trigger - Legacy nested trigger structure. Prefer eventType or eventFilter instead. (optional)
+     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data, so scriptInput: { apiKey: "sk-123" } is accessed as event.data.apiKey in handler code. The linter validates code against these fields. (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type: "string"|"number"|"boolean"|"object"|"array", required?: boolean, description?: string }. When provided, the linter can catch typos in event.data.fieldName access as errors instead of warnings. (optional)
+     * @param args.enabled - Whether the flow is enabled (default: true) (optional)
+     * @param args.webhook - Set to true to create a webhook-triggered flow. Returns a webhookUrl in the response. External services POST to this URL to trigger the flow. The request body is available as event.fields.body in the handler (event.data.body is NOT populated for webhook flows). (optional)
+     * @param args.parentSpaceId - Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. If omitted, auto-inherited from the current group context (if any). (optional)
+     * @returns Promise<FlowsCreateFlowData> Typed flat response with IDE autocomplete
+     */
+    createFlow: async (args: FlowsCreateFlowArgs): Promise<FlowsCreateFlowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'createFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new time-based flow with cron schedule. NOTE: Consider using createFlow instead for a simpler interface with inline code support.
+     * @param args.title - Flow title
+     * @param args.description - Detailed description of what the flow does
+     * @param args.schedule - Cron expression for scheduling (e.g., "0 9 * * *" for daily at 9am)
+     * @param args.scriptId - ID of the script to execute when triggered
+     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler). (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }. (optional)
+     * @returns Promise<FlowsCreateTimeFlowData> Typed flat response with IDE autocomplete
+     */
+    createTimeFlow: async (args: FlowsCreateTimeFlowArgs): Promise<FlowsCreateTimeFlowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'createTimeFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create an event-based flow with pre-filtering conditions. NOTE: Consider using createFlow instead for a simpler interface with inline code support. EFFICIENCY RULE: Always filter in eventFilter, not the script. - eventFilter conditions: FREE (evaluated in-memory before script runs) - Script filtering: EXPENSIVE (invokes Lambda for every event) BAD: Trigger on "telegram.message" with no filter → script checks sender GOOD: Trigger on "telegram.message" with eventFilter for sender TRIGGER STRUCTURE: { type: "event", config: { eventFilter: { operator: "and" | "or", conditions: [ { operator: "equals", field: "type", value: "call.ended" }, { operator: "contains", field: "content.text", value: "urgent" } ] } } } IMPORTANT: Use field: "type" (not "eventType") to filter by event type. This is required for testFlow to auto-generate test events. VALID OPERATORS: equals, notEquals, contains, startsWith, endsWith, greaterThan, lessThan, exists, notExists, matchesRegex, and, or, not COMMON EVENT TYPES (use with field: "type"): call.started, call.ended, call.action, telegram.message, telegram.bot_message, telegram.bot_command, telegram.bot_callback_query, gmail.email_received
+     * @param args.title - Flow title
+     * @param args.description - Detailed description of what the flow does
+     * @param args.trigger - Event filter conditions that determine WHEN the script runs. Add ALL filtering logic here to minimize Lambda invocations. Must have type:"event" and config.eventFilter with operator and conditions array.
+     * @param args.scriptId - ID of the script to execute when triggered
+     * @param args.scriptInput - Static input data passed to the script. Fields are spread into event.data (e.g., scriptInput: { apiKey: "sk-123" } → event.data.apiKey in handler). (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields (auto-inferred from scriptInput values if not provided). Keys are field names, values are { type, required?, description? }. (optional)
+     * @returns Promise<FlowsCreateEventFlowData> Typed flat response with IDE autocomplete
+     */
+    createEventFlow: async (args: FlowsCreateEventFlowArgs): Promise<FlowsCreateEventFlowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'createEventFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a specific flow by ID. Returns normalized flat structure. Use includeScript=true to also return the flow's script code.
+     * @param args.id - Flow ID (24-character hex string returned by createFlow/createEventFlow). Get IDs from the flow creation response or by searching flows.
+     * @param args.includeScript - Include the flow's script code in the response. Default: false. (optional)
+     * @returns Promise<FlowsGetFlowData> Typed flat response with IDE autocomplete
+     */
+    getFlow: async (args: FlowsGetFlowArgs): Promise<FlowsGetFlowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'getFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Update an existing flow. Returns normalized flat structure.
+     * @param args.id - Flow ID to update (24-character hex string returned by createFlow/createEventFlow)
+     * @param args.title - New title (optional)
+     * @param args.description - New description (optional)
+     * @param args.trigger - New trigger configuration (optional)
+     * @param args.scriptId - New script ID (optional)
+     * @param args.scriptInput - New static input data for the script. Fields are spread into event.data in handler code. (optional)
+     * @param args.scriptInputSchema - Schema describing scriptInput fields. Keys are field names, values are { type, required?, description? }. (optional)
+     * @param args.status - New status: active, paused, completed, failed (optional)
+     * @param args.parentSpaceId - Group/space ID to scope this flow to. When set, the flow executes with group context and accesses the group's data instead of the user's personal data. Set to empty string to remove group scope. (optional)
+     * @param args.schedule - Cron expression for time-based flows. Times are automatically evaluated in the user's local timezone. Example: "0 9 * * *" runs at 9am in the user's timezone. (optional)
+     * @param args.eventType - Event type shorthand (e.g., "telegram.message"). Use ONLY when you need to process every single event of this type. For filtering a subset of events, use eventFilter instead. (optional)
+     * @param args.eventFilter - Event filter with operator and conditions array. RECOMMENDED for most event flows — lets you pre-filter events before Lambda invocation (free, in-memory). Example: { operator: "and", conditions: [{ operator: "equals", field: "type", value: "telegram.message" }, { operator: "startsWith", field: "content.text", value: "/" }] } (optional)
+     * @returns Promise<FlowsUpdateFlowData> Typed flat response with IDE autocomplete
+     */
+    updateFlow: async (args: FlowsUpdateFlowArgs): Promise<FlowsUpdateFlowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'updateFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Replace the ENTIRE script code for a flow. For small changes, prefer editFlowScript instead — it only requires the changed portions. Use modifyFlowScript only when rewriting more than ~50% of the code or creating a script from scratch.
+     * @param args.flowId - Flow ID to modify (24-character hex string)
+     * @param args.newCode - New handler code. Must include export async function handler(event, context, mirra) wrapper. Required unless path is provided. (optional)
+     * @param args.path - Path to a script file in the workspace container (e.g., "/workspace/flows/my-handler/handler.js"). If provided, code is read from this file instead of newCode. (optional)
+     * @param args.commitMessage - Description of changes (optional) (optional)
+     */
+    modifyFlowScript: async (args: FlowsModifyFlowScriptArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'modifyFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read the script code for a flow with line numbers. Supports optional line range to read a portion of the script. Use this before editFlowScript to see the current code.
+     * @param args.flowId - Flow ID (24-character hex string)
+     * @param args.startLine - First line to return (1-indexed). Default: 1 (optional)
+     * @param args.endLine - Last line to return (inclusive). Default: end of file (optional)
+     */
+    readFlowScript: async (args: FlowsReadFlowScriptArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'readFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Apply surgical edits to a flow's script code using oldText/newText pairs. Each edit replaces an exact text match. Much more efficient than modifyFlowScript for small changes — avoids rewriting the entire script. Use readFlowScript first to see current code.
+     * @param args.flowId - Flow ID (24-character hex string)
+     * @param args.edits - Array of edits. Each: { oldText: string (exact match in current code), newText: string (replacement) }. Applied sequentially. oldText must be unique in the code — include enough surrounding context.
+     * @param args.commitMessage - Description of changes (optional)
+     */
+    editFlowScript: async (args: FlowsEditFlowScriptArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'editFlowScript',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Execute a flow on-demand with custom input. The input object is merged into the flow's scriptInput and passed to the handler as event.data fields. Returns the handler's return value along with execution metadata.
+     * @param args.flowId - Flow ID to execute (24-character hex string)
+     * @param args.input - Dynamic input object passed to the flow handler via event.data. Fields are merged with the flow's static scriptInput (dynamic input takes precedence). (optional)
+     */
+    executeFlow: async (args: FlowsExecuteFlowArgs): Promise<any> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'executeFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete a flow
+     * @param args.id - Flow ID to delete (24-character hex string returned by createFlow/createEventFlow)
+     * @returns Promise<FlowsDeleteFlowData> Typed flat response with IDE autocomplete
+     */
+    deleteFlow: async (args: FlowsDeleteFlowArgs): Promise<FlowsDeleteFlowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'deleteFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Pause an active flow. Returns normalized flat structure.
+     * @param args.id - Flow ID to pause (24-character hex string)
+     * @returns Promise<FlowsPauseFlowData> Typed flat response with IDE autocomplete
+     */
+    pauseFlow: async (args: FlowsPauseFlowArgs): Promise<FlowsPauseFlowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'pauseFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Resume a paused flow. Returns normalized flat structure.
+     * @param args.id - Flow ID to resume (24-character hex string)
+     * @returns Promise<FlowsResumeFlowData> Typed flat response with IDE autocomplete
+     */
+    resumeFlow: async (args: FlowsResumeFlowArgs): Promise<FlowsResumeFlowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'resumeFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Search flows with filters. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. Use getFlow for full details on a specific flow. ⚠️ RESPONSE FORMAT: Returns { count: number, flows: Array }. You MUST access the array via `result.flows`. Do NOT use `result.length` or treat `result` as an array — it is an object. Example: ``` const result = await mirra.flows.searchFlows({}); const flows = result.flows; // ← REQUIRED — the array is here console.log(`Found ${flows.length} flows`); ```
+     * @param args.status - Filter by status (or array of statuses) (optional)
+     * @param args.triggerType - Filter by trigger type: time or event (optional)
+     * @param args.parentSpaceId - Filter flows by space/group ID. Only returns flows assigned to this space. (optional)
+     * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
+     * @param args.limit - Maximum number of results (default: 20) (optional)
+     * @param args.offset - Pagination offset (default: 0) (optional)
+     * @returns Promise<FlowsSearchFlowsData> Typed flat response with IDE autocomplete
+     */
+    searchFlows: async (args: FlowsSearchFlowsArgs): Promise<FlowsSearchFlowsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'searchFlows',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Record execution result for a flow. Returns normalized flat structure.
+     * @param args.id - Flow ID
+     * @param args.success - Whether execution succeeded
+     * @param args.result - Execution result data (optional)
+     * @param args.error - Error message if execution failed (optional)
+     * @returns Promise<FlowsRecordExecutionData> Typed flat response with IDE autocomplete
+     */
+    recordExecution: async (args: FlowsRecordExecutionArgs): Promise<FlowsRecordExecutionData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'recordExecution',
+        params: args || {}
+      });
+    },
+
+    /**
+     * List available event types that can trigger automations. Returns normalized event types. Filter by source or sources to narrow results (e.g., source: "telegram" or sources: ["telegram", "gmail"]). IMPORTANT: Use includeSchema: true when writing scripts to see available fields and correct access patterns. PREFERRED — event.fields.* uses the same alias names as eventFilter: - event.fields.chat_id, event.fields.message_text, event.fields.sender_name, etc. ADVANCED — event.data.* for normalized fields and full event: - event.data.text (normalized text content) - event.data.sender (normalized sender name) - event.data.event (full IntegrationEvent for fields without aliases) Common WRONG patterns that don't work: - event.summary (doesn't exist) - event.content.text (wrong path) - event.timestamp (wrong path)
+     * @param args.source - Filter by source/category (e.g., "telegram", "gmail", "calendar"). Returns only event types from this source. (optional)
+     * @param args.sources - Array of sources to filter by (e.g., ["telegram", "gmail"]). More efficient than separate calls. (optional)
+     * @param args.includeTemplates - Include condition templates for each event type (optional)
+     * @param args.includeSchema - Include field schema showing available paths for script access. RECOMMENDED when writing scripts to see correct field access patterns. (optional)
+     * @returns Promise<FlowsListEventTypesData> Typed flat response with IDE autocomplete
+     */
+    listEventTypes: async (args: FlowsListEventTypesArgs): Promise<FlowsListEventTypesData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'listEventTypes',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Test a flow by generating an event that matches the trigger conditions. REQUIREMENT: The flow's trigger conditions MUST include a condition with field: "type" or field: "source" so the system knows what kind of test event to generate. CORRECT condition: { operator: "equals", field: "type", value: "telegram.message" } WRONG condition: { operator: "equals", field: "eventType", value: "telegram.message" } If your flow lacks a "type" or "source" condition, use validateTrigger instead with a manually constructed event. MODES: - dryRun=true (DEFAULT): Validates trigger matching only. Safe, no side effects, no token consumption. - dryRun=false: Executes the real script. WARNING: This causes real side effects (sends messages, makes API calls, consumes tokens). Use dryRun=true first to verify trigger conditions work, then dryRun=false only when ready to test full execution. WORKFLOW: 1. Generates a test event from the flow's trigger conditions (requires "type" or "source" field) 2. Validates the event matches the trigger (always) 3. If dryRun=false, executes the script with the test event RESULT: Returns detailed information about trigger matching, including which conditions passed/failed, and optionally full execution results.
+     * @param args.flowId - ID of the flow to test
+     * @param args.dryRun - If true (default), only validate trigger matching without executing script. If false, execute the script (causes side effects). (optional)
+     * @param args.eventOverrides - Custom field values to merge into the generated test event (e.g., {"content.text": "custom message"}) (optional)
+     * @returns Promise<FlowsTestFlowData> Typed flat response with IDE autocomplete
+     */
+    testFlow: async (args: FlowsTestFlowArgs): Promise<FlowsTestFlowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'testFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Check if a custom event would match a flow trigger without any execution. Useful for debugging trigger conditions or testing with real event data.
+     * @param args.flowId - ID of the flow
+     * @param args.event - Event object to test against the trigger (must match IntegrationEvent structure)
+     * @returns Promise<FlowsValidateTriggerData> Typed flat response with IDE autocomplete
+     */
+    validateTrigger: async (args: FlowsValidateTriggerArgs): Promise<FlowsValidateTriggerData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'validateTrigger',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get all active flows triggered by a specific event type. Default returns minimal info (id, title, status, triggerType, isActive). Use detail: "summary" for execution stats. ⚠️ RESPONSE FORMAT: Returns { eventType, count, flows: Array }. Access the array via `result.flows`.
+     * @param args.eventType - Event type to filter by (e.g., "call.action", "call.ended", "telegram.message")
+     * @param args.detail - Detail level: "minimal" (default) returns id, title, status, triggerType, isActive. "summary" adds description, cronExpression, scriptId, executionCount, lastExecutedAt, createdAt. (optional)
+     * @returns Promise<FlowsGetFlowsByEventTypeData> Typed flat response with IDE autocomplete
+     */
+    getFlowsByEventType: async (args: FlowsGetFlowsByEventTypeArgs): Promise<FlowsGetFlowsByEventTypeData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'getFlowsByEventType',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a self-managing flow that processes multiple adapter operations over time, respecting rate limits. The flow automatically cleans up when complete and notifies the user via feed item.
+     * @param args.title - Human-readable title for this batch operation (e.g., "Leave 100 Telegram groups")
+     * @param args.operations - Array of operations to execute. Each item must have adapter, operation, and args properties.
+     * @param args.batchSize - Number of operations to process per execution (default: 5) (optional)
+     * @param args.intervalSeconds - Seconds between batch executions (default: 60, minimum: 60) (optional)
+     * @returns Promise<FlowsCreateBatchOperationData> Typed flat response with IDE autocomplete
+     */
+    createBatchOperation: async (args: FlowsCreateBatchOperationArgs): Promise<FlowsCreateBatchOperationData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'createBatchOperation',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Publish a flow to the marketplace so other users can discover and install it. The flow must have a deployed script.
+     * @param args.flowId - ID of the flow to publish
+     * @param args.pricing - Pricing configuration. Defaults to { model: "free" }. Supported models: "free", "pay-per-execution". For paid models, include basePrice. (optional)
+     * @param args.tags - Tags for marketplace discovery (e.g., ["telegram", "automation"]) (optional)
+     * @param args.category - Marketplace category (e.g., "messaging", "productivity"). Defaults to "uncategorized". (optional)
+     * @returns Promise<FlowsPublishFlowData> Typed flat response with IDE autocomplete
+     */
+    publishFlow: async (args: FlowsPublishFlowArgs): Promise<FlowsPublishFlowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'publishFlow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Remove a flow from the marketplace. Existing installations will continue to work.
+     * @param args.flowId - ID of the flow to unpublish
+     * @returns Promise<FlowsUnpublishFlowData> Typed flat response with IDE autocomplete
+     */
+    unpublishFlow: async (args: FlowsUnpublishFlowArgs): Promise<FlowsUnpublishFlowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'flows',
+        method: 'unpublishFlow',
         params: args || {}
       });
     }
@@ -9777,6 +14076,489 @@ function createCryptoAdapter(sdk: MirraSDK) {
   };
 }
 
+/**
+ * Google Docs Adapter
+ * Category: productivity
+ */
+function createGoogleDocsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new Google Doc
+     * @param args.title - Title of the document
+     * @returns Promise<GoogleDocsCreateDocumentData> Typed flat response with IDE autocomplete
+     */
+    createDocument: async (args: GoogleDocsCreateDocumentArgs): Promise<GoogleDocsCreateDocumentData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'createDocument',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get a Google Doc by ID. Returns normalized flat structure with extracted fields.
+     * @param args.documentId - ID of the document
+     * @returns Promise<GoogleDocsDocumentData> Typed flat response with IDE autocomplete
+     */
+    getDocument: async (args: GoogleDocsGetDocumentArgs): Promise<GoogleDocsDocumentData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'getDocument',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Append text to the end of a document
+     * @param args.documentId - ID of the document
+     * @param args.text - Text to append
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
+     */
+    appendText: async (args: GoogleDocsAppendTextArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'appendText',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Replace text in a document
+     * @param args.documentId - ID of the document
+     * @param args.searchText - Text to search for
+     * @param args.replaceText - Text to replace with
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
+     */
+    replaceText: async (args: GoogleDocsReplaceTextArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'replaceText',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get the text content of a Google Doc
+     * @param args.documentId - ID of the document
+     * @returns Promise<GoogleDocsContentData> Typed flat response with IDE autocomplete
+     */
+    getDocumentContent: async (args: GoogleDocsGetDocumentContentArgs): Promise<GoogleDocsContentData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'getDocumentContent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert text at a specific position in the document
+     * @param args.documentId - ID of the document
+     * @param args.text - Text to insert
+     * @param args.position - Character position to insert at (1-indexed)
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
+     */
+    insertTextAtPosition: async (args: GoogleDocsInsertTextAtPositionArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'insertTextAtPosition',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert text after a search string in the document
+     * @param args.documentId - ID of the document
+     * @param args.searchText - Text to search for
+     * @param args.textToInsert - Text to insert after the search text
+     * @param args.occurrence - Which occurrence to insert after (default: 1) (optional)
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
+     */
+    insertTextAfter: async (args: GoogleDocsInsertTextAfterArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'insertTextAfter',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a heading into the document
+     * @param args.documentId - ID of the document
+     * @param args.text - Heading text
+     * @param args.level - Heading level (1-6)
+     * @param args.position - Character position to insert at (optional)
+     * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
+     */
+    insertHeading: async (args: GoogleDocsInsertHeadingArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'insertHeading',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a bulleted or numbered list into the document
+     * @param args.documentId - ID of the document
+     * @param args.items - Array of list items
+     * @param args.listType - Type of list: "bulleted" or "numbered"
+     * @param args.position - Character position to insert at (optional)
+     * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
+     */
+    insertList: async (args: GoogleDocsInsertListArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'insertList',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a table into the document
+     * @param args.documentId - ID of the document
+     * @param args.data - 2D array of table data (rows x columns)
+     * @param args.hasHeader - Whether the first row is a header (default: true) (optional)
+     * @param args.position - Character position to insert at (optional)
+     * @param args.insertAfterText - Insert after this text instead of at position (optional)
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
+     */
+    insertTable: async (args: GoogleDocsInsertTableArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'insertTable',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Replace the entire content of a document
+     * @param args.documentId - ID of the document
+     * @param args.newContent - New content to replace existing content
+     * @returns Promise<GoogleDocsWriteResultData> Typed flat response with IDE autocomplete
+     */
+    updateDocumentContent: async (args: GoogleDocsUpdateDocumentContentArgs): Promise<GoogleDocsWriteResultData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'updateDocumentContent',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a new section with a heading and content. Returns normalized result with insertion details.
+     * @param args.documentId - ID of the document
+     * @param args.heading - Section heading text
+     * @param args.content - Section content text
+     * @returns Promise<GoogleDocsSectionResultData> Typed flat response with IDE autocomplete
+     */
+    createSection: async (args: GoogleDocsCreateSectionArgs): Promise<GoogleDocsSectionResultData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'createSection',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Find the character position for insertion based on position or search text. Returns normalized result with position and context.
+     * @param args.documentId - ID of the document
+     * @param args.position - Position to find (1 for start, -1 for end)
+     * @param args.searchText - Text to search for (returns position after this text) (optional)
+     * @returns Promise<GoogleDocsInsertionPointData> Typed flat response with IDE autocomplete
+     */
+    findInsertionPoint: async (args: GoogleDocsFindInsertionPointArgs): Promise<GoogleDocsInsertionPointData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-docs',
+        method: 'findInsertionPoint',
+        params: args || {}
+      });
+    }
+  };
+}
+
+/**
+ * Google Sheets Adapter
+ * Category: productivity
+ */
+function createGoogleSheetsAdapter(sdk: MirraSDK) {
+  return {
+    /**
+     * Create a new Google Sheets spreadsheet
+     * @param args.title - Title of the spreadsheet
+     * @returns Promise<GoogleSheetsCreateSpreadsheetData> Typed flat response with IDE autocomplete
+     */
+    createSpreadsheet: async (args: GoogleSheetsCreateSpreadsheetArgs): Promise<GoogleSheetsCreateSpreadsheetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'createSpreadsheet',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Read data from a range in a spreadsheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.range - Cell range (e.g., "Sheet1!A1:B10")
+     * @returns Promise<GoogleSheetsReadRangeData> Typed flat response with IDE autocomplete
+     */
+    readRange: async (args: GoogleSheetsReadRangeArgs): Promise<GoogleSheetsReadRangeData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'readRange',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Write data to a range in a spreadsheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.range - Cell range (e.g., "Sheet1!A1:B10")
+     * @param args.values - Data to write (2D array)
+     * @returns Promise<GoogleSheetsWriteRangeData> Typed flat response with IDE autocomplete
+     */
+    writeRange: async (args: GoogleSheetsWriteRangeArgs): Promise<GoogleSheetsWriteRangeData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'writeRange',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Append a row to a spreadsheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetName - Name of the sheet
+     * @param args.values - Row values to append
+     * @returns Promise<GoogleSheetsAppendRowData> Typed flat response with IDE autocomplete
+     */
+    appendRow: async (args: GoogleSheetsAppendRowArgs): Promise<GoogleSheetsAppendRowData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'appendRow',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Get spreadsheet metadata and properties
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @returns Promise<GoogleSheetsGetSpreadsheetData> Typed flat response with IDE autocomplete
+     */
+    getSpreadsheet: async (args: GoogleSheetsGetSpreadsheetArgs): Promise<GoogleSheetsGetSpreadsheetData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'getSpreadsheet',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a value at a specific cell with optional formatting
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.cell - Cell reference in format SheetName!A1
+     * @param args.value - Value to insert
+     * @param args.bold - Make text bold (optional)
+     * @param args.italic - Make text italic (optional)
+     * @param args.foregroundColor - Text color (hex or named color) (optional)
+     * @param args.backgroundColor - Cell background color (hex or named color) (optional)
+     * @returns Promise<GoogleSheetsInsertAtCellData> Typed flat response with IDE autocomplete
+     */
+    insertAtCell: async (args: GoogleSheetsInsertAtCellArgs): Promise<GoogleSheetsInsertAtCellData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'insertAtCell',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert a formula at a specific cell
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.cell - Cell reference in format SheetName!A1
+     * @param args.formula - Formula to insert (with or without leading =)
+     * @param args.note - Optional note to add to the cell (optional)
+     * @returns Promise<GoogleSheetsInsertFormulaData> Typed flat response with IDE autocomplete
+     */
+    insertFormula: async (args: GoogleSheetsInsertFormulaArgs): Promise<GoogleSheetsInsertFormulaData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'insertFormula',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Apply formatting to a range of cells
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.range - Range in format SheetName!A1:B10
+     * @param args.bold - Make text bold (optional)
+     * @param args.italic - Make text italic (optional)
+     * @param args.foregroundColor - Text color (hex or named color) (optional)
+     * @param args.backgroundColor - Cell background color (hex or named color) (optional)
+     * @param args.borders - Add borders to cells (optional)
+     * @returns Promise<GoogleSheetsFormatRangeData> Typed flat response with IDE autocomplete
+     */
+    formatRange: async (args: GoogleSheetsFormatRangeArgs): Promise<GoogleSheetsFormatRangeData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'formatRange',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Create a chart from spreadsheet data
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - ID of the sheet containing data
+     * @param args.dataRange - Data range for the chart (e.g., A1:B10)
+     * @param args.chartType - Chart type: BAR, LINE, AREA, PIE, or SCATTER
+     * @param args.title - Chart title
+     * @param args.position - Chart position with row, column, rowCount, columnCount
+     * @returns Promise<GoogleSheetsCreateChartData> Typed flat response with IDE autocomplete
+     */
+    createChart: async (args: GoogleSheetsCreateChartArgs): Promise<GoogleSheetsCreateChartData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'createChart',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Find and replace text in a spreadsheet
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.findText - Text to find
+     * @param args.replaceText - Text to replace with
+     * @param args.sheetName - Limit search to specific sheet (optional)
+     * @param args.matchCase - Case-sensitive search (optional)
+     * @param args.matchEntireCell - Match entire cell content only (optional)
+     * @returns Promise<GoogleSheetsFindAndReplaceData> Typed flat response with IDE autocomplete
+     */
+    findAndReplace: async (args: GoogleSheetsFindAndReplaceArgs): Promise<GoogleSheetsFindAndReplaceData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'findAndReplace',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert multiple rows of data at once
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetName - Name of the sheet
+     * @param args.rowsData - 2D array of row data to insert
+     * @param args.startingRow - Row number to start insertion (1-indexed). If not provided, appends to end (optional)
+     * @param args.formattingOptions - Optional formatting to apply (bold, italic, foregroundColor, backgroundColor, borders) (optional)
+     * @returns Promise<GoogleSheetsInsertMultipleRowsData> Typed flat response with IDE autocomplete
+     */
+    insertMultipleRows: async (args: GoogleSheetsInsertMultipleRowsArgs): Promise<GoogleSheetsInsertMultipleRowsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'insertMultipleRows',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Clear content from a range of cells
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetName - Name of the sheet
+     * @param args.range - Range to clear (e.g., A1:B10)
+     * @returns Promise<GoogleSheetsClearRangeData> Typed flat response with IDE autocomplete
+     */
+    clearRange: async (args: GoogleSheetsClearRangeArgs): Promise<GoogleSheetsClearRangeData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'clearRange',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert empty rows at a specific position in a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Row indices are 0-indexed (row 1 in UI = index 0).
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startRowIndex - Row index to start inserting at (0-indexed). To insert before row 5 in the UI, use index 4.
+     * @param args.numRows - Number of rows to insert
+     * @returns Promise<GoogleSheetsInsertRowsData> Typed flat response with IDE autocomplete
+     */
+    insertRows: async (args: GoogleSheetsInsertRowsArgs): Promise<GoogleSheetsInsertRowsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'insertRows',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete rows from a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Row indices are 0-indexed (row 1 in UI = index 0).
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startRowIndex - Row index to start deleting from (0-indexed). To delete row 5 in the UI, use index 4.
+     * @param args.numRows - Number of rows to delete
+     * @returns Promise<GoogleSheetsDeleteRowsData> Typed flat response with IDE autocomplete
+     */
+    deleteRows: async (args: GoogleSheetsDeleteRowsArgs): Promise<GoogleSheetsDeleteRowsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'deleteRows',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Insert empty columns at a specific position in a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Column indices are 0-indexed (A=0, B=1, C=2, etc.).
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startColumnIndex - Column index to start inserting at (0-indexed: A=0, B=1, C=2, D=3, etc.). To insert before column D, use index 3.
+     * @param args.numColumns - Number of columns to insert
+     * @returns Promise<GoogleSheetsInsertColumnsData> Typed flat response with IDE autocomplete
+     */
+    insertColumns: async (args: GoogleSheetsInsertColumnsArgs): Promise<GoogleSheetsInsertColumnsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'insertColumns',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Delete columns from a sheet. IMPORTANT: Requires numeric sheetId (get from getSpreadsheet), not sheet name. Column indices are 0-indexed (A=0, B=1, C=2, etc.).
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sheetId - Numeric sheet ID (get from getSpreadsheet response: sheets[0].properties.sheetId). This is NOT the sheet name.
+     * @param args.startColumnIndex - Column index to start deleting from (0-indexed: A=0, B=1, C=2, D=3, etc.). To delete column D, use index 3.
+     * @param args.numColumns - Number of columns to delete
+     * @returns Promise<GoogleSheetsDeleteColumnsData> Typed flat response with IDE autocomplete
+     */
+    deleteColumns: async (args: GoogleSheetsDeleteColumnsArgs): Promise<GoogleSheetsDeleteColumnsData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'deleteColumns',
+        params: args || {}
+      });
+    },
+
+    /**
+     * Copy data from one range to another location within the same spreadsheet. IMPORTANT: Requires numeric sheetIds (get from getSpreadsheet), not sheet names. Can copy within same sheet or across sheets.
+     * @param args.spreadsheetId - ID of the spreadsheet
+     * @param args.sourceSheetId - Numeric sheet ID of the source sheet (get from getSpreadsheet response: sheets[n].properties.sheetId)
+     * @param args.sourceRange - Source range in A1 notation WITHOUT sheet name (e.g., "A1:C5", not "Sheet1!A1:C5")
+     * @param args.targetSheetId - Numeric sheet ID of the target sheet (can be same as sourceSheetId to copy within same sheet)
+     * @param args.targetStartCell - Target start cell in A1 notation (e.g., "E1"). The copied data will fill cells starting from this position.
+     * @returns Promise<GoogleSheetsCopyRangeData> Typed flat response with IDE autocomplete
+     */
+    copyRange: async (args: GoogleSheetsCopyRangeArgs): Promise<GoogleSheetsCopyRangeData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'google-sheets',
+        method: 'copyRange',
+        params: args || {}
+      });
+    }
+  };
+}
+
 
 // ============================================================================
 // Exports
@@ -9784,14 +14566,18 @@ function createCryptoAdapter(sdk: MirraSDK) {
 
 export const generatedAdapters = {
   ai: createAiAdapter,
+  jira: createJiraAdapter,
   channels: createChannelsAdapter,
   dashboards: createDashboardsAdapter,
   data: createDataAdapter,
-  desktop: createDesktopAdapter,
   document: createDocumentAdapter,
   feedItems: createFeedItemsAdapter,
   feedback: createFeedbackAdapter,
   github: createGithubAdapter,
+  googleAds: createGoogleAdsAdapter,
+  googleCalendar: createGoogleCalendarAdapter,
+  googleDrive: createGoogleDriveAdapter,
+  googleGmail: createGoogleGmailAdapter,
   hypertrade: createHypertradeAdapter,
   skills: createSkillsAdapter,
   items: createItemsAdapter,
@@ -9801,13 +14587,20 @@ export const generatedAdapters = {
   observability: createObservabilityAdapter,
   pages: createPagesAdapter,
   polymarket: createPolymarketAdapter,
+  scripts: createScriptsAdapter,
   shopify: createShopifyAdapter,
   socket: createSocketAdapter,
+  telegram: createTelegramAdapter,
   telegramBot: createTelegramBotAdapter,
+  trello: createTrelloAdapter,
+  twitter: createTwitterAdapter,
   videoGenerator: createVideoGeneratorAdapter,
   voice: createVoiceAdapter,
   workspace: createWorkspaceAdapter,
+  flows: createFlowsAdapter,
   user: createUserAdapter,
   contacts: createContactsAdapter,
-  crypto: createCryptoAdapter
+  crypto: createCryptoAdapter,
+  googleDocs: createGoogleDocsAdapter,
+  googleSheets: createGoogleSheetsAdapter
 };

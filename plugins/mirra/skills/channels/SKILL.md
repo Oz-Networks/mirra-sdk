@@ -87,7 +87,8 @@ File drafted copy for review, one draft per channel. Nothing is sent — a teamm
 **Arguments:**
 
 - `sourceCardId` (string, **required**): The update card this copy was drafted from (cardId from the items.update.published event)
-- `drafts` (array, **required**): One per channel: [{ channelId, channelType, channelLabel, title?, body }]. channelId/type/label come from listChannels. Respect each channel's character cap — an over-length draft cannot be approved.
+- `drafts` (array, **required**): One per channel: [{ channelId, channelType, channelLabel, title?, body }]. channelId/type/label come from listChannels. Respect each channel's character cap — an over-length draft cannot be approved. Do NOT attach pictures here: the source card's hero is added automatically to every channel that takes one, and a reviewer can swap or remove it.
+- `skipPoster` (boolean, *optional*): Set true to file these as text-only, without the source card's hero picture. Only pass this if the team has decided its posts should not carry pictures.
 
 **Returns:**
 

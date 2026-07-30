@@ -41,6 +41,7 @@ Replace `{operation}` with the operation name from the table below.
 | Operation | Description |
 |-----------|-------------|
 | `sendMessage` | Send a text message to a Telegram chat via bot |
+| `sendPhoto` | Send a photo to a Telegram chat, with the text as its caption. Takes a public https URL and Teleg... |
 | `replyToMessage` | Reply to a specific message in a Telegram chat |
 | `editMessageText` | Replace the text of a previously sent bot message. Use this for the "placeholder + edit" pattern:... |
 | `answerCallbackQuery` | Respond to an inline keyboard button press (callback query) |
@@ -89,6 +90,42 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "messageId": 42,
   "chatId": "123456789",
   "text": "Hello from Mirra!"
+}
+```
+
+### `sendPhoto`
+
+Send a photo to a Telegram chat, with the text as its caption. Takes a public https URL and Telegram fetches it itself. NOTE: a caption is capped at 1024 characters, not the 4096 sendMessage allows — send the text with sendMessage instead if it is longer. Use a JPEG or PNG; Telegram reads a WebP as a sticker.
+
+**Arguments:**
+
+- `botUsername` (string, **required**): Username of the bot to send from (without @)
+- `chatId` (string, **required**): Telegram chat ID to send the photo to
+- `photo` (string, **required**): Public https URL of the photo (max 5MB)
+- `caption` (string, *optional*): Text shown under the photo (max 1024 characters)
+- `parseMode` (string, *optional*): Parse mode for the caption: Markdown, MarkdownV2, or HTML
+- `disableNotification` (boolean, *optional*): Send silently without notification sound
+
+**Returns:**
+
+`AdapterOperationResult`: Sent message details including messageId and chatId
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"telegramBot","method":"sendPhoto","params":{"botUsername":"my_bot","chatId":"123456789","photo":"https://cdn.example.com/poster.png","caption":"What shipped this week"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "messageId": 44,
+  "chatId": "123456789",
+  "caption": "What shipped this week"
 }
 ```
 

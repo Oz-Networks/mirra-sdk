@@ -38,21 +38,21 @@ Replace `{operation}` with the operation name from the table below.
 
 | Operation | Description |
 |-----------|-------------|
-| `listSkills` | List this space's procedures as a menu — one trigger line each, no bodies. Call this once per ses... |
+| `listSkills` | List the procedures available here as a menu — one trigger line each, no bodies. If this space be... |
 | `getSkill` | Load one procedure by name. Returns the full markdown body — follow it. |
-| `createSkill` | Write a new procedure into this space so teammates’ agents can run it. Write it from what actuall... |
-| `updateSkill` | Revise a procedure in place. Any member of the space can improve any procedure. |
-| `deleteSkill` | Delete a procedure from this space. |
+| `createSkill` | Write a new procedure so teammates’ agents can run it. The procedure stays in this space unless y... |
+| `updateSkill` | Revise a procedure in place, at whichever level holds it. Any member of the space can improve any... |
+| `deleteSkill` | Delete a procedure. Deletes the space's own copy first, so removing one that overrode an organiza... |
 
 ## Operation Details
 
 ### `listSkills`
 
-List this space's procedures as a menu — one trigger line each, no bodies. Call this once per session; load a body with getSkill only when a description matches what you are about to do.
+List the procedures available here as a menu — one trigger line each, no bodies. If this space belongs to an organization, the organization's procedures are included and the space's own override them by name. Call this once per session; load a body with getSkill only when a description matches what you are about to do.
 
 **Returns:**
 
-`AdapterOperationResult`: Returns { count, skills[] }. Each entry: { name, description, tags, updatedAt }.
+`AdapterOperationResult`: Returns { count, skills[] }. Each entry: { name, description, tags, updatedAt, scope }.
 
 **Example:**
 
@@ -73,7 +73,7 @@ Load one procedure by name. Returns the full markdown body — follow it.
 
 **Returns:**
 
-`AdapterOperationResult`: Returns { name, description, body, tags, authorUserId, updatedAt }.
+`AdapterOperationResult`: Returns { name, description, body, tags, authorUserId, updatedAt, scope }.
 
 **Example:**
 
@@ -86,7 +86,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `createSkill`
 
-Write a new procedure into this space so teammates’ agents can run it. Write it from what actually just happened, in the second person, addressed to another Claude.
+Write a new procedure so teammates’ agents can run it. The procedure stays in this space unless you say otherwise. If this space belongs to an organization and the procedure is genuinely company-wide, pass scope "organization" and every space in it can use it. Write it from what actually just happened, in the second person, addressed to another Claude.
 
 **Arguments:**
 
@@ -94,6 +94,7 @@ Write a new procedure into this space so teammates’ agents can run it. Write i
 - `description` (string, **required**): The trigger line: when another agent should load this. One sentence, concrete.
 - `body` (string, **required**): Markdown. The procedure itself — steps, gotchas, what "done" looks like.
 - `tags` (array, *optional*): Tags for discovery
+- `scope` (string, *optional*): "space" (the default) or "organization" to make it usable by every space in this organization. Ignored for a space with no organization.
 
 **Returns:**
 
@@ -110,7 +111,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `updateSkill`
 
-Revise a procedure in place. Any member of the space can improve any procedure.
+Revise a procedure in place, at whichever level holds it. Any member of the space can improve any procedure, including one the organization owns.
 
 **Arguments:**
 
@@ -134,7 +135,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `deleteSkill`
 
-Delete a procedure from this space.
+Delete a procedure. Deletes the space's own copy first, so removing one that overrode an organization procedure restores the organization's.
 
 **Arguments:**
 

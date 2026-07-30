@@ -40,7 +40,8 @@ Replace `{operation}` with the operation name from the table below.
 
 | Operation | Description |
 |-----------|-------------|
-| `postTweet` | Post a tweet |
+| `postTweet` | Post a tweet, optionally with up to 4 images. Upload each image with uploadMedia first and pass t... |
+| `uploadMedia` | Upload one image to X and get back a media id for postTweet. Takes a public https URL — X is not ... |
 | `getUserTweets` | Retrieve tweets from a Twitter user. Must provide either userId OR userName (not both). NOTE: Thi... |
 | `advancedSearch` | Search tweets using advanced Twitter search syntax. Supports operators like from:username, since:... |
 | `getTweetById` | Fetch one or more tweets by their IDs. Useful for retrieving parent/original tweets when processi... |
@@ -49,11 +50,12 @@ Replace `{operation}` with the operation name from the table below.
 
 ### `postTweet`
 
-Post a tweet
+Post a tweet, optionally with up to 4 images. Upload each image with uploadMedia first and pass the ids it returns.
 
 **Arguments:**
 
 - `text` (string, **required**): Tweet text (max 280 characters)
+- `mediaIds` (array, *optional*): Up to 4 media ids from uploadMedia. Images do not consume characters.
 
 **Returns:**
 
@@ -66,6 +68,30 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"twitter","method":"postTweet","params":{"text":"<value>"}}' | jq .
+```
+
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
+
+### `uploadMedia`
+
+Upload one image to X and get back a media id for postTweet. Takes a public https URL — X is not sent the link, the bytes are fetched and uploaded. Max 5MB; JPEG, PNG, WebP or GIF. Requires the media.write scope: a connection authorized before image posting shipped must be reconnected first.
+
+**Arguments:**
+
+- `imageUrl` (string, **required**): Public https URL of the image to upload
+- `altText` (string, *optional*): Alt text describing the image, for people using a screen reader (max 1000 chars)
+
+**Returns:**
+
+`AdapterOperationResult`: Returns { mediaId: string } in result.data — pass it to postTweet as mediaIds: [mediaId]
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"twitter","method":"uploadMedia","params":{"imageUrl":"https://example.com"}}' | jq .
 ```
 
 > **Warning:** This is a destructive operation. Confirm with the user before executing.
