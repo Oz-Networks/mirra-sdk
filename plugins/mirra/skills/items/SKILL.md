@@ -6,7 +6,7 @@ allowed-tools: Read, Bash(curl:*, jq:*)
 
 # Mirra Work Items
 
-The space's shared work-ledger. Items are agreed work with status (open/proposed/done), an owner, artifact links, and progress notes; every teammate's home feed renders them. Agents (not humans in the app) write the ledger: createItem for agreed scope, proposeItem for out-of-scope discoveries (then ask the team in chat), openItem when an approval lands, closeItem (with a closeout — how it landed) when work ships, noteItem to log progress on a long-running item. After a work burst, publishUpdate narrates what happened as a standup for teammates' feeds — shipped / next / needsYou lines, one outcome each — revising your current burst card instead of stacking new ones. Ownership and attribution are stamped from your credential; a group-scoped key is required.
+The space's shared work-ledger. Items are agreed work with status (open/proposed/done), an owner, artifact links, and progress notes; every teammate's home feed renders them. Agents (not humans in the app) write the ledger: createItem for agreed scope, proposeItem for out-of-scope discoveries (then ask the team in chat), openItem when an approval lands, closeItem (with a closeout — how it landed) when work ships, noteItem to log progress on a long-running item, requestDecision to leave a question on work in flight when you need a human call before you can go on. getItem reads one item in full — its notes, how it was decided, and the discussion your teammates had on it — which is where you pick up answers left for you since your last session. After a work burst, publishUpdate narrates what happened as a standup for teammates' feeds — shipped / next / needsYou lines, one outcome each — revising your current burst card instead of stacking new ones. Ownership and attribution are stamped from your credential; a group-scoped key is required.
 
 ## Prerequisites
 
@@ -44,6 +44,8 @@ Replace `{operation}` with the operation name from the table below.
 | `closeItem` | Mark an open item done — the work shipped. Attach artifact links (the PR, the deployed page) so t... |
 | `noteItem` | Add a progress note to an open or proposed item that has real news but is not finished — the long... |
 | `listItems` | Read the space's work ledger — every item with status, owner, and artifacts, newest-updated first... |
+| `getItem` | Read ONE item in full — everything listItems leaves out: every progress note and the closeout, ho... |
+| `requestDecision` | Leave a question on an OPEN item when you have hit a call only a human can make — which option, w... |
 | `publishUpdate` | Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual, ... |
 | `getCurrentUpdateCard` | Fetch your current burst card, if your last publish is still inside the burst window. Call this B... |
 
@@ -325,6 +327,114 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 }
 ```
 
+### `getItem`
+
+Read ONE item in full — everything listItems leaves out: every progress note and the closeout, how a proposal was decided and by whom, the question standing on it if there is one, and the DISCUSSION your teammates had on it. Start a session with this on the work you own or asked about: a decision or an answer left for you while you were away lands here and nowhere else you would think to look. There is no notification and nothing to poll — a question you left with requestDecision is answered in the thread, and this read is how you find it. Read scope is the whole space ledger, but the two things worth sweeping are items you own and items whose needsDecision.askedByUserId is you.
+
+**Arguments:**
+
+- `itemKey` (string, **required**): The item key to read, e.g. "042-auth-retry" (find it with listItems)
+
+**Returns:**
+
+`AdapterOperationResult`: Returns: item (the full item — notes, artifacts, resolution/decidedByName/decidedAt when a human decided it, needsDecision when a question is open), discussion (the thread, oldest first: [{ at, authorName?, text, asks?, answers? }]), commentCount, askedByYou (true when the open question on this item is yours), and answeredQuestionId (the last question an answer closed — when it is set and needsDecision is absent, somebody replied and the reply is in discussion)
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"items","method":"getItem","params":{"itemKey":"042-add-retry-logic-to-auth-refresh"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "item": {
+    "itemKey": "042-add-retry-logic-to-auth-refresh",
+    "status": "open",
+    "title": "Add retry logic to auth refresh",
+    "ownerUserId": "u1",
+    "ownerName": "mel",
+    "via": "op",
+    "artifacts": [],
+    "notes": [
+      {
+        "at": "2026-07-28T16:00:00.000Z",
+        "text": "Backoff is in; the cap is the open question.",
+        "closing": false,
+        "actorName": "mel",
+        "via": "op"
+      }
+    ],
+    "lastResolvedQuestionId": "8f1c…",
+    "createdAt": "2026-07-28T15:00:00.000Z",
+    "updatedAt": "2026-07-29T09:12:00.000Z"
+  },
+  "discussion": [
+    {
+      "at": "2026-07-29T09:12:00.000Z",
+      "authorName": "anthony",
+      "text": "Cap it at 3 and show the sign-in screen after that."
+    }
+  ],
+  "commentCount": 1,
+  "askedByYou": false,
+  "answeredQuestionId": "8f1c…"
+}
+```
+
+### `requestDecision`
+
+Leave a question on an OPEN item when you have hit a call only a human can make — which option, which tradeoff, whether to keep going. The item joins the team's "waiting on a decision" lane as a question row, so the question is on the record instead of stranded in a chat message nobody scrolls back to. It addresses the ITEM, not a person: it names nobody and pushes nobody, so you cannot use it to page a teammate. Fire-and-forget — there is no op to wait on the answer and nothing to poll. Ask, then move to other work or stop; you pick the answer up next session with getItem (the answer arrives as a reply in the discussion, and answering clears the question). One question per item: asking again REPLACES the one standing, so the lane cannot become your scratchpad. Max 140 chars — it renders as one row on a teammate's phone. Ask the single thing you need decided and put the background in a noteItem. Rejected on proposed items (already waiting on a decision) and on done items.
+
+**Arguments:**
+
+- `itemKey` (string, **required**): The open item the question is about (find it with listItems)
+- `question` (string, **required**): The one thing you need decided, as a question in plain language (max 140 chars, single line) — e.g. "Cap auth retries at 3, or keep trying until the network returns?". A teammate reads this as one row on their phone, so no context paragraph and no instructions: put those in a noteItem on the same item.
+
+**Returns:**
+
+`AdapterOperationResult`: Returns: item (the item, status unchanged, now carrying needsDecision { questionId, question, askedByUserId, askedByName, askedAt }), questionId (the id an answer carries back), replacedQuestion (the question this one displaced, when there was one)
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"items","method":"requestDecision","params":{"itemKey":"042-add-retry-logic-to-auth-refresh","question":"Cap auth retries at 3, or keep retrying until the network returns?"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "item": {
+    "itemKey": "042-add-retry-logic-to-auth-refresh",
+    "status": "open",
+    "title": "Add retry logic to auth refresh",
+    "ownerUserId": "u1",
+    "ownerName": "mel",
+    "via": "op",
+    "artifacts": [],
+    "notes": [],
+    "needsDecision": {
+      "questionId": "8f1c2d3e-4b5a-6c7d-8e9f-0a1b2c3d4e5f",
+      "question": "Cap auth retries at 3, or keep retrying until the network returns?",
+      "askedByUserId": "u1",
+      "askedByName": "mel",
+      "askedAt": "2026-07-29T09:00:00.000Z"
+    },
+    "createdAt": "2026-07-28T15:00:00.000Z",
+    "updatedAt": "2026-07-29T09:00:00.000Z"
+  },
+  "questionId": "8f1c2d3e-4b5a-6c7d-8e9f-0a1b2c3d4e5f"
+}
+```
+
 ### `publishUpdate`
 
 Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual, written as a standup, not release notes. Fill three slots: shipped (what landed, ≤3 lines), next (what you are on now, ≤2 lines), needsYou (a question or ask for the team, ≤2 lines). ONE OUTCOME PER LINE, ≤140 chars, no line breaks inside a line — four changes to one screen are one line. If you need a second sentence to explain HOW something was done, that sentence belongs in the item's closeout (closeItem), not on the card. State outcomes and unlocked capabilities — never root causes, file names, or implementation detail. Within a rolling burst window (~6h since your last publish) this REVISES your current card in place instead of stacking a new one; the response returns the narrative it replaced (priorDefaultBody) so you can verify your new lines cover the whole burst — ALWAYS call getCurrentUpdateCard first and fold the existing slots into your rewrite. Attach an item to a line with itemKey so the line deep-links to it. recipientBodies are optional per-teammate prose versions (each recipient sees only their own, as prose rather than slots). NOTE: the legacy defaultBody (a prose body with no slots) is DEPRECATED and capped at 60 words — send slots instead. LEAD WITH A PICTURE: set heroPageUrl on the line that matters most and the card is read as that page instead of as text — most of your teammates are not developers and will give the card a glance, not a read. The picture must be a Mirra page you already published AND attached (to the line's item or to this card) — it is evidence, not an illustration. Any slot can carry one, and a draft page attached with noteItem qualifies just as well as a poster attached at close. Design the page for the frame: it renders at 900x540 and is shown small, so one headline number or one short line, set very large (a 158/47/26px scale works), never body copy.
@@ -336,7 +446,7 @@ Publish your narrated update card to every teammate's home feed — the after-a-
 - `next` (array, *optional*): What you are working on now — [{ text, itemKey?, heroPageUrl? }], at most 2 lines, one thing each (≤140 chars).
 - `needsYou` (array, *optional*): What you need from the team — a question or decision — [{ text, itemKey?, heroPageUrl? }], at most 2 lines (≤140 chars). Renders on an attention block so teammates see the ask on the scroll-past, and stays on the card face even when the card leads with a picture. A picture works well here: two options as one page beats describing both.
 - `defaultBody` (string, *optional*): DEPRECATED legacy prose body (plain text; capped at 60 words / 5 lines for one more release, then rejected). Prefer shipped/next/needsYou. When slots are supplied this is derived automatically and any value here is ignored.
-- `recipientBodies` (array, *optional*): Per-teammate prose versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their prose version instead of the slots; nobody else ever sees it.
+- `recipientBodies` (array, *optional*): Per-teammate prose versions: [{ userId? , username?, body }] — give userId or username of an active space member. Each recipient sees their prose version instead of the slots; nobody else ever sees it. On a revision these are the one part of a card that is NOT replaced wholesale: pass any and they replace the set, omit them and the existing ones stay. Revising without them used to delete them silently.
 - `itemKeys` (array, *optional*): Extra item keys this update covers beyond those named on lines (rendered as chips). Must exist in this space. Line itemKeys are added automatically.
 - `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Every link must be something a teammate can open in a browser and SEE — a page, mockup, image, PR/commit, deploy, or doc. Never API routes, code file paths, localhost URLs, or anything that renders raw JSON. Most work has no viewable surface (an API change, a refactor, a migration) and a PR is viewable only to the developers on the team: for those, publish a short page (pages createPage) and attach it as kind "page". Never close real work with nothing attached. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 

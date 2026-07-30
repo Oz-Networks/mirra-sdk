@@ -46,6 +46,8 @@ only write to spaces they belong to.
 | Moment | Do this | Details in |
 |---|---|---|
 | Session start in a linked repo | Read `.mirra/CONTEXT.md`; skim the ledger (`listItems`) so you know what the team is doing | `mirra:ledger` |
+| Session start, on your own work | **Check what got decided while you were gone** — items you own or questions you asked. Read the `## Waiting on a decision` / `## Recently decided` rollup in `.mirra/items/INDEX.md`, or `getItem` a specific one | `mirra:ledger` |
+| You are blocked mid-work on a call only a human can make | `requestDecision` on the OPEN item — one question, ≤140 chars. Then **carry on with something else and stop waiting**: the answer is a next-session pickup, never a poll | `mirra:ledger` |
 | Your human asks for something the team has a written procedure for | Load it and follow it instead of improvising — see **Team procedures** below | this skill |
 | You start team-agreed work | `createItem` — the ledger is the team's record of who is on what | `mirra:ledger` |
 | You ship something | `closeItem` with a `closeout` (how it landed) + artifacts (PR, page, deploy URL) — receipts, not claims. Detail goes on the item, not the card | `mirra:ledger` |

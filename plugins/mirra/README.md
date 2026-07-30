@@ -61,7 +61,7 @@ claimed that name.
 | [`/mirra:user`](./skills/user/) | User | 6 | No |
 | [`/mirra:video-generator`](./skills/video-generator/) | Video Generator | 5 | No |
 | [`/mirra:voice`](./skills/voice/) | Voice | 12 | No |
-| [`/mirra:items`](./skills/items/) | Work Items | 8 | No |
+| [`/mirra:items`](./skills/items/) | Work Items | 10 | No |
 | [`/mirra:workspace`](./skills/workspace/) | Workspace | 1 | No |
 
 ### Communication
@@ -134,7 +134,7 @@ Hand-authored orchestration skills (not tied to a single adapter):
 | [`/mirra:ledger`](./skills/ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), share drafts for comment while the work is still open, close what ships with a page a teammate can actually open, and publish ONE narrated update card per work burst — led by a picture, revised, never stacked. Rides the Mirra items adapter / MCP work-ledger tools. |
 | [`/mirra:mirra`](./skills/mirra/) | START HERE for anything Mirra. Load this whenever the repo you're working in has a .mirra/ directory (it's linked to a Mirra team space), or your human mentions their Mirra space, teammates' updates, the team ledger, or a procedure their team has written down. Directs the ambient team rituals — record work in the shared ledger, publish update cards, follow the team's own procedures, ask the space before expanding scope — and indexes every detail-level mirra-* skill. |
 
-**Total: 38 adapters, 434 operations, 3 collaboration skill(s)**
+**Total: 38 adapters, 436 operations, 3 collaboration skill(s)**
 
 ## How It Works
 

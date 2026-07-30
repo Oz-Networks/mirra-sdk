@@ -27,7 +27,9 @@ One line each. The sections below carry the detail.
    chat. Don't sit on it, don't start it. → *The proposal flow*
 3. **Approvals travel through humans.** Nothing watches chat for you. When the
    team says yes, the item's owner tells *their own* agent, and that agent
-   flips it with `openItem`, citing where the decision happened.
+   flips it with `openItem`, citing where the decision happened. A human can
+   also decide it directly in the app now, in which case it is already `open`
+   (or `done`, if they declined) before you next look. → *Pick up decisions*
 4. **Share drafts while they are still drafts.** A prototype, a mockup, two
    options to choose between: publish it as a page and attach it with
    `noteItem` while the item is open. → *Share a draft for comment*
@@ -51,6 +53,15 @@ One line each. The sections below carry the detail.
 11. **Lead with a picture.** A card with a picture gets looked at; a card
     without one gets scrolled past, however well it is written. →
     *Three jobs a page does*
+12. **Start by picking up what got decided.** Items you own — and questions you
+    asked, even on items you don't own — may have been decided or answered while
+    you were gone. Read the rollup at the top of `.mirra/items/INDEX.md`, or
+    `getItem` a specific one. → *Pick up decisions*
+13. **Ask on the record when you are blocked.** `requestDecision` puts ONE
+    question (≤140 chars) on the open item, where the team sees it in their
+    waiting lane. Then go and do something else: there is nothing to wait on and
+    nothing to poll, and the answer arrives in a later session. →
+    *Ask a question mid-work*
 
 ## Three jobs a page does
 
@@ -118,6 +129,8 @@ Three arguments are renamed there and nothing else changes: `artifacts` →
 | `noteItem` | Progress or a draft on open/proposed work; no status change. **The only op that attaches without closing** | `itemKey`, `note`, `artifacts?` |
 | `closeItem` | Work shipped: `open → done` | `itemKey`, `closeout?` (how it landed — write it!), `artifacts?` |
 | `listItems` | Read the ledger; find itemKeys | `status?` |
+| `getItem` | ONE item in full — notes, the decision, the open question, and the discussion thread | `itemKey` |
+| `requestDecision` | You are blocked on a human call mid-work (open items only) | `itemKey`, `question` (≤140 chars) |
 | `getCurrentUpdateCard` | ALWAYS before publishing | — |
 | `publishUpdate` | The burst standup | `headline?`, `shipped?`/`next?`/`needsYou?` (`[{ text, itemKey?, heroPageUrl? }]`), `recipientBodies?` (`[{ username \| userId, body }]`), `artifacts?` |
 
@@ -323,11 +336,76 @@ detail to the closeout — not to spread it across more lines.
 (Within a single run you may long-poll chat for a quick reply — the
 mirra:cowork pattern — but there is no standing listener.)
 
+A proposal can also be settled by a human tapping Approve or "Not doing it" in
+the app, without anyone relaying it to you. That is why rule 12 exists: the item
+may already be `open` — or `done` with `resolution: "declined"` — by the time you
+next look at it. `done` on its own does not mean shipped; check `resolution`.
+
+## Pick up decisions
+
+Start here when you return to a space. Two reads, cheapest first:
+
+```bash
+# 1. The rollup — one file, every item, no fan-out. In a linked repo:
+#    .mirra/items/INDEX.md → "## Waiting on a decision" and "## Recently decided"
+#    (also mirrored at /workspace/items/INDEX.md)
+
+# 2. The full record for one item — notes, the decision, any open question, and
+#    the discussion thread in one call.
+... -d '{ "resourceId": "items", "method": "getItem", "params": {
+      "itemKey": "043-rebuild-the-flaky-websocket-reconnect" } }'
+# → { status: "done", resolution: "declined", decidedBy: { name: "Merle" },
+#     decidedAt: "…", notes: [ … the reason they gave … ], discussion: [ … ] }
+```
+
+What to look for, and what it means:
+
+- `resolution: "approved"` → the item is `open`. It is yours to do now.
+- `resolution: "declined"` → the item is `done` and the work is NOT wanted. Do
+  not start it, and do not reopen it to "check" — the decider's reason is in
+  `notes`. Read it before proposing anything adjacent.
+- `needsDecision` absent on an item where you left a question → somebody
+  answered. The answer is a comment in the discussion thread.
+- `resolution` absent on a `done` item → it shipped the ordinary way.
+
+Scope is "items you own **or** questions you asked" — a question you left on
+someone else's item still comes back to you.
+
+## Ask a question mid-work
+
+For the call only a human can make, on work already agreed and in flight. Not
+for scope (that is a proposal) and not for anything you could decide yourself.
+
+```bash
+... -d '{ "resourceId": "items", "method": "requestDecision", "params": {
+      "itemKey": "042-add-retry-logic-to-auth-refresh",
+      "question": "Cap retries at 3 and fall back to sign-in, or keep trying with longer backoff?" } }'
+```
+
+The question joins the team's waiting lane as a row on the item. Then:
+
+- **Move on.** This is fire-and-forget by design. There is no op that waits for
+  the answer, no poll interval, and no doorbell — asking and then spinning is the
+  one wrong way to use it. Do other work, or end the session cleanly.
+- **One question per item.** A second `requestDecision` REPLACES the first, so
+  don't use it as a scratchpad. Ask the one thing that is actually blocking.
+- **≤140 chars**, because it renders as one row on a teammate's phone. Background
+  goes in a `noteItem`; the question is the question.
+- **It pages nobody.** No push, no named recipient — it addresses the item, not a
+  person. If something genuinely needs one human's attention now, that is your
+  human's job in chat, not yours.
+- If you are blocked so hard you cannot continue, say so in the space chat as
+  well (`mirra-messaging`) — the question is the durable record, chat is how a
+  person finds out today.
+
 ## Rules the server enforces (don't fight them)
 
 - Owner and actor are stamped from your credential — args can't override them.
 - Ledger writes need an active group membership; group scope is pinned server-side.
 - `openItem` only from `proposed`; `closeItem` only from `open` — anything else errors with the item's actual status.
+- `requestDecision` only on `open` items — a `proposed` item is already waiting on a decision, and a `done` one is finished.
+- Any status change CLEARS the decision and any open question. So an item declined, reopened by a git push, then genuinely shipped never still reads "declined" — and never claim a resolution you read before a transition you also saw.
+- You cannot decide on the team's behalf. There is no agent op that stamps a `resolution`; only a human in the app can, and a git push that flips `status:` stamps none (there is no decider to name). Frontmatter decision fields in `.mirra/items/*.md` are a read-only mirror — editing them is inert.
 - `noteItem` is rejected on `done` items — revising a closeout is a repo-side edit, not a new note.
 - Slot caps (`shipped` ≤3, `next` ≤2, `needsYou` ≤2; each line ≤140 chars, no inner newline) are enforced — over-cap rejects with a message pointing you at the closeout. Fold changes into outcomes; don't spread them across lines.
 - `itemKeys` on a card (and any `itemKey` on a line) must exist in the space; unknown keys error immediately.
