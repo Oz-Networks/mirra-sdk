@@ -1,15 +1,11 @@
 {
-  "version": "0.2.112",
-  "notes": "Mirra Desktop v0.2.112",
-  "pub_date": "2026-07-30T01:47:49.860Z",
+  "version": "0.2.113",
+  "notes": "Mirra Desktop v0.2.113",
+  "pub_date": "2026-07-30T03:27:16.623Z",
   "platforms": {
     "darwin-aarch64": {
-      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.112/Mirra.app.tar.gz",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFE1RzVHbkwzZ2x2ZHpicU1zWXRzWlhqMHE3VzhiNTg5Nk1waGxMNGVCcTFoWGlMZTBJTURuS0Q2bnJPKzFrVk56LzZzT1JEQ3F1a0I4cUY1bVYxbEFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1Mzc2MDU3CWZpbGU6TWlycmEuYXBwLnRhci5negorOGgvUlhiRTl6a0FmRXFDbk9KQVVJZm5KQ3FWODh6QzVEblpzQ3oyellReUJxakhDdlVlUHpFVnBDL2xxc3daaDg4cCs3MHFKcUhqdWlRSVdiMzhEUT09Cg=="
-    },
-    "windows-x86_64": {
-      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.112/Mirra_0.2.112_x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMGNMY0h6VUFHWXdkZmtIeUszWXk1WE5PNm1WaTljUEppQXRVYk9BS1JkRnpEb2lPeHlzRVVHUFRmazY0T21tUXNrRzlvR0MxdThVM2MxMExzbGRqdWd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1Mzc2Mjc2CWZpbGU6TWlycmFfMC4yLjExMl94NjQtc2V0dXAuZXhlCmwxTU1rYzYvRXU4dWRGR2lKTGJETEM2TFloeVJMWDVKL2VjTDNIY1AyS0NlRWZsTlM5djh4b05hTm9ZWFRuNTZ6L0dycWtpYlNJdEdqdnU1cC9haENnPT0K"
+      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.113/Mirra.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMFNZRzl0RXZwSjVxUlJOcVFPTWJvem95Umhpb2h4ZU5qUXIrWXBUbkJDcFhabkp4d3B6dm43RjA4ekdnUnhRRWFidHdYT0VNcytUaTgvcm9DcHowS0EwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg1MzgyMDE3CWZpbGU6TWlycmEuYXBwLnRhci5negoweGl3K1poQ3paSHhVZUJZYVUxdm9oSUJ6bzcwbGJ4NHdRNVQxakNFQjl3SWRSSHFHMmQydm4vSzlZZjVWcmw1YkZUbGdRMDFKcFdYSmRWRjFGdDJCUT09Cg=="
     }
   }
 }
