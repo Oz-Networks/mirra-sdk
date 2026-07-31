@@ -42,6 +42,7 @@ Replace `{operation}` with the operation name from the table below.
 | `createDraftSet` | File drafted copy for review, one draft per channel. Nothing is sent — a teammate edits, approves... |
 | `getDraftSet` | Read one draft set, including which drafts are queued for sending. Call this when you receive a c... |
 | `listPendingDraftSets` | Draft sets in this space still awaiting review or partially sent. Useful for a nightly reminder f... |
+| `claimDraftForDispatch` | Take exclusive ownership of one queued draft before you post it. Call this immediately before sen... |
 | `markDraftSent` | Record that you posted one draft. This also attaches the live post back to the update card it cam... |
 | `markDraftFailed` | Record that a post failed. Also writes the reason onto the channel itself, which is what surfaces... |
 
@@ -167,6 +168,37 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 }
 ```
 
+### `claimDraftForDispatch`
+
+Take exclusive ownership of one queued draft before you post it. Call this immediately before sending, and post ONLY when it returns claimed:true — a false means another dispatch run already has this draft, or somebody cancelled it, and posting anyway is how a space publishes the same announcement twice. Filtering on status:"queued" yourself is not enough: two runs can read that at the same moment and both post. This is a single atomic database claim, so exactly one caller wins.
+
+**Arguments:**
+
+- `setId` (string, **required**): The draft set id
+- `draftId` (string, **required**): draftId of the draft you are about to post
+- `dispatchToken` (string, *optional*): The draft's dispatchToken, exactly as getDraftSet returned it. Identifies this attempt — pass the same value to markDraftSent/markDraftFailed. Omit only when the draft has none
+
+**Returns:**
+
+`AdapterOperationResult`: Returns: claimed (post only if true), reason (why it was refused, when false)
+
+**Example:**
+
+```bash
+curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -d '{"resourceId":"channels","method":"claimDraftForDispatch","params":{"setId":"6a6600112233445566778899","draftId":"d-1","dispatchToken":"tok-1"}}' | jq .
+```
+
+**Example response:**
+
+```json
+{
+  "claimed": true
+}
+```
+
 ### `markDraftSent`
 
 Record that you posted one draft. This also attaches the live post back to the update card it came from, so the card later reads "shipped this, and here is where we said so". Deduped on url — a retried dispatch adds one link, not two.
@@ -176,6 +208,7 @@ Record that you posted one draft. This also attaches the live post back to the u
 - `setId` (string, **required**): The draft set id
 - `channelId` (string, **required**): Which channel was posted to
 - `sentUrl` (string, **required**): Permalink to the live post
+- `dispatchToken` (string, *optional*): The token you claimed this draft with. Rejected if the draft has since been taken back or sent again, which stops a run that hung from stamping "sent" over somebody's recovery
 
 **Returns:**
 
@@ -208,6 +241,7 @@ Record that a post failed. Also writes the reason onto the channel itself, which
 - `setId` (string, **required**): The draft set id
 - `channelId` (string, **required**): Which channel failed
 - `error` (string, **required**): What went wrong, in words a teammate can act on
+- `dispatchToken` (string, *optional*): The token you claimed this draft with. Rejected if the attempt has been superseded
 
 **Returns:**
 

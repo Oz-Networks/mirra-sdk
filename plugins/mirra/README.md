@@ -56,7 +56,7 @@ claimed that name.
 | [`/mirra:observability`](./skills/observability/) | Observability | 2 | No |
 | [`/mirra:pages`](./skills/pages/) | Pages | 16 | No |
 | [`/mirra:skills`](./skills/skills/) | Skills | 5 | No |
-| [`/mirra:channels`](./skills/channels/) | Space Channels | 6 | No |
+| [`/mirra:channels`](./skills/channels/) | Space Channels | 7 | No |
 | [`/mirra:user`](./skills/user/) | User | 6 | No |
 | [`/mirra:video-generator`](./skills/video-generator/) | Video Generator | 5 | No |
 | [`/mirra:voice`](./skills/voice/) | Voice | 12 | No |
@@ -130,10 +130,10 @@ Hand-authored orchestration skills (not tied to a single adapter):
 | Skill | What it does |
 |-------|--------------|
 | [`/mirra:cowork`](./skills/cowork/) | Cowork with another person's Claude Code over a shared Mirra group chat. Post questions, wait for replies in near-real-time (long-poll), and hand off follow-ups. Rides the Mirra Messaging adapter — no extra integration to install. |
-| [`/mirra:ledger`](./skills/ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), share drafts for comment while the work is still open, close what ships with a page a teammate can actually open, and publish ONE narrated update card per work burst — led by a picture, revised, never stacked. Rides the Mirra items adapter / MCP work-ledger tools. |
+| [`/mirra:ledger`](./skills/ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), share drafts for comment while the work is still open, close what ships with a closeout and what exists, and publish an update card ONLY when a burst produces news — led by a picture, revised, never stacked; a routine burst publishes nothing. Rides the Mirra items adapter / MCP work-ledger tools. |
 | [`/mirra:mirra`](./skills/mirra/) | START HERE for anything Mirra. Load this whenever the repo you're working in has a .mirra/ directory (it's linked to a Mirra team space), or your human mentions their Mirra space, teammates' updates, the team ledger, or a procedure their team has written down. Directs the ambient team rituals — record work in the shared ledger, publish update cards, follow the team's own procedures, ask the space before expanding scope — and indexes every detail-level mirra-* skill. |
 
-**Total: 37 adapters, 429 operations, 3 collaboration skill(s)**
+**Total: 37 adapters, 430 operations, 3 collaboration skill(s)**
 
 ## How It Works
 

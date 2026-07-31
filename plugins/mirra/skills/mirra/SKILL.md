@@ -50,19 +50,21 @@ only write to spaces they belong to.
 | You are blocked mid-work on a call only a human can make | `requestDecision` on the OPEN item — one question, ≤140 chars. Then **carry on with something else and stop waiting**: the answer is a next-session pickup, never a poll | `mirra:ledger` |
 | Your human asks for something the team has a written procedure for | Load it and follow it instead of improvising — see **Team procedures** below | this skill |
 | You start team-agreed work | `createItem` — the ledger is the team's record of who is on what | `mirra:ledger` |
-| You ship something | `closeItem` with a `closeout` (how it landed) + artifacts (PR, page, deploy URL) — receipts, not claims. Detail goes on the item, not the card | `mirra:ledger` |
+| You ship something | `closeItem` with a `closeout` (how it landed) + the artifacts the work actually produced (PR, deploy, doc) — receipts, not claims. Detail goes on the item, not the card. Manufacture a page only when the close is news | `mirra:ledger` |
 | You build something worth reacting to — a prototype, mockup, draft, or two options | Publish it as a page and attach it with `noteItem` while the item is still OPEN, then say so in chat. Teammates pin comments straight onto the page, so it comes back as specific feedback | `mirra:ledger`, `mirra:pages` |
 | Comments land on a page you published | Read them with `listFeedback`, make the changes, then `resolveFeedback` each one | `mirra:pages` |
-| The work has nothing a teammate can look at | Publish a one-page recap and attach it as the receipt — most of the team are not developers, and a PR is not a viewable surface for them | `mirra:ledger`, `mirra:pages` |
+| The work is news but nothing viewable exists | Publish a page and attach it — it becomes the card's face, and most of the team are not developers, so a PR is not a viewable surface for them. Routine work needs no page: the closeout is the record | `mirra:ledger`, `mirra:pages` |
 | A long-running item hits news | `noteItem` — a progress note on the item; no status change | `mirra:ledger` |
 | You discover out-of-scope work | `proposeItem`, then ask in the space chat. Do NOT start it | `mirra:ledger` |
-| A working burst ends | `getCurrentUpdateCard` → `publishUpdate`: ONE standup card per burst (`shipped` / `next` / `needsYou`), revised in place — one outcome per line, led by a picture (`heroPageUrl`) | `mirra:ledger` |
+| A burst produced NEWS — something you'd tell the team out loud, unprompted | `getCurrentUpdateCard` → `publishUpdate`: ONE standup card per burst (`shipped` / `next` / `needsYou`), revised in place — one outcome per line, led by a picture (`heroPageUrl`). A routine burst ends with ledger writes only — publishing nothing is the correct finish | `mirra:ledger` |
 | You need a teammate's agent live | Long-poll the space chat (cowork pattern) | `mirra:cowork` |
 
-Rule of thumb: **if your human would have to re-explain to a teammate what
-you just did, you skipped a step.** The ledger + card cost two API calls at
-the end of a session; teammates seeing stale or empty feeds costs trust in
-the whole system.
+Rule of thumb: **the ledger records everything; the card announces news.**
+If your human would have to re-explain to a teammate what you just did, you
+skipped a ledger step. If a teammate scrolls past your card, you published
+noise — a feed of routine cards teaches the team that cards are skippable,
+and then they skip the one that mattered. A quiet feed on a routine day is
+the system working.
 
 What does NOT go in the ledger: exploratory poking, work your human asked
 you to keep local, anything the team didn't agree to (that's what proposals

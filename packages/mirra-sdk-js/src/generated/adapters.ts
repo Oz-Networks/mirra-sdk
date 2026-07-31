@@ -155,15 +155,22 @@ export interface ChannelsCreateDraftSetArgs {
 export interface ChannelsGetDraftSetArgs {
   setId: string; // The draft set id (from the send event)
 }
+export interface ChannelsClaimDraftForDispatchArgs {
+  setId: string; // The draft set id
+  draftId: string; // draftId of the draft you are about to post
+  dispatchToken?: string; // The draft's dispatchToken, exactly as getDraftSet returned it. Identifies this attempt — pass the same value to markDraftSent/markDraftFailed. Omit only when the draft has none
+}
 export interface ChannelsMarkDraftSentArgs {
   setId: string; // The draft set id
   channelId: string; // Which channel was posted to
   sentUrl: string; // Permalink to the live post
+  dispatchToken?: string; // The token you claimed this draft with. Rejected if the draft has since been taken back or sent again, which stops a run that hung from stamping "sent" over somebody's recovery
 }
 export interface ChannelsMarkDraftFailedArgs {
   setId: string; // The draft set id
   channelId: string; // Which channel failed
   error: string; // What went wrong, in words a teammate can act on
+  dispatchToken?: string; // The token you claimed this draft with. Rejected if the attempt has been superseded
 }
 
 // Dashboards Adapter Types
@@ -2621,6 +2628,7 @@ export interface ChannelDraft {
   body: string; // The copy, as last edited by a teammate
   media: any; // Pictures to post with the body: [{ url, mimeType, width, height, alt }]. Empty array when the post is text only. The urls are public and durable — hand them straight to the send op
   status: string; // 'draft' | 'approved' | 'skipped' | 'queued' | 'sent' | 'failed' — post only what is 'queued'
+  dispatchToken?: string; // Identifies the current send attempt. Pass it to claimDraftForDispatch, then to markDraftSent/markDraftFailed. Absent on drafts queued before 2026-07-31
   sentUrl?: string; // Permalink, once posted
   error?: string; // Why the last attempt failed
 }
@@ -2641,6 +2649,13 @@ export interface ChannelsPendingSetsData {
 }
 
 export type ChannelsListPendingDraftSetsResult = AdapterResultBase<ChannelsPendingSetsData>;
+
+export interface ChannelsDispatchClaimData {
+  claimed: boolean; // True for exactly one caller. Post only when this is true
+  reason?: string; // Why it was refused: 'not_found' | 'not_queued' | 'already_claimed' | 'stale_token'
+}
+
+export type ChannelsClaimDraftForDispatchResult = AdapterResultBase<ChannelsDispatchClaimData>;
 
 export interface ChannelsDispatchResultData {
   setId: string; // The draft set
@@ -8099,10 +8114,26 @@ function createChannelsAdapter(sdk: MirraSDK) {
     },
 
     /**
+     * Take exclusive ownership of one queued draft before you post it. Call this immediately before sending, and post ONLY when it returns claimed:true — a false means another dispatch run already has this draft, or somebody cancelled it, and posting anyway is how a space publishes the same announcement twice. Filtering on status:"queued" yourself is not enough: two runs can read that at the same moment and both post. This is a single atomic database claim, so exactly one caller wins.
+     * @param args.setId - The draft set id
+     * @param args.draftId - draftId of the draft you are about to post
+     * @param args.dispatchToken - The draft's dispatchToken, exactly as getDraftSet returned it. Identifies this attempt — pass the same value to markDraftSent/markDraftFailed. Omit only when the draft has none (optional)
+     * @returns Promise<ChannelsDispatchClaimData> Typed flat response with IDE autocomplete
+     */
+    claimDraftForDispatch: async (args: ChannelsClaimDraftForDispatchArgs): Promise<ChannelsDispatchClaimData> => {
+      return sdk.resources.callDirect({
+        resourceId: 'channels',
+        method: 'claimDraftForDispatch',
+        params: args || {}
+      });
+    },
+
+    /**
      * Record that you posted one draft. This also attaches the live post back to the update card it came from, so the card later reads "shipped this, and here is where we said so". Deduped on url — a retried dispatch adds one link, not two.
      * @param args.setId - The draft set id
      * @param args.channelId - Which channel was posted to
      * @param args.sentUrl - Permalink to the live post
+     * @param args.dispatchToken - The token you claimed this draft with. Rejected if the draft has since been taken back or sent again, which stops a run that hung from stamping "sent" over somebody's recovery (optional)
      * @returns Promise<ChannelsDispatchResultData> Typed flat response with IDE autocomplete
      */
     markDraftSent: async (args: ChannelsMarkDraftSentArgs): Promise<ChannelsDispatchResultData> => {
@@ -8118,6 +8149,7 @@ function createChannelsAdapter(sdk: MirraSDK) {
      * @param args.setId - The draft set id
      * @param args.channelId - Which channel failed
      * @param args.error - What went wrong, in words a teammate can act on
+     * @param args.dispatchToken - The token you claimed this draft with. Rejected if the attempt has been superseded (optional)
      * @returns Promise<ChannelsDispatchResultData> Typed flat response with IDE autocomplete
      */
     markDraftFailed: async (args: ChannelsMarkDraftFailedArgs): Promise<ChannelsDispatchResultData> => {

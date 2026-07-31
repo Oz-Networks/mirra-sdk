@@ -1,6 +1,6 @@
 ---
 name: ledger
-description: "The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), share drafts for comment while the work is still open, close what ships with a page a teammate can actually open, and publish ONE narrated update card per work burst — led by a picture, revised, never stacked. Rides the Mirra items adapter / MCP work-ledger tools."
+description: "The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), share drafts for comment while the work is still open, close what ships with a closeout and what exists, and publish an update card ONLY when a burst produces news — led by a picture, revised, never stacked; a routine burst publishes nothing. Rides the Mirra items adapter / MCP work-ledger tools."
 allowed-tools: Read, Write, Bash(curl:*, jq:*)
 ---
 
@@ -12,9 +12,10 @@ feed renders it. Humans never edit the ledger in the app — **agents write it**
 one per teammate, through canonical ops. Your writes are attributed to your
 human via your credential; you cannot write as anyone else.
 
-The companion surface is the **update card**: after a burst of work you publish
-a short narrative FOR your teammates' feeds. One card per burst — revised in
-place as the burst continues, never stacked.
+The companion surface is the **update card**: when a burst of work produces
+news, you publish a short narrative FOR your teammates' feeds. One card per
+burst — revised in place as the burst continues, never stacked — and none at
+all when the burst was routine. → *What makes a card*
 
 ## The contract
 
@@ -35,21 +36,27 @@ One line each. The sections below carry the detail.
    `noteItem` while the item is open. → *Share a draft for comment*
 5. **Note real news on long-running work.** Same op, different job — a deal
    moving stages, a multi-week build hitting a milestone. No status change.
-6. **Close what ships, with receipts AND a closeout.** `closeItem` with
-   artifacts and the short "how it actually landed" paragraph. →
+6. **Close what ships, with a closeout and what exists.** `closeItem` with
+   the short "how it actually landed" paragraph plus the artifacts the work
+   actually produced — the PR, the doc, the dashboard itself. →
    *Close with a closeout*
-7. **Attach only what a person can open — and make one when there isn't one.**
-   Most work has no viewable surface, so publish a page and attach that. Never
-   close real work with nothing attached. → *Three jobs a page does*
+7. **Attach only what a person can open — and manufacture a page only for
+   news.** A page's one job is to be looked at, so build one only when the
+   close is going on a card, or when you are sharing a draft for comment.
+   A routine close needs no page. → *Three jobs a page does*
 8. **Name things for humans.** Titles render on teammates' phones: "The fix, on
    GitHub", never `fix(auth): …`, a commit hash, a raw URL, or a timestamp. The
    `itemKey` slug is machine identity and is never shown to people.
-9. **Publish the burst, revise the card.** `getCurrentUpdateCard` → rewrite ONE
-   standup covering the whole burst (old + new) → `publishUpdate`. Twenty
-   sessions in an afternoon should read as one card that kept getting better.
-10. **The card is a standup, not release notes.** One OUTCOME per line. If you
-    need a second sentence to explain HOW, it belongs in the closeout. →
-    *The publish ritual*
+9. **Publish news, not bursts.** A card exists only when the burst produced
+   something you would say to the team out loud, unprompted. When it did:
+   `getCurrentUpdateCard` → rewrite ONE standup covering the whole burst
+   (old + new) → `publishUpdate`, revised in place, never stacked. When it
+   didn't: your ledger writes are the finish — publish nothing. →
+   *What makes a card*
+10. **The card is a standup, not release notes.** One OUTCOME per line, and
+    every line must be news on its own — the slot caps are ceilings, not
+    quotas. If you need a second sentence to explain HOW, it belongs in the
+    closeout. → *The publish ritual*
 11. **Lead with a picture.** A card with a picture gets looked at; a card
     without one gets scrolled past, however well it is written. →
     *Three jobs a page does*
@@ -63,6 +70,49 @@ One line each. The sections below carry the detail.
     nothing to poll, and the answer arrives in a later session. →
     *Ask a question mid-work*
 
+## What makes a card
+
+The card is the team's attention channel, and attention is spent by volume: a
+feed of routine cards teaches teammates that cards are skippable, and then they
+skip the one that mattered. The ledger already records everything — closeouts,
+notes, artifacts, the repo mirror — so the card adds nothing by repeating it.
+The card exists to say the few things a teammate should not have to go looking
+for.
+
+**The bar: would you say it to the team out loud, unprompted, if you were all
+in one room?** If you would only say it when someone asked "what did you do
+today?", it is a closeout, not a card.
+
+What clears the bar:
+
+- Something finished that a teammate should now look at, use, or respond to —
+  a project ready for review, materials prepped for a client.
+- The world changed the team's state — a part arrived and work is unblocked, a
+  client scheduled, a deal moved stages.
+- A milestone you would genuinely announce.
+
+What does not: optimizations, refactors, fixes, polish (closeout only);
+progress that changes nobody's plans (`noteItem`); operational routine — a
+call happened, a deploy ran — which is recorded elsewhere already. A quiet day
+on the feed is the system working, not a gap: "what did they do yesterday?" is
+a question the ledger answers.
+
+Once a card exists, every line still has to clear the bar on its own. Routine
+closes do not ride along as filler — a news line drowns in its own card. And
+`next` earns its line only when what you are doing next *changed* in a way
+that affects someone; "still working on X" is pulse, and the ledger is the
+pulse.
+
+> **This overturns the previous trigger, in writing.** An earlier version of
+> this skill fired the card on cadence — "a working burst ends → publish ONE
+> standup card" — and warned that teammates seeing stale or empty feeds costs
+> trust in the whole system. Overturned 2026-07-31: that rule filled the feed
+> with routine and trained teammates to skip cards, which is the more
+> expensive way to lose trust. The burst machinery (one card, revised in
+> place, never stacked) is unchanged — it governs how a card behaves when
+> news happens, not whether one is owed. Do not reintroduce the per-burst
+> trigger or the empty-feed warning without overturning this paragraph.
+
 ## Three jobs a page does
 
 A page turns up in three different moments. They run together easily, because
@@ -72,7 +122,7 @@ two of them produce the same thing — a URL you attach — and the third one
 | Job | When | The page is | How |
 |---|---|---|---|
 | **Draft** | the moment the thing exists | the thing itself — the prototype, the mockup, the two options | `noteItem` + `artifacts`; the item stays open |
-| **Receipt** | the work landed | evidence that invisible work happened — usually a poster | `closeItem` + `artifacts` |
+| **Receipt** | the work landed AND it is news | evidence that invisible work happened — usually a poster | `closeItem` + `artifacts` |
 | **Picture** | you publish the card | whichever attached page should be the card's face | `heroPageUrl` on a line |
 
 The third is a **role, not a kind of page**. Any page already attached can play
@@ -83,9 +133,15 @@ to be one you already published and attached — to that line's item, or to the
 card's own `artifacts` — because a picture of work is evidence, not decoration.
 The server checks.
 
-And skip the page entirely when there is nothing to show. A one-line config fix
-or a docs tweak just needs its PR. The rule is rule 7 — close nothing real with
-nothing attached — not "make a page every time".
+And most closes need no page at all. **Attach what exists; manufacture
+nothing**: a routine close carries its closeout and whatever the work already
+produced — the PR, the doc, the dashboard itself. You build a page only when
+the close is news (it is going on a card, and the page is its face) or when
+you are sharing a draft for comment. Making work *easy to view* is only worth
+doing for work that *ought to be viewed* — for everything else the closeout is
+the record, and that is rule 7 now, not "make a page every time". (The old
+form of rule 7 — "never close real work with nothing attached" — is overturned
+with the cadence trigger; see *What makes a card*.)
 
 ## Two ways to call
 
@@ -211,6 +267,9 @@ add the receipt alongside it.
 
 ## Make the receipt (the poster)
 
+**Only for a close that is news** — a close going on a card. A routine close
+takes no poster; its closeout is the record. When the close does clear the bar:
+
 **Do this while you are closing the item, not while you are publishing the
 card.** By publish time the burst is over and there is nothing to make a page
 out of but the sentence you just wrote. The page belongs to the *outcome*, so it
@@ -276,6 +335,11 @@ hide it from the library. The test is not "did this lead a card" — it is
 ## The publish ritual, end to end
 
 ```bash
+# 0. The bar, before anything: did this burst produce news — something you
+#    would say to the team out loud, unprompted? If not, STOP. Your ledger
+#    writes are the finish, and publishing nothing is the correct finish.
+#    → What makes a card
+
 # 1. What did this burst touch?
 ... -d '{ "resourceId": "items", "method": "listItems", "params": { "status": "open" } }'
 
