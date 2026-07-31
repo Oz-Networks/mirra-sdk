@@ -193,8 +193,10 @@ what people can react to, and feedback collected after shipping is not feedback.
 outstanding, `resolveFeedback` once you have actually made a change:
 
 ```bash
-curl -sS -X POST "$MIRRA_API/api/sdk/execute" -H "Authorization: Bearer $MIRRA_TOKEN" \
-  -H "X-Scope: group" -H "X-Group-Id: $GROUP_ID" -H 'Content-Type: application/json' \
+curl -s -X POST "${API_URL:-https://api.fxn.world}/api/sdk/v2/resources/call" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${API_KEY}" \
+  -H "X-Scope: group" -H "X-Group-Id: ${MIRRA_GROUP_ID}" \
   -d '{ "resourceId": "pages", "method": "listFeedback", "params": { "path": "/checkout-v2" } }'
 ```
 
