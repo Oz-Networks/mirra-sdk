@@ -12,14 +12,6 @@
       "source": "./plugins/mirra",
       "category": "productivity",
       "homepage": "https://docs.getmirra.app"
-    },
-    {
-      "name": "mirra-cc-bridge",
-      "version": "1.6.0",
-      "description": "Bridge Claude Code to Mirra Messenger - control coding sessions from your phone via text and voice",
-      "source": "./packages/mirra-cc-bridge",
-      "category": "productivity",
-      "homepage": "https://docs.getmirra.app/claude-code"
     }
   ]
 }
