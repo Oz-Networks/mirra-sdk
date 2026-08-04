@@ -35,10 +35,11 @@ One line each. The sections below carry the detail.
    options to choose between: publish it as a page and attach it with
    `noteItem` while the item is open. → *Share a draft for comment*
 5. **Note real news on long-running work.** Same op, different job — a deal
-   moving stages, a multi-week build hitting a milestone. No status change.
+   moving stages, a multi-week build hitting a milestone. 1–3 sentences, no
+   status change.
 6. **Close what ships, with a closeout and what exists.** `closeItem` with
-   the short "how it actually landed" paragraph plus the artifacts the work
-   actually produced — the PR, the doc, the dashboard itself. →
+   the 2–4 sentence "how it actually landed" closeout plus the artifacts the
+   work actually produced — the PR, the doc, the dashboard itself. →
    *Close with a closeout*
 7. **Attach only what a person can open — and manufacture a page only for
    news.** A page's one job is to be looked at, so build one only when the
@@ -69,6 +70,10 @@ One line each. The sections below carry the detail.
     waiting lane. Then go and do something else: there is nothing to wait on and
     nothing to poll, and the answer arrives in a later session. →
     *Ask a question mid-work*
+14. **Write state, not history.** Everything you write here — closeouts, notes,
+    CONTEXT.md, skills — records how things are now. When something changes,
+    replace the old text; the story of the change lives in git, not in the
+    document. → *Write state, not history*
 
 ## What makes a card
 
@@ -103,15 +108,8 @@ closes do not ride along as filler — a news line drowns in its own card. And
 that affects someone; "still working on X" is pulse, and the ledger is the
 pulse.
 
-> **This overturns the previous trigger, in writing.** An earlier version of
-> this skill fired the card on cadence — "a working burst ends → publish ONE
-> standup card" — and warned that teammates seeing stale or empty feeds costs
-> trust in the whole system. Overturned 2026-07-31: that rule filled the feed
-> with routine and trained teammates to skip cards, which is the more
-> expensive way to lose trust. The burst machinery (one card, revised in
-> place, never stacked) is unchanged — it governs how a card behaves when
-> news happens, not whether one is owed. Do not reintroduce the per-burst
-> trigger or the empty-feed warning without overturning this paragraph.
+> An earlier per-burst trigger ("a burst ends → publish a card") was removed
+> deliberately — it filled the feed with routine. Don't reintroduce it.
 
 ## Three jobs a page does
 
@@ -139,9 +137,7 @@ produced — the PR, the doc, the dashboard itself. You build a page only when
 the close is news (it is going on a card, and the page is its face) or when
 you are sharing a draft for comment. Making work *easy to view* is only worth
 doing for work that *ought to be viewed* — for everything else the closeout is
-the record, and that is rule 7 now, not "make a page every time". (The old
-form of rule 7 — "never close real work with nothing attached" — is overturned
-with the cadence trigger; see *What makes a card*.)
+the record.
 
 ## Two ways to call
 
@@ -184,8 +180,8 @@ Three arguments are renamed there and nothing else changes: `artifacts` →
 | `openItem` | Approval relayed to you: `proposed → open` | `itemKey`, `source?` (where approved) |
 | `noteItem` | Progress or a draft on open/proposed work; no status change. **The only op that attaches without closing** | `itemKey`, `note`, `artifacts?` |
 | `closeItem` | Work shipped: `open → done` | `itemKey`, `closeout?` (how it landed — write it!), `artifacts?` |
-| `listItems` | Read the ledger; find itemKeys | `status?` |
-| `getItem` | ONE item in full — notes, the decision, the open question, and the discussion thread | `itemKey` |
+| `listItems` | Read the live ledger — open + proposed + the last 14 days of done (`status: "done"` reads the full history) | `status?`, `doneWithinDays?` |
+| `getItem` | ONE item in full — the decision, the open question, and the discussion thread. On a done item the closeout stands in for the notes (`allNotes: true` for the lot) | `itemKey`, `allNotes?` |
 | `requestDecision` | You are blocked on a human call mid-work (open items only) | `itemKey`, `question` (≤140 chars) |
 | `getCurrentUpdateCard` | ALWAYS before publishing | — |
 | `publishUpdate` | The burst standup | `headline?`, `shipped?`/`next?`/`needsYou?` (`[{ text, itemKey?, heroPageUrl? }]`), `recipientBodies?` (`[{ username \| userId, body }]`), `artifacts?` |
@@ -204,7 +200,10 @@ still attached when you close the item.
 ## Close with a closeout
 
 The detail that used to bloat the card goes here, on the item — rendered in its
-detail view and exported to the repo:
+detail view and exported to the repo. **2–4 sentences**: what changed, any
+caveat, what to watch. Once the item is done the closeout supersedes the
+progress notes — reads return it alone — so it must stand on its own, and it is
+a record, not an essay:
 
 ```bash
 ... -d '{ "resourceId": "items", "method": "closeItem", "params": {
@@ -213,6 +212,22 @@ detail view and exported to the repo:
       "artifacts": [{ "kind": "pr", "url": "https://github.com/acme/app/pull/118", "title": "The fix, on GitHub" }]
     } }'
 ```
+
+## Write state, not history
+
+The ledger's documents — closeouts, notes, CONTEXT.md, the skills a space
+shares — describe how things are **now**. Git already keeps the history, so a
+document that narrates its own past pays for the same information twice, in
+every context that loads it.
+
+- When something changes, **replace** the old text. Don't append the new rule
+  under the old one, and don't leave a paragraph explaining what the text used
+  to say or why it moved — that story is the commit message.
+- Fewer words, same facts. If a sentence can come out without a fact coming
+  out, it comes out.
+- One exception: when a removed rule is something a future agent would
+  plausibly re-add, leave a single line — "X was removed deliberately; don't
+  reintroduce it." Never a paragraph of provenance.
 
 ## Share a draft for comment
 

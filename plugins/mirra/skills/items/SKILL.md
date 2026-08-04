@@ -43,7 +43,7 @@ Replace `{operation}` with the operation name from the table below.
 | `openItem` | Flip a proposed item to open — the team approved it (decided on a call or in chat, relayed to you... |
 | `closeItem` | Mark an open item done — the work shipped. Attach artifact links (the PR, the deployed page) so t... |
 | `noteItem` | Add a progress note to an open or proposed item that has real news but is not finished — the long... |
-| `listItems` | Read the space's work ledger — every item with status, owner, and artifacts, newest-updated first... |
+| `listItems` | Read the space's live work ledger — every open and proposed item, plus items closed in the last 1... |
 | `getItem` | Read ONE item in full — everything listItems leaves out: every progress note and the closeout, ho... |
 | `requestDecision` | Leave a question on an OPEN item when you have hit a call only a human can make — which option, w... |
 | `publishUpdate` | Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual, ... |
@@ -184,7 +184,7 @@ Mark an open item done — the work shipped. Attach artifact links (the PR, the 
 **Arguments:**
 
 - `itemKey` (string, **required**): The item key of the finished work (find it with listItems)
-- `closeout` (string, *optional*): How the work actually landed — a short paragraph (max 4000 chars, newlines fine): what changed, any caveat, what to watch. This is the release-note detail; it belongs here on the item, never on the home card. Plain language a teammate can read.
+- `closeout` (string, *optional*): How the work actually landed — 2 to 4 sentences: what changed, any caveat, what to watch. It supersedes the progress notes, so it must stand alone, and shorter is better — a closeout is a record, not an essay. Plain language a teammate can read; it belongs here on the item, never on the home card.
 - `source` (string, *optional*): Optional provenance note if the item is missing one
 - `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Every link must be something a teammate can open in a browser and SEE — a page, mockup, image, PR/commit, deploy, or doc. Never API routes, code file paths, localhost URLs, or anything that renders raw JSON. Most work has no viewable surface (an API change, a refactor, a migration) and a PR is viewable only to the developers on the team: for those, publish a short page (pages createPage) and attach it as kind "page". Never close real work with nothing attached. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 
@@ -242,7 +242,7 @@ Add a progress note to an open or proposed item that has real news but is not fi
 **Arguments:**
 
 - `itemKey` (string, **required**): The item key to note (find it with listItems)
-- `note` (string, **required**): The progress note — what advanced, in plain language (max 4000 chars, newlines fine). Not a status change; just news worth recording on the item.
+- `note` (string, **required**): The progress note — what advanced, in 1 to 3 plain-language sentences. Notes are superseded by the closeout when the item closes, so record the news, not the journey. Not a status change.
 - `artifacts` (array, *optional*): Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Every link must be something a teammate can open in a browser and SEE — a page, mockup, image, PR/commit, deploy, or doc. Never API routes, code file paths, localhost URLs, or anything that renders raw JSON. Most work has no viewable surface (an API change, a refactor, a migration) and a PR is viewable only to the developers on the team: for those, publish a short page (pages createPage) and attach it as kind "page". Never close real work with nothing attached. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 
 **Returns:**
@@ -287,15 +287,16 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `listItems`
 
-Read the space's work ledger — every item with status, owner, and artifacts, newest-updated first. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
+Read the space's live work ledger — every open and proposed item, plus items closed in the last 14 days, newest-updated first. Older done items are still the record but stay out of the default read; `doneOmitted` says how many there are, and `status: "done"` returns all of them. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
 
 **Arguments:**
 
-- `status` (string, *optional*): Filter to one status: "open", "proposed", or "done" (default: all)
+- `status` (string, *optional*): Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" returns the full history
+- `doneWithinDays` (number, *optional*): When listing without a status: how many days of done items to include (default 14; 0 = no window). Live items are always included
 
 **Returns:**
 
-`AdapterOperationResult`: Returns: items (array of { itemKey, status, title, ownerUserId, ownerName, source, via, artifacts, doneAt, createdAt, updatedAt }), count
+`AdapterOperationResult`: Returns: items (array of { itemKey, status, title, ownerUserId, ownerName, source, via, artifacts, doneAt, createdAt, updatedAt }), count, and on windowed listings doneWindowDays + doneOmitted (how many older done items were left out)
 
 **Example:**
 
@@ -334,10 +335,11 @@ Read ONE item in full — everything listItems leaves out: every progress note a
 **Arguments:**
 
 - `itemKey` (string, **required**): The item key to read, e.g. "042-auth-retry" (find it with listItems)
+- `allNotes` (boolean, *optional*): On a done item the closeout supersedes the progress notes, so they are left out by default (progressNotesElided says how many). Pass true to read the full note history
 
 **Returns:**
 
-`AdapterOperationResult`: Returns: item (the full item — notes, artifacts, resolution/decidedByName/decidedAt when a human decided it, needsDecision when a question is open), discussion (the thread, oldest first: [{ at, authorName?, text, asks?, answers? }]), commentCount, askedByYou (true when the open question on this item is yours), and answeredQuestionId (the last question an answer closed — when it is set and needsDecision is absent, somebody replied and the reply is in discussion)
+`AdapterOperationResult`: Returns: item (the full item — notes, artifacts, resolution/decidedByName/decidedAt when a human decided it, needsDecision when a question is open; on a done item notes carry only the closeout unless allNotes is passed), discussion (the thread, oldest first: [{ at, authorName?, text, asks?, answers? }]), commentCount, askedByYou (true when the open question on this item is yours), answeredQuestionId (the last question an answer closed — when it is set and needsDecision is absent, somebody replied and the reply is in discussion), and progressNotesElided (how many superseded notes a done read left out)
 
 **Example:**
 

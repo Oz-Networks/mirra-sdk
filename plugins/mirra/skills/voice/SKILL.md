@@ -377,7 +377,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `scheduleMeeting`
 
-Schedule a Mirra meeting ahead of time (Google Meet style). Returns a stable share link immediately; reminders fire automatically 10 minutes before and at start. Supports recurrence. The meeting appears on the calendar and in the space.
+Schedule a Mirra meeting ahead of time (Google Meet style). Returns a stable share link immediately; reminders fire automatically (an early reminder reminderMinutes before, default 10, plus one at start). Supports recurrence. The meeting appears on the calendar and in the space.
 
 **Arguments:**
 
@@ -387,6 +387,7 @@ Schedule a Mirra meeting ahead of time (Google Meet style). Returns a stable sha
 - `durationMinutes` (number, *optional*): Length in minutes, 15 to 480. Default 30.
 - `timezone` (string, **required**): IANA timezone the meeting is scheduled in (recurrence follows this wall clock), e.g. "America/New_York".
 - `recurrence` (string, *optional*): One of "none", "daily", "weekly", "monthly". Default "none".
+- `reminderMinutes` (number, *optional*): Early-reminder lead time in minutes before start, 0 to 10080. 0 disables the early reminder (the "starting now" one still fires). Default 10.
 
 **Returns:**
 
@@ -460,6 +461,7 @@ Create a native calendar event (a plain entry: title, time, optional repeat and 
 - `timezone` (string, **required**): IANA timezone, e.g. "America/New_York".
 - `recurrence` (string, *optional*): One of "none", "daily", "weekly", "monthly". Default "none".
 - `notes` (string, *optional*): Optional notes, up to 2000 characters.
+- `reminderMinutes` (number, *optional*): Early-reminder lead time in minutes before start, 0 to 10080. 0 disables the early reminder. Default 10.
 
 **Returns:**
 
@@ -502,6 +504,7 @@ Update a native calendar event the user owns. Only pass the fields being changed
 - `timezone` (string, *optional*): New IANA timezone.
 - `recurrence` (string, *optional*): One of "none", "daily", "weekly", "monthly".
 - `notes` (string, *optional*): New notes.
+- `reminderMinutes` (number, *optional*): New early-reminder lead in minutes before start, 0 to 10080. 0 disables the early reminder.
 
 **Returns:**
 

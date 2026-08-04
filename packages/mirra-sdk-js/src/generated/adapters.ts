@@ -800,20 +800,22 @@ export interface ItemsOpenItemArgs {
 }
 export interface ItemsCloseItemArgs {
   itemKey: string; // The item key of the finished work (find it with listItems)
-  closeout?: string; // How the work actually landed — a short paragraph (max 4000 chars, newlines fine): what changed, any caveat, what to watch. This is the release-note detail; it belongs here on the item, never on the home card. Plain language a teammate can read.
+  closeout?: string; // How the work actually landed — 2 to 4 sentences: what changed, any caveat, what to watch. It supersedes the progress notes, so it must stand alone, and shorter is better — a closeout is a record, not an essay. Plain language a teammate can read; it belongs here on the item, never on the home card.
   source?: string; // Optional provenance note if the item is missing one
   artifacts?: any[]; // Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Every link must be something a teammate can open in a browser and SEE — a page, mockup, image, PR/commit, deploy, or doc. Never API routes, code file paths, localhost URLs, or anything that renders raw JSON. Most work has no viewable surface (an API change, a refactor, a migration) and a PR is viewable only to the developers on the team: for those, publish a short page (pages createPage) and attach it as kind "page". Never close real work with nothing attached. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 }
 export interface ItemsNoteItemArgs {
   itemKey: string; // The item key to note (find it with listItems)
-  note: string; // The progress note — what advanced, in plain language (max 4000 chars, newlines fine). Not a status change; just news worth recording on the item.
+  note: string; // The progress note — what advanced, in 1 to 3 plain-language sentences. Notes are superseded by the closeout when the item closes, so record the news, not the journey. Not a status change.
   artifacts?: any[]; // Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Every link must be something a teammate can open in a browser and SEE — a page, mockup, image, PR/commit, deploy, or doc. Never API routes, code file paths, localhost URLs, or anything that renders raw JSON. Most work has no viewable surface (an API change, a refactor, a migration) and a PR is viewable only to the developers on the team: for those, publish a short page (pages createPage) and attach it as kind "page". Never close real work with nothing attached. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 }
 export interface ItemsListItemsArgs {
-  status?: string; // Filter to one status: "open", "proposed", or "done" (default: all)
+  status?: string; // Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" returns the full history
+  doneWithinDays?: number; // When listing without a status: how many days of done items to include (default 14; 0 = no window). Live items are always included
 }
 export interface ItemsGetItemArgs {
   itemKey: string; // The item key to read, e.g. "042-auth-retry" (find it with listItems)
+  allNotes?: boolean; // On a done item the closeout supersedes the progress notes, so they are left out by default (progressNotesElided says how many). Pass true to read the full note history
 }
 export interface ItemsRequestDecisionArgs {
   itemKey: string; // The open item the question is about (find it with listItems)
@@ -1919,6 +1921,7 @@ export interface VoiceScheduleMeetingArgs {
   durationMinutes?: number; // Length in minutes, 15 to 480. Default 30.
   timezone: string; // IANA timezone the meeting is scheduled in (recurrence follows this wall clock), e.g. "America/New_York".
   recurrence?: string; // One of "none", "daily", "weekly", "monthly". Default "none".
+  reminderMinutes?: number; // Early-reminder lead time in minutes before start, 0 to 10080. 0 disables the early reminder (the "starting now" one still fires). Default 10.
 }
 export interface VoiceCancelScheduledMeetingArgs {
   uuid: string; // The meeting's public uuid (10 characters, from getCalendar or the share link).
@@ -1932,6 +1935,7 @@ export interface VoiceCreateCalendarEventArgs {
   timezone: string; // IANA timezone, e.g. "America/New_York".
   recurrence?: string; // One of "none", "daily", "weekly", "monthly". Default "none".
   notes?: string; // Optional notes, up to 2000 characters.
+  reminderMinutes?: number; // Early-reminder lead time in minutes before start, 0 to 10080. 0 disables the early reminder. Default 10.
 }
 export interface VoiceUpdateCalendarEventArgs {
   eventId: string; // The event id from getCalendar.
@@ -1942,6 +1946,7 @@ export interface VoiceUpdateCalendarEventArgs {
   timezone?: string; // New IANA timezone.
   recurrence?: string; // One of "none", "daily", "weekly", "monthly".
   notes?: string; // New notes.
+  reminderMinutes?: number; // New early-reminder lead in minutes before start, 0 to 10080. 0 disables the early reminder.
 }
 export interface VoiceDeleteCalendarEventArgs {
   eventId: string; // The event id from getCalendar.
@@ -10041,7 +10046,7 @@ function createItemsAdapter(sdk: MirraSDK) {
     /**
      * Mark an open item done — the work shipped. Attach artifact links (the PR, the deployed page) so the team can see what was produced, and write a closeout: the short "how it actually landed" paragraph that used to bloat update cards. The closeout lives on the item (rendered in its detail view, exported to the repo), NOT on the home card — so the release-note detail has a home and the card stays a one-line standup. Strongly encouraged; skipping it leaves a thinner record. Errors if the item is not currently open.
      * @param args.itemKey - The item key of the finished work (find it with listItems)
-     * @param args.closeout - How the work actually landed — a short paragraph (max 4000 chars, newlines fine): what changed, any caveat, what to watch. This is the release-note detail; it belongs here on the item, never on the home card. Plain language a teammate can read. (optional)
+     * @param args.closeout - How the work actually landed — 2 to 4 sentences: what changed, any caveat, what to watch. It supersedes the progress notes, so it must stand alone, and shorter is better — a closeout is a record, not an essay. Plain language a teammate can read; it belongs here on the item, never on the home card. (optional)
      * @param args.source - Optional provenance note if the item is missing one (optional)
      * @param args.artifacts - Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Every link must be something a teammate can open in a browser and SEE — a page, mockup, image, PR/commit, deploy, or doc. Never API routes, code file paths, localhost URLs, or anything that renders raw JSON. Most work has no viewable surface (an API change, a refactor, a migration) and a PR is viewable only to the developers on the team: for those, publish a short page (pages createPage) and attach it as kind "page". Never close real work with nothing attached. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps. (optional)
      * @returns Promise<ItemsCloseData> Typed flat response with IDE autocomplete
@@ -10057,7 +10062,7 @@ function createItemsAdapter(sdk: MirraSDK) {
     /**
      * Add a progress note to an open or proposed item that has real news but is not finished — the long-running case (a months-long prospecting item, a multi-week build), and the review case: you built a prototype, mockup or draft and want the team to react before it ships. Pass artifacts to attach it — publish it as a page first (pages createPage) so teammates can pin comments straight onto it, then read those comments back with pages listFeedback. This is the ONLY way to attach something to an item without closing it. The note lands on the item (shown in its detail view, exported to the repo), never on the home card. Does NOT change status. Rejected on done items — a note after the fact is a closeout revision, which is a repo-side edit. To finish work, use closeItem with a closeout instead.
      * @param args.itemKey - The item key to note (find it with listItems)
-     * @param args.note - The progress note — what advanced, in plain language (max 4000 chars, newlines fine). Not a status change; just news worth recording on the item.
+     * @param args.note - The progress note — what advanced, in 1 to 3 plain-language sentences. Notes are superseded by the closeout when the item closes, so record the news, not the journey. Not a status change.
      * @param args.artifacts - Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Every link must be something a teammate can open in a browser and SEE — a page, mockup, image, PR/commit, deploy, or doc. Never API routes, code file paths, localhost URLs, or anything that renders raw JSON. Most work has no viewable surface (an API change, a refactor, a migration) and a PR is viewable only to the developers on the team: for those, publish a short page (pages createPage) and attach it as kind "page". Never close real work with nothing attached. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps. (optional)
      * @returns Promise<ItemsNoteData> Typed flat response with IDE autocomplete
      */
@@ -10070,8 +10075,9 @@ function createItemsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Read the space's work ledger — every item with status, owner, and artifacts, newest-updated first. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
-     * @param args.status - Filter to one status: "open", "proposed", or "done" (default: all) (optional)
+     * Read the space's live work ledger — every open and proposed item, plus items closed in the last 14 days, newest-updated first. Older done items are still the record but stay out of the default read; `doneOmitted` says how many there are, and `status: "done"` returns all of them. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
+     * @param args.status - Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" returns the full history (optional)
+     * @param args.doneWithinDays - When listing without a status: how many days of done items to include (default 14; 0 = no window). Live items are always included (optional)
      * @returns Promise<ItemsListData> Typed flat response with IDE autocomplete
      */
     listItems: async (args: ItemsListItemsArgs): Promise<ItemsListData> => {
@@ -10085,6 +10091,7 @@ function createItemsAdapter(sdk: MirraSDK) {
     /**
      * Read ONE item in full — everything listItems leaves out: every progress note and the closeout, how a proposal was decided and by whom, the question standing on it if there is one, and the DISCUSSION your teammates had on it. Start a session with this on the work you own or asked about: a decision or an answer left for you while you were away lands here and nowhere else you would think to look. There is no notification and nothing to poll — a question you left with requestDecision is answered in the thread, and this read is how you find it. Read scope is the whole space ledger, but the two things worth sweeping are items you own and items whose needsDecision.askedByUserId is you.
      * @param args.itemKey - The item key to read, e.g. "042-auth-retry" (find it with listItems)
+     * @param args.allNotes - On a done item the closeout supersedes the progress notes, so they are left out by default (progressNotesElided says how many). Pass true to read the full note history (optional)
      * @returns Promise<ItemsGetItemData> Typed flat response with IDE autocomplete
      */
     getItem: async (args: ItemsGetItemArgs): Promise<ItemsGetItemData> => {
@@ -13342,13 +13349,14 @@ function createVoiceAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Schedule a Mirra meeting ahead of time (Google Meet style). Returns a stable share link immediately; reminders fire automatically 10 minutes before and at start. Supports recurrence. The meeting appears on the calendar and in the space.
+     * Schedule a Mirra meeting ahead of time (Google Meet style). Returns a stable share link immediately; reminders fire automatically (an early reminder reminderMinutes before, default 10, plus one at start). Supports recurrence. The meeting appears on the calendar and in the space.
      * @param args.title - Meeting title. Defaults to "Mirra Meeting". (optional)
      * @param args.groupId - Space to attach the meeting to. Omit for a personal meeting. (optional)
      * @param args.startAt - First occurrence, ISO date, must be in the future.
      * @param args.durationMinutes - Length in minutes, 15 to 480. Default 30. (optional)
      * @param args.timezone - IANA timezone the meeting is scheduled in (recurrence follows this wall clock), e.g. "America/New_York".
      * @param args.recurrence - One of "none", "daily", "weekly", "monthly". Default "none". (optional)
+     * @param args.reminderMinutes - Early-reminder lead time in minutes before start, 0 to 10080. 0 disables the early reminder (the "starting now" one still fires). Default 10. (optional)
      */
     scheduleMeeting: async (args: VoiceScheduleMeetingArgs): Promise<any> => {
       return sdk.resources.callDirect({
@@ -13380,6 +13388,7 @@ function createVoiceAdapter(sdk: MirraSDK) {
      * @param args.timezone - IANA timezone, e.g. "America/New_York".
      * @param args.recurrence - One of "none", "daily", "weekly", "monthly". Default "none". (optional)
      * @param args.notes - Optional notes, up to 2000 characters. (optional)
+     * @param args.reminderMinutes - Early-reminder lead time in minutes before start, 0 to 10080. 0 disables the early reminder. Default 10. (optional)
      */
     createCalendarEvent: async (args: VoiceCreateCalendarEventArgs): Promise<any> => {
       return sdk.resources.callDirect({
@@ -13399,6 +13408,7 @@ function createVoiceAdapter(sdk: MirraSDK) {
      * @param args.timezone - New IANA timezone. (optional)
      * @param args.recurrence - One of "none", "daily", "weekly", "monthly". (optional)
      * @param args.notes - New notes. (optional)
+     * @param args.reminderMinutes - New early-reminder lead in minutes before start, 0 to 10080. 0 disables the early reminder. (optional)
      */
     updateCalendarEvent: async (args: VoiceUpdateCalendarEventArgs): Promise<any> => {
       return sdk.resources.callDirect({
