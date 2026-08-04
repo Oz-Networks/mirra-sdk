@@ -811,7 +811,7 @@ export interface ItemsNoteItemArgs {
 }
 export interface ItemsListItemsArgs {
   status?: string; // Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" returns the full history
-  doneWithinDays?: number; // When listing without a status: how many days of done items to include (default 14; 0 = no window). Live items are always included
+  doneWithinDays?: number; // When listing without a status: how many days of done items to include (default 7; 0 = no window). Live items are always included
 }
 export interface ItemsGetItemArgs {
   itemKey: string; // The item key to read, e.g. "042-auth-retry" (find it with listItems)
@@ -10075,9 +10075,9 @@ function createItemsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Read the space's live work ledger — every open and proposed item, plus items closed in the last 14 days, newest-updated first. Older done items are still the record but stay out of the default read; `doneOmitted` says how many there are, and `status: "done"` returns all of them. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
+     * Read the space's live work ledger — every open and proposed item, plus items closed in the last 7 days, newest-updated first. Older done items are still the record but stay out of the default read; `doneOmitted` says how many there are, and `status: "done"` returns all of them. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
      * @param args.status - Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" returns the full history (optional)
-     * @param args.doneWithinDays - When listing without a status: how many days of done items to include (default 14; 0 = no window). Live items are always included (optional)
+     * @param args.doneWithinDays - When listing without a status: how many days of done items to include (default 7; 0 = no window). Live items are always included (optional)
      * @returns Promise<ItemsListData> Typed flat response with IDE autocomplete
      */
     listItems: async (args: ItemsListItemsArgs): Promise<ItemsListData> => {

@@ -43,7 +43,7 @@ Replace `{operation}` with the operation name from the table below.
 | `openItem` | Flip a proposed item to open — the team approved it (decided on a call or in chat, relayed to you... |
 | `closeItem` | Mark an open item done — the work shipped. Attach artifact links (the PR, the deployed page) so t... |
 | `noteItem` | Add a progress note to an open or proposed item that has real news but is not finished — the long... |
-| `listItems` | Read the space's live work ledger — every open and proposed item, plus items closed in the last 1... |
+| `listItems` | Read the space's live work ledger — every open and proposed item, plus items closed in the last 7... |
 | `getItem` | Read ONE item in full — everything listItems leaves out: every progress note and the closeout, ho... |
 | `requestDecision` | Leave a question on an OPEN item when you have hit a call only a human can make — which option, w... |
 | `publishUpdate` | Publish your narrated update card to every teammate's home feed — the after-a-work-burst ritual, ... |
@@ -287,12 +287,12 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `listItems`
 
-Read the space's live work ledger — every open and proposed item, plus items closed in the last 14 days, newest-updated first. Older done items are still the record but stay out of the default read; `doneOmitted` says how many there are, and `status: "done"` returns all of them. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
+Read the space's live work ledger — every open and proposed item, plus items closed in the last 7 days, newest-updated first. Older done items are still the record but stay out of the default read; `doneOmitted` says how many there are, and `status: "done"` returns all of them. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
 
 **Arguments:**
 
 - `status` (string, *optional*): Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" returns the full history
-- `doneWithinDays` (number, *optional*): When listing without a status: how many days of done items to include (default 14; 0 = no window). Live items are always included
+- `doneWithinDays` (number, *optional*): When listing without a status: how many days of done items to include (default 7; 0 = no window). Live items are always included
 
 **Returns:**
 
