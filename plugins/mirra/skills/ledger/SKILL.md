@@ -180,7 +180,7 @@ Three arguments are renamed there and nothing else changes: `artifacts` →
 | `openItem` | Approval relayed to you: `proposed → open` | `itemKey`, `source?` (where approved) |
 | `noteItem` | Progress or a draft on open/proposed work; no status change. **The only op that attaches without closing** | `itemKey`, `note`, `artifacts?` |
 | `closeItem` | Work shipped: `open → done` | `itemKey`, `closeout?` (how it landed — write it!), `artifacts?` |
-| `listItems` | Read the live ledger — open + proposed + the last 7 days of done (`status: "done"` reads the full history) | `status?`, `doneWithinDays?` |
+| `listItems` | Read the live ledger — open + proposed + the last 7 days of done, live work first (`status: "done"` reads the history). 30 rows, then it says what it left out | `status?`, `limit?`, `doneWithinDays?` |
 | `getItem` | ONE item in full — the decision, the open question, and the discussion thread. On a done item the closeout stands in for the notes (`allNotes: true` for the lot) | `itemKey`, `allNotes?` |
 | `requestDecision` | You are blocked on a human call mid-work (open items only) | `itemKey`, `question` (≤140 chars) |
 | `getCurrentUpdateCard` | ALWAYS before publishing | — |
@@ -189,6 +189,13 @@ Three arguments are renamed there and nothing else changes: `artifacts` →
 Slot caps: `shipped` ≤3, `next` ≤2, `needsYou` ≤2; each line ≤140 chars, one
 outcome, no line break inside it. (`defaultBody` is a deprecated legacy prose
 body — prefer slots.)
+
+**Read narrowly.** A listing is a cost every later turn of your session pays,
+and the ledger only grows — spaces are already past 100 items. Ask the question
+you actually have: `status: "open"` for what is in flight, `getItem` for one
+item, `status: "done"` only when you want history. Listings return 30 rows and
+tell you when there were more; raise `limit` (max 200) only then. Never read
+the whole ledger to find one key.
 
 Artifacts everywhere are `[{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]`.
 Every one must be something a teammate can open in a browser and *see*: a page,

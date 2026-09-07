@@ -287,16 +287,17 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `listItems`
 
-Read the space's live work ledger — every open and proposed item, plus items closed in the last 7 days, newest-updated first. Older done items are still the record but stay out of the default read; `doneOmitted` says how many there are, and `status: "done"` returns all of them. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
+Read the space's live work ledger — every open and proposed item, plus items closed in the last 7 days. Live work comes first, newest-updated within each group. ASK NARROWLY: a listing is a cost every later turn of your session pays, and the ledger only grows, so read the question you actually have — `status: "open"` for what is in flight, getItem for one item, `status: "done"` only when you want history. Listings return at most 30 rows and say what they left out (`omitted`); `limit` goes up to 200. Older done items are still the record but stay out of the default read; `doneOmitted` says how many there are, and `status: "done"` reads them. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
 
 **Arguments:**
 
-- `status` (string, *optional*): Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" returns the full history
+- `status` (string, *optional*): Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" reaches the full history (still capped by limit)
+- `limit` (number, *optional*): Rows to return (default 30, max 200). Raise it only when a listing told you it omitted something you need
 - `doneWithinDays` (number, *optional*): When listing without a status: how many days of done items to include (default 7; 0 = no window). Live items are always included
 
 **Returns:**
 
-`AdapterOperationResult`: Returns: items (array of { itemKey, status, title, ownerUserId, ownerName, source, via, artifacts, doneAt, createdAt, updatedAt }), count, and on windowed listings doneWindowDays + doneOmitted (how many older done items were left out)
+`AdapterOperationResult`: Returns: items (array of { itemKey, status, title, ownerUserId, ownerName, source, via, artifacts, doneAt, createdAt, updatedAt }), count, total (how many matched before the row cap), omitted + limit when the cap left rows out, and on windowed listings doneWindowDays + doneOmitted (how many older done items were left out)
 
 **Example:**
 
@@ -324,7 +325,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
       "updatedAt": "2026-07-23T18:00:00.000Z"
     }
   ],
-  "count": 1
+  "count": 1,
+  "total": 1
 }
 ```
 

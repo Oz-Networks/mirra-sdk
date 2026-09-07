@@ -810,7 +810,8 @@ export interface ItemsNoteItemArgs {
   artifacts?: any[]; // Artifact links to attach: [{ kind: "pr"|"page"|"deploy"|"doc"|"image"|"url", url, title? }]. Every link must be something a teammate can open in a browser and SEE — a page, mockup, image, PR/commit, deploy, or doc. Never API routes, code file paths, localhost URLs, or anything that renders raw JSON. Most work has no viewable surface (an API change, a refactor, a migration) and a PR is viewable only to the developers on the team: for those, publish a short page (pages createPage) and attach it as kind "page". Never close real work with nothing attached. Always set title, in plain language a teammate recognizes at a glance ("The fix, on GitHub", "Live on production") — never commit hashes, conventional-commit prefixes, raw URLs, or timestamps.
 }
 export interface ItemsListItemsArgs {
-  status?: string; // Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" returns the full history
+  status?: string; // Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" reaches the full history (still capped by limit)
+  limit?: number; // Rows to return (default 30, max 200). Raise it only when a listing told you it omitted something you need
   doneWithinDays?: number; // When listing without a status: how many days of done items to include (default 7; 0 = no window). Live items are always included
 }
 export interface ItemsGetItemArgs {
@@ -3868,8 +3869,13 @@ export interface ItemsNoteData {
 export type ItemsNoteItemResult = AdapterResultBase<ItemsNoteData>;
 
 export interface ItemsListData {
-  items: any; // Ledger items, newest-updated first
-  count: number; // Number of items returned
+  items: any; // Ledger items — live work first on a mixed listing, newest-updated within each group
+  count: number; // Number of items returned (never more than limit)
+  total: number; // How many items matched this filter before the row cap
+  omitted?: number; // Rows the cap left out — present only when it bit. Narrow with status, or raise limit (max 200)
+  limit?: number; // The row cap this listing applied — present only when it left something out
+  doneWindowDays?: number; // On a default (no-status) listing: how many days of done items it reached back for
+  doneOmitted?: number; // Done items older than that window. The record keeps them; status: "done" reads them
 }
 
 export type ItemsListItemsResult = AdapterResultBase<ItemsListData>;
@@ -10075,8 +10081,9 @@ function createItemsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Read the space's live work ledger — every open and proposed item, plus items closed in the last 7 days, newest-updated first. Older done items are still the record but stay out of the default read; `doneOmitted` says how many there are, and `status: "done"` returns all of them. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
-     * @param args.status - Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" returns the full history (optional)
+     * Read the space's live work ledger — every open and proposed item, plus items closed in the last 7 days. Live work comes first, newest-updated within each group. ASK NARROWLY: a listing is a cost every later turn of your session pays, and the ledger only grows, so read the question you actually have — `status: "open"` for what is in flight, getItem for one item, `status: "done"` only when you want history. Listings return at most 30 rows and say what they left out (`omitted`); `limit` goes up to 200. Older done items are still the record but stay out of the default read; `doneOmitted` says how many there are, and `status: "done"` reads them. Use it to find item keys before openItem/closeItem, to see what is open before starting work, and to gather item keys for publishUpdate.
+     * @param args.status - Filter to one status: "open", "proposed", or "done". An explicit status is unwindowed — "done" reaches the full history (still capped by limit) (optional)
+     * @param args.limit - Rows to return (default 30, max 200). Raise it only when a listing told you it omitted something you need (optional)
      * @param args.doneWithinDays - When listing without a status: how many days of done items to include (default 7; 0 = no window). Live items are always included (optional)
      * @returns Promise<ItemsListData> Typed flat response with IDE autocomplete
      */
