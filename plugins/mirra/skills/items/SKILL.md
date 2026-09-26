@@ -255,7 +255,7 @@ Add a progress note to an open or proposed item that has real news but is not fi
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"items","method":"noteItem","params":{"itemKey":"010-land-the-nextcom-pilot","note":"Second demo went well — their ops lead is now the champion. Waiting on procurement to greenlight a paid pilot; expect an answer next week."}}' | jq .
+  -d '{"resourceId":"items","method":"noteItem","params":{"itemKey":"010-win-the-globex-pilot","note":"Second demo went well — their ops lead is now the champion. Waiting on procurement to greenlight a paid pilot; expect an answer next week."}}' | jq .
 ```
 
 **Example response:**
@@ -263,9 +263,9 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 ```json
 {
   "item": {
-    "itemKey": "010-land-the-nextcom-pilot",
+    "itemKey": "010-win-the-globex-pilot",
     "status": "open",
-    "title": "Land the NextCom pilot",
+    "title": "Win the Globex pilot",
     "ownerUserId": "u1",
     "ownerName": "mel",
     "via": "op",
