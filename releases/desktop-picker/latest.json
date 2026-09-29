@@ -1,0 +1,11 @@
+{
+  "version": "0.2.135",
+  "notes": "Mirra Selfhost v0.2.135",
+  "pub_date": "2026-09-29T19:32:33.639Z",
+  "platforms": {
+    "darwin-aarch64": {
+      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/selfhost-v0.2.135/Mirra-Selfhost.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURjl2Yi81cVUvUlNMK0ZXdzhjSDU1VkRCUkJ3ejZ6WlBkUVJRZGN2NFo2aG9WRFhQRmE2YW1GVE9GdWg0MHh0akRITnNqQ0N1MCtUSkFMcFlFaFU5dTN0UkRWS1g1ZVEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNzEwMzQxCWZpbGU6TWlycmEgU2VsZmhvc3QuYXBwLnRhci5nego5UnBwbHVLSlNpVlYrZDJMVmcyOUlPRzlQeFo2OXp2NHRZU3c1STNCY1FmZDZvclM5THpvZno1RnI4bzk2Um1tWGlza3d5VVBRNjFHdXhEcFU0V2lBZz09Cg=="
+    }
+  }
+}
