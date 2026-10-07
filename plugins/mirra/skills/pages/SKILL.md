@@ -560,7 +560,7 @@ Close a page comment once you have acted on it, so it stops coming back from lis
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"pages","method":"resolveFeedback","params":{"feedbackId":"6a6a3e8876d577eaae1c3d3c"}}' | jq .
+  -d '{"resourceId":"pages","method":"resolveFeedback","params":{"feedbackId":"650000000000000000000a06"}}' | jq .
 ```
 
 ## Response Format

@@ -100,7 +100,7 @@ MIT License - see individual package LICENSE files for details.
 This repository is automatically synced from our main monorepo. For contributions:
 1. Visit https://docs.getmirra.app
 2. Open an issue or discussion
-3. Contact: support@getmirra.app
+3. Contact: support@oznetworks.xyz
 
 ---
 

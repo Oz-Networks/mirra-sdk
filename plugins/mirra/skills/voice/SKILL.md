@@ -90,7 +90,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "calls": [
     {
       "id": "6789abc",
-      "agoraCallId": "call_1750459861273_qbhg8we",
+      "agoraCallId": "call_1750000000000_testcal",
       "scope": "group",
       "status": "ended",
       "createdAt": "2025-06-01T10:00:00Z",
@@ -122,7 +122,7 @@ Get full metadata and participant list for a specific call. Use the call's agora
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"voice","method":"getCallDetails","params":{"callId":"call_1750459861273_qbhg8we"}}' | jq .
+  -d '{"resourceId":"voice","method":"getCallDetails","params":{"callId":"call_1750000000000_testcal"}}' | jq .
 ```
 
 **Example response:**
@@ -130,7 +130,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 ```json
 {
   "id": "6789abc",
-  "agoraCallId": "call_1750459861273_qbhg8we",
+  "agoraCallId": "call_1750000000000_testcal",
   "scope": "group",
   "status": "ended",
   "createdAt": "2025-06-01T10:00:00Z",
@@ -173,14 +173,14 @@ Get transcript segments for a voice call. Each segment contains the speaker, tex
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"voice","method":"getCallTranscript","params":{"callId":"call_1750459861273_qbhg8we","limit":10}}' | jq .
+  -d '{"resourceId":"voice","method":"getCallTranscript","params":{"callId":"call_1750000000000_testcal","limit":10}}' | jq .
 ```
 
 **Example response:**
 
 ```json
 {
-  "callId": "call_1750459861273_qbhg8we",
+  "callId": "call_1750000000000_testcal",
   "count": 2,
   "offset": 0,
   "limit": 10,
@@ -222,14 +222,14 @@ Get a human-readable formatted transcript summary for a voice call. Returns spea
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"voice","method":"getCallSummary","params":{"callId":"call_1750459861273_qbhg8we"}}' | jq .
+  -d '{"resourceId":"voice","method":"getCallSummary","params":{"callId":"call_1750000000000_testcal"}}' | jq .
 ```
 
 **Example response:**
 
 ```json
 {
-  "callId": "call_1750459861273_qbhg8we",
+  "callId": "call_1750000000000_testcal",
   "summary": "alice: Hey, let's discuss the Q2 roadmap.\nbob: Sure, I think we should prioritize mobile performance.\nalice: Agreed. Let's also look at the onboarding flow.",
   "characterCount": 158
 }
@@ -269,7 +269,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "results": [
     {
       "segmentId": "seg_001",
-      "callId": "call_1750459861273_qbhg8we",
+      "callId": "call_1750000000000_testcal",
       "speakerUsername": "alice",
       "text": "Hey, let's discuss the Q2 roadmap.",
       "startMs": 1200,
@@ -309,7 +309,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "hasActiveCall": true,
   "call": {
     "id": "6789abc",
-    "agoraCallId": "call_1750459861273_qbhg8we",
+    "agoraCallId": "call_1750000000000_testcal",
     "scope": "group",
     "status": "active",
     "createdAt": "2025-06-01T11:30:00Z",

@@ -101,7 +101,7 @@ File drafted copy for review, one draft per channel. Nothing is sent — a teamm
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"channels","method":"createDraftSet","params":{"sourceCardId":"6a64b5923657f98c84d1531c","drafts":[{"channelId":"ch_1","channelType":"twitter","channelLabel":"@fxn","body":"Spaces can now hold their own credentials."}]}}' | jq .
+  -d '{"resourceId":"channels","method":"createDraftSet","params":{"sourceCardId":"650000000000000000000a05","drafts":[{"channelId":"ch_1","channelType":"twitter","channelLabel":"@fxn","body":"Spaces can now hold their own credentials."}]}}' | jq .
 ```
 
 **Example response:**

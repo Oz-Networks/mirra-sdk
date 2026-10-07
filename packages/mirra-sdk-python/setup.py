@@ -7,7 +7,7 @@ setup(
     name="mirra-sdk",
     version="0.1.0",
     author="Mirra",
-    author_email="support@getmirra.app",
+    author_email="support@oznetworks.xyz",
     description="Official Python SDK for the Mirra API",
     long_description=long_description,
     long_description_content_type="text/markdown",
