@@ -381,8 +381,8 @@ export interface FeedbackSubmitFeatureRequestArgs {
 
 // GitHub Adapter Types
 export interface GithubLinkRepoArgs {
-  owner: string; // Repository owner (org or user), e.g. "Oz-Networks"
-  repo: string; // Repository name, e.g. "fxn-monorepo"
+  owner: string; // Repository owner (org or user), e.g. "acme"
+  repo: string; // Repository name, e.g. "app"
   basePath?: string; // Directory all Mirra writes are confined to (default ".mirra"). No leading slash, no "..".
   promptFiles?: any[]; // Repo paths injected into the group's system prompt (default ["{basePath}/CONTEXT.md"], max 5)
 }
@@ -8810,8 +8810,8 @@ function createGithubAdapter(sdk: MirraSDK) {
   return {
     /**
      * Link a GitHub repository to this group (group admin only). The repo becomes the group's shared ground truth: Mirra auto-commits call notes and decisions under basePath (default ".mirra/") and injects promptFiles (default ".mirra/CONTEXT.md") into the group's AI context. Requires the Mirra GitHub App to be installed on the repo's owner — if it isn't, this returns linked: false with an installUrl to complete installation first (the URL expires in ~30 minutes; re-call linkRepo after installing). On success, seeds an opinionated scaffold (README, CONTEXT.md, calls/, decisions/, chats/) and appends a "Mirra shared context" section to the repo's root CLAUDE.md so every teammate's Claude Code learns the conventions.
-     * @param args.owner - Repository owner (org or user), e.g. "Oz-Networks"
-     * @param args.repo - Repository name, e.g. "fxn-monorepo"
+     * @param args.owner - Repository owner (org or user), e.g. "acme"
+     * @param args.repo - Repository name, e.g. "app"
      * @param args.basePath - Directory all Mirra writes are confined to (default ".mirra"). No leading slash, no "..". (optional)
      * @param args.promptFiles - Repo paths injected into the group's system prompt (default ["{basePath}/CONTEXT.md"], max 5) (optional)
      * @returns Promise<GithubLinkRepoData> Typed flat response with IDE autocomplete
