@@ -182,7 +182,7 @@ Search your contacts by username, email, phone, or wallet address
 curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "Content-Type: application/json" \
   -H "x-api-key: ${API_KEY}" \
-  -d '{"resourceId":"contacts","method":"searchContacts","params":{"query":"heather"}}' | jq .
+  -d '{"resourceId":"contacts","method":"searchContacts","params":{"query":"rebecca"}}' | jq .
 ```
 
 **Example response:**
@@ -193,15 +193,15 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   "results": [
     {
       "contactId": "507f1f77bcf86cd799439011",
-      "username": "heather_smith",
+      "username": "rebecca_smith",
       "profilePhoto": null,
-      "email": "heather@example.com",
+      "email": "rebecca@example.com",
       "phoneNumber": null,
       "wallets": []
     }
   ],
   "count": 1,
-  "query": "heather",
+  "query": "rebecca",
   "searchType": "all"
 }
 ```

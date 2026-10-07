@@ -442,7 +442,7 @@ Start here when you return to a space. Two reads, cheapest first:
 #    the discussion thread in one call.
 ... -d '{ "resourceId": "items", "method": "getItem", "params": {
       "itemKey": "043-rebuild-the-flaky-websocket-reconnect" } }'
-# → { status: "done", resolution: "declined", decidedBy: { name: "Merle" },
+# → { status: "done", resolution: "declined", decidedBy: { name: "Nadia" },
 #     decidedAt: "…", notes: [ … the reason they gave … ], discussion: [ … ] }
 ```
 
