@@ -11290,7 +11290,7 @@ function createScriptsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get details of a specific script. Returns flat normalized structure.
+     * Get details of a script you may use: your own, a system script, a published public one, or one you installed. Returns flat normalized structure; lambdaFunctionName, lambdaArn and the run figures (totalExecutions, totalCost, avgDuration, errorRate, lastExecutedAt) are empty or zero unless you own the script. A script you may not use answers as not found.
      * @param args.scriptId - ID of the script
      * @returns Promise<ScriptGetData> Typed flat response with IDE autocomplete
      */
@@ -11315,7 +11315,7 @@ function createScriptsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get execution history for a script. Returns flat execution summaries.
+     * Get execution history for a script you may use. The owner sees every run; anyone else sees the runs they ran or were billed for. Returns flat execution summaries.
      * @param args.scriptId - ID of the script
      * @param args.status - Filter by status (completed, failed, running) (optional)
      * @param args.limit - Maximum number of executions to return (default: 100) (optional)
@@ -11330,7 +11330,7 @@ function createScriptsAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Get details of a specific execution. Returns flat execution structure.
+     * Get details of an execution you ran, were billed for, or that ran your script. Returns flat execution structure. Any other execution answers as not found.
      * @param args.executionId - ID of the execution
      * @returns Promise<ScriptExecutionData> Typed flat response with IDE autocomplete
      */

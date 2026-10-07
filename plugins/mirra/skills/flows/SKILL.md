@@ -185,7 +185,7 @@ Get a specific flow by ID. Returns normalized flat structure. Use includeScript=
 
 **Returns:**
 
-`NormalizedFlow`: Returns FLAT flow object with: id, title, description, status, scope, userId, triggerType, cronExpression, timezone, eventFilter, scriptId, scriptInstallationId, scriptInput, scriptInputSchema, executionCount, lastExecutedAt, createdAt, updatedAt, version, feedItemId, isActive, isTimeBased, isEventBased. No nested trigger object. When includeScript=true, also includes scriptCode.
+`NormalizedFlow`: Returns FLAT flow object with: id, title, description, status, scope, userId, triggerType, cronExpression, timezone, eventFilter, scriptId, scriptInstallationId, scriptInput, scriptInputSchema, executionCount, lastExecutedAt, createdAt, updatedAt, version, feedItemId, isActive, isTimeBased, isEventBased. No nested trigger object. When includeScript=true, also includes scriptCode; when the flow's script is one the caller may not read, scriptCodeWithheld: true instead.
 
 **Example:**
 

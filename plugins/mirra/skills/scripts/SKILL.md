@@ -44,10 +44,10 @@ Replace `{operation}` with the operation name from the table below.
 | `listVersions` | List all versions of a script. Returns flat version structures. |
 | `deployScript` | Deploy a script version to AWS Lambda. Must be called after createScript to make the script execu... |
 | `executeScript` | Execute a deployed script with custom data. Script must be deployed first via deployScript. Retur... |
-| `getScript` | Get details of a specific script. Returns flat normalized structure. |
+| `getScript` | Get details of a script you may use: your own, a system script, a published public one, or one yo... |
 | `listScripts` | List all scripts owned by the user. Returns flat script summaries. |
-| `getExecutions` | Get execution history for a script. Returns flat execution summaries. |
-| `getExecution` | Get details of a specific execution. Returns flat execution structure. |
+| `getExecutions` | Get execution history for a script you may use. The owner sees every run; anyone else sees the ru... |
+| `getExecution` | Get details of an execution you ran, were billed for, or that ran your script. Returns flat execu... |
 | `getMetrics` | Get execution metrics for a script. Returns flat metrics structure. |
 | `getFlowScript` | Get the script code for a specific flow. Returns flat flow script structure. |
 | `modifyFlowScript` | Replace the ENTIRE script code for a flow. For small changes, prefer editScriptCode or editFlowSc... |
@@ -305,7 +305,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `getScript`
 
-Get details of a specific script. Returns flat normalized structure.
+Get details of a script you may use: your own, a system script, a published public one, or one you installed. Returns flat normalized structure; lambdaFunctionName, lambdaArn and the run figures (totalExecutions, totalCost, avgDuration, errorRate, lastExecutedAt) are empty or zero unless you own the script. A script you may not use answers as not found.
 
 **Arguments:**
 
@@ -403,7 +403,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `getExecutions`
 
-Get execution history for a script. Returns flat execution summaries.
+Get execution history for a script you may use. The owner sees every run; anyone else sees the runs they ran or were billed for. Returns flat execution summaries.
 
 **Arguments:**
 
@@ -453,7 +453,7 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `getExecution`
 
-Get details of a specific execution. Returns flat execution structure.
+Get details of an execution you ran, were billed for, or that ran your script. Returns flat execution structure. Any other execution answers as not found.
 
 **Arguments:**
 
