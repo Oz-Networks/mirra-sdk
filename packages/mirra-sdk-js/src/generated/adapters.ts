@@ -93,7 +93,7 @@ export interface AiTranscribeAudioArgs {
 export interface JiraCreateIssueArgs {
   projectKey: string; // Jira project key (e.g., "PROJ")
   summary: string; // Issue summary/title
-  description?: string; // Issue description
+  description?: string; // Issue description, as plain text. A blank line starts a new paragraph and a single newline is a line break. Markdown and Jira wiki markup are not rendered.
   issueType?: string; // Issue type (Task, Bug, Story, etc.)
 }
 export interface JiraSearchIssuesArgs {
@@ -106,22 +106,23 @@ export interface JiraGetIssueArgs {
 export interface JiraUpdateIssueArgs {
   issueKey: string; // Issue key (e.g., "PROJ-123")
   summary?: string; // New issue summary/title
-  description?: string; // New issue description
+  description?: string; // New issue description, as plain text. A blank line starts a new paragraph and a single newline is a line break. Markdown and Jira wiki markup are not rendered.
 }
 export interface JiraDeleteIssueArgs {
-  issueKey: string; // Issue key (e.g., "PROJ-123")
+  issueKey: string; // Issue key (e.g., "PROJ-123") or ID
+  deleteSubtasks?: boolean; // Also delete the issue's subtasks. Defaults to false.
 }
 export interface JiraAddCommentArgs {
-  issueKey: string; // Issue key (e.g., "PROJ-123")
-  comment: string; // Comment text
+  issueKey: string; // Issue key (e.g., "PROJ-123") or ID
+  comment: string; // Comment text, as plain text. A blank line starts a new paragraph and a single newline is a line break. Markdown and Jira wiki markup are not rendered.
 }
 export interface JiraTransitionIssueArgs {
   issueKey: string; // Issue key (e.g., "PROJ-123")
   transitionId: string; // ID of the transition to perform
 }
 export interface JiraAssignIssueArgs {
-  issueKey: string; // Issue key (e.g., "PROJ-123")
-  accountId: string; // Atlassian account ID of the assignee
+  issueKey: string; // Issue key (e.g., "PROJ-123") or ID
+  accountId: string; // Atlassian account ID of the new assignee. Pass null to unassign the issue.
 }
 export interface JiraGetProjectMetadataArgs {
   projectKey: string; // Project key (e.g., "PROJ")
@@ -417,158 +418,6 @@ export interface GithubDeleteFileArgs {
 export interface GithubGetRecentCommitsArgs {
   path?: string; // Only commits touching this path (e.g. ".mirra/" or "src/")
   limit?: number; // Max commits to return (default 10, max 50)
-}
-
-// Google Ads Adapter Types
-export interface GoogleAdsGetAccountOverviewArgs {
-  customerId: string; // Google Ads account ID (e.g., '123-456-7890')
-  dateRange?: string; // Named date range (e.g., LAST_30_DAYS, LAST_7_DAYS, THIS_MONTH) or custom range YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS
-}
-export interface GoogleAdsListCampaignsArgs {
-  customerId: string; // Google Ads account ID
-  dateRange?: string; // Named range or custom YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS
-  status?: string; // Filter by status: ENABLED, PAUSED, or ALL. Default: ALL
-  limit?: number; // Max campaigns to return. Default: 200, max: 200
-  orderBy?: string; // Sort field: cost, conversions, roas, cpa, impressions, clicks. Default: cost
-}
-export interface GoogleAdsGetCampaignDetailsArgs {
-  customerId: string; // Google Ads account ID
-  campaignId: string; // Campaign ID from listCampaigns
-  dateRange?: string; // Named range or custom. Default: LAST_30_DAYS
-}
-export interface GoogleAdsUpdateCampaignStatusArgs {
-  customerId: string; // Google Ads account ID
-  campaignId: string; // Campaign ID to modify
-  status: string; // New status: PAUSED or ENABLED (not REMOVED)
-  reason?: string; // Optional reason for the change (stored in adapter audit log, not sent to Google)
-}
-export interface GoogleAdsUpdateCampaignBudgetArgs {
-  customerId: string; // Google Ads account ID
-  campaignId: string; // Campaign ID (used to look up the associated budget)
-  dailyBudgetAmount: number; // New daily budget in account currency (e.g., 150.00 for $150/day)
-}
-export interface GoogleAdsListAdGroupsArgs {
-  customerId: string; // Google Ads account ID
-  campaignId: string; // Filter to ad groups within this campaign
-  dateRange?: string; // Default: LAST_30_DAYS
-  status?: string; // ENABLED, PAUSED, or ALL. Default: ALL
-}
-export interface GoogleAdsGetAdGroupDetailsArgs {
-  customerId: string; // Google Ads account ID
-  adGroupId: string; // Ad group ID
-  dateRange?: string; // Default: LAST_30_DAYS
-}
-export interface GoogleAdsUpdateAdGroupStatusArgs {
-  customerId: string; // Google Ads account ID
-  adGroupId: string; // Ad group ID
-  status: string; // PAUSED or ENABLED
-}
-export interface GoogleAdsUpdateAdGroupBidArgs {
-  customerId: string; // Google Ads account ID
-  adGroupId: string; // Ad group ID
-  cpcBidAmount: number; // New default CPC bid in account currency
-}
-export interface GoogleAdsListKeywordsArgs {
-  customerId: string; // Google Ads account ID
-  adGroupId?: string; // Filter to one ad group. If omitted, scope to campaignId
-  campaignId?: string; // Filter to all ad groups within a campaign. One of adGroupId or campaignId required
-  dateRange?: string; // Default: LAST_30_DAYS
-  status?: string; // ENABLED, PAUSED, or ALL. Default: ENABLED
-  limit?: number; // Default: 200, max: 500
-  orderBy?: string; // cost, conversions, cpa, impressions. Default: cost
-}
-export interface GoogleAdsGetKeywordDetailsArgs {
-  customerId: string; // Google Ads account ID
-  keywordId: string; // Keyword criterion ID
-  adGroupId: string; // Ad group containing the keyword (required by GAQL scoping)
-  dateRange?: string; // Default: LAST_30_DAYS
-}
-export interface GoogleAdsUpdateKeywordStatusArgs {
-  customerId: string; // Google Ads account ID
-  keywordId: string; // Keyword criterion ID
-  adGroupId: string; // Ad group containing the keyword
-  status: string; // PAUSED or ENABLED
-}
-export interface GoogleAdsGetSearchTermReportArgs {
-  customerId: string; // Google Ads account ID
-  campaignId?: string; // Filter to a specific campaign
-  adGroupId?: string; // Filter to a specific ad group
-  dateRange?: string; // Default: LAST_30_DAYS
-  minImpressions?: number; // Filter out terms with fewer impressions. Default: 0
-  limit?: number; // Default: 200, max: 500
-  orderBy?: string; // cost, conversions, impressions, cpa. Default: cost
-}
-export interface GoogleAdsGetKeywordIdeasArgs {
-  customerId: string; // Google Ads account ID
-  seedKeywords?: any[]; // Array of seed keyword strings (max 20). One of seedKeywords or pageUrl required
-  pageUrl?: string; // Landing page URL to generate ideas from. One of seedKeywords or pageUrl required
-  language?: string; // Language resource name (default: English — languageConstants/1000)
-  geoTargets?: any[]; // Array of geo target constant resource names. Default: all locations
-  limit?: number; // Max ideas to return. Default: 100, max: 1000
-}
-export interface GoogleAdsListAdsArgs {
-  customerId: string; // Google Ads account ID
-  adGroupId: string; // Ad group to list ads from
-  dateRange?: string; // Default: LAST_30_DAYS
-  status?: string; // ENABLED, PAUSED, or ALL. Default: ALL
-}
-export interface GoogleAdsGetAdDetailsArgs {
-  customerId: string; // Google Ads account ID
-  adId: string; // Ad ID
-  adGroupId: string; // Ad group containing the ad
-  dateRange?: string; // Default: LAST_30_DAYS
-}
-export interface GoogleAdsGetPerformanceReportArgs {
-  customerId: string; // Google Ads account ID
-  dimensions: any[]; // Dimensions to segment by: campaign, adGroup, keyword, device, network, date, dayOfWeek, hour, geo, matchType. At least one required
-  metrics?: any[]; // Metrics to include: impressions, clicks, cost, conversions, conversionsValue, ctr, avgCpc, cpa, roas. Default: all standard metrics
-  dateRange?: string; // Default: LAST_30_DAYS
-  campaignId?: string; // Filter to a specific campaign
-  filters?: any; // Additional GAQL WHERE conditions as key-value pairs
-  orderBy?: string; // Metric to sort by (descending). Default: cost
-  limit?: number; // Default: 200, max: 500
-}
-export interface GoogleAdsGetAuctionInsightsArgs {
-  customerId: string; // Google Ads account ID
-  campaignId?: string; // Scope to a campaign. One of campaignId or adGroupId required
-  adGroupId?: string; // Scope to an ad group
-  dateRange?: string; // Default: LAST_30_DAYS
-}
-export interface GoogleAdsGetChangeHistoryArgs {
-  customerId: string; // Google Ads account ID
-  dateRange?: string; // Default: LAST_7_DAYS. Max lookback: 90 days
-  resourceTypes?: any[]; // Filter to specific types: CAMPAIGN, AD_GROUP, AD, AD_GROUP_CRITERION. Default: all
-  limit?: number; // Default: 100, max: 500
-}
-export interface GoogleAdsGetConversionReportArgs {
-  customerId: string; // Google Ads account ID
-  campaignId?: string; // Filter to a specific campaign
-  dateRange?: string; // Default: LAST_30_DAYS
-}
-export interface GoogleAdsGetGeographicReportArgs {
-  customerId: string; // Google Ads account ID
-  campaignId?: string; // Filter to a specific campaign
-  granularity?: string; // COUNTRY, REGION, or CITY. Default: REGION
-  dateRange?: string; // Default: LAST_30_DAYS
-  limit?: number; // Default: 100
-}
-export interface GoogleAdsGetDeviceReportArgs {
-  customerId: string; // Google Ads account ID
-  campaignId?: string; // Filter to a specific campaign. Default: account-level
-  dateRange?: string; // Default: LAST_30_DAYS
-}
-export interface GoogleAdsGetHourOfDayReportArgs {
-  customerId: string; // Google Ads account ID
-  campaignId?: string; // Filter to a specific campaign
-  dateRange?: string; // Recommend at least LAST_30_DAYS for meaningful hourly data. Default: LAST_30_DAYS
-}
-export interface GoogleAdsListBudgetsArgs {
-  customerId: string; // Google Ads account ID
-  includeRemoved?: boolean; // Include removed budgets. Default: false
-}
-export interface GoogleAdsGetBudgetRecommendationsArgs {
-  customerId: string; // Google Ads account ID
-  campaignId?: string; // Filter to a specific campaign
 }
 
 // Google Calendar Adapter Types
@@ -1338,7 +1187,8 @@ export interface ShopifyPublishCollectionArgs {
 }
 export interface ShopifyListProductsArgs {
   limit?: number; // Number of products to return per page (1-250). Defaults to 50.
-  pageInfo?: string; // Cursor for pagination. Use the nextPageInfo value from a previous response to get the next page.
+  pageInfo?: string; // Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+  before?: string; // Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
   status?: string; // Filter by product status: "active", "archived", or "draft".
   vendor?: string; // Filter by product vendor name.
   productType?: string; // Filter by product type.
@@ -1369,7 +1219,8 @@ export interface ShopifyDeleteProductArgs {
 }
 export interface ShopifyListOrdersArgs {
   limit?: number; // Number of orders to return per page (1-250). Defaults to 50.
-  pageInfo?: string; // Cursor for pagination from a previous response.
+  pageInfo?: string; // Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+  before?: string; // Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
   status?: string; // Filter by order status: "open", "closed", "cancelled", or "any". Defaults to "any".
   financialStatus?: string; // Filter by financial status: "authorized", "pending", "paid", "partially_paid", "refunded", "voided", "partially_refunded", "any", "unpaid".
   fulfillmentStatus?: string; // Filter by fulfillment status: "shipped", "partial", "unshipped", "any", "unfulfilled".
@@ -1402,7 +1253,8 @@ export interface ShopifyCloseOrderArgs {
 }
 export interface ShopifyListCustomersArgs {
   limit?: number; // Number of customers to return per page (1-250). Defaults to 50.
-  pageInfo?: string; // Cursor for pagination from a previous response.
+  pageInfo?: string; // Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+  before?: string; // Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
   sinceId?: string; // Return customers after this customer ID.
   createdAtMin?: string; // Return customers created after this date (ISO 8601 format).
   createdAtMax?: string; // Return customers created before this date (ISO 8601 format).
@@ -1443,12 +1295,14 @@ export interface ShopifyAdjustInventoryArgs {
   adjustment: number; // The quantity adjustment. Positive to add stock, negative to remove.
 }
 export interface ShopifyListCollectionsArgs {
-  limit?: number; // Maximum number of collections to return per type (1-250). Defaults to 50. Note: up to this many custom collections AND this many smart collections may be returned.
-  pageInfo?: string; // Cursor for pagination from a previous response.
+  limit?: number; // Number of collections per page, 1-250, default 50
+  pageInfo?: string; // Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+  before?: string; // Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 }
 export interface ShopifyListPagesArgs {
   limit?: number; // Number of pages per page, 1-250, default 50
-  pageInfo?: string; // Cursor for pagination
+  pageInfo?: string; // Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+  before?: string; // Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 }
 export interface ShopifyGetPageArgs {
   pageId: string; // The Shopify page ID.
@@ -1473,7 +1327,8 @@ export interface ShopifyDeletePageArgs {
 }
 export interface ShopifyListBlogsArgs {
   limit?: number; // Number of blogs per page, 1-250, default 50
-  pageInfo?: string; // Cursor for pagination
+  pageInfo?: string; // Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+  before?: string; // Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 }
 export interface ShopifyGetBlogArgs {
   blogId: string; // The Shopify blog ID.
@@ -1493,7 +1348,8 @@ export interface ShopifyDeleteBlogArgs {
 export interface ShopifyListArticlesArgs {
   blogId: string; // The blog ID to list articles from.
   limit?: number; // Number of articles per page, 1-250, default 50
-  pageInfo?: string; // Cursor for pagination
+  pageInfo?: string; // Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+  before?: string; // Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 }
 export interface ShopifyGetArticleArgs {
   articleId: string; // The Shopify article ID.
@@ -1545,7 +1401,8 @@ export interface ShopifyDeleteThemeFilesArgs {
 }
 export interface ShopifyListMenusArgs {
   limit?: number; // Number of menus per page, 1-250, default 50
-  pageInfo?: string; // Cursor for pagination
+  pageInfo?: string; // Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+  before?: string; // Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 }
 export interface ShopifyGetMenuArgs {
   menuId: string; // The Shopify menu ID.
@@ -1566,7 +1423,8 @@ export interface ShopifyDeleteMenuArgs {
 }
 export interface ShopifyListRedirectsArgs {
   limit?: number; // Number of redirects per page, 1-250, default 50
-  pageInfo?: string; // Cursor for pagination
+  pageInfo?: string; // Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+  before?: string; // Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 }
 export interface ShopifyCreateRedirectArgs {
   path: string; // The old path to redirect from
@@ -2503,8 +2361,8 @@ export type JiraTransitionIssueResult = AdapterResultBase<JiraTransitionIssueDat
 
 export interface JiraAssignIssueData {
   issueKey: string; // Issue key
-  accountId: string; // Assigned user account ID
-  assigned: boolean; // Whether assignment succeeded
+  accountId: any; // Account ID of the new assignee, or null when the issue was unassigned
+  assigned: boolean; // Whether the issue now has an assignee
 }
 
 export type JiraAssignIssueResult = AdapterResultBase<JiraAssignIssueData>;
@@ -5193,8 +5051,8 @@ export interface ShopifyNormalizedProduct {
 
 export interface ShopifyListProductsData {
   products: any; // List of products
-  nextPageInfo?: string; // Cursor for next page
-  previousPageInfo?: string; // Cursor for previous page
+  nextPageInfo?: string; // Cursor for the next page, or null on the last page
+  previousPageInfo?: string; // Cursor for the previous page, or null on the first page
   totalRetrieved: number; // Number of products retrieved
 }
 
@@ -5314,8 +5172,8 @@ export interface ShopifyNormalizedOrder {
 
 export interface ShopifyListOrdersData {
   orders: any; // List of orders
-  nextPageInfo?: string; // Cursor for next page
-  previousPageInfo?: string; // Cursor for previous page
+  nextPageInfo?: string; // Cursor for the next page, or null on the last page
+  previousPageInfo?: string; // Cursor for the previous page, or null on the first page
   totalRetrieved: number; // Number of orders retrieved
 }
 
@@ -5494,8 +5352,8 @@ export interface ShopifyNormalizedCustomer {
 
 export interface ShopifyListCustomersData {
   customers: any; // List of customers
-  nextPageInfo?: string; // Cursor for next page
-  previousPageInfo?: string; // Cursor for previous page
+  nextPageInfo?: string; // Cursor for the next page, or null on the last page
+  previousPageInfo?: string; // Cursor for the previous page, or null on the first page
   totalRetrieved: number; // Number of customers retrieved
 }
 
@@ -5613,6 +5471,8 @@ export interface ShopifyNormalizedCollection {
 
 export interface ShopifyListCollectionsData {
   collections: any; // List of collections
+  nextPageInfo?: string; // Cursor for the next page, or null on the last page
+  previousPageInfo?: string; // Cursor for the previous page, or null on the first page
   totalRetrieved: number; // Number of collections retrieved
 }
 
@@ -5631,8 +5491,8 @@ export interface ShopifyNormalizedPage {
 
 export interface ShopifyListPagesData {
   pages: any; // List of pages
-  nextPageInfo?: string; // Cursor for next page
-  previousPageInfo?: string; // Cursor for previous page
+  nextPageInfo?: string; // Cursor for the next page, or null on the last page
+  previousPageInfo?: string; // Cursor for the previous page, or null on the first page
   totalRetrieved: number; // Number of pages retrieved
 }
 
@@ -5696,8 +5556,8 @@ export interface ShopifyNormalizedBlog {
 
 export interface ShopifyListBlogsData {
   blogs: any; // List of blogs
-  nextPageInfo?: string; // Cursor for next page
-  previousPageInfo?: string; // Cursor for previous page
+  nextPageInfo?: string; // Cursor for the next page, or null on the last page
+  previousPageInfo?: string; // Cursor for the previous page, or null on the first page
   totalRetrieved: number; // Number of blogs retrieved
 }
 
@@ -5764,8 +5624,8 @@ export interface ShopifyNormalizedArticle {
 
 export interface ShopifyListArticlesData {
   articles: any; // List of articles
-  nextPageInfo?: string; // Cursor for next page
-  previousPageInfo?: string; // Cursor for previous page
+  nextPageInfo?: string; // Cursor for the next page, or null on the last page
+  previousPageInfo?: string; // Cursor for the previous page, or null on the first page
   totalRetrieved: number; // Number of articles retrieved
 }
 
@@ -5918,8 +5778,8 @@ export interface ShopifyNormalizedMenu {
 
 export interface ShopifyListMenusData {
   menus: any; // List of menus
-  nextPageInfo?: string; // Cursor for next page
-  previousPageInfo?: string; // Cursor for previous page
+  nextPageInfo?: string; // Cursor for the next page, or null on the last page
+  previousPageInfo?: string; // Cursor for the previous page, or null on the first page
   totalRetrieved: number; // Number of menus retrieved
 }
 
@@ -5967,8 +5827,8 @@ export interface ShopifyNormalizedRedirect {
 
 export interface ShopifyListRedirectsData {
   redirects: any; // List of redirects
-  nextPageInfo?: string; // Cursor for next page
-  previousPageInfo?: string; // Cursor for previous page
+  nextPageInfo?: string; // Cursor for the next page, or null on the last page
+  previousPageInfo?: string; // Cursor for the previous page, or null on the first page
   totalRetrieved: number; // Number of redirects retrieved
 }
 
@@ -7851,7 +7711,7 @@ function createJiraAdapter(sdk: MirraSDK) {
      * Create a new Jira issue
      * @param args.projectKey - Jira project key (e.g., "PROJ")
      * @param args.summary - Issue summary/title
-     * @param args.description - Issue description (optional)
+     * @param args.description - Issue description, as plain text. A blank line starts a new paragraph and a single newline is a line break. Markdown and Jira wiki markup are not rendered. (optional)
      * @param args.issueType - Issue type (Task, Bug, Story, etc.) (optional)
      * @returns Promise<JiraCreateIssueData> Typed flat response with IDE autocomplete
      */
@@ -7894,7 +7754,7 @@ function createJiraAdapter(sdk: MirraSDK) {
      * Update an existing Jira issue
      * @param args.issueKey - Issue key (e.g., "PROJ-123")
      * @param args.summary - New issue summary/title (optional)
-     * @param args.description - New issue description (optional)
+     * @param args.description - New issue description, as plain text. A blank line starts a new paragraph and a single newline is a line break. Markdown and Jira wiki markup are not rendered. (optional)
      * @returns Promise<JiraUpdateIssueData> Typed flat response with IDE autocomplete
      */
     updateIssue: async (args: JiraUpdateIssueArgs): Promise<JiraUpdateIssueData> => {
@@ -7906,8 +7766,9 @@ function createJiraAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Delete a Jira issue
-     * @param args.issueKey - Issue key (e.g., "PROJ-123")
+     * Permanently delete a Jira issue. Jira refuses to delete an issue that has subtasks unless deleteSubtasks is true.
+     * @param args.issueKey - Issue key (e.g., "PROJ-123") or ID
+     * @param args.deleteSubtasks - Also delete the issue's subtasks. Defaults to false. (optional)
      * @returns Promise<JiraDeleteIssueData> Typed flat response with IDE autocomplete
      */
     deleteIssue: async (args: JiraDeleteIssueArgs): Promise<JiraDeleteIssueData> => {
@@ -7919,9 +7780,9 @@ function createJiraAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Add a comment to a Jira issue
-     * @param args.issueKey - Issue key (e.g., "PROJ-123")
-     * @param args.comment - Comment text
+     * Add a plain-text comment to a Jira issue.
+     * @param args.issueKey - Issue key (e.g., "PROJ-123") or ID
+     * @param args.comment - Comment text, as plain text. A blank line starts a new paragraph and a single newline is a line break. Markdown and Jira wiki markup are not rendered.
      * @returns Promise<JiraAddCommentData> Typed flat response with IDE autocomplete
      */
     addComment: async (args: JiraAddCommentArgs): Promise<JiraAddCommentData> => {
@@ -7947,9 +7808,9 @@ function createJiraAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * Assign a Jira issue to a user
-     * @param args.issueKey - Issue key (e.g., "PROJ-123")
-     * @param args.accountId - Atlassian account ID of the assignee
+     * Assign a Jira issue to a user, or unassign it. Get account IDs from listAssignableUsers.
+     * @param args.issueKey - Issue key (e.g., "PROJ-123") or ID
+     * @param args.accountId - Atlassian account ID of the new assignee. Pass null to unassign the issue.
      * @returns Promise<JiraAssignIssueData> Typed flat response with IDE autocomplete
      */
     assignIssue: async (args: JiraAssignIssueArgs): Promise<JiraAssignIssueData> => {
@@ -8946,389 +8807,6 @@ function createGithubAdapter(sdk: MirraSDK) {
       return sdk.resources.callDirect({
         resourceId: 'github',
         method: 'getRecentCommits',
-        params: args || {}
-      });
-    }
-  };
-}
-
-/**
- * Google Ads Adapter
- * Category: advertising
- */
-function createGoogleAdsAdapter(sdk: MirraSDK) {
-  return {
-    /**
-     * Returns high-level account metrics and a quick snapshot of account health for a given date range. Use this as the entry point for any account-level analysis — it gives you total spend, overall ROAS/CPA, and surfaces top/bottom campaigns so you know where to drill in. Start here when the user asks something like "how are my ads doing?" or "give me a summary of my Google Ads account."
-     * @param args.customerId - Google Ads account ID (e.g., '123-456-7890')
-     * @param args.dateRange - Named date range (e.g., LAST_30_DAYS, LAST_7_DAYS, THIS_MONTH) or custom range YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS (optional)
-     */
-    getAccountOverview: async (args: GoogleAdsGetAccountOverviewArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getAccountOverview',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Lists all non-removed campaigns with their performance metrics for the given date range. Use this to rank campaigns by ROAS, CPA, spend, or conversion volume and quickly identify which are performing and which are bleeding budget. Returns up to 200 campaigns sorted by spend descending by default. Each campaign includes a metrics object — check roas, cpa, and searchImpressionShare to understand performance gaps.
-     * @param args.customerId - Google Ads account ID
-     * @param args.dateRange - Named range or custom YYYY-MM-DD:YYYY-MM-DD. Default: LAST_30_DAYS (optional)
-     * @param args.status - Filter by status: ENABLED, PAUSED, or ALL. Default: ALL (optional)
-     * @param args.limit - Max campaigns to return. Default: 200, max: 200 (optional)
-     * @param args.orderBy - Sort field: cost, conversions, roas, cpa, impressions, clicks. Default: cost (optional)
-     */
-    listCampaigns: async (args: GoogleAdsListCampaignsArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'listCampaigns',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Returns detailed metrics for a single campaign, including a day-by-day breakdown for the date range. Use this after listCampaigns to drill into a specific campaign — check the daily trend to spot when performance changed. The dailyMetrics array shows exactly which days had high CPA or low ROAS, helping attribute changes to external events, bid changes, or budget issues.
-     * @param args.customerId - Google Ads account ID
-     * @param args.campaignId - Campaign ID from listCampaigns
-     * @param args.dateRange - Named range or custom. Default: LAST_30_DAYS (optional)
-     */
-    getCampaignDetails: async (args: GoogleAdsGetCampaignDetailsArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getCampaignDetails',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Pauses or enables a campaign. Pausing immediately stops all ads in the campaign from serving. Enabling resumes delivery (subject to budget and bid eligibility). Always show the user the campaign name and current budget before confirming. This change is reversible but takes effect within minutes. RISKY — requires explicit user confirmation before calling.
-     * @param args.customerId - Google Ads account ID
-     * @param args.campaignId - Campaign ID to modify
-     * @param args.status - New status: PAUSED or ENABLED (not REMOVED)
-     * @param args.reason - Optional reason for the change (stored in adapter audit log, not sent to Google) (optional)
-     */
-    updateCampaignStatus: async (args: GoogleAdsUpdateCampaignStatusArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'updateCampaignStatus',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Modifies the daily budget for a campaign's associated budget. Note: if multiple campaigns share a budget (shared budget), this will affect all of them — the response includes sharedWithCampaigns to warn the user. Always confirm the exact dollar amount and, if shared, which other campaigns will be affected. RISKY — requires explicit user confirmation.
-     * @param args.customerId - Google Ads account ID
-     * @param args.campaignId - Campaign ID (used to look up the associated budget)
-     * @param args.dailyBudgetAmount - New daily budget in account currency (e.g., 150.00 for $150/day)
-     */
-    updateCampaignBudget: async (args: GoogleAdsUpdateCampaignBudgetArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'updateCampaignBudget',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Lists all ad groups within a campaign with performance metrics. Use this after identifying an underperforming campaign to understand which ad groups are dragging down the campaign's numbers. An ad group's metrics aggregate all keywords and ads within it. Check defaultCpcBid vs actual avgCpc — a large gap may indicate the auto-bidding is diverging from manual intent.
-     * @param args.customerId - Google Ads account ID
-     * @param args.campaignId - Filter to ad groups within this campaign
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     * @param args.status - ENABLED, PAUSED, or ALL. Default: ALL (optional)
-     */
-    listAdGroups: async (args: GoogleAdsListAdGroupsArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'listAdGroups',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Detailed metrics for a single ad group with daily breakdown. Use this when an ad group's aggregate metrics look problematic — the daily trend will show whether the issue is recent or chronic.
-     * @param args.customerId - Google Ads account ID
-     * @param args.adGroupId - Ad group ID
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     */
-    getAdGroupDetails: async (args: GoogleAdsGetAdGroupDetailsArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getAdGroupDetails',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Pauses or enables an ad group. Pausing stops all ads and keywords within it from serving. Same semantics as updateCampaignStatus but scoped to an ad group. RISKY — requires explicit user confirmation.
-     * @param args.customerId - Google Ads account ID
-     * @param args.adGroupId - Ad group ID
-     * @param args.status - PAUSED or ENABLED
-     */
-    updateAdGroupStatus: async (args: GoogleAdsUpdateAdGroupStatusArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'updateAdGroupStatus',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Modifies the default CPC bid for an ad group. This affects all keywords in the ad group that don't have individual keyword-level bids. Verify bidding strategy before calling — this only applies to manual CPC campaigns or campaigns with bidding strategies that respect manual bid overrides. RISKY — requires explicit user confirmation.
-     * @param args.customerId - Google Ads account ID
-     * @param args.adGroupId - Ad group ID
-     * @param args.cpcBidAmount - New default CPC bid in account currency
-     */
-    updateAdGroupBid: async (args: GoogleAdsUpdateAdGroupBidArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'updateAdGroupBid',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Lists all keywords in an ad group (or across a campaign) with performance metrics and quality scores. This is one of the most informative operations — quality score components (expectedCtr, adRelevance, landingPageExperience) reveal structural issues in the account. Keywords with high cost and zero conversions are the primary target for the wasteful-spend-detection skill. Note: quality score is only available when there is sufficient impression volume.
-     * @param args.customerId - Google Ads account ID
-     * @param args.adGroupId - Filter to one ad group. If omitted, scope to campaignId (optional)
-     * @param args.campaignId - Filter to all ad groups within a campaign. One of adGroupId or campaignId required (optional)
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     * @param args.status - ENABLED, PAUSED, or ALL. Default: ENABLED (optional)
-     * @param args.limit - Default: 200, max: 500 (optional)
-     * @param args.orderBy - cost, conversions, cpa, impressions. Default: cost (optional)
-     */
-    listKeywords: async (args: GoogleAdsListKeywordsArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'listKeywords',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Detailed metrics for a single keyword with daily breakdown. Use this to understand the performance trend for a specific keyword — especially useful when a keyword's cost is spiking or conversion rate is dropping.
-     * @param args.customerId - Google Ads account ID
-     * @param args.keywordId - Keyword criterion ID
-     * @param args.adGroupId - Ad group containing the keyword (required by GAQL scoping)
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     */
-    getKeywordDetails: async (args: GoogleAdsGetKeywordDetailsArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getKeywordDetails',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Pauses or enables a specific keyword. Use this to stop a specific keyword from spending without touching the ad group. Always confirm the keyword text, match type, and current cost before pausing. RISKY — requires explicit user confirmation.
-     * @param args.customerId - Google Ads account ID
-     * @param args.keywordId - Keyword criterion ID
-     * @param args.adGroupId - Ad group containing the keyword
-     * @param args.status - PAUSED or ENABLED
-     */
-    updateKeywordStatus: async (args: GoogleAdsUpdateKeywordStatusArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'updateKeywordStatus',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Returns the actual search queries that users typed which triggered your ads. This is the single most actionable report in Google Ads — it shows you what you're actually paying for. Look for: (1) irrelevant queries that should become negative keywords, (2) high-performing queries not yet added as exact-match keywords, (3) expensive queries with no conversions. The status field shows whether a term has already been added as a keyword (ADDED) or excluded as a negative (EXCLUDED).
-     * @param args.customerId - Google Ads account ID
-     * @param args.campaignId - Filter to a specific campaign (optional)
-     * @param args.adGroupId - Filter to a specific ad group (optional)
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     * @param args.minImpressions - Filter out terms with fewer impressions. Default: 0 (optional)
-     * @param args.limit - Default: 200, max: 500 (optional)
-     * @param args.orderBy - cost, conversions, impressions, cpa. Default: cost (optional)
-     */
-    getSearchTermReport: async (args: GoogleAdsGetSearchTermReportArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getSearchTermReport',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Uses the Google Keyword Planner API to generate keyword ideas from seed keywords or a landing page URL. Returns estimated monthly search volume, competition level, and bid estimates for each idea. Use this to find untapped keyword opportunities — compare lowTopOfPageBid vs your current avgCpc to find underpriced opportunities. Rate limited to 100 requests/day — use sparingly.
-     * @param args.customerId - Google Ads account ID
-     * @param args.seedKeywords - Array of seed keyword strings (max 20). One of seedKeywords or pageUrl required (optional)
-     * @param args.pageUrl - Landing page URL to generate ideas from. One of seedKeywords or pageUrl required (optional)
-     * @param args.language - Language resource name (default: English — languageConstants/1000) (optional)
-     * @param args.geoTargets - Array of geo target constant resource names. Default: all locations (optional)
-     * @param args.limit - Max ideas to return. Default: 100, max: 1000 (optional)
-     */
-    getKeywordIdeas: async (args: GoogleAdsGetKeywordIdeasArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getKeywordIdeas',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Lists all ads within an ad group with performance metrics and quality signals. For Responsive Search Ads (RSA), includes the headlines and descriptions as arrays. Use this to identify top-performing ad copy — compare CTR and conversion rate across variants to understand what messaging resonates. adStrength (EXCELLENT/GOOD/POOR) is Google's own quality signal for RSA.
-     * @param args.customerId - Google Ads account ID
-     * @param args.adGroupId - Ad group to list ads from
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     * @param args.status - ENABLED, PAUSED, or ALL. Default: ALL (optional)
-     */
-    listAds: async (args: GoogleAdsListAdsArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'listAds',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Detailed metrics for a single ad with daily breakdown. Most useful for spotting when an ad's CTR or conversion rate changed — the daily trend reveals if a recent landing page change or ad copy edit correlated with a performance shift.
-     * @param args.customerId - Google Ads account ID
-     * @param args.adId - Ad ID
-     * @param args.adGroupId - Ad group containing the ad
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     */
-    getAdDetails: async (args: GoogleAdsGetAdDetailsArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getAdDetails',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Flexible performance report with custom dimension and metric selection. Use this for custom analyses not covered by the dedicated reports — e.g., performance by network, by day of week, or a combined campaign+device breakdown. Returns a flat array of rows with whatever dimensions/metrics were requested. Prefer the dedicated reports (getDeviceReport, getHourOfDayReport, etc.) for their respective use cases.
-     * @param args.customerId - Google Ads account ID
-     * @param args.dimensions - Dimensions to segment by: campaign, adGroup, keyword, device, network, date, dayOfWeek, hour, geo, matchType. At least one required
-     * @param args.metrics - Metrics to include: impressions, clicks, cost, conversions, conversionsValue, ctr, avgCpc, cpa, roas. Default: all standard metrics (optional)
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     * @param args.campaignId - Filter to a specific campaign (optional)
-     * @param args.filters - Additional GAQL WHERE conditions as key-value pairs (optional)
-     * @param args.orderBy - Metric to sort by (descending). Default: cost (optional)
-     * @param args.limit - Default: 200, max: 500 (optional)
-     */
-    getPerformanceReport: async (args: GoogleAdsGetPerformanceReportArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getPerformanceReport',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Returns auction insights showing how your ads compete against other advertisers in the same auctions. This is your window into the competitive landscape. Key metrics: impressionShare (your slice), overlapRate (how often you compete directly), outRankingShare (how often you beat them). Scoped to a campaign or ad group.
-     * @param args.customerId - Google Ads account ID
-     * @param args.campaignId - Scope to a campaign. One of campaignId or adGroupId required (optional)
-     * @param args.adGroupId - Scope to an ad group (optional)
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     */
-    getAuctionInsights: async (args: GoogleAdsGetAuctionInsightsArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getAuctionInsights',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Returns a log of changes made to the account within the date range. Essential for diagnosing sudden performance shifts — check change history for that date to see if someone adjusted bids, paused keywords, or changed budget. Also useful for governance: knowing who changed what and when. Max lookback: 90 days.
-     * @param args.customerId - Google Ads account ID
-     * @param args.dateRange - Default: LAST_7_DAYS. Max lookback: 90 days (optional)
-     * @param args.resourceTypes - Filter to specific types: CAMPAIGN, AD_GROUP, AD, AD_GROUP_CRITERION. Default: all (optional)
-     * @param args.limit - Default: 100, max: 500 (optional)
-     */
-    getChangeHistory: async (args: GoogleAdsGetChangeHistoryArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getChangeHistory',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Reports on conversion performance broken down by conversion action (e.g., "Purchase", "Lead Form Submit", "Phone Call"). Use this to understand which types of conversions your campaigns are driving and whether your conversion tracking is set up correctly. Missing conversion actions with zero data can indicate tracking gaps.
-     * @param args.customerId - Google Ads account ID
-     * @param args.campaignId - Filter to a specific campaign (optional)
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     */
-    getConversionReport: async (args: GoogleAdsGetConversionReportArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getConversionReport',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Performance broken down by country, region, or city. Use this to find geographic concentrations of conversions or waste. A campaign running nationally but converting only in two metros is a candidate for geo-targeting refinement.
-     * @param args.customerId - Google Ads account ID
-     * @param args.campaignId - Filter to a specific campaign (optional)
-     * @param args.granularity - COUNTRY, REGION, or CITY. Default: REGION (optional)
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     * @param args.limit - Default: 100 (optional)
-     */
-    getGeographicReport: async (args: GoogleAdsGetGeographicReportArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getGeographicReport',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Performance broken down by device type (desktop, mobile, tablet). Use this to identify device-specific performance gaps — a campaign with 80% of spend on mobile but 90% of conversions on desktop has a misaligned device bid modifier. Check if searchImpressionShare varies significantly by device — that indicates a bidding opportunity.
-     * @param args.customerId - Google Ads account ID
-     * @param args.campaignId - Filter to a specific campaign. Default: account-level (optional)
-     * @param args.dateRange - Default: LAST_30_DAYS (optional)
-     */
-    getDeviceReport: async (args: GoogleAdsGetDeviceReportArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getDeviceReport',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Performance segmented by hour of day AND day of week. Use this to identify optimal ad scheduling windows and discover hours with high spend but low conversion rates. A peak-hour analysis often reveals that campaigns running 24/7 are wasting budget between midnight and 6am with no conversions.
-     * @param args.customerId - Google Ads account ID
-     * @param args.campaignId - Filter to a specific campaign (optional)
-     * @param args.dateRange - Recommend at least LAST_30_DAYS for meaningful hourly data. Default: LAST_30_DAYS (optional)
-     */
-    getHourOfDayReport: async (args: GoogleAdsGetHourOfDayReportArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getHourOfDayReport',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Lists all campaign budgets in the account, including shared budgets and how many campaigns are using each budget. Shared budgets are often a source of unexpected spend distribution — if three campaigns share one budget, Google will allocate it across all three based on predicted performance, not evenly. Returns current utilization for each budget.
-     * @param args.customerId - Google Ads account ID
-     * @param args.includeRemoved - Include removed budgets. Default: false (optional)
-     */
-    listBudgets: async (args: GoogleAdsListBudgetsArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'listBudgets',
-        params: args || {}
-      });
-    },
-
-    /**
-     * Returns Google's automated budget recommendations for campaigns that are budget-constrained. Google identifies campaigns where impression share loss due to budget would improve if budget were increased, and estimates the incremental conversions/clicks from the recommended increase. Use this to inform budget reallocation decisions — but always verify with your own ROAS analysis rather than relying solely on Google's estimates.
-     * @param args.customerId - Google Ads account ID
-     * @param args.campaignId - Filter to a specific campaign (optional)
-     */
-    getBudgetRecommendations: async (args: GoogleAdsGetBudgetRecommendationsArgs): Promise<any> => {
-      return sdk.resources.callDirect({
-        resourceId: 'google-ads',
-        method: 'getBudgetRecommendations',
         params: args || {}
       });
     }
@@ -11617,7 +11095,8 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * List products in the Shopify store with optional filtering and pagination. Returns up to 50 products per page. Use the nextPageInfo cursor from the response to fetch subsequent pages.
      * @param args.limit - Number of products to return per page (1-250). Defaults to 50. (optional)
-     * @param args.pageInfo - Cursor for pagination. Use the nextPageInfo value from a previous response to get the next page. (optional)
+     * @param args.pageInfo - Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before. (optional)
+     * @param args.before - Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo. (optional)
      * @param args.status - Filter by product status: "active", "archived", or "draft". (optional)
      * @param args.vendor - Filter by product vendor name. (optional)
      * @param args.productType - Filter by product type. (optional)
@@ -11698,7 +11177,8 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * List orders from the Shopify store with optional filtering. Returns up to 50 orders per page sorted by creation date descending. By default returns open orders.
      * @param args.limit - Number of orders to return per page (1-250). Defaults to 50. (optional)
-     * @param args.pageInfo - Cursor for pagination from a previous response. (optional)
+     * @param args.pageInfo - Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before. (optional)
+     * @param args.before - Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo. (optional)
      * @param args.status - Filter by order status: "open", "closed", "cancelled", or "any". Defaults to "any". (optional)
      * @param args.financialStatus - Filter by financial status: "authorized", "pending", "paid", "partially_paid", "refunded", "voided", "partially_refunded", "any", "unpaid". (optional)
      * @param args.fulfillmentStatus - Filter by fulfillment status: "shipped", "partial", "unshipped", "any", "unfulfilled". (optional)
@@ -11791,7 +11271,8 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * List customers from the Shopify store with optional pagination. Returns up to 50 customers per page.
      * @param args.limit - Number of customers to return per page (1-250). Defaults to 50. (optional)
-     * @param args.pageInfo - Cursor for pagination from a previous response. (optional)
+     * @param args.pageInfo - Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before. (optional)
+     * @param args.before - Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo. (optional)
      * @param args.sinceId - Return customers after this customer ID. (optional)
      * @param args.createdAtMin - Return customers created after this date (ISO 8601 format). (optional)
      * @param args.createdAtMax - Return customers created before this date (ISO 8601 format). (optional)
@@ -11901,9 +11382,10 @@ function createShopifyAdapter(sdk: MirraSDK) {
     },
 
     /**
-     * List collections in the Shopify store. Returns both custom collections and smart collections combined, sorted by title.
-     * @param args.limit - Maximum number of collections to return per type (1-250). Defaults to 50. Note: up to this many custom collections AND this many smart collections may be returned. (optional)
-     * @param args.pageInfo - Cursor for pagination from a previous response. (optional)
+     * List collections in the Shopify store, custom and smart together, with pagination. Use the nextPageInfo cursor from the response to fetch the next page.
+     * @param args.limit - Number of collections per page, 1-250, default 50 (optional)
+     * @param args.pageInfo - Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before. (optional)
+     * @param args.before - Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo. (optional)
      * @returns Promise<ShopifyListCollectionsData> Typed flat response with IDE autocomplete
      */
     listCollections: async (args: ShopifyListCollectionsArgs): Promise<ShopifyListCollectionsData> => {
@@ -11917,7 +11399,8 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * List pages in the Shopify store with optional pagination.
      * @param args.limit - Number of pages per page, 1-250, default 50 (optional)
-     * @param args.pageInfo - Cursor for pagination (optional)
+     * @param args.pageInfo - Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before. (optional)
+     * @param args.before - Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo. (optional)
      * @returns Promise<ShopifyListPagesData> Typed flat response with IDE autocomplete
      */
     listPages: async (args: ShopifyListPagesArgs): Promise<ShopifyListPagesData> => {
@@ -11992,7 +11475,8 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * List blogs in the Shopify store.
      * @param args.limit - Number of blogs per page, 1-250, default 50 (optional)
-     * @param args.pageInfo - Cursor for pagination (optional)
+     * @param args.pageInfo - Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before. (optional)
+     * @param args.before - Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo. (optional)
      * @returns Promise<ShopifyListBlogsData> Typed flat response with IDE autocomplete
      */
     listBlogs: async (args: ShopifyListBlogsArgs): Promise<ShopifyListBlogsData> => {
@@ -12062,7 +11546,8 @@ function createShopifyAdapter(sdk: MirraSDK) {
      * List articles in a blog.
      * @param args.blogId - The blog ID to list articles from.
      * @param args.limit - Number of articles per page, 1-250, default 50 (optional)
-     * @param args.pageInfo - Cursor for pagination (optional)
+     * @param args.pageInfo - Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before. (optional)
+     * @param args.before - Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo. (optional)
      * @returns Promise<ShopifyListArticlesData> Typed flat response with IDE autocomplete
      */
     listArticles: async (args: ShopifyListArticlesArgs): Promise<ShopifyListArticlesData> => {
@@ -12236,7 +11721,8 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * List navigation menus.
      * @param args.limit - Number of menus per page, 1-250, default 50 (optional)
-     * @param args.pageInfo - Cursor for pagination (optional)
+     * @param args.pageInfo - Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before. (optional)
+     * @param args.before - Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo. (optional)
      * @returns Promise<ShopifyListMenusData> Typed flat response with IDE autocomplete
      */
     listMenus: async (args: ShopifyListMenusArgs): Promise<ShopifyListMenusData> => {
@@ -12307,7 +11793,8 @@ function createShopifyAdapter(sdk: MirraSDK) {
     /**
      * List URL redirects.
      * @param args.limit - Number of redirects per page, 1-250, default 50 (optional)
-     * @param args.pageInfo - Cursor for pagination (optional)
+     * @param args.pageInfo - Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before. (optional)
+     * @param args.before - Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo. (optional)
      * @returns Promise<ShopifyListRedirectsData> Typed flat response with IDE autocomplete
      */
     listRedirects: async (args: ShopifyListRedirectsArgs): Promise<ShopifyListRedirectsData> => {
@@ -14623,7 +14110,6 @@ export const generatedAdapters = {
   feedItems: createFeedItemsAdapter,
   feedback: createFeedbackAdapter,
   github: createGithubAdapter,
-  googleAds: createGoogleAdsAdapter,
   googleCalendar: createGoogleCalendarAdapter,
   googleDrive: createGoogleDriveAdapter,
   googleGmail: createGoogleGmailAdapter,

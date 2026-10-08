@@ -44,10 +44,10 @@ Replace `{operation}` with the operation name from the table below.
 | `searchIssues` | Search Jira issues using JQL. Returns normalized flat issue summaries. |
 | `getIssue` | Get a specific Jira issue by key or ID. Returns normalized flat structure. |
 | `updateIssue` | Update an existing Jira issue |
-| `deleteIssue` | Delete a Jira issue |
-| `addComment` | Add a comment to a Jira issue |
+| `deleteIssue` | Permanently delete a Jira issue. Jira refuses to delete an issue that has subtasks unless deleteS... |
+| `addComment` | Add a plain-text comment to a Jira issue. |
 | `transitionIssue` | Transition a Jira issue to a different status |
-| `assignIssue` | Assign a Jira issue to a user |
+| `assignIssue` | Assign a Jira issue to a user, or unassign it. Get account IDs from listAssignableUsers. |
 | `getProjects` | Get all accessible Jira projects. Returns normalized flat project structures. |
 | `listProjects` | List all accessible Jira projects (alias for getProjects). Returns normalized flat structures. |
 | `getProjectMetadata` | Get metadata for a specific Jira project. Returns normalized flat structures. |
@@ -67,7 +67,7 @@ Create a new Jira issue
 
 - `projectKey` (string, **required**): Jira project key (e.g., "PROJ")
 - `summary` (string, **required**): Issue summary/title
-- `description` (string, *optional*): Issue description
+- `description` (string, *optional*): Issue description, as plain text. A blank line starts a new paragraph and a single newline is a line break. Markdown and Jira wiki markup are not rendered.
 - `issueType` (string, *optional*): Issue type (Task, Bug, Story, etc.)
 
 **Returns:**
@@ -136,7 +136,7 @@ Update an existing Jira issue
 
 - `issueKey` (string, **required**): Issue key (e.g., "PROJ-123")
 - `summary` (string, *optional*): New issue summary/title
-- `description` (string, *optional*): New issue description
+- `description` (string, *optional*): New issue description, as plain text. A blank line starts a new paragraph and a single newline is a line break. Markdown and Jira wiki markup are not rendered.
 
 **Returns:**
 
@@ -155,11 +155,12 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `deleteIssue`
 
-Delete a Jira issue
+Permanently delete a Jira issue. Jira refuses to delete an issue that has subtasks unless deleteSubtasks is true.
 
 **Arguments:**
 
-- `issueKey` (string, **required**): Issue key (e.g., "PROJ-123")
+- `issueKey` (string, **required**): Issue key (e.g., "PROJ-123") or ID
+- `deleteSubtasks` (boolean, *optional*): Also delete the issue's subtasks. Defaults to false.
 
 **Returns:**
 
@@ -174,14 +175,16 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -d '{"resourceId":"jira","method":"deleteIssue","params":{"issueKey":"<value>"}}' | jq .
 ```
 
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
+
 ### `addComment`
 
-Add a comment to a Jira issue
+Add a plain-text comment to a Jira issue.
 
 **Arguments:**
 
-- `issueKey` (string, **required**): Issue key (e.g., "PROJ-123")
-- `comment` (string, **required**): Comment text
+- `issueKey` (string, **required**): Issue key (e.g., "PROJ-123") or ID
+- `comment` (string, **required**): Comment text, as plain text. A blank line starts a new paragraph and a single newline is a line break. Markdown and Jira wiki markup are not rendered.
 
 **Returns:**
 
@@ -222,12 +225,12 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `assignIssue`
 
-Assign a Jira issue to a user
+Assign a Jira issue to a user, or unassign it. Get account IDs from listAssignableUsers.
 
 **Arguments:**
 
-- `issueKey` (string, **required**): Issue key (e.g., "PROJ-123")
-- `accountId` (string, **required**): Atlassian account ID of the assignee
+- `issueKey` (string, **required**): Issue key (e.g., "PROJ-123") or ID
+- `accountId` (string, **required**): Atlassian account ID of the new assignee. Pass null to unassign the issue.
 
 **Returns:**
 

@@ -115,12 +115,6 @@ claimed that name.
 
 | Skill | Adapter | Operations | Auth Required |
 |-------|---------|------------|---------------|
-| [`/mirra:google-ads`](./skills/google-ads/) | Google Ads | 25 | Yes (OAuth) |
-
-### Other
-
-| Skill | Adapter | Operations | Auth Required |
-|-------|---------|------------|---------------|
 | [`/mirra:shopify`](./skills/shopify/) | Shopify | 63 | Yes (OAuth) |
 
 ### Collaboration
@@ -133,7 +127,7 @@ Hand-authored orchestration skills (not tied to a single adapter):
 | [`/mirra:ledger`](./skills/ledger/) | The team work-ledger ritual for agents on a Mirra space: track agreed work, propose discoveries (then ask in chat), share drafts for comment while the work is still open, close what ships with a closeout and what exists, and publish an update card ONLY when a burst produces news — led by a picture, revised, never stacked; a routine burst publishes nothing. Rides the Mirra items adapter / MCP work-ledger tools. |
 | [`/mirra:mirra`](./skills/mirra/) | START HERE for anything Mirra. Load this whenever the repo you're working in has a .mirra/ directory (it's linked to a Mirra team space), or your human mentions their Mirra space, teammates' updates, the team ledger, or a procedure their team has written down. Directs the ambient team rituals — record work in the shared ledger, publish update cards, follow the team's own procedures, ask the space before expanding scope — and indexes every detail-level mirra-* skill. |
 
-**Total: 37 adapters, 430 operations, 3 collaboration skill(s)**
+**Total: 36 adapters, 405 operations, 3 collaboration skill(s)**
 
 ## How It Works
 

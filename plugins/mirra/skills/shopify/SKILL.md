@@ -69,7 +69,7 @@ Replace `{operation}` with the operation name from the table below.
 | `searchCustomers` | Search customers by a query string. Searches across email, name, and other fields. Returns up to ... |
 | `getInventoryLevels` | Get inventory levels. With no arguments, returns levels for all inventory items (up to limit). Op... |
 | `adjustInventory` | Adjust the available inventory quantity for an item at a specific location. The adjustment is rel... |
-| `listCollections` | List collections in the Shopify store. Returns both custom collections and smart collections comb... |
+| `listCollections` | List collections in the Shopify store, custom and smart together, with pagination. Use the nextPa... |
 | `listPages` | List pages in the Shopify store with optional pagination. |
 | `getPage` | Get a single page by ID. |
 | `createPage` | Create a new page in the Shopify store. |
@@ -268,6 +268,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -d '{"resourceId":"shopify","method":"createCollection","params":{"title":"Summer Launch","descriptionHtml":"<p>Our summer collection</p>","templateSuffix":"landing","published":false}}' | jq .
 ```
 
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
+
 ### `updateCollection`
 
 Update a manual (custom) collection — title, description, theme template suffix, sort order, image, and visibility on the Online Store sales channel. Only the provided fields are changed.
@@ -296,6 +298,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -d '{"resourceId":"shopify","method":"updateCollection","params":{"collectionId":"841564295","published":true,"templateSuffix":"preview"}}' | jq .
 ```
 
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
+
 ### `deleteCollection`
 
 Delete a collection. This removes the collection grouping only — the products that belonged to it are not deleted.
@@ -316,6 +320,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"shopify","method":"deleteCollection","params":{"collectionId":"841564295"}}' | jq .
 ```
+
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
 
 ### `addProductsToCollection`
 
@@ -339,6 +345,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -d '{"resourceId":"shopify","method":"addProductsToCollection","params":{"collectionId":"841564295","productIds":["1234567890","1234567891"]}}' | jq .
 ```
 
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
+
 ### `removeProductsFromCollection`
 
 Remove one or more products from a manual (custom) collection. The products themselves are not deleted and remain in any other collections they belong to.
@@ -360,6 +368,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"shopify","method":"removeProductsFromCollection","params":{"collectionId":"841564295","productIds":["1234567890"]}}' | jq .
 ```
+
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
 
 ### `publishCollection`
 
@@ -383,6 +393,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -d '{"resourceId":"shopify","method":"publishCollection","params":{"collectionId":"841564295","published":true}}' | jq .
 ```
 
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
+
 ### `listProducts`
 
 List products in the Shopify store with optional filtering and pagination. Returns up to 50 products per page. Use the nextPageInfo cursor from the response to fetch subsequent pages.
@@ -390,7 +402,8 @@ List products in the Shopify store with optional filtering and pagination. Retur
 **Arguments:**
 
 - `limit` (number, *optional*): Number of products to return per page (1-250). Defaults to 50.
-- `pageInfo` (string, *optional*): Cursor for pagination. Use the nextPageInfo value from a previous response to get the next page.
+- `pageInfo` (string, *optional*): Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+- `before` (string, *optional*): Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 - `status` (string, *optional*): Filter by product status: "active", "archived", or "draft".
 - `vendor` (string, *optional*): Filter by product vendor name.
 - `productType` (string, *optional*): Filter by product type.
@@ -517,7 +530,8 @@ List orders from the Shopify store with optional filtering. Returns up to 50 ord
 **Arguments:**
 
 - `limit` (number, *optional*): Number of orders to return per page (1-250). Defaults to 50.
-- `pageInfo` (string, *optional*): Cursor for pagination from a previous response.
+- `pageInfo` (string, *optional*): Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+- `before` (string, *optional*): Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 - `status` (string, *optional*): Filter by order status: "open", "closed", "cancelled", or "any". Defaults to "any".
 - `financialStatus` (string, *optional*): Filter by financial status: "authorized", "pending", "paid", "partially_paid", "refunded", "voided", "partially_refunded", "any", "unpaid".
 - `fulfillmentStatus` (string, *optional*): Filter by fulfillment status: "shipped", "partial", "unshipped", "any", "unfulfilled".
@@ -664,7 +678,8 @@ List customers from the Shopify store with optional pagination. Returns up to 50
 **Arguments:**
 
 - `limit` (number, *optional*): Number of customers to return per page (1-250). Defaults to 50.
-- `pageInfo` (string, *optional*): Cursor for pagination from a previous response.
+- `pageInfo` (string, *optional*): Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+- `before` (string, *optional*): Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 - `sinceId` (string, *optional*): Return customers after this customer ID.
 - `createdAtMin` (string, *optional*): Return customers created after this date (ISO 8601 format).
 - `createdAtMax` (string, *optional*): Return customers created before this date (ISO 8601 format).
@@ -833,16 +848,17 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
 
 ### `listCollections`
 
-List collections in the Shopify store. Returns both custom collections and smart collections combined, sorted by title.
+List collections in the Shopify store, custom and smart together, with pagination. Use the nextPageInfo cursor from the response to fetch the next page.
 
 **Arguments:**
 
-- `limit` (number, *optional*): Maximum number of collections to return per type (1-250). Defaults to 50. Note: up to this many custom collections AND this many smart collections may be returned.
-- `pageInfo` (string, *optional*): Cursor for pagination from a previous response.
+- `limit` (number, *optional*): Number of collections per page, 1-250, default 50
+- `pageInfo` (string, *optional*): Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+- `before` (string, *optional*): Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 
 **Returns:**
 
-`AdapterOperationResult`: Returns { collections: NormalizedShopifyCollection[], totalRetrieved }. Each collection includes id, title, bodyHtml, handle, sortOrder, collectionType ("custom" or "smart"), imageUrl.
+`AdapterOperationResult`: Returns { collections: NormalizedShopifyCollection[], nextPageInfo, previousPageInfo, totalRetrieved }. Each collection includes id, title, bodyHtml, handle, sortOrder, collectionType ("custom" or "smart"), imageUrl.
 
 **Example:**
 
@@ -860,7 +876,8 @@ List pages in the Shopify store with optional pagination.
 **Arguments:**
 
 - `limit` (number, *optional*): Number of pages per page, 1-250, default 50
-- `pageInfo` (string, *optional*): Cursor for pagination
+- `pageInfo` (string, *optional*): Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+- `before` (string, *optional*): Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 
 **Returns:**
 
@@ -981,7 +998,8 @@ List blogs in the Shopify store.
 **Arguments:**
 
 - `limit` (number, *optional*): Number of blogs per page, 1-250, default 50
-- `pageInfo` (string, *optional*): Cursor for pagination
+- `pageInfo` (string, *optional*): Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+- `before` (string, *optional*): Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 
 **Returns:**
 
@@ -1097,7 +1115,8 @@ List articles in a blog.
 
 - `blogId` (string, **required**): The blog ID to list articles from.
 - `limit` (number, *optional*): Number of articles per page, 1-250, default 50
-- `pageInfo` (string, *optional*): Cursor for pagination
+- `pageInfo` (string, *optional*): Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+- `before` (string, *optional*): Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 
 **Returns:**
 
@@ -1376,7 +1395,8 @@ List navigation menus.
 **Arguments:**
 
 - `limit` (number, *optional*): Number of menus per page, 1-250, default 50
-- `pageInfo` (string, *optional*): Cursor for pagination
+- `pageInfo` (string, *optional*): Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+- `before` (string, *optional*): Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 
 **Returns:**
 
@@ -1493,7 +1513,8 @@ List URL redirects.
 **Arguments:**
 
 - `limit` (number, *optional*): Number of redirects per page, 1-250, default 50
-- `pageInfo` (string, *optional*): Cursor for pagination
+- `pageInfo` (string, *optional*): Cursor for the next page: the nextPageInfo value from a previous response. Cannot be combined with before.
+- `before` (string, *optional*): Cursor for the previous page: the previousPageInfo value from a previous response. Cannot be combined with pageInfo.
 
 **Returns:**
 
@@ -1636,6 +1657,8 @@ curl -s -X POST "${API_URL}/api/sdk/v2/resources/call" \
   -H "x-api-key: ${API_KEY}" \
   -d '{"resourceId":"shopify","method":"request","params":{"method":"<value>","path":"<value>"}}' | jq .
 ```
+
+> **Warning:** This is a destructive operation. Confirm with the user before executing.
 
 ## Response Format
 
