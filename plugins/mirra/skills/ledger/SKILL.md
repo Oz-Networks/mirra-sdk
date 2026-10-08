@@ -260,7 +260,7 @@ what people can react to, and feedback collected after shipping is not feedback.
 ... -d '{ "resourceId": "items", "method": "noteItem", "params": {
       "itemKey": "051-rebuild-the-checkout-flow",
       "note": "Second pass at checkout is up — the address step is now one screen. Comments welcome on the page, especially the payment step.",
-      "artifacts": [{ "kind": "page", "url": "https://anthony.withmirra.com/checkout-v2", "title": "Checkout, second pass" }]
+      "artifacts": [{ "kind": "page", "url": "https://<username>.withmirra.com/checkout-v2", "title": "Checkout, second pass" }]
     } }'
 
 # 3. Say it wants eyes, in the space chat (mirra-messaging), and say what you
@@ -313,14 +313,14 @@ Two minutes, three calls:
       "purpose": "poster",
       "code": "<the JSX, with your four strings>"
     } }'
-# → { id: "665…", url: "https://anthony.withmirra.com/store-removal", … }
+# → { id: "665…", url: "https://<username>.withmirra.com/store-removal", … }
 
 # 2. Attach it to the item as the receipt (rule 7).
 ... -d '{ "resourceId": "items", "method": "closeItem", "params": {
       "itemKey": "046-remove-the-store-and-marketplace",
       "closeout": "The store, the marketplace and every screen that reached them are gone — 179,644 lines and one migration. Nothing else regressed. Watch: `users.developer` is NOT the API-key flag, so key issuance is unaffected.",
       "artifacts": [
-        { "kind": "page", "url": "https://anthony.withmirra.com/store-removal", "title": "What came out" },
+        { "kind": "page", "url": "https://<username>.withmirra.com/store-removal", "title": "What came out" },
         { "kind": "pr",   "url": "https://github.com/acme/app/pull/121", "title": "The removal, on GitHub" }
       ]
     } }'
@@ -375,7 +375,7 @@ hide it from the library. The test is not "did this lead a card" — it is
 ... -d '{ "resourceId": "items", "method": "publishUpdate", "params": {
       "headline": "Meetings are a real feature now",
       "shipped": [
-        { "text": "Sign-in recovers on its own on spotty networks — no more dropped sessions.", "itemKey": "042-add-retry-logic-to-auth-refresh", "heroPageUrl": "https://anthony.withmirra.com/auth-retry" }
+        { "text": "Sign-in recovers on its own on spotty networks — no more dropped sessions.", "itemKey": "042-add-retry-logic-to-auth-refresh", "heroPageUrl": "https://<username>.withmirra.com/auth-retry" }
       ],
       "next": [
         { "text": "Rebuilding the flaky websocket reconnect.", "itemKey": "043-rebuild-the-flaky-websocket-reconnect" }
@@ -383,7 +383,7 @@ hide it from the library. The test is not "did this lead a card" — it is
       "needsYou": [
         { "text": "The nightly export ran twice today — want me to fix the schedule?" }
       ],
-      "recipientBodies": [{ "username": "anthony", "body": "Auth retry is live — the mobile OTA can drop the workaround." }]
+      "recipientBodies": [{ "username": "sam", "body": "Auth retry is live — the mobile OTA can drop the workaround." }]
     } }'
 # → { card: {...}, revised: true, priorDefaultBody: "…" }
 ```
@@ -442,7 +442,7 @@ Start here when you return to a space. Two reads, cheapest first:
 #    the discussion thread in one call.
 ... -d '{ "resourceId": "items", "method": "getItem", "params": {
       "itemKey": "043-rebuild-the-flaky-websocket-reconnect" } }'
-# → { status: "done", resolution: "declined", decidedBy: { name: "Nadia" },
+# → { status: "done", resolution: "declined", decidedBy: { name: "Priya" },
 #     decidedAt: "…", notes: [ … the reason they gave … ], discussion: [ … ] }
 ```
 

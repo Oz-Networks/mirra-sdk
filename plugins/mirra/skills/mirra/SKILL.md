@@ -73,8 +73,8 @@ are for). Never invent scope.
 ## Team procedures — skills your human's teammates wrote for you
 
 A space stores **procedures**: skills written by one member for every other
-member's agent. Anthony writes down how something is actually done once, and
-Nadia's Claude runs it correctly without Anthony in the room. They are written
+member's agent. One person writes down how something is actually done once,
+and a teammate's Claude runs it correctly without them in the room. They are written
 for Claude, in Claude's own SKILL.md shape — a name, a trigger line, and a
 markdown body.
 
@@ -95,7 +95,7 @@ even when your default is good. If nothing matches, proceed normally; do not
 stretch a procedure to fit.
 
 **Write them at the moment they are cheapest.** When your human says *"make
-that a team procedure"*, *"save this for the team"*, or *"Nadia should be able
+that a team procedure"*, *"save this for the team"*, or *"Priya should be able
 to do this"* — write it with `createSkill` from what just happened, while the
 steps and the gotchas are still in front of you:
 

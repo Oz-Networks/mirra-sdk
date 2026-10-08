@@ -905,7 +905,7 @@ export interface MemorySearchArgs {
 }
 export interface MemoryQueryArgs {
   type?: string; // Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against entityType, meta_item_type, subType, or semantic_roles
-  filters?: any; // Additional filters (not yet implemented)
+  filters?: any; // Ignored by this operation. Filter with type, or use findOne for a single entity.
   limit?: number; // Maximum results (default: 20, max: 100)
   offset?: number; // Pagination offset for fetching more results (default: 0)
   groupId?: string; // Optional group ID to scope query to a specific group's memory graph. If omitted, queries across your personal graph and all groups you belong to. Each result includes a graphId field showing which graph it came from.
@@ -10331,7 +10331,7 @@ function createMemoryAdapter(sdk: MirraSDK) {
     /**
      * Query memory entities with filters. Returns lightweight summaries with TRUNCATED content (max 200 chars) to prevent large payloads. Use type="task" to list all tasks (including those created via createTask). To get full untruncated content for a specific entity, use `findOne` with the entity ID.
      * @param args.type - Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against entityType, meta_item_type, subType, or semantic_roles (optional)
-     * @param args.filters - Additional filters (not yet implemented) (optional)
+     * @param args.filters - Ignored by this operation. Filter with type, or use findOne for a single entity. (optional)
      * @param args.limit - Maximum results (default: 20, max: 100) (optional)
      * @param args.offset - Pagination offset for fetching more results (default: 0) (optional)
      * @param args.groupId - Optional group ID to scope query to a specific group's memory graph. If omitted, queries across your personal graph and all groups you belong to. Each result includes a graphId field showing which graph it came from. (optional)

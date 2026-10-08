@@ -213,7 +213,7 @@ Query memory entities with filters. Returns lightweight summaries with TRUNCATED
 **Arguments:**
 
 - `type` (string, *optional*): Semantic type filter (e.g., "task", "note", "idea", "reminder", "contact", "document"). Matches against entityType, meta_item_type, subType, or semantic_roles
-- `filters` (object, *optional*): Additional filters (not yet implemented)
+- `filters` (object, *optional*): Ignored by this operation. Filter with type, or use findOne for a single entity.
 - `limit` (number, *optional*): Maximum results (default: 20, max: 100)
 - `offset` (number, *optional*): Pagination offset for fetching more results (default: 0)
 - `groupId` (string, *optional*): Optional group ID to scope query to a specific group's memory graph. If omitted, queries across your personal graph and all groups you belong to. Each result includes a graphId field showing which graph it came from.
