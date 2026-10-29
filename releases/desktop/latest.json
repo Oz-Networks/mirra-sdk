@@ -6,6 +6,10 @@
     "darwin-aarch64": {
       "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.148/Mirra.app.tar.gz",
       "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMGFVUUlPSlJYT25ON3FFNGZtMXZUNnZMZFlITjBsVzRZV0d5dE1pQk9sUjVmWXo3dFM1QSs2amNRb2RXN0lnR01uU242VHRKS0ZJbjdtZUNUbFZEc0FFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMjkwODM1CWZpbGU6TWlycmEuYXBwLnRhci5negpiSFd3WEhid21IS1N3K21IUjY1MS9GaGNJN3BuTEJSSk1MNWRiWDRRN2VIa0dIRklEUXlXWlFtSG8rSXVMbTF1c3pWYXRJVTZqb09UV2w4eS93YnRCdz09Cg=="
+    },
+    "windows-x86_64": {
+      "url": "https://github.com/Oz-Networks/mirra-sdk/releases/download/desktop-v0.2.148/Mirra_0.2.148_x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdW81VGlmVUpRMGN2bVZ1aGJMS0ZyelgyZUFjdFZZc2FTZFovYS9mSGFRTVBuUlFsamlLT1ZNdnNkdnNMano5VitKd0F5SEd3UjdDQUc0NUUxT25Vc2N3blB0Z295OHdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMjkxMzI1CWZpbGU6TWlycmFfMC4yLjE0OF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjE0OApXVXduL3VMb2d6K2xtcVRkSmxETWhWWUhIRW85SG5BMXI0Yks3OVYxMUw3UnRwMXhFblZ2T1B1dGhZZHpOQy81Ny9DczdMbEtUMUlyZVJLdjJTRC9CUT09Cg=="
     }
   }
 }
